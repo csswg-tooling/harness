@@ -1,0 +1,115 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+// 
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// 
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class.db_connection.phi
+//
+//  Provides database access functionality similar to that provided to the
+//  Mobile Test Harness [1] by the file dbconnection.phi, where provided
+//  functionallity from top-level functions is instead encopsulated by an
+//  object class and support for error handling is deferred.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+////////////////////////////////////////////////////////////////////////////////
+
+require_once("class.db_result_set.phi");
+require_once("config.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class db_connection
+//
+//  db_connection works with db_result_set (defined separately) as part of a 
+//  factory design pattern, where db_connection is a specialized object solely
+//  used to create other instances of db_result_set.
+//
+//  Other objects needing to get, post, update, or delete information from the
+//  database will function as a client to an instance of db_connection which, 
+//  in turn, will produce a db_result_set.
+//
+//  In this way, the client object that requires an instance of db_result_set
+//  for some purpose does not need to creat this product instance directly, 
+//  rather the client object delegates this responsibility to the factory. 
+//
+//  Once invoked, the factory creates a new instance of the product, passing it
+//  back to the client. Put simply, the client uses the factory to create an 
+//  instance of the product.
+//
+////////////////////////////////////////////////////////////////////////////////
+class db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  // Instance variable to hold a handle to a database connection.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  
+  var $m_db;
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  is_false()
+  //
+  //  returns TRUE is the stored resource value is FALSE;
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function is_false()
+  {
+    if($this->m_db) return FALSE;
+    return TRUE;
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  constructor - connect to the data base
+  //
+  //  mysql_connect opens or reuses a connection to the MySQL Server.
+  //
+  //  DB_HOST is defined in config.phi and identifies the the MySQL server. 
+  //
+  //  DB_USER is defined in config.phi and identifies the username used to
+  //  access the MySQL server.
+  //
+  //  DB_PASSWORD is defined in config.phi and identifies the password of
+  //  the user used to access the MySQL server.
+  //
+  //  If a second call is made to mysql_connect() with the same arguments, 
+  //  no new link will be established, but instead, the link identifier of 
+  //  the already opened link will be returned; thus, we do not need to force 
+  //  this object to be a singleton within the application.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function db_connection()
+  {  
+    $this->m_db = mysql_connect(DB_HOST, DB_USER, DB_PASSWORD);
+    mysql_query('use '.DB_NAME.';', $this->m_db);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  query() - execute a database query  
+  //
+  //  This is the factory method for creating instances of db_result_set,
+  //  which contain the results of querying the MySQL server with the
+  //  provided query string.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function query($query_string) 
+  {
+    return new db_result_set(mysql_query($query_string, $this->m_db));
+  }
+}
+?>

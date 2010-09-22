@@ -1,0 +1,168 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+//
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.test_results.phi
+//
+//  Provides results reporting functionality as a proxy to that provided to the
+//  Mobile Test Harness [1].
+//
+//  Currently, this file represents a place holder for a work in progress.
+//  Additional requested functionality, including various results concolidations
+//  and cross tabulations, are in active development.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("./lib_test_harness/class.db_connection.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class test_results
+//
+//  test_results is a concrete db_connection taylored for storing the 
+//  testing results tables.
+//
+////////////////////////////////////////////////////////////////////////////////
+class test_results extends db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_data;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function test_results
+    ( $test_suite
+    , $test_select
+    , $select_type
+    , $browser
+    , $version
+    , $platform
+    , $grouping
+    , $modified
+    , $order
+    )
+  {
+    parent::db_connection();
+
+    $sql  = "SELECT title,browser,version,platform,SUM(pass) as pass,";
+    $sql .= "SUM(fail) as fail,SUM(uncertain) as uncertain,";
+    $sql .= "COUNT(*) as count FROM (";
+    
+    $sql .= "SELECT testcases.title,testcases.testsuite,";
+    $sql .= "testcases.testgroup,testcases.testcase,results.useragent,";
+    $sql .= "results.modified,result='pass' AS pass,";
+    $sql .= "result='fail' AS fail,result='uncertain' AS uncertain ";
+    $sql .= "FROM testcases INNER JOIN results ";
+    $sql .= "ON testcases.testsuite = results.testsuite ";
+    $sql .= "AND testcases.testcase = results.testcase ";
+    $sql .= "WHERE testcases.testsuite = '".$test_suite."' ";
+    
+    if($test_select) {
+      if($select_type == 1) {
+        $sql .= "AND testcases.testgroup = '".$test_select."' ";
+      } elseif($select_type==2) {
+        $sql .= "AND testcases.testcase = '".$test_select."' ";
+      }
+    }
+
+    if($modified) {
+      $sql .= "AND results.modified <= '".$modified."' ";
+    }
+
+    $sql .= ") AS t ";
+    $sql .= "INNER JOIN useragents ";
+    $sql .= "ON t.useragent = useragents.useragent ";
+    
+    if($browser) {
+      $sql .= "WHERE browser='".$browser."' ";
+      if($version) {
+        $sql .= "AND version = '".$version."' ";
+      }
+      if($platform) {
+        $sql .= "AND platform = '".$platform."' ";
+      }
+    }
+    if($grouping == 's') {
+      $sql .= "GROUP BY testsuite, ";
+    } elseif($grouping == 'g') {
+      $sql .= "GROUP BY testgroup, ";
+    } else {
+      $sql .= "GROUP BY testcase, ";
+    }
+    $sql .= "browser, version ";
+
+    if($order) {
+      $sql .= "ORDER BY count";
+    }
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to obtain results.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $this->m_data = $r->fetch_table();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write
+  //
+  //  Write HTML for a table displaying the results data.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write($indent)
+  {
+
+    if(!($this->m_data)) {
+      echo $indent . '<p>No results entered matching this query.</p>' . "\n";
+    } else {
+
+      echo $indent . '<table>' ."\n";
+
+      echo $indent . '  <tr>' ."\n";
+      foreach($this->m_data[0] as $key=>$value) {
+        echo $indent . '    <th>' ."\n";
+        echo $indent . '      ' . $key;
+        echo $indent . '    </th>' ."\n";
+      }
+      echo $indent . '  </tr>' ."\n";
+
+      foreach($this->m_data as $row) {
+        echo $indent . '  <tr>' ."\n";
+        foreach($row as $value) {
+          echo $indent . '    <td>' ."\n";
+          echo $indent . '      ' . $value;
+          echo $indent . '    </td>' ."\n";
+        }
+        echo $indent . '  </tr>' ."\n";
+      }
+
+      echo $indent . '</table>' . "\n";
+    }
+  }
+}
+
+?>

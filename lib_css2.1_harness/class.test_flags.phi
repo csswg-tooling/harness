@@ -1,0 +1,95 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+// 
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// 
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.test_flags.phi
+//
+//  Provides functionalities for acessing, storing, and displaying specific
+//  requirements for individual test cases.
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("./lib_test_harness/class.db_connection.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class test_flags
+//
+//  test_flags is a concrete db_connection taylored for storing a list 
+//  of client requirements for a particular test case.
+//
+////////////////////////////////////////////////////////////////////////////////
+class test_flags extends db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_list;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  //  Query the database for information about the client requirements
+  //  of a particular test case. Store the results.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function test_flags($test_suite, $test_case) 
+  {
+    parent::db_connection();
+
+    $sql  = "SELECT description ";
+    $sql .= "FROM testcases ";
+    $sql .= "LEFT JOIN flags ";
+    $sql .= "ON FIND_IN_SET(flags.flag, testcases.flags) ";
+    $sql .= "WHERE testsuite='";
+    $sql .= $test_suite;
+    $sql .= "' ";
+    $sql .= "AND testcase='";
+    $sql .= $test_case;
+    $sql .="'";
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $this->m_list = null;
+    } else {
+      $this->m_list = $r->fetch_field_data('description');
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write($indent)
+  {
+    if($this->m_list && count($this->m_list) && $this->m_list[0] != '') {
+      echo "\n";
+      echo $indent . '<p class="notes">'."\n";
+      foreach($this->m_list as $flag) {
+        echo $indent . '  ' . $flag . "\n";
+      }
+      echo $indent . '</p>'."\n";
+      echo "\n";
+    }
+  }
+
+}
+
+?>

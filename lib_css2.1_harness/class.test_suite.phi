@@ -1,0 +1,121 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2007 World Wide Web Consortium, 
+//  (Massachusetts Institute of Technology, European Research 
+//  Consortium for Informatics and Mathematics, Keio 
+//  University). All Rights Reserved. 
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+// 
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// 
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.test_suite.php
+//
+//  Adapted from Mobile Test Harness [1]
+//
+//    File: tests.php
+//      Class: TestSuite
+//      Lines: 246-344
+//
+//  where herein information about a particular test suite is queried from 
+//  the database and stored internally. Other information queries (e.g. 
+//  obtaining the number of test cases in the suite) are deferred for other
+//  object classes.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("./lib_test_harness/class.db_connection.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class test_suite
+//
+//  test_suite is a concrete db_connection taylored for storing the 
+//  information about a particular test suite.
+//
+////////////////////////////////////////////////////////////////////////////////
+class test_suite extends db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_info;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  //  Query the database for information about a particular test suite
+  //  and store the results.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function test_suite($test_suite) 
+  {
+    parent::db_connection();
+    
+    $sql  = "SELECT * FROM testsuites ";
+    $sql .= "WHERE testsuite='$test_suite' ";
+    $sql .= "LIMIT 1";
+    
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to obtain information about ' . $test_suite;
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $this->m_info = $r->fetch_array();
+    
+    if(!($this->m_info)) {
+      $msg = 'Unable to obtain information about ' . $test_suite;
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Member functions for retrieving information about the test suite
+  //
+  //    get_name()
+  //    get_title()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_name()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_name()
+  {
+    return $this->m_info['testsuite'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_title()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_title()
+  {
+    return $this->m_info['title'];
+  }
+
+}
+
+?>

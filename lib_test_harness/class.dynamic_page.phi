@@ -1,0 +1,196 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+//
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.dynamic_page.phi
+//
+//  Provides error reporting functionality similar to that provided to the
+//  Mobile Test Harness [1] by the function WriteErrorpage() in the file
+//  dbconnection.phi, where rather than generating an error page as a result
+//  of a returned error flag, errors are triggered in flight and then caught
+//  by a provided error handler.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("class.static_page.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class dynamic_page
+//
+//  This derived class encapsulates the reporting of errors encountered while
+//  attempting to acquire the content of dynamic pages. Class derived from this
+//  class will add functionality needed by specific pages.
+//
+////////////////////////////////////////////////////////////////////////////////
+class dynamic_page extends static_page
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_error_client;
+  var $m_error_code;
+  var $m_error_message;
+  var $m_error_file;
+  var $m_error_line;
+  var $m_error_context;
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function dynamic_page() 
+  {
+    parent::static_page();
+    $this->m_error_client = null;
+    $this->m_error_code = null;
+    $this->m_error_message = null;
+    $this->m_error_file = null;
+    $this->m_error_line = null;
+    $this->m_error_context = null;
+    set_error_handler(array(&$this, 'error_handler'));
+  }  
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  // error_handler()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function error_handler($errno, $errstr, $errfile, $errline, $errcontext)
+  {
+    switch ($errno) {
+      case E_WARNING:
+      case E_USER_WARNING:
+        $this->m_error_code = 'WARNING:';
+        break;
+      case E_NOTICE:
+      case E_USER_NOTICE:
+        $this->m_error_code = 'NOTICE:';
+        break;
+      default:
+        $this->m_error_code = 'ERROR:';
+    }
+    
+    if(!$errstr) {
+      $errstr = 'Unknown Error';
+    }
+    
+    $this->m_error_message = $errstr;
+    $this->m_error_file = $errfile;
+    $this->m_error_line = $errline;
+    $this->m_error_context = $errcontext;
+
+    if(!headers_sent()) {
+      if ($this->m_error_client) {
+        header('HTTP/1.1 400 Bad Request');
+      } else {
+        header('HTTP/1.1 500 Internal Server Error');
+      }
+    }
+
+    $this->write();
+    
+    die();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  // trigger_server_error()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function trigger_server_error($error_msg, $error_type = E_USER_ERROR)
+  {
+    trigger_error($error_msg, $error_type);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  // trigger_client_error()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function trigger_client_error($error_msg, $error_type = E_USER_ERROR)
+  {
+    $this->m_error_client = 1;
+    trigger_error($error_msg, $error_type);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write_html_body()
+  //
+  //  Member function to write common <body> tags at the start of the page 
+  //     content.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write_html_body($indent = '')
+  {
+    echo $indent . '<body>' . "\n";
+    $this->write_body_header($indent . '  ');
+    if($this->m_error_code == null) {
+      $this->write_body_content($indent . '  ');
+    } else {
+      $this->write_body_error($indent . '  ');
+    }
+    $this->write_body_footer($indent . '  ');
+    echo $indent . '</body>' . "\n";
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  // write_body_error()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write_body_error($indent = '')
+  {
+    if($this->m_error_code) {
+      echo $indent . '<p>' . "\n";
+      echo $indent . '  <strong>' . $this->m_error_code . '</strong>' . "\n";
+      if($this->m_error_message) {
+        echo $indent . '  ' . $this->m_error_message . "\n";
+      }
+      echo $indent . '</p>' . "\n";
+    } else {
+      if($this->m_error_message) {
+        echo $indent . '<p>' . "\n";
+        echo $indent . '  ' . $this->m_error_message . "\n";
+        echo $indent . '</p>' . "\n";
+      }
+    }
+    if($this->m_error_file) {
+      echo $indent . '<p>File: ' . "\n";
+      echo $indent . '  ' . $this->m_error_file . "\n";
+      echo $indent . '</p>' . "\n";
+    }
+    if($this->m_error_line) {
+      echo $indent . '<p>Line: ' . "\n";
+      echo $indent . '  ' . $this->m_error_line . "\n";
+      echo $indent . '</p>' . "\n";
+    }
+    if($this->m_error_context) {
+      echo $indent . '<p>Context: ' . "\n";
+      echo $indent . '  ';
+      print_r($this->m_error_context);
+      echo "\n";
+      echo $indent . '</p>' . "\n";
+    }
+  }
+}
+?>

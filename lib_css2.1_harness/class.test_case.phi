@@ -1,0 +1,628 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2007 World Wide Web Consortium, 
+//  (Massachusetts Institute of Technology, European Research 
+//  Consortium for Informatics and Mathematics, Keio 
+//  University). All Rights Reserved. 
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+// 
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// 
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.test_case.phi
+//
+//  Adapted from Mobile Test Harness [1]
+//
+//    File: tests.phi
+//      Class: TestResult
+//      Lines: 20-39
+//      Class: TestSuite
+//      Class: TestCase
+//      Lines: 246-380
+//
+//  where herein information about a particular test case is queried from 
+//  the database and stored internally. Also, the functionalities for 
+//  submitting test results are included herein. Other information queries 
+// (e.g. obtaining the next test case in a list of test cases) are deferred 
+//  for other object classes.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_css2.1_harness/class.test_flags.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class test_case
+//
+//  test_case is a concrete db_connection taylored for storing the 
+//  information about a particular test case.
+//
+////////////////////////////////////////////////////////////////////////////////
+class test_case extends db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_info;
+  var $m_rank;  // $rank = 1 is the first entry of the list.
+  var $m_count;
+  var $m_timestamp;
+  var $m_flags;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  //  Query the database for information about a specific test case 
+  //  and store the results.
+  //
+  //  Test cases can be indentified in three ways:
+  //
+  //    1) by name within a particular test suite
+  //
+  //    2a) by index within a particular test suite.
+  //    2b) by ordered rank within a particular test suite.
+  //
+  //    3a) by index within a particular test group.
+  //    3b) by ordered rank within a particular test group.
+  //
+  //  The index value of a particular test case is determined by the oder
+  //  the test case is stored in the database table.
+  //
+  //  The ordered rank is determined by sorting available test cases 
+  //  according to the number of responses the individual cases have 
+  //  for a given user agent string as of a given timestamp.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function test_case
+    ( $test_suite
+    , $test_select
+    , $select_type
+    , $user_agent
+    , $modified
+    , $order
+    , $rank  // $rank = 1 is the first member of the list.
+    )
+  {
+    parent::db_connection();
+
+    if($rank < 1) $rank = 1;
+
+    if($modified) {
+      $this->m_timestamp = $modified;
+    } else {
+      $this->m_timestamp = $this->get_now();
+    }
+    
+    switch ($select_type) {
+    
+    // Select test case by rank from list of cases in a particular test group.
+    case 1: 
+      $this->m_count = $this->count_cases_in_group
+        ( $test_suite
+        , $test_select
+        );
+        
+      $this->m_info = $this->select_case_from_group
+        ( $test_suite
+        , $test_select
+        , $user_agent
+        , $this->m_timestamp
+        , $order
+        , $rank
+        );
+        
+      $this->m_rank = $rank;
+      break;
+
+    // Select test case by explicit test case id.
+    case 2:
+      $this->m_count = $this->count_cases
+        ( $test_suite
+        , $test_select
+        );
+        
+      $this->m_info = $this->select_case
+        ( $test_suite
+        , $test_select
+        , $user_agent
+        );
+
+      $this->m_rank = 1;
+      break;
+
+    // Select test case by rank from list of cases in the particular test suite.
+    default:
+    
+      $this->m_count = $this->count_cases_in_suite($test_suite);
+
+      $this->m_info = $this->select_case_from_suite
+        ( $test_suite
+        , $user_agent
+        , $this->m_timestamp
+        , $order
+        , $rank
+        );
+
+      $this->m_rank = $rank;
+    }
+
+    $this->m_flags = new test_flags
+      ( $test_suite
+      , $this->get_test_case()
+      );
+
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_now()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_now()
+  {
+    $sql  = "SELECT CURRENT_TIMESTAMP";
+    $r = $this->query($sql);
+    
+    if($r->is_false()) {
+      $msg = 'Unable to obtain timestamp.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t) || !isset($t['CURRENT_TIMESTAMP'])) {
+      $msg = 'Unable to obtain timestamp.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+    
+    return $t['CURRENT_TIMESTAMP'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  count_cases_in_suite()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function count_cases_in_suite($test_suite)
+  {
+    $sql  = "SELECT COUNT(*) AS count ";
+    $sql .= "FROM testcases ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "LIMIT 1";
+    
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t) || !isset($t['count'])) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $t['count'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  select_case_from_suite()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function select_case_from_suite
+    ( $test_suite
+    , $user_agent
+    , $modified
+    , $order
+    , $rank
+    )
+  {
+
+    // $rank = 1 is the first member of the list.
+    // MySQL needs $rank = 0 to be the first member of the list.
+    $rank = $rank - 1;
+    if($rank < 0) {
+      $rank = 0;
+    }
+
+    $sql  = "SELECT t1.*, count FROM (";
+    $sql .= "SELECT testcases.uri, testcases.testsuite, ";
+    $sql .= "testcases.testgroup, testcases.testcase, ";
+    $sql .= "testcases.title AS casetitle, ";
+    $sql .= "testgroups.title AS grouptitle, ";
+    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "FROM (testcases LEFT JOIN testsuites ";
+    $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
+    $sql .= "LEFT JOIN testgroups ";
+    $sql .= "ON testcases.testgroup = testgroups.testgroup ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "') AS t1 ";
+    $sql .= "LEFT JOIN (";
+    $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
+    $sql .= "FROM results ";
+    $sql .= "WHERE useragent='" . $user_agent . "' ";
+    if($modified) {
+      $sql .= "AND modified <= '" . $modified . "' ";
+    }
+    $sql .= "GROUP BY testsuite,testcase) AS t2 ";
+    $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
+    if($order == 1) {
+      $sql .= "ORDER BY count ";
+    }
+    $sql .= "LIMIT " . $rank . ",1";
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to access information about test case.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t)) {
+      $msg = 'Unable to access information about test case.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $t;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  count_cases_in_group()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function count_cases_in_group($test_suite, $test_group)
+  {
+    $sql  = "SELECT COUNT(*) AS count ";
+    $sql .= "FROM testcases ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.testgroup='" . $test_group . "' ";
+    $sql .= "LIMIT 1";
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t) || !isset($t['count'])) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $t['count'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  select_case_from_group()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function select_case_from_group
+    ( $test_suite
+    , $test_group
+    , $user_agent
+    , $modified
+    , $order
+    , $rank
+    )
+  {
+
+    // $rank = 1 is the first member of the list.
+    // MySQL needs $rank = 0 to be the first member of the list.
+    $rank = $rank - 1;
+    if($rank < 0) {
+      $rank = 0;
+    }
+
+    $sql  = "SELECT t1.*, count FROM (";
+    $sql .= "SELECT testcases.uri, testcases.testsuite, ";
+    $sql .= "testcases.testgroup, testcases.testcase, ";
+    $sql .= "testcases.title AS casetitle, ";
+    $sql .= "testgroups.title AS grouptitle, ";
+    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "FROM (testcases LEFT JOIN testsuites ";
+    $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
+    $sql .= "LEFT JOIN testgroups ";
+    $sql .= "ON testcases.testgroup = testgroups.testgroup ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.testgroup='" . $test_group . "' ";
+    $sql .= ") AS t1 ";
+    $sql .= "LEFT JOIN (";
+    $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
+    $sql .= "FROM results ";
+    $sql .= "WHERE useragent='" . $user_agent . "' ";
+    if($modified) {
+      $sql .= "AND modified <= '" . $modified . "' ";
+    }
+    $sql .= "GROUP BY testsuite,testcase) AS t2 ";
+    $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
+    if($order == 1) {
+      $sql .= "ORDER BY count ";
+    }
+    $sql .= "LIMIT " . $rank . ",1";
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to access information about test case.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t)) {
+      $msg = 'Unable to access information about test case.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $t;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  count_cases()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function count_cases($test_suite, $test_case)
+  {
+    $sql  = "SELECT COUNT(*) AS count ";
+    $sql .= "FROM testcases ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.testcase='" . $test_case . "' ";
+    $sql .= "LIMIT 1";
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t) || !isset($t['count'])) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $t['count'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  select_case()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function select_case
+    ( $test_suite
+    , $test_case
+    , $user_agent
+    )
+  {
+    $sql  = "SELECT t1.*, count FROM (";
+    $sql .= "SELECT testcases.uri, testcases.testsuite, ";
+    $sql .= "testcases.testgroup, testcases.testcase, ";
+    $sql .= "testcases.title AS casetitle, ";
+    $sql .= "testgroups.title AS grouptitle, ";
+    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "FROM (testcases LEFT JOIN testsuites ";
+    $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
+    $sql .= "LEFT JOIN testgroups ";
+    $sql .= "ON testcases.testgroup = testgroups.testgroup ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.testcase='" . $test_case . "' ";
+    $sql .= ") AS t1 ";
+    $sql .= "LEFT JOIN (";
+    $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
+    $sql .= "FROM results ";
+    $sql .= "WHERE useragent='" . $user_agent . "' ";
+    $sql .= "GROUP BY testsuite,testcase) AS t2 ";
+    $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
+    $sql .= "LIMIT 1";
+
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Unable to access information about test case.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $t = $r->fetch_array();
+    
+    if(!($t)) {
+      $msg = 'Unable to access information about test case.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $t;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  submit()
+  //
+  //  Submit results info about the test case.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function submit($useragent, $response)
+  {
+    $sql  = "INSERT INTO results ";
+    $sql .= "(testsuite, testcase, useragent, result) ";
+    $sql .= "VALUES (";
+    $sql .= "'".$this->get_test_suite()."',";
+    $sql .= "'".$this->get_test_case()."',";
+    $sql .= "'".$useragent."',";
+    $sql .= "'".$response."'";
+    $sql .= ")";
+    
+    $r = $this->query($sql);
+
+    if($r->is_false()) {
+      $msg = 'Operation Failed. We were unable to record you submission.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write($indent)
+  {
+    echo "\n";
+    
+    echo $indent . '<div class="test">'."\n";
+    echo $indent . '  <p>'."\n";
+    
+    echo $indent . '    <object data="';
+    echo $this->get_uri();
+    echo '" type="text/html">'."\n";
+
+    echo $indent . '      <a href="';
+    echo $this->get_uri();
+    echo '">'."\n";
+    echo $indent . '        Run test'."\n";
+    echo $indent . '      </a>'."\n";
+
+    echo $indent . '    </object>'."\n";
+    echo $indent . '  </p>'."\n";
+    echo $indent . '</div>'."\n";
+    echo "\n";
+  
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Member functions for retrieving information about the test suite
+  //
+  //    get_timestamp()
+  //    get_uri()
+  //    get_test_suite()
+  //    get_test_case()
+  //    get_title()
+  //    get_title_suite();
+  //    get_title_group();
+  //    get_count();
+  //    get_rank();
+  //
+  ////////////////////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_timestamp()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_timestamp()
+  {
+    return $this->m_timestamp;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_uri()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_uri()
+  {
+    return $this->m_info['uri'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_test_case()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_test_case()
+  {
+    return $this->m_info['testcase'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_test_suite()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_test_suite()
+  {
+    return $this->m_info['testsuite'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_title()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_title()
+  {
+    return $this->m_info['casetitle'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_title_suite()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_title_suite()
+  {
+    return $this->m_info['suitetitle'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_title_group()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_title_group()
+  {
+    return $this->m_info['grouptitle'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_rank()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_rank()
+  {
+    return $this->m_rank;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_count()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_count()
+  {
+    return $this->m_count;
+  }
+
+}
+
+?>

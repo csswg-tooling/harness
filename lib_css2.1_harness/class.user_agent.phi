@@ -1,0 +1,263 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+// 
+//  This work is distributed under the W3CÂ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// 
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.user_agent.php
+//
+//  In the Mobile Test Harness [1] user-agents where identified by full
+//  user-agent string. For the CSS2.1 test harness there is a desire to
+//  allow consolodated results for user-agent strings representing the
+//  same browser type, version number and/or platform (OS).
+//
+//  Herein functionallity is provided whereby a user-agent string can be
+//  summarized by a browser type, a version number, and a platform (OS).
+//  First, the database is queried using either a user-agent string or
+//  a unique id code. If the user-agent is not in the database, then the
+//  provided string is parsed to obtain a reasonable guess for the browser,
+//  version, and platform information.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("./lib_test_harness/class.db_connection.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class user_agent
+//
+//  user_agent is a concrete db_connection taylored for storing the 
+//  information about a particular user agent.
+//
+////////////////////////////////////////////////////////////////////////////////
+class user_agent extends db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_info;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function user_agent($id='') 
+  {
+    parent::db_connection();
+
+    $this->m_info = $this->lookup($id);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  lookup()
+  //
+  //  Query the database for information about known user agents.
+  //  If the user agent is unknown or if an id is not provided,
+  //  then provide a guess of the required information using 
+  //  the get_browser() function.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function lookup($id) 
+  {
+    if(!isset($id) || $id=='') {
+      $id = $_SERVER['HTTP_USER_AGENT'];
+      $ua = $this->query_by_string($id);
+    } else {
+      $ua = $this->query_by_id($id);
+      if(!isset($ua) || !isset($ua['id'])) {
+        unset($ua);
+        $ua = $this->query_by_string($id);
+      }
+    }
+    if(!isset($ua) || !isset($ua['id']) || $ua['id']=='') {
+      $ua = $this->parse_string($id);
+    }
+    return $ua;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  query_by_id
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function query_by_id($id) 
+  {
+    $sql  = "SELECT id,useragent,browser,version,platform FROM useragents ";
+    $sql .= "WHERE id='$id' ";
+    $sql .= "LIMIT 1";
+    $r = $this->query($sql);
+    if($r->is_false()) {
+      return null;
+    }
+    return $r->fetch_array();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  query_by_string
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function query_by_string($ua_string) 
+  {
+    $sql  = "SELECT id,useragent,browser,version,platform FROM useragents ";
+    $sql .= "WHERE useragent='$ua_string' ";
+    $sql .= "LIMIT 1";
+    $r = $this->query($sql);
+    if($r->is_false()) {
+      return null;
+    }
+    return $r->fetch_array();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  parse_string
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  // Edit 20100917: This function referenced a get_browser() function that
+  // doesn't exist - the user_agent::get_browser function is completely 
+  // unrelated.  Instead, I'm just punting to get this to work.  "Proper" UA
+  // detection through uastring parsing can wait until later.
+  function parse_string($ua_string) 
+  {
+    $r['id'] = null;
+    $r['useragent'] = $ua_string;
+    $r['browser'] = "Generic Browser";
+    $r['version'] = "1";
+    $r['platform'] = "Computron";
+    return $r;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  update()
+  //
+  //  Reload info about the user agent from the database.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function update()
+  {
+    $ua = $this->lookup($this->get_ua_string());
+
+    if($ua['id'] == null) {
+      $sql  = "INSERT INTO useragents ";
+      $sql .= "(useragent, browser, version, platform) ";
+      $sql .= "VALUES (";
+      $sql .= "'".$ua['useragent']."',";
+      $sql .= "'".$ua['browser']."',";
+      $sql .= "'".$ua['version']."',";
+      $sql .= "'".$ua['platform']."'";
+      $sql .= ")";
+      $r = $this->query($sql);
+      $ua = $this->lookup($ua['useragent']);
+    }
+
+    $this->m_info = $ua;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write
+  //
+  //  Write HTML for a human readable description of the user agent.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write($indent)
+  {
+    if($this->get_browser() == 'Default Browser') {
+      echo $indent . 'unknown';
+    } else {
+      echo $indent . $this->get_browser();
+      
+      if($this->get_version() != '0') {
+        echo ' ' . $this->get_version();
+      }
+
+      if($this->get_platform() != 'unknown') {
+        echo ' on ' . $this->get_platform();
+      }
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Member functions for retrieving information about the user agent
+  //
+  //    get_id()
+  //    get_ua_string()
+  //    get_browser()
+  //    get_version()
+  //    get_platform()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_id()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_id()
+  {
+    return $this->m_info['id'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_ua_string()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_ua_string()
+  {
+    return $this->m_info['useragent'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_browser()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_browser()
+  {
+    return $this->m_info['browser'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_version()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_version()
+  {
+    return $this->m_info['version'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_platform()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_platform()
+  {
+    return $this->m_info['platform'];
+  }
+
+}
+
+?>
