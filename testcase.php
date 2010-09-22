@@ -210,85 +210,9 @@ class testcase_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_head_style($indent = '')
   {  
-    echo $indent . '<style type="text/css">' . "\n";
-    
-    echo $indent . '  @import url(';
-    echo 'http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css);';
+    echo $indent . '<link rel="stylesheet" href="http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css">';
     echo "\n";
-    
-    echo $indent . '  html, body, div, p, h1, form {' . "\n";
-    echo $indent . '    margin: 0;' . "\n";
-    echo $indent . '    padding: 0;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  html, .test p {' . "\n";
-    echo $indent . '    height: 100%;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  body {' . "\n";
-    echo $indent . '    margin: 3%;' . "\n";
-    echo $indent . '    height: 94%;' . "\n";
-    echo $indent . '    width: 94%;' . "\n";
-    echo $indent . '    display: table;' . "\n";
-    echo $indent . '    table-layout: fixed;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '' . "\n";
-    echo $indent . '  img {' . "\n";
-    echo $indent . '    border: none;' . "\n";
-    echo $indent . '    float: left;' . "\n";
-    echo $indent . '    margin-right: 8px;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  h1 {' . "\n";
-    echo $indent . '    font: inherit;' . "\n";
-    echo $indent . '    font-size: 1em;' . "\n";
-    echo $indent . '    font-style: italic;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  span {' . "\n";
-    echo $indent . '    display: block;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  .suite, .id {' . "\n";
-    echo $indent . '    margin-left: 80px;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  .id {' . "\n";
-    echo $indent . '    font-weight: bold;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  .header {' . "\n";
-    echo $indent . '    margin-bottom: 0.4em;' . "\n";
-    echo $indent . '    font-size: smaller;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  .test {' . "\n";
-    echo $indent . '    height: 80%;' . "\n";
-    echo $indent . '    width: 100%;' . "\n";
-    echo $indent . '    text-align: center;' . "\n";
-    echo $indent . '    display: table-row;' . "\n";
-    echo $indent . '    clear: both;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  .test p {' . "\n";
-    echo $indent . '    height: inherit;' . "\n";
-    echo $indent . '    display: table-cell;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  object {' . "\n";
-    echo $indent . '    display: block;' . "\n";
-    echo $indent . '    height: 98%;' . "\n";
-    echo $indent . '    width: 98%;' . "\n";
-    echo $indent . '    border: groove 2px;' . "\n";
-    echo $indent . '    margin: auto;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  object a {' . "\n";
-    echo $indent . '    display: block;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '' . "\n";
-    echo $indent . '  form {' . "\n";
-    echo $indent . '    margin-top: 0.4em;' . "\n";
-    echo $indent . '    display: table;' . "\n";
-    echo $indent . '    width: 100%;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  form p {' . "\n";
-    echo $indent . '    display: table-cell;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '  form p.ua {' . "\n";
-    echo $indent . '    text-align: right;' . "\n";
-    echo $indent . '    font-size: smaller;' . "\n";
-    echo $indent . '  }' . "\n";
-    echo $indent . '</style>' . "\n";
+    echo $indent . '<link rel="stylesheet" href="harness.css">';
   }
 
   ////////////////////////////////////////////////////////////////////////////

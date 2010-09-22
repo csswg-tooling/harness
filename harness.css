@@ -1,0 +1,70 @@
+html, body, div, p, h1, form {
+  margin: 0;
+  padding: 0;
+}
+html, .test p {
+  height: 100%;
+}
+body {
+  margin: 3%;
+  height: 94%;
+  width: 94%;
+  display: table;
+  table-layout: fixed;
+}
+img {
+  border: none;
+  float: left;
+  margin-right: 8px;
+}
+h1 {
+  font: inherit;
+  font-size: 1em;
+  font-style: italic;
+}
+span {
+  display: block;
+}
+.suite, .id {
+  margin-left: 80px;
+}
+.id {
+  font-weight: bold;
+}
+.header {
+  margin-bottom: 0.4em;
+  font-size: smaller;
+}
+.test {
+  height: 80%;
+  width: 100%;
+  text-align: center;
+  display: table-row;
+  clear: both;
+}
+.test p {
+  height: inherit;
+  display: table-cell;
+}
+object {
+  display: block;
+  height: 98%;
+  width: 98%;
+  border: groove 2px;
+  margin: auto;
+}
+object a {
+  display: block;
+}
+form {
+  margin-top: 0.4em;
+  display: table;
+  width: 100%;
+}
+form p {
+  display: table-cell;
+}
+form p.ua {
+  text-align: right;
+  font-size: smaller;
+}
