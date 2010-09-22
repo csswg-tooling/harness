@@ -99,8 +99,8 @@ class css_page extends dynamic_page
     echo $indent . '  </a>'."\n";
     echo $indent . '</p>'."\n";
     echo $indent . '<h1>'."\n";
-    echo $indent . '  <a href="http://www.w3.org/Style/CSS/">'."\n";
-    echo $indent . '    Cascading Style Sheets Working Group'."\n";
+    echo $indent . '  <a href="http://csswg.org/test">'."\n";
+    echo $indent . '    CSS Test Suite Project'."\n";
     echo $indent . '  </a>'."\n";
     echo $indent . '</h1>'."\n";
     echo $indent . '<hr>'."\n";
@@ -123,20 +123,8 @@ class css_page extends dynamic_page
 
 
     echo $indent.'<address>'."\n";
-
-    echo $indent.'  Developed and maintained by:'."\n";
-    echo $indent.'  <br />'."\n";
-    echo $indent.'  <a href="/People/Dom/">Dominique Hazael-Massieux</a> ';
-    echo "\n";
-    
-    echo $indent.'  (<a href="mailto:dom@w3.org">dom@w3.org</a>).'."\n";
-
-    echo $indent.'  <br />'."\n";
-
-    echo $indent.'  David M. Berfanger'."\n";
-    echo $indent.'  (<a href="mailto:david.berfanger@hp.com">';
-    echo 'david.berfanger@hp.com</a>).'."\n";
-    
+    echo $indent.'Please send comments, questions, and error reports to'."\n";
+    echo $indent.'<a href="http://lists.w3.org/Archives/Public/public-css-testsuite">public-css-testsuite@w3.org</a>.'."\n";    
     echo $indent.'</address>'."\n";
 
     if ($this->m_resource_id) {

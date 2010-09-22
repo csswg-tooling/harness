@@ -89,19 +89,6 @@ class welcome_page extends css_page
     echo $indent . '  Conformance Test Suite</a>.'."\n";
     echo $indent . '</p>'."\n";
     echo $indent . '<p>'."\n";
-    echo $indent . '  The W3C CSS 2.1 Conformance Test Harness, adapted ';
-    echo 'from the ' . "\n";
-    echo $indent . '  <a href="http://www.w3.org/2007/03/mth/harness">';
-    echo 'Mobile Test Harness</a>'."\n";
-    echo $indent . '  by the <a href="http://www.w3.org/Style/CSS/">CSS ';
-    echo 'WG (Cascading Style Sheets Working'."\n";
-    echo $indent . 'Group)</a>, provides navigation and results ';
-    echo 'recording controls for assessing'."\n";
-    echo $indent . 'efficiently browser-based CSS test cases, allowing ';
-    echo 'anyone to submit easily pass/fail'."\n";
-    echo $indent . 'data in CSS conformance testing.'."\n";
-    echo $indent . '</p>'."\n";
-    echo $indent . '<p>'."\n";
     echo $indent . '  Currently, you can provide test data or review ';
     echo 'the testing results for the following '."\n";
     echo $indent . '  test suites:'."\n";
@@ -109,17 +96,34 @@ class welcome_page extends css_page
 
     $this->m_test_suites -> write($indent);
 
+    echo $indent . '<p>Please make sure your client is configured to:</p>'."\n";
+    echo $indent . '<ul><li>Default black text on a white background.'."\n";
+    echo $indent . '  <li>No minimum font size.'."\n";
+    echo $indent . '  <li>Print background colors and images.'."\n";
+    echo $indent . '</ul>'."\n";
     echo $indent . '<p>'."\n";
-    echo $indent . '  Note that many of the tests require the client to ';
-    echo 'be properly configured. For'."\n";
-    echo $indent . '  example, many of the tests require the ';
-    echo '<a href="http://dev.w3.org/CSS/fonts/ahem/">'."\n";
-    echo $indent . '  Ahem font to be installed</a>. For a particular ';
-    echo 'test any specific client requirements'."\n";
-    echo $indent . '  will be noted by the harness interface. Tests on ';
-    echo 'clients not meeting listed configuration'."\n";
-    echo $indent . '  requirements are of no value'."\n";
+    echo $indent . '  Note that many of the tests require the ';
+    echo '<a href="http://www.w3.org/Style/CSS/Test/Fonts/Ahem/">'."\n";
+    echo $indent . '  Ahem font to be installed</a>.'."\n";
+    echo $indent . '  Some tests have additional requirements, which'."\n";
+    echo $indent . '  will be noted by the harness interface. ';
     echo $indent . '</p>'."\n";
+
+    echo $indent . '<p><small>'."\n";
+    echo $indent . '  This W3C CSS 2.1 Conformance Test Harness was adapted ';
+    echo 'from the ' . "\n";
+    echo $indent . '  <a href="http://www.w3.org/2007/03/mth/harness">';
+    echo 'Mobile Test Harness</a>'."\n";
+    echo $indent . '  by the <a href="http://www.w3.org/Style/CSS/">CSS ';
+    echo 'WG (Cascading Style Sheets Working'."\n";
+    echo $indent . 'Group)</a> to provide navigation and results ';
+    echo 'recording controls for assessing'."\n";
+    echo $indent . 'efficiently browser-based CSS test cases, allowing ';
+    echo 'anyone to submit easily pass/fail'."\n";
+    echo $indent . 'data in CSS conformance testing. '."\n";
+    echo $indent . 'It was developed by <a href="/People/Dom/">Dominique Hazael-Massieux</a> (<a href="mailto:dom@w3.org">dom@w3.org</a>).'."\n";
+    echo $indent . 'and David M. Berfanger (<a href="mailto:david.berfanger@hp.com">david.berfanger@hp.com</a>)'."\n";
+    echo $indent . '</small></p>'."\n";
   }
 }
 
