@@ -144,19 +144,23 @@ class testsuite_page extends css_page
 			-->
 			<p>Your user-agent string is shown below:</p>
 			<pre><?= $this->m_user_agent->get_ua_string() ?></pre>
-			<p>The <?= $this->m_test_suite->get_title() ?> test suite contains <?= $this->m_test_cases->get_count() ?> test cases.  You can choose to conduct:</p>
+			<p>The <?= $this->m_test_suite->get_title() ?> test suite contains <?= $this->m_test_cases->get_count() ?> test cases.
+			You can stop running tests at any time without causing trouble.
+
+                        <!--  You can choose to conduct:</p>
 			<ul>
-				<li>
-					<form action=testcase.php method=get>
+				<li> -->
+					<form action=testcase.php method=get><strong>
 						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
 						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
-						The full test suite
+						Run the full test suite
 						<select name=o>
 							<option selected value=1>with least tested cases first</option>
 							<option value=0>in order</option>
 						</select>
-						<input type=submit value="Go">
+						<input type=submit value="Start"></strong>
 					</form>
+			<!--
 				</li>
 				<li>
 					<form action=testcase.php method=get>
@@ -178,14 +182,13 @@ class testsuite_page extends css_page
 						<input type=submit value="Go">
 					</form>
 				</li>
-			</ul>
-			<p><strong>Note:</strong> You can stop running tests at any time without 
-				causing troubles.  Also, the harness adds automatically in each test case
+			</ul> -->
+			<p><strong>Note:</strong> The harness adds automatically in each test case
 				the number of remaining test cases and a form to submit results; these
 				additions are not part of the original test cases, and their influence
 				one the results should be ignored as much as possible.  If you would like
 				to see a particular test case without these additions, a link is
-				provided to opent he test case in a separate window.  In case of doubt,
+				provided to open the test case in a separate window.  In case of doubt,
 				please hit the "Cannot Tell" button.
 			</p>
 		<?php
