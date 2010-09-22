@@ -90,7 +90,7 @@ class request_user_agent extends css_page
     $this->m_content_title = 'W3C CSS 2.1 Conformance Test Harness';
     
     $this->m_new_uri  = 'http://www.w3.org/2008/07/test-harness-css/';
-    $this->m_new_uri .= 'testsuite.php';
+    $this->m_new_uri .= 'testsuite';
     
     if(isset($_POST['s'])) {
       $this->m_new_uri .= '?s=' . $_POST['s'];

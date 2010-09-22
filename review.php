@@ -137,7 +137,7 @@ class review_page extends css_page
     echo $indent . '</p>'."\n";
     echo $indent . '<ul>'."\n";
     echo $indent . '<li>'."\n";
-    echo $indent . '  <form action="results.php" method="get">'."\n";
+    echo $indent . '  <form action="results" method="get">'."\n";
 
     echo $indent . '    <input type="hidden" name="s" value="';
     echo $this->m_test_suite->get_name();
@@ -155,7 +155,7 @@ class review_page extends css_page
     echo $indent . '</li>'."\n";
     echo $indent . '<li>'."\n";
     
-    echo $indent . '  <form action="results.php" method="get">'."\n";
+    echo $indent . '  <form action="results" method="get">'."\n";
     echo $indent . '    <input type="hidden" name="s" value="';
     echo $this->m_test_suite->get_name();
     echo '" />';
@@ -173,7 +173,7 @@ class review_page extends css_page
     echo $indent . '</li>'."\n";
     echo $indent . '<li>'."\n";
     
-    echo $indent . '  <form action="results.php" method="get">'."\n";
+    echo $indent . '  <form action="results" method="get">'."\n";
     echo $indent . '    <input type="hidden" name="s" value="';
     echo $this->m_test_suite->get_name();
     echo '" />';

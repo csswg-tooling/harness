@@ -213,10 +213,10 @@ class submit_results_page extends css_page
     
     if( ($type==2) || ($next_rank > $count) ) {
       $this->m_new_uri  = 'http://test.csswg.org/harness/';
-      $this->m_new_uri .= 'success.php';
+      $this->m_new_uri .= 'success';
     } else {
       $this->m_new_uri  = 'http://test.csswg.org/harness/';
-      $this->m_new_uri .= 'testcase.php';
+      $this->m_new_uri .= 'testcase';
       $this->m_new_uri .= '?s=' . $suite->get_name();
 
       if($type==1) {

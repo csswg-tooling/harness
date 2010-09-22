@@ -72,7 +72,7 @@ class success_page extends css_page
 		echo $indent . '  Thank you for providing data ';
 		echo 'for conducting CSS 2.1 conformance'."\n";
 		echo $indent . '  testing using the ';
-		echo '<a href="http://www.w3.org/Style/CSS/Test/CSS2.1/current/">';
+		echo '<a href="http://www.w3.org/Style/CSS/Test/CSS2.1/">';
 		echo 'CSS 2.1'."\n";
 		echo $indent . '  Conformance Test Suite</a>.'."\n";
 		echo $indent . '</p>'."\n";
@@ -80,7 +80,7 @@ class success_page extends css_page
 		echo $indent . '<p>'."\n";
 		echo $indent . '  You can submit additional results and access ';
 		echo 'collected results from the '."\n";
-		echo $indent . '  <a href="index.php">'."\n";
+		echo $indent . '  <a href="./">'."\n";
 		echo $indent . '    harness welcome page'."\n";
 		echo $indent . '  </a>.'."\n";
 		echo $indent . '</p>'."\n";

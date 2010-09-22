@@ -309,7 +309,7 @@ class testcase_page extends css_page
     echo $indent . '    </span>'."\n";
     
     echo $indent . '    <span class="suite">'."\n";
-    echo $indent . '      <a href="testsuite.php?s=';
+    echo $indent . '      <a href="testsuite?s=';
     echo $this->m_test_case->get_test_suite();
     echo '">'."\n";
     echo $indent . '        ' . $this->m_content_title . "\n";
@@ -353,7 +353,7 @@ class testcase_page extends css_page
 
     $this->m_test_case->write($indent);
 
-    echo $indent . '<form name="eval" action="submit.php" method="post">'."\n";
+    echo $indent . '<form name="eval" action="submit" method="post">'."\n";
     echo $indent . '  <p class="buttons">'."\n";
     foreach($_GET as $opt => $value) {
       echo $indent . '    <input type="hidden" name="';

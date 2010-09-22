@@ -111,12 +111,12 @@ class test_suites extends db_connection
       echo $indent . '      ' . $test_suite['title'] . "\n";
       echo $indent . '    </a>'."\n";
       echo $indent . '    (<a href="';
-      echo 'testsuite.php?s=' . $test_suite['testsuite'];
+      echo 'testsuite?s=' . $test_suite['testsuite'];
       echo '">'."\n";
       echo $indent . '      Enter Data'."\n";
       echo $indent . '    </a>,'."\n";
       echo $indent . '    <a href="';
-      echo 'review.php?s=' . $test_suite['testsuite'];
+      echo 'review?s=' . $test_suite['testsuite'];
       echo '">'."\n";
       echo $indent . '      Review Results'."\n";
       echo $indent . '    </a>)'."\n";

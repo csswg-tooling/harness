@@ -150,7 +150,7 @@ class testsuite_page extends css_page
                         <!--  You can choose to conduct:</p>
 			<ul>
 				<li> -->
-					<form action=testcase.php method=get><strong>
+					<form action=testcase method=get><strong>
 						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
 						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
 						Run the full test suite
@@ -163,7 +163,7 @@ class testsuite_page extends css_page
 			<!--
 				</li>
 				<li>
-					<form action=testcase.php method=get>
+					<form action=testcase method=get>
 						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
 						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
 						A group of test cases: <?php $this->m_test_groups->write($indent) ?>
@@ -175,7 +175,7 @@ class testsuite_page extends css_page
 					</form>
 				</li>
 				<li>
-					<form action=testcase.php method=get>
+					<form action=testcase method=get>
 						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
 						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
 						A single test case: <?= $this->m_test_cases->write($indent) ?>
