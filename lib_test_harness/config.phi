@@ -38,14 +38,14 @@
  * Database username
  */
  
- define("DB_USER","");
+ define("DB_USER","testharness");
 /**
  * Database password
  */
  
- define("DB_PASSWORD","");
+ define("DB_PASSWORD","r3B7xzXyPJZJ8pS7");
 /**
  * Database name
  */
  
- define("DB_NAME","");
+ define("DB_NAME","testharness");
