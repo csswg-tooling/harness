@@ -67,7 +67,8 @@ class test_results extends db_connection
     
     $sql  = "SELECT testcase as Test, useragent as UserAgent, ";
     $sql .= "SUM(result='pass') as Pass, SUM(result='fail') as Fail, ";
-    $sql .= "SUM(result='uncertain') as Uncertain ";
+    $sql .= "SUM(result='uncertain') as Uncertain, ";
+    $sql .= "COUNT(*) as count ";
     $sql .= "FROM results GROUP BY testcase, useragent ";
 
 /*
