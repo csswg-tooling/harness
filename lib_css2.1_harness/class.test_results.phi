@@ -64,7 +64,13 @@ class test_results extends db_connection
     )
   {
     parent::db_connection();
+    
+    $sql  = "SELECT testcase as Test, useragent as UserAgent, ";
+    $sql .= "SUM(result='pass') as Pass, SUM(result='fail') as Fail, ";
+    $sql .= "SUM(result='uncertain') as Uncertain ";
+    $sql .= "FROM results GROUP BY testcase, useragent ";
 
+/*
     $sql  = "SELECT title,browser,version,platform,SUM(pass) as pass,";
     $sql .= "SUM(fail) as fail,SUM(uncertain) as uncertain,";
     $sql .= "COUNT(*) as count FROM (";
@@ -111,6 +117,7 @@ class test_results extends db_connection
       $sql .= "GROUP BY testcase, ";
     }
     $sql .= "browser, version ";
+*/
 
     if($order) {
       $sql .= "ORDER BY count";
