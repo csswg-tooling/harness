@@ -257,7 +257,7 @@ class test_case extends db_connection
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
     $sql .= "FROM results ";
-    $sql .= "WHERE useragent='" . $user_agent . "' ";
+    $sql .= "WHERE useragent='" . $user_agent->get_ua_string() . "' ";
     if($modified) {
       $sql .= "AND modified <= '" . $modified . "' ";
     }
@@ -353,7 +353,7 @@ class test_case extends db_connection
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
     $sql .= "FROM results ";
-    $sql .= "WHERE useragent='" . $user_agent . "' ";
+    $sql .= "WHERE useragent='" . $user_agent->get_ua_string() . "' ";
     if($modified) {
       $sql .= "AND modified <= '" . $modified . "' ";
     }
@@ -438,7 +438,7 @@ class test_case extends db_connection
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
     $sql .= "FROM results ";
-    $sql .= "WHERE useragent='" . $user_agent . "' ";
+    $sql .= "WHERE useragent='" . $user_agent->get_ua_string() . "' ";
     $sql .= "GROUP BY testsuite,testcase) AS t2 ";
     $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
     $sql .= "LIMIT 1";
@@ -467,14 +467,15 @@ class test_case extends db_connection
   //  Submit results info about the test case.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function submit($useragent, $response)
+  function submit($user_agent, $response)
   {
     $sql  = "INSERT INTO results ";
-    $sql .= "(testsuite, testcase, useragent, result) ";
+    $sql .= "(testsuite, testcase, useragent, useragent_id, result) ";
     $sql .= "VALUES (";
     $sql .= "'".$this->get_test_suite()."',";
     $sql .= "'".$this->get_test_case()."',";
-    $sql .= "'".$useragent."',";
+    $sql .= "'".$user_agent->get_ua_string()."',";
+    $sql .= "'".$user_agent->get_id()."',";
     $sql .= "'".$response."'";
     $sql .= ")";
     

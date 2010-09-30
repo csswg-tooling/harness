@@ -186,7 +186,7 @@ class testcase_page extends css_page
       ( $suite->get_name()
       , $select
       , $type
-      , $this->m_user_agent->get_ua_string()
+      , $this->m_user_agent
       , $modified
       , $order 
       , $rank);

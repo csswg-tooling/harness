@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `results` (
   `testsuite` varchar(255) NOT NULL default '',
   `testcase` varchar(255) NOT NULL default '',
   `useragent` varchar(255) NOT NULL default '',
+  `useragent_id` int(10) NOT NULL default '0',
   `result` enum('pass','fail','uncertain','na') NOT NULL default 'pass',
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
@@ -85,8 +86,9 @@ CREATE TABLE IF NOT EXISTS `useragents` (
   `id` int(11) NOT NULL auto_increment,
   `useragent` varchar(255) NOT NULL default '',
   `engine` varchar(255) default NULL,
+  `engine_version` varchar(255) default NULL,
   `browser` varchar(255) default NULL,
-  `version` varchar(255) default NULL,
+  `browser_version` varchar(255) default NULL,
   `platform` varchar(255) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=139 ;

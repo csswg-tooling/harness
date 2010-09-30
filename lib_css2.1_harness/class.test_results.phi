@@ -55,8 +55,8 @@ class test_results extends db_connection
     ( $test_suite
     , $test_select
     , $select_type
-    , $browser
-    , $version
+    , $engine
+    , $engine_version
     , $platform
     , $grouping
     , $modified
@@ -64,15 +64,15 @@ class test_results extends db_connection
     )
   {
     parent::db_connection();
-    
+/*    
     $sql  = "SELECT testcase as Test, useragent as UserAgent, ";
     $sql .= "SUM(result='pass') as Pass, SUM(result='fail') as Fail, ";
     $sql .= "SUM(result='uncertain') as Uncertain, ";
     $sql .= "COUNT(*) as count ";
     $sql .= "FROM results GROUP BY testcase, useragent ";
+*/
 
-/*
-    $sql  = "SELECT title,browser,version,platform,SUM(pass) as pass,";
+    $sql  = "SELECT title,engine,engine_version,platform,SUM(pass) as pass,";
     $sql .= "SUM(fail) as fail,SUM(uncertain) as uncertain,";
     $sql .= "COUNT(*) as count FROM (";
     
@@ -101,10 +101,10 @@ class test_results extends db_connection
     $sql .= "INNER JOIN useragents ";
     $sql .= "ON t.useragent = useragents.useragent ";
     
-    if($browser) {
-      $sql .= "WHERE browser='".$browser."' ";
+    if($engine) {
+      $sql .= "WHERE engine='".$engine."' ";
       if($version) {
-        $sql .= "AND version = '".$version."' ";
+        $sql .= "AND engine_version = '".$engine_version."' ";
       }
       if($platform) {
         $sql .= "AND platform = '".$platform."' ";
@@ -117,8 +117,7 @@ class test_results extends db_connection
     } else {
       $sql .= "GROUP BY testcase, ";
     }
-    $sql .= "browser, version ";
-*/
+    $sql .= "engine, engine_version ";
 
     if($order) {
       $sql .= "ORDER BY count";

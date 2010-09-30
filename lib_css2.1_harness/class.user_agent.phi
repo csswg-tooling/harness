@@ -86,7 +86,7 @@ class user_agent extends db_connection
       }
     }
     if(!isset($ua) || !isset($ua['id']) || $ua['id']=='') {
-      $ua = $this->parse_string($id);
+      $ua = $this->parse_ua_string($id);
     }
     return $ua;
   }
@@ -98,7 +98,7 @@ class user_agent extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function query_by_id($id) 
   {
-    $sql  = "SELECT id,useragent,engine,browser,version,platform FROM useragents ";
+    $sql  = "SELECT id,useragent,engine,engine_version,browser,browser_version,platform FROM useragents ";
     $sql .= "WHERE id='$id' ";
     $sql .= "LIMIT 1";
     $r = $this->query($sql);
@@ -115,7 +115,7 @@ class user_agent extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function query_by_string($ua_string) 
   {
-    $sql  = "SELECT id,useragent,engine,browser,version,platform FROM useragents ";
+    $sql  = "SELECT id,useragent,engine,engine_version,browser,browser_version,platform FROM useragents ";
     $sql .= "WHERE useragent='$ua_string' ";
     $sql .= "LIMIT 1";
     $r = $this->query($sql);
@@ -125,26 +125,231 @@ class user_agent extends db_connection
     return $r->fetch_array();
   }
 
+
   ////////////////////////////////////////////////////////////////////////////
   //
-  //  parse_string
+  //  helper functions to split useragent strings into component parts
   //
   ////////////////////////////////////////////////////////////////////////////
-  // Edit 20100917: This function referenced a get_browser() function that
-  // doesn't exist - the user_agent::get_browser function is completely 
-  // unrelated.  Instead, I'm just punting to get this to work.  "Proper" UA
-  // detection through uastring parsing can wait until later.
-  function parse_string($ua_string) 
+  protected function _split_ua_product_version($product)
+  {
+    if (('(' == $product[0]) && (')' == substr($product, -1))) {
+      return substr($product, 1, strlen($product) - 2);
+    }
+    $slash = strpos($product, '/');
+    if ((FALSE === $slash) || (($slash + 1) == strlen($product))) {
+      return $product;
+    }
+    $version = substr($product, $slash + 1);
+    $product = substr($product, 0, $slash);
+    return compact("product", "version");
+  }
+  
+  protected function _explode_ua_comment($ua_comment)
+  {
+    if (FALSE === strpos($ua_comment, ';')) {
+      return $ua_comment;
+    }
+    return preg_split('/;(\s)+/', $ua_comment);
+  }
+
+  protected function _explode_ua_string($ua_string)
+  {
+    $ua_string = str_replace(') (', '; ', $ua_string);  // collapse sequential comments (from Uzbl browser)
+    
+    $index = -1;
+    $count = strlen($ua_string);
+    
+    $start = 0;
+    while (++$index < $count) {
+      if (' ' == $ua_string[$index]) {
+        $product = $this->_split_ua_product_version(substr($ua_string, $start, $index - $start));
+        while ((++$index < $count) && (' ' == $ua_string[$index])) ;
+        $start = $index;
+        $comment = '';
+        if (($index < $count) && ('(' == $ua_string[$index])) { // grab comment
+          $start++;
+          $level = 0;
+          while (++$index < $count) {
+            if ('(' == $ua_string[$index]) {
+              $level++;
+            }
+            if (')' == $ua_string[$index]) {
+              if (0 == $level) {
+                break;
+              }
+              $level--;
+            }
+          }
+          $comment = substr($ua_string, $start, $index - $start);
+          while ((++$index < $count) && (' ' == $ua_string[$index])) ;
+          $start = $index;
+          $index--;
+        }
+        if ('' == $comment) {
+          $r[] = $product;
+        }
+        else {
+          $comment = $this->_explode_ua_comment($comment);
+          $r[] = compact("product", "comment");
+        }
+      }
+    }
+    if ($start < $index) {
+      $r[] = $this->_split_ua_product_version(substr($ua_string, $start, $index - $start));
+    }
+    return $r;
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  parse_ua_string
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function parse_ua_string($ua_string) 
   {
     $r['id'] = null;
     $r['useragent'] = $ua_string;
     
+    $ua_data = $this->_explode_ua_string($ua_string);
     
+    $browser = '';
+    $browser_version = '';
+    $engine = '';
+    $engine_version = '';
+    $platform = '';
     
-    $r['engine'] = "XXX";
-    $r['browser'] = "Default Browser";
-    $r['version'] = "1";
-    $r['platform'] = "Computron";
+    // find browser
+    $product = $ua_data[0];
+    $version = '';
+    $comment = '';
+    if (is_array($product)) {
+      extract($product);
+      if (is_array($product)) {
+        extract($product);
+      }
+    }
+    if ('mozilla' == strtolower($product)) {    // we have to go looking... search comments
+      if (is_array($comment)) {
+        foreach ($comment as $comment_chunk) {
+          if (0 === stripos($comment_chunk, 'MSIE')) {
+            $browser = 'Internet Explorer';
+            $browser_version = substr($comment_chunk, 5);
+            $engine = 'Trident';
+          }
+          if (0 === stripos($comment_chunk, 'Trident')) {
+            $product = $this->_split_ua_product_version($comment_chunk);
+            if (is_array($product)) {
+              extract($product);
+              $engine_version = $version;
+            }
+            $engine = $product;
+          }
+          if (0 === stripos($comment_chunk, 'Konqueror')) {
+            $product = $this->_split_ua_product_version($comment_chunk);
+            if (is_array($product)) {
+              extract($product);
+              $browser_version = $version;
+            }
+            $browser = $product;
+          }
+          if (0 === stripos($comment_chunk, 'Googlebot')) {
+            $product = $this->_split_ua_product_version($comment_chunk);
+            if (is_array($product)) {
+              extract($product);
+              $browser_version = $version;
+            }
+            $browser = $product;
+          }
+        }
+      }
+    }
+    else {
+      $browser = $product;
+      $browser_version = $version;
+    }
+    
+    // find platform in initial comment
+    if (is_array($comment)) {
+      foreach($comment as $comment_chunk) {
+        if ((0 === stripos($comment_chunk, 'Linux')) || 
+            (0 === stripos($comment_chunk, 'Unix')) ||
+            (0 === stripos($comment_chunk, 'Android')) ||
+            (0 === stripos($comment_chunk, 'Windows')) ||
+            (0 === stripos($comment_chunk, 'Macintosh')) ||
+            (0 === stripos($comment_chunk, 'Chromium')) ||
+            (0 === stripos($comment_chunk, 'iPad')) ||
+            (0 === stripos($comment_chunk, 'OpenBSD')) ||
+            (0 === stripos($comment_chunk, 'FreeBSD')) ||
+            (0 === stripos($comment_chunk, 'WebOS'))) {
+          $platform = $comment_chunk;
+        }
+      }
+    }
+    else {
+      $platform = $comment;
+    }
+    
+    // find engine and possibly browser
+    foreach ($ua_data as $ua_chunk) {
+      $comment = '';
+      $version = '';
+      if (is_array($ua_chunk)) {
+        extract($ua_chunk);
+        if (is_array($product)) {
+          extract($product);
+        }
+      }
+      else {
+        $product = $ua_chunk;
+      }
+      if ((0 === stripos($product, 'AppleWebKit')) ||
+          (0 === stripos($product, 'WebKit')) ||
+          (0 === stripos($product, 'Gecko')) ||
+          (0 === stripos($product, 'KHTML')) ||
+          (0 === stripos($product, 'Presto')) ||
+          (0 === stripos($product, 'Trident'))) {
+        $engine = $product;
+        $engine_version = $version;
+      }
+      if ('' == $browser) {
+        if ((0 === stripos($product, 'Firefox')) ||
+            (0 === stripos($product, 'Chrome'))) {
+          $browser = $product;
+          $browser_version = $version;
+        }
+        if (0 === stripos($product, 'Version')) {
+          $browser = 'Safari';
+          $browser_version = $version;
+        }
+      }
+    }
+    
+    // no browser yet, take last product
+    if ('' == $browser) {
+      $browser = $product;
+      $browser_version = $version;
+    }
+    
+    // general cleanups
+    if ('' == $engine) {
+      if (0 === stripos($browser, 'Firefox')) {
+        $engine = 'Gecko';
+      }
+      if (0 === stripos($browser, 'Uzbl')) {
+        $engine = 'WebKit';
+      }
+    }
+    if ((0 === stripos($engine, 'AppleWebKit')) ||
+        (0 === stripos($engine, 'WebKitGTK'))) {
+      $engine = 'WebKit';
+    }
+    
+    $r['engine'] = $engine;
+    $r['engine_version'] = $engine_version;
+    $r['browser'] = $browser;
+    $r['browser_version'] = $browser_version;
+    $r['platform'] = $platform;
     return $r;
   }
 
@@ -161,12 +366,13 @@ class user_agent extends db_connection
 
     if($ua['id'] == null) {
       $sql  = "INSERT INTO useragents ";
-      $sql .= "(useragent, engine, browser, version, platform) ";
+      $sql .= "(useragent, engine, engine_version, browser, browser_version, platform) ";
       $sql .= "VALUES (";
       $sql .= "'".$ua['useragent']."',";
       $sql .= "'".$ua['engine']."',";
+      $sql .= "'".$ua['engine_version']."',";
       $sql .= "'".$ua['browser']."',";
-      $sql .= "'".$ua['version']."',";
+      $sql .= "'".$ua['browser_version']."',";
       $sql .= "'".$ua['platform']."'";
       $sql .= ")";
       $r = $this->query($sql);
@@ -190,11 +396,19 @@ class user_agent extends db_connection
     } else {
       echo $indent . $this->get_browser();
       
-      if($this->get_version() != '0') {
-        echo ' ' . $this->get_version();
+      if($this->get_browser_version() != '') {
+        echo ' ' . $this->get_browser_version();
+      }
+      
+      if ($this->get_engine() != '') {
+        echo ' (' . $this->get_engine();
+        if ($this->get_engine_version() != '') {
+          echo ' ' . $this->get_engine_version();
+        }
+        echo ')';
       }
 
-      if($this->get_platform() != 'unknown') {
+      if($this->get_platform() != '') {
         echo ' on ' . $this->get_platform();
       }
     }
@@ -208,8 +422,9 @@ class user_agent extends db_connection
   //    get_id()
   //    get_ua_string()
   //    get_engine()
+  //    get_engine_version()
   //    get_browser()
-  //    get_version()
+  //    get_browser_version()
   //    get_platform()
   //
   ////////////////////////////////////////////////////////////////////////////
@@ -246,6 +461,16 @@ class user_agent extends db_connection
 
   ////////////////////////////////////////////////////////////////////////////
   //
+  //  get_engine_version()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_engine_version()
+  {
+    return $this->m_info['engine_version'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
   //  get_browser()
   //
   ////////////////////////////////////////////////////////////////////////////
@@ -256,12 +481,12 @@ class user_agent extends db_connection
 
   ////////////////////////////////////////////////////////////////////////////
   //
-  //  get_version()
+  //  get_browser_version()
   //
   ////////////////////////////////////////////////////////////////////////////
-  function get_version()
+  function get_browser_version()
   {
-    return $this->m_info['version'];
+    return $this->m_info['browser_version'];
   }
 
   ////////////////////////////////////////////////////////////////////////////

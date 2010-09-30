@@ -165,7 +165,8 @@ class submit_results_page extends css_page
     } else {
       $ua = new user_agent();
     }
-
+    $ua->update();
+      
     switch($type) {
       case 0:
         $select = null;
@@ -188,7 +189,7 @@ class submit_results_page extends css_page
       ( $suite->get_name()
       , $select
       , $type
-      , $ua->get_ua_string()
+      , $ua
       , $modified
       , $order 
       , $rank
@@ -200,7 +201,7 @@ class submit_results_page extends css_page
     }
 
     if ($response != '') {
-      $case->submit($ua->get_ua_string(), $response);
+      $case->submit($ua, $response);
      }
 
     $next_rank = $case->get_rank();
