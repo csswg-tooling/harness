@@ -95,17 +95,6 @@ class populate_ua_page extends css_page
   {
     parent::css_page();
 
-    $db = new db_connection();
-//  only update ua table    
-//    $sql = "SELECT DISTINCT useragent, useragent_id FROM results";
-
-
-      
-    // update results ua ids
-    $sql = "SELECT id, useragent FROM results WHERE useragent_id='0' LIMIT 5000";
-      
-    $r = $db->query($sql);
-    $this->ua_list = $r->fetch_table(); 
   }  
   
   ////////////////////////////////////////////////////////////////////////////
@@ -115,23 +104,15 @@ class populate_ua_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_content($indent = '') {
 
-    echo "<table>";
-//    sort($this->ua_list);
     $db = new db_connection();
 
-    foreach ($this->ua_list as $ua_data) {
-//  Verify
-/*
-        $ua = new user_agent($ua_data['useragent_id']);
-        
-        if ($ua->get_ua_string() != $ua_data['useragent']) {
-            echo "<tr><td>ERROR<td>{$ua_data['useragent_id']}<td>{$ua_data['useragent']}";
-        }
-        else {
-            echo "<tr><td>&nbsp;<td>{$ua_data['useragent_id']}<td>{$ua_data['useragent']}";
-        }
-*/        
+    echo "<table>";
 
+    // update results ua ids
+    $sql = "SELECT id, useragent FROM results WHERE useragent_id='0' LIMIT 5000";
+    $r = $db->query($sql);
+    $ua_list = $r->fetch_table(); 
+    foreach ($ua_list as $ua_data) {
       $ua = new user_agent($ua_data['useragent']);
         
       echo "<tr><td colspan='999'>" . $ua_data['useragent'];
@@ -143,7 +124,24 @@ class populate_ua_page extends css_page
         
       $sql = "UPDATE results SET useragent_id='{$ua->get_id()}' WHERE id='{$ua_data['id']}'";
       $db->query($sql);
- 
+    }
+    echo "</table>";
+
+
+    // Verify
+    echo "<table>";
+    $sql = "SELECT DISTINCT useragent, useragent_id FROM results";
+    $r = $db->query($sql);
+    $ua_list = $r->fetch_table(); 
+    foreach ($ua_list as $ua_data) {
+      $ua = new user_agent($ua_data['useragent_id']);
+        
+      if ($ua->get_ua_string() != $ua_data['useragent']) {
+        echo "<tr><td>ERROR<td>{$ua_data['useragent_id']}<td>{$ua_data['useragent']}";
+      }
+      else {
+        echo "<tr><td>&nbsp;<td>{$ua_data['useragent_id']}<td>{$ua_data['useragent']}";
+      }
     }
     echo "</table>";
     
