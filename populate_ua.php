@@ -141,7 +141,7 @@ class populate_ua_page extends css_page
 
       $ua->update();
         
-      $sql = "UPDATE results SET useragent_id='{$ua->get_id()}' WHERE id='{$ua_string['id']}'";
+      $sql = "UPDATE results SET useragent_id='{$ua->get_id()}' WHERE id='{$ua_data['id']}'";
       $db->query($sql);
  
     }
