@@ -137,22 +137,22 @@ class testsuite_page extends css_page
 			<p>Thank you for offering to contribute results for the support of CSS2.1 conformance testing.</p>
 			<!--
 			<?php if(isset($_GET['u'])): ?>
-				<p>You have provided the user-agent string shown below.  This string indicates that the browser for which you wish to provide data is <?= $this->m_user_agent->write($indent) ?>.</p>
+				<p>You have provided the user-agent string shown below.  This string indicates that the browser for which you wish to provide data is <?php echo $this->m_user_agent->write($indent) ?>.</p>
 			<?php else: ?>
-				<p>Your browser has been identified by the user-agent string shown below.  This string indicates that your browser is <?= $this->m_user_agent->write($indent) ?>; however, you can provide results for a different browser by providing another user-agent string.</p>
+				<p>Your browser has been identified by the user-agent string shown below.  This string indicates that your browser is <?php echo $this->m_user_agent->write($indent) ?>; however, you can provide results for a different browser by providing another user-agent string.</p>
 			<?php endif; ?>
 			-->
 			<p>Your user-agent string is shown below:</p>
-			<pre><?= $this->m_user_agent->get_ua_string() ?></pre>
-			<p>The <?= $this->m_test_suite->get_title() ?> test suite contains <?= $this->m_test_cases->get_count() ?> test cases.
+			<pre><?php echo $this->m_user_agent->get_ua_string() ?></pre>
+			<p>The <?php echo $this->m_test_suite->get_title() ?> test suite contains <?php echo $this->m_test_cases->get_count() ?> test cases.
 			You can stop running tests at any time without causing trouble.
 
                         <!--  You can choose to conduct:</p>
 			<ul>
 				<li> -->
 					<form action=testcase method=get><strong>
-						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
-						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
+						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">
+						<input type=hidden name=u value="<?php echo $this->m_user_agent->get_id() ?>">
 						Run the full test suite
 						<select name=o>
 							<option selected value=1>with least tested cases first</option>
@@ -164,8 +164,8 @@ class testsuite_page extends css_page
 				</li>
 				<li>
 					<form action=testcase method=get>
-						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
-						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
+						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">
+						<input type=hidden name=u value="<?php echo $this->m_user_agent->get_id() ?>">
 						A group of test cases: <?php $this->m_test_groups->write($indent) ?>
 						<select name=o>
 							<option selected value=1>with least tested cases first</option>
@@ -176,9 +176,9 @@ class testsuite_page extends css_page
 				</li>
 				<li>
 					<form action=testcase method=get>
-						<input type=hidden name=s value="<?= $this->m_test_suite->get_name() ?>">
-						<input type=hidden name=u value="<?= $this->m_user_agent->get_id() ?>">
-						A single test case: <?= $this->m_test_cases->write($indent) ?>
+						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">
+						<input type=hidden name=u value="<?php echo $this->m_user_agent->get_id() ?>">
+						A single test case: <?php echo $this->m_test_cases->write($indent) ?>
 						<input type=submit value="Go">
 					</form>
 				</li>
