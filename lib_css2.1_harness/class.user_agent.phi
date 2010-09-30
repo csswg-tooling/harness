@@ -1,9 +1,9 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -98,7 +98,7 @@ class user_agent extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function query_by_id($id) 
   {
-    $sql  = "SELECT id,useragent,browser,version,platform FROM useragents ";
+    $sql  = "SELECT id,useragent,engine,browser,version,platform FROM useragents ";
     $sql .= "WHERE id='$id' ";
     $sql .= "LIMIT 1";
     $r = $this->query($sql);
@@ -115,7 +115,7 @@ class user_agent extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function query_by_string($ua_string) 
   {
-    $sql  = "SELECT id,useragent,browser,version,platform FROM useragents ";
+    $sql  = "SELECT id,useragent,engine,browser,version,platform FROM useragents ";
     $sql .= "WHERE useragent='$ua_string' ";
     $sql .= "LIMIT 1";
     $r = $this->query($sql);
@@ -138,7 +138,11 @@ class user_agent extends db_connection
   {
     $r['id'] = null;
     $r['useragent'] = $ua_string;
-    $r['browser'] = "Generic Browser";
+    
+    
+    
+    $r['engine'] = "XXX";
+    $r['browser'] = "Default Browser";
     $r['version'] = "1";
     $r['platform'] = "Computron";
     return $r;
@@ -157,9 +161,10 @@ class user_agent extends db_connection
 
     if($ua['id'] == null) {
       $sql  = "INSERT INTO useragents ";
-      $sql .= "(useragent, browser, version, platform) ";
+      $sql .= "(useragent, engine, browser, version, platform) ";
       $sql .= "VALUES (";
       $sql .= "'".$ua['useragent']."',";
+      $sql .= "'".$ua['engine']."',";
       $sql .= "'".$ua['browser']."',";
       $sql .= "'".$ua['version']."',";
       $sql .= "'".$ua['platform']."'";
@@ -178,7 +183,7 @@ class user_agent extends db_connection
   //  Write HTML for a human readable description of the user agent.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function write($indent)
+  function write($indent = '')
   {
     if($this->get_browser() == 'Default Browser') {
       echo $indent . 'unknown';
@@ -202,6 +207,7 @@ class user_agent extends db_connection
   //
   //    get_id()
   //    get_ua_string()
+  //    get_engine()
   //    get_browser()
   //    get_version()
   //    get_platform()
@@ -226,6 +232,16 @@ class user_agent extends db_connection
   function get_ua_string()
   {
     return $this->m_info['useragent'];
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_engine()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_engine()
+  {
+    return $this->m_info['engine'];
   }
 
   ////////////////////////////////////////////////////////////////////////////

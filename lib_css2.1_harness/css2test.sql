@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
 CREATE TABLE IF NOT EXISTS `useragents` (
   `id` int(11) NOT NULL auto_increment,
   `useragent` varchar(255) NOT NULL default '',
+  `engine` varchar(255) default NULL,
   `browser` varchar(255) default NULL,
   `version` varchar(255) default NULL,
   `platform` varchar(255) default NULL,
