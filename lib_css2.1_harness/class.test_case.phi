@@ -467,15 +467,16 @@ class test_case extends db_connection
   //  Submit results info about the test case.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function submit($user_agent, $response)
+  function submit($user_agent, $client_ip, $response)
   {
     $sql  = "INSERT INTO results ";
-    $sql .= "(testsuite, testcase, useragent, useragent_id, result) ";
+    $sql .= "(testsuite, testcase, useragent, useragent_id, client_ip, result) ";
     $sql .= "VALUES (";
     $sql .= "'".$this->get_test_suite()."',";
     $sql .= "'".$this->get_test_case()."',";
     $sql .= "'".$user_agent->get_ua_string()."',";
     $sql .= "'".$user_agent->get_id()."',";
+    $sql .= "'".$client_ip."',";
     $sql .= "'".$response."'";
     $sql .= ")";
     

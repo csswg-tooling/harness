@@ -1,13 +1,13 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2007 World Wide Web Consortium, 
+//  Copyright Â© 2007 World Wide Web Consortium, 
 //  (Massachusetts Institute of Technology, European Research 
 //  Consortium for Informatics and Mathematics, Keio 
 //  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -61,6 +61,25 @@ class submit_results_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   var $m_new_uri;
 
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Get ip addr of client submitting result
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  protected function _get_client_ip()
+  {
+    if (! empty($_SERVER['HTTP_CLIENT_IP'])) {
+      $ip = $_SERVER['HTTP_CLIENT_IP'];
+    }
+    elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
+    else {
+      $ip = $_SERVER['REMOTE_ADDR'];
+    }
+    return $ip;
+  }
+  
   ////////////////////////////////////////////////////////////////////////////
   //
   //  Constructor.
@@ -201,7 +220,7 @@ class submit_results_page extends css_page
     }
 
     if ($response != '') {
-      $case->submit($ua, $response);
+      $case->submit($ua, $this->_get_client_ip(), $response);
      }
 
     $next_rank = $case->get_rank();
