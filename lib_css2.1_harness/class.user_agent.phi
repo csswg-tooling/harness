@@ -278,11 +278,15 @@ class user_agent extends db_connection
             (0 === stripos($comment_chunk, 'Windows')) ||
             (0 === stripos($comment_chunk, 'Macintosh')) ||
             (0 === stripos($comment_chunk, 'Chromium')) ||
-            (0 === stripos($comment_chunk, 'iPad')) ||
             (0 === stripos($comment_chunk, 'OpenBSD')) ||
             (0 === stripos($comment_chunk, 'FreeBSD')) ||
             (0 === stripos($comment_chunk, 'WebOS'))) {
           $platform = $comment_chunk;
+        }
+        if ((0 === stripos($comment_chunk, 'iPad')) ||
+            (0 === stripos($comment_chunk, 'iPhone')) ||
+            (0 === stripos($comment_chunk, 'iPod'))) {
+          $platform = "iOS";
         }
       }
     }
