@@ -109,6 +109,7 @@ class populate_ua_page extends css_page
     echo "<table>";
 
     // update results ua ids
+    
     $sql = "SELECT id, useragent FROM results WHERE useragent_id='0' LIMIT 5000";
     $r = $db->query($sql);
     $ua_list = $r->fetch_table(); 
@@ -122,11 +123,19 @@ class populate_ua_page extends css_page
 
       $ua->update();
         
-      $sql = "UPDATE results SET useragent_id='{$ua->get_id()}' WHERE id='{$ua_data['id']}'";
+      $sql = "UPDATE results SET useragent_id='{$ua->get_id()}', modified=modified WHERE id='{$ua_data['id']}'";
       $db->query($sql);
     }
     echo "</table>";
 
+// XXX recover old modified times...
+    $sql = "SELECT id, modified FROM old_results";
+    $r = $db->query($sql);
+    $ua_list = $r->fetch_table(); 
+    foreach ($ua_list as $ua_data) {
+      $sql = "UPDATE results SET modified='{$ua_data['modified']}' WHERE id='{$ua_data['id']}'";
+      $db->query($sql);
+    }
 
     // Verify
     echo "<table>";

@@ -303,11 +303,13 @@ class user_agent extends db_connection
       else {
         $product = $ua_chunk;
       }
-      if ((0 === stripos($product, 'AppleWebKit')) ||
+      if ((0 === stripos($product, 'Amaya')) ||
+          (0 === stripos($product, 'AppleWebKit')) ||
           (0 === stripos($product, 'WebKit')) ||
           (0 === stripos($product, 'Gecko')) ||
           (0 === stripos($product, 'KHTML')) ||
           (0 === stripos($product, 'Presto')) ||
+          (0 === stripos($product, 'Prince')) ||
           (0 === stripos($product, 'Trident'))) {
         $engine = $product;
         $engine_version = $version;
