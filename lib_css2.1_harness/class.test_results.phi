@@ -82,8 +82,7 @@ class test_results extends db_connection
     $sql .= "results.modified,result='pass' AS pass,";
     $sql .= "result='fail' AS fail,result='uncertain' AS uncertain ";
     $sql .= "FROM testcases INNER JOIN results ";
-    $sql .= "ON testcases.testsuite = results.testsuite ";
-    $sql .= "AND testcases.testcase = results.testcase ";
+    $sql .= "ON testcases.id = results.testcase_id ";
     $sql .= "WHERE testcases.testsuite = '".$test_suite."' ";
     
     if($test_select) {

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `flags` (
 
 CREATE TABLE IF NOT EXISTS `results` (
   `id` int(11) unsigned NOT NULL auto_increment,
+  `testcase_id` int(11) unsigned NOT NULL default '0',
   `testsuite` varchar(255) NOT NULL default '',
   `testcase` varchar(255) NOT NULL default '',
   `useragent` varchar(255) NOT NULL default '',
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS `results` (
 --
 
 CREATE TABLE IF NOT EXISTS `testcases` (
+  `id` int(11) unsigned NOT NULL auto_increment,
   `uri` varchar(255) NOT NULL default '',
   `testsuite` varchar(255) NOT NULL default '',
   `testcase` varchar(255) NOT NULL default '',
@@ -48,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `testcases` (
   `assertion` varchar(255) default NULL,
   `testgroup` varchar(255) default NULL,
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY  (`uri`)
+  PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------

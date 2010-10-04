@@ -157,7 +157,7 @@ class test_case extends db_connection
         , $order
         , $rank
         );
-
+        
       $this->m_rank = $rank;
     }
 
@@ -244,7 +244,7 @@ class test_case extends db_connection
     }
 
     $sql  = "SELECT t1.*, count FROM (";
-    $sql .= "SELECT testcases.uri, testcases.testsuite, ";
+    $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
@@ -255,19 +255,19 @@ class test_case extends db_connection
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "') AS t1 ";
     $sql .= "LEFT JOIN (";
-    $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
-    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id = useragents.id) ";
+    $sql .= "SELECT testcase_id, COUNT(*) AS count ";
+    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id=useragents.id) ";
     $sql .= "WHERE engine='" . $user_agent->get_engine() . "' ";
     if($modified) {
       $sql .= "AND modified <= '" . $modified . "' ";
     }
-    $sql .= "GROUP BY testsuite,testcase) AS t2 ";
-    $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
+    $sql .= "GROUP BY testcase_id) AS t2 ";
+    $sql .= "ON t1.id=t2.testcase_id ";
     if($order == 1) {
       $sql .= "ORDER BY count ";
     }
     $sql .= "LIMIT " . $rank . ",1";
-    
+
     $r = $this->query($sql);
 
     if($r->is_false()) {
@@ -338,7 +338,7 @@ class test_case extends db_connection
     }
 
     $sql  = "SELECT t1.*, count FROM (";
-    $sql .= "SELECT testcases.uri, testcases.testsuite, ";
+    $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
@@ -351,14 +351,14 @@ class test_case extends db_connection
     $sql .= "AND testcases.testgroup='" . $test_group . "' ";
     $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
-    $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
-    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id = useragents.id) ";
+    $sql .= "SELECT testcase_id, COUNT(*) AS count ";
+    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id=useragents.id) ";
     $sql .= "WHERE engine='" . $user_agent->get_engine() . "' ";
     if($modified) {
       $sql .= "AND modified <= '" . $modified . "' ";
     }
-    $sql .= "GROUP BY testsuite,testcase) AS t2 ";
-    $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
+    $sql .= "GROUP BY testcase_id) AS t2 ";
+    $sql .= "ON t1.id=t2.testcase_id ";
     if($order == 1) {
       $sql .= "ORDER BY count ";
     }
@@ -423,7 +423,7 @@ class test_case extends db_connection
     )
   {
     $sql  = "SELECT t1.*, count FROM (";
-    $sql .= "SELECT testcases.uri, testcases.testsuite, ";
+    $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
@@ -436,11 +436,11 @@ class test_case extends db_connection
     $sql .= "AND testcases.testcase='" . $test_case . "' ";
     $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
-    $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
+    $sql .= "SELECT testcase_id, COUNT(*) AS count ";
     $sql .= "FROM results ";
     $sql .= "WHERE useragent_id='" . $user_agent->get_id() . "' ";
-    $sql .= "GROUP BY testsuite,testcase) AS t2 ";
-    $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
+    $sql .= "GROUP BY testcase_id) AS t2 ";
+    $sql .= "ON t1.id=t2.testcase_id ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
@@ -470,8 +470,9 @@ class test_case extends db_connection
   function submit($user_agent, $client_ip, $response)
   {
     $sql  = "INSERT INTO results ";
-    $sql .= "(testsuite, testcase, useragent, useragent_id, client_ip, result) ";
+    $sql .= "(testcase_id, testsuite, testcase, useragent, useragent_id, client_ip, result) ";
     $sql .= "VALUES (";
+    $sql .= "'".$this->get_id()."',";
     $sql .= "'".$this->get_test_suite()."',";
     $sql .= "'".$this->get_test_case()."',";
     $sql .= "'".$user_agent->get_ua_string()."',";
@@ -524,6 +525,7 @@ class test_case extends db_connection
   //  Member functions for retrieving information about the test suite
   //
   //    get_timestamp()
+  //    get_id()
   //    get_uri()
   //    get_test_suite()
   //    get_test_case()
@@ -543,6 +545,16 @@ class test_case extends db_connection
   function get_timestamp()
   {
     return $this->m_timestamp;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_id()
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_id()
+  {
+    return $this->m_info['id'];
   }
 
   ////////////////////////////////////////////////////////////////////////////
