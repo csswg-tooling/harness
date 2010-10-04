@@ -64,7 +64,7 @@ class populate_ua_page extends css_page
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $ua_list;
+
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -106,53 +106,90 @@ class populate_ua_page extends css_page
 
     $db = new db_connection();
 
-    echo "<table>";
-
     // update results ua ids
-    
+    echo "<table>";
     $sql = "SELECT id, useragent FROM results WHERE useragent_id='0' LIMIT 5000";
     $r = $db->query($sql);
-    $ua_list = $r->fetch_table(); 
-    foreach ($ua_list as $ua_data) {
-      $ua = new user_agent($ua_data['useragent']);
+    $db_list = $r->fetch_table(); 
+    foreach ($db_list as $db_data) {
+      $ua = new user_agent($db_data['useragent']);
         
-      echo "<tr><td colspan='999'>" . $ua_data['useragent'];
+      echo "<tr><td colspan='999'>" . $db_data['useragent'];
 
       echo "<tr><td>&nbsp;<td>";
       $ua->write();
 
       $ua->update();
         
-      $sql = "UPDATE results SET useragent_id='{$ua->get_id()}', modified=modified WHERE id='{$ua_data['id']}'";
+      $sql = "UPDATE results SET useragent_id='{$ua->get_id()}', modified=modified WHERE id='{$db_data['id']}'";
+      $db->query($sql);
+    }
+    echo "</table>";
+
+    // update results testcase_ids
+    echo "<table>";
+    $sql = "SELECT id, testsuite, testcase FROM results WHERE testcase_id='0' LIMIT 5000";
+    $r = $db->query($sql);
+    $db_list = $r->fetch_table(); 
+    foreach ($db_list as $db_data) {
+      $sql = "SELECT id FROM testcases WHERE testsuite='{$db_data['testsuite']}' AND testcase='{$db_data['testcase']}'";
+      $r = $db->query($sql);
+      $testcase = $r->fetch_table();
+      $testcase_id = $testcase[0]['id'];
+      echo "<tr><td>" . $db_data['testsuite'] . "<td>" . $db_data['testcase'];
+      echo "<td>" . $testcase_id;
+      $sql = "UPDATE results SET testcase_id='{$testcase_id}', modified=modified WHERE id='{$db_data['id']}'";
       $db->query($sql);
     }
     echo "</table>";
 
 // XXX recover old modified times...
+/*
     $sql = "SELECT id, modified FROM old_results";
     $r = $db->query($sql);
-    $ua_list = $r->fetch_table(); 
-    foreach ($ua_list as $ua_data) {
-      $sql = "UPDATE results SET modified='{$ua_data['modified']}' WHERE id='{$ua_data['id']}'";
+    $db_list = $r->fetch_table(); 
+    foreach ($db_list as $db_data) {
+      $sql = "UPDATE results SET modified='{$db_data['modified']}' WHERE id='{$db_data['id']}'";
       $db->query($sql);
     }
-
-    // Verify
+*/
+    // Verify UA
     echo "<table>";
     $sql = "SELECT DISTINCT useragent, useragent_id FROM results";
     $r = $db->query($sql);
-    $ua_list = $r->fetch_table(); 
-    foreach ($ua_list as $ua_data) {
-      $ua = new user_agent($ua_data['useragent_id']);
+    $db_list = $r->fetch_table(); 
+    foreach ($db_list as $db_data) {
+      $ua = new user_agent($db_data['useragent_id']);
         
-      if ($ua->get_ua_string() != $ua_data['useragent']) {
-        echo "<tr><td>ERROR<td>{$ua_data['useragent_id']}<td>{$ua_data['useragent']}";
+      if ($ua->get_ua_string() != $db_data['useragent']) {
+        echo "<tr><td>ERROR<td>{$db_data['useragent_id']}<td>{$db_data['useragent']}";
       }
       else {
-        echo "<tr><td>&nbsp;<td>{$ua_data['useragent_id']}<td>{$ua_data['useragent']}";
+//        echo "<tr><td>&nbsp;<td>{$db_data['useragent_id']}<td>{$db_data['useragent']}";
       }
     }
     echo "</table>";
+    
+    // Verify testcase id
+    echo "<table>";
+    $sql = "SELECT DISTINCT testsuite, testcase, testcase_id FROM results";
+    $r = $db->query($sql);
+    $db_list = $r->fetch_table(); 
+    foreach ($db_list as $db_data) {
+      $sql = "SELECT testsuite, testcase FROM testcases WHERE id='{$db_data['testcase_id']}'";
+      $r = $db->query($sql);
+      $testcase = $r->fetch_table();
+        
+      if (($testcase[0]['testsuite'] != $db_data['testsuite']) || 
+          ($testcase[0]['testcase'] != $db_data['testcase'])) {
+        echo "<tr><td>ERROR<td>{$db_data['testcase_id']}<td>{$db_data['testsuite']}<td>{$db_data['testcase']}";
+      }
+      else {
+//        echo "<tr><td>&nbsp;<td>{$db_data['testcase_id']}<td>{$db_data['testsuite']}<td>{$db_data['testcase']}";
+      }
+    }
+    echo "</table>";
+    
     
   }
 }
