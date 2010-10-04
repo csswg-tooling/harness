@@ -1,9 +1,9 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 //
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -72,12 +72,13 @@ class test_results extends db_connection
     $sql .= "FROM results GROUP BY testcase, useragent ";
 */
 
-    $sql  = "SELECT title,engine,engine_version,platform,SUM(pass) as pass,";
-    $sql .= "SUM(fail) as fail,SUM(uncertain) as uncertain,";
-    $sql .= "COUNT(*) as count FROM (";
+//    $sql  = "SELECT title,engine,engine_version,platform,SUM(pass) as pass,";
+    $sql  = "SELECT Testcase, Engine, SUM(pass) as Pass,";
+    $sql .= "SUM(fail) as Fail,SUM(uncertain) as Uncertain,";
+    $sql .= "COUNT(*) as Count FROM (";
     
     $sql .= "SELECT testcases.title,testcases.testsuite,";
-    $sql .= "testcases.testgroup,testcases.testcase,results.useragent,";
+    $sql .= "testcases.testgroup,testcases.testcase,results.useragent_id,";
     $sql .= "results.modified,result='pass' AS pass,";
     $sql .= "result='fail' AS fail,result='uncertain' AS uncertain ";
     $sql .= "FROM testcases INNER JOIN results ";
@@ -99,16 +100,18 @@ class test_results extends db_connection
 
     $sql .= ") AS t ";
     $sql .= "INNER JOIN useragents ";
-    $sql .= "ON t.useragent = useragents.useragent ";
+    $sql .= "ON t.useragent_id = useragents.id ";
     
     if($engine) {
       $sql .= "WHERE engine='".$engine."' ";
+/*      
       if($version) {
         $sql .= "AND engine_version = '".$engine_version."' ";
       }
       if($platform) {
         $sql .= "AND platform = '".$platform."' ";
       }
+*/      
     }
     if($grouping == 's') {
       $sql .= "GROUP BY testsuite, ";
@@ -117,7 +120,7 @@ class test_results extends db_connection
     } else {
       $sql .= "GROUP BY testcase, ";
     }
-    $sql .= "engine, engine_version ";
+    $sql .= "engine "; // , engine_version ";
 
     if($order) {
       $sql .= "ORDER BY count";

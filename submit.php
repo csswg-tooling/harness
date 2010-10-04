@@ -206,8 +206,8 @@ class submit_results_page extends css_page
 
     $case = new test_case
       ( $suite->get_name()
-      , $select
-      , $type
+      , $case_id  // we always want to select the proper test case here... $select
+      , 2 //$type
       , $ua
       , $modified
       , $order 
@@ -229,7 +229,11 @@ class submit_results_page extends css_page
     } else {
       $next_rank = $next_rank + 1;
     }
-    $count = $case->get_count();
+    switch ($type) {
+      case 0: $count = $case->count_cases_in_suite($suite->get_name());           break;
+      case 1: $count = $case->count_cases_in_group($suite->get_name(), $select);  break;
+      default: $count = $case->get_count();
+    }
     
     if( ($type==2) || ($next_rank > $count) ) {
 //      $this->m_new_uri  = 'http://test.csswg.org/harness/';

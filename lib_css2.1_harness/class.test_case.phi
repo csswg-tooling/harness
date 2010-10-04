@@ -1,13 +1,13 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2007 World Wide Web Consortium, 
+//  Copyright Â© 2007 World Wide Web Consortium, 
 //  (Massachusetts Institute of Technology, European Research 
 //  Consortium for Informatics and Mathematics, Keio 
 //  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -142,7 +142,7 @@ class test_case extends db_connection
         , $user_agent
         );
 
-      $this->m_rank = 1;
+      $this->m_rank = $rank;
       break;
 
     // Select test case by rank from list of cases in the particular test suite.
@@ -256,8 +256,8 @@ class test_case extends db_connection
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "') AS t1 ";
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
-    $sql .= "FROM results ";
-    $sql .= "WHERE useragent='" . $user_agent->get_ua_string() . "' ";
+    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id = useragents.id) ";
+    $sql .= "WHERE engine='" . $user_agent->get_engine() . "' ";
     if($modified) {
       $sql .= "AND modified <= '" . $modified . "' ";
     }
@@ -267,7 +267,7 @@ class test_case extends db_connection
       $sql .= "ORDER BY count ";
     }
     $sql .= "LIMIT " . $rank . ",1";
-
+    
     $r = $this->query($sql);
 
     if($r->is_false()) {
@@ -352,8 +352,8 @@ class test_case extends db_connection
     $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
-    $sql .= "FROM results ";
-    $sql .= "WHERE useragent='" . $user_agent->get_ua_string() . "' ";
+    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id = useragents.id) ";
+    $sql .= "WHERE engine='" . $user_agent->get_engine() . "' ";
     if($modified) {
       $sql .= "AND modified <= '" . $modified . "' ";
     }
@@ -438,7 +438,7 @@ class test_case extends db_connection
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testsuite,testcase,COUNT(*) AS count ";
     $sql .= "FROM results ";
-    $sql .= "WHERE useragent='" . $user_agent->get_ua_string() . "' ";
+    $sql .= "WHERE useragent_id='" . $user_agent->get_id() . "' ";
     $sql .= "GROUP BY testsuite,testcase) AS t2 ";
     $sql .= "ON t1.testsuite=t2.testsuite AND t1.testcase=t2.testcase ";
     $sql .= "LIMIT 1";

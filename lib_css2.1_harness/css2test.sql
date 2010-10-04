@@ -22,16 +22,16 @@ CREATE TABLE IF NOT EXISTS `flags` (
 --
 
 CREATE TABLE IF NOT EXISTS `results` (
-  `id` int(10) unsigned NOT NULL auto_increment,
+  `id` int(11) unsigned NOT NULL auto_increment,
   `testsuite` varchar(255) NOT NULL default '',
   `testcase` varchar(255) NOT NULL default '',
   `useragent` varchar(255) NOT NULL default '',
-  `useragent_id` int(10) NOT NULL default '0',
+  `useragent_id` int(11) unsigned NOT NULL default '0',
   `client_ip` varchar(15) NULL default '',
   `result` enum('pass','fail','uncertain','na') NOT NULL default 'pass',
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=15379 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 ;
 
 -- --------------------------------------------------------
 
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
 --
 
 CREATE TABLE IF NOT EXISTS `useragents` (
-  `id` int(11) NOT NULL auto_increment,
+  `id` int(11) unsigned NOT NULL auto_increment,
   `useragent` varchar(255) NOT NULL default '',
   `engine` varchar(255) default NULL,
   `engine_version` varchar(255) default NULL,
@@ -92,4 +92,4 @@ CREATE TABLE IF NOT EXISTS `useragents` (
   `browser_version` varchar(255) default NULL,
   `platform` varchar(255) default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=139 ;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
