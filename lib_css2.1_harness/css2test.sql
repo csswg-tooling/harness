@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS `results` (
   `result` enum('pass','fail','uncertain','na') NOT NULL default 'pass',
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
+  KEY `useragent_id` (`useragent_id`),
+  KEY `testcase_id` (`testcase_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 ;
 
 -- --------------------------------------------------------

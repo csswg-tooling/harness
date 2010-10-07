@@ -44,6 +44,7 @@ class test_results extends db_connection
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
+  var $engines;
   var $m_data;
 
   ////////////////////////////////////////////////////////////////////////////
@@ -72,15 +73,19 @@ class test_results extends db_connection
     $sql .= "FROM results GROUP BY testcase, useragent ";
 */
 
+    $sql = "SELECT DISTINCT engine FROM 'useragents' WHERE engine!='' ORDER BY engine";
+    $r = $this->query($sql);
+    $this->engines = $r->fetch_table();
+
 //    $sql  = "SELECT title,engine,engine_version,platform,SUM(pass) as pass,";
     $sql  = "SELECT Testcase, Engine, SUM(pass) as Pass,";
-    $sql .= "SUM(fail) as Fail,SUM(uncertain) as Uncertain,";
+    $sql .= "SUM(fail) as Fail, SUM(uncertain) as Uncertain,";
     $sql .= "COUNT(*) as Count FROM (";
     
     $sql .= "SELECT testcases.title,testcases.testsuite,";
-    $sql .= "testcases.testgroup,testcases.testcase,results.useragent_id,";
-    $sql .= "results.modified,result='pass' AS pass,";
-    $sql .= "result='fail' AS fail,result='uncertain' AS uncertain ";
+    $sql .= "testcases.testgroup, testcases.testcase, results.useragent_id,";
+    $sql .= "results.modified, result='pass' AS pass, ";
+    $sql .= "result='fail' AS fail, result='uncertain' AS uncertain ";
     $sql .= "FROM testcases INNER JOIN results ";
     $sql .= "ON testcases.id = results.testcase_id ";
     $sql .= "WHERE testcases.testsuite = '".$test_suite."' ";
@@ -103,14 +108,12 @@ class test_results extends db_connection
     
     if($engine) {
       $sql .= "WHERE engine='".$engine."' ";
-/*      
-      if($version) {
+      if($engine_version) {
         $sql .= "AND engine_version = '".$engine_version."' ";
       }
       if($platform) {
         $sql .= "AND platform = '".$platform."' ";
       }
-*/      
     }
     if($grouping == 's') {
       $sql .= "GROUP BY testsuite, ";
@@ -119,7 +122,10 @@ class test_results extends db_connection
     } else {
       $sql .= "GROUP BY testcase, ";
     }
-    $sql .= "engine "; // , engine_version ";
+    $sql .= "engine "; 
+    if ($engine_version) {
+      $sql .= ", engine_version ";
+    }
 
     if($order) {
       $sql .= "ORDER BY count";
@@ -159,9 +165,10 @@ class test_results extends db_connection
       }
       echo $indent . '  </tr>' ."\n";
 
-      foreach($this->m_data as $row) {
+      foreach($this->m_data as $result) {
+      
         echo $indent . '  <tr>' ."\n";
-        foreach($row as $value) {
+        foreach($result as $value) {
           echo $indent . '    <td>' ."\n";
           echo $indent . '      ' . $value;
           echo $indent . '    </td>' ."\n";

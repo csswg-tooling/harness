@@ -162,16 +162,16 @@ class results_page extends css_page
       $grouping = null;
     }
 
-    if(isset($_GET['b'])) {
-      $browser = $_GET['b'];
+    if(isset($_GET['e'])) {
+      $engine = $_GET['e'];
     } else {
-      $browser = null;
+      $engine = null;
     }
 
     if(isset($_GET['v'])) {
-      $version = $_GET['v'];
+      $engine_version = $_GET['v'];
     } else {
-      $version = null;
+      $engine_version = null;
     }
 
     if(isset($_GET['p'])) {
@@ -184,8 +184,8 @@ class results_page extends css_page
       ( $suite
       , $select
       , $type
-      , $browser
-      , $version
+      , $engine
+      , $engine_version
       , $platform
       , $grouping
       , $modified
