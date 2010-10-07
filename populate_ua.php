@@ -144,7 +144,7 @@ class populate_ua_page extends css_page
     echo "</table>";
 
 // XXX recover old modified times...
-/*
+
     $sql = "SELECT id, modified FROM old_results";
     $r = $db->query($sql);
     $db_list = $r->fetch_table(); 
@@ -152,7 +152,7 @@ class populate_ua_page extends css_page
       $sql = "UPDATE results SET modified='{$db_data['modified']}' WHERE id='{$db_data['id']}'";
       $db->query($sql);
     }
-*/
+
     // Verify UA
     echo "<table>";
     $sql = "SELECT DISTINCT useragent, useragent_id FROM results";
@@ -172,7 +172,7 @@ class populate_ua_page extends css_page
     
     // Verify testcase id
     echo "<table>";
-    $sql = "SELECT DISTINCT testsuite, testcase, testcase_id FROM results";
+    $sql = "SELECT DISTINCT testsuite, testcase, testcase_id FROM results WHERE testcase_id!='0'";
     $r = $db->query($sql);
     $db_list = $r->fetch_table(); 
     foreach ($db_list as $db_data) {
