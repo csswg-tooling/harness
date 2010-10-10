@@ -73,7 +73,7 @@ class test_results extends db_connection
     $sql .= "FROM results GROUP BY testcase, useragent ";
 */
 
-    $sql = "SELECT DISTINCT engine FROM 'useragents' WHERE engine!='' ORDER BY engine";
+    $sql = "SELECT DISTINCT engine FROM useragents WHERE engine!='' ORDER BY engine";
     $r = $this->query($sql);
     $this->engines = $r->fetch_table();
 
