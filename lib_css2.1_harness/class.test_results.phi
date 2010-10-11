@@ -44,8 +44,9 @@ class test_results extends db_connection
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $engines;
+  var $m_engines;
   var $m_data;
+  var $m_test_suite;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -65,6 +66,8 @@ class test_results extends db_connection
     )
   {
     parent::db_connection();
+    
+    $this->m_test_suite = $test_suite;
 /*    
     $sql  = "SELECT testcase as Test, useragent as UserAgent, ";
     $sql .= "SUM(result='pass') as Pass, SUM(result='fail') as Fail, ";
@@ -75,20 +78,24 @@ class test_results extends db_connection
 
     $sql = "SELECT DISTINCT engine FROM useragents WHERE engine!='' ORDER BY engine";
     $r = $this->query($sql);
-    $this->engines = $r->fetch_table();
+    if (! $r->is_false()) {
+      $db_engines = $r->fetch_table();
+      foreach ($db_engines as $db_engine) {
+        $this->m_engines[] = $db_engine['engine'];
+      }
+    }
 
-//    $sql  = "SELECT title,engine,engine_version,platform,SUM(pass) as pass,";
-    $sql  = "SELECT Testcase, Engine, SUM(pass) as Pass,";
-    $sql .= "SUM(fail) as Fail, SUM(uncertain) as Uncertain,";
-    $sql .= "COUNT(*) as Count FROM (";
+    $sql  = "SELECT testcase, engine, SUM(pass) as pass, ";
+    $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
+    $sql .= "COUNT(*) as count FROM (";
     
-    $sql .= "SELECT testcases.title,testcases.testsuite,";
-    $sql .= "testcases.testgroup, testcases.testcase, results.useragent_id,";
-    $sql .= "results.modified, result='pass' AS pass, ";
-    $sql .= "result='fail' AS fail, result='uncertain' AS uncertain ";
-    $sql .= "FROM testcases INNER JOIN results ";
-    $sql .= "ON testcases.id = results.testcase_id ";
-    $sql .= "WHERE testcases.testsuite = '".$test_suite."' ";
+    $sql .= "SELECT testcases.title, testcases.testsuite, ";
+    $sql .= "testcases.testgroup, testcases.testcase, results.useragent_id, ";
+    $sql .= "results.modified, useragents.engine, result = 'pass' AS pass, ";
+    $sql .= "result = 'fail' AS fail, result = 'uncertain' AS uncertain ";
+    $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
+    $sql .= "ON (testcases.id = results.testcase_id AND results.useragent_id = useragents.id)) as t ";
+    $sql .= "WHERE t.testsuite = '".$test_suite."' ";
     
     if($test_select) {
       if($select_type == 1) {
@@ -97,14 +104,10 @@ class test_results extends db_connection
         $sql .= "AND testcases.testcase = '".$test_select."' ";
       }
     }
-
+    
     if($modified) {
       $sql .= "AND results.modified <= '".$modified."' ";
-    }
-
-    $sql .= ") AS t ";
-    $sql .= "INNER JOIN useragents ";
-    $sql .= "ON t.useragent_id = useragents.id ";
+    }  
     
     if($engine) {
       $sql .= "WHERE engine='".$engine."' ";
@@ -130,7 +133,7 @@ class test_results extends db_connection
     if($order) {
       $sql .= "ORDER BY count";
     }
-
+//print $sql;
     $r = $this->query($sql);
 
     if($r->is_false()) {
@@ -152,11 +155,75 @@ class test_results extends db_connection
   {
 
     if(!($this->m_data)) {
-      echo $indent . '<p>No results entered matching this query.</p>' . "\n";
+      echo $indent . "<p>No results entered matching this query.</p>\n";
     } else {
 
-      echo $indent . '<table>' ."\n";
+      echo $indent . "<table>\n";
+      echo $indent . "  <tr>\n";
+      echo $indent . "    <th>Testcase</th>\n";
+      foreach ($this->m_engines as $engine) {
+        echo $indent . "    <th>{$engine}</th>\n";
+      }
+      echo $indent . "  </tr>\n";
+      
+      $testcase_count = 0;
+      $testcase_pass_count = 0;
+      $last_testcase = '';
+      foreach ($this->m_data as $result) {
+        $testcase = $result['testcase'];
+        if ($testcase != $last_testcase) {
+          if ($last_testcase) {
+            foreach ($this->m_engines as $engine) {
+              if (array_key_exists($engine, $engine_count)) {
+                $pass = $engine_pass[$engine];
+                $fail = $engine_fail[$engine];
+                $uncertain = $engine_uncertain[$engine];
+                if (0 < $pass) {
+                  $pass_count++;
+                  $row .= "<td class='pass'>";
+                }
+                else if (0 < $fail) {
+                  $row .= "<td class='fail'>";
+                }
+                else {
+                  $row .= "<td class='uncertain'>";
+                }
+                $row .= "{$pass}/{$fail}/{$uncertain}";
+                $row .= "</td>";
+              }
+              else {
+                $row .= "<td>&nbsp;</td>";
+              }
+            }
+            if (1 < $pass_count) {
+              echo "<tr class='pass'>";
+              $testcase_pass_count++;
+            }
+            else {
+              echo "<tr>";
+            }
+            echo "{$row}</tr>";
+          }
+          unset ($engine_pass);
+          unset ($engine_fail);
+          unset ($engine_uncertain);
+          unset ($engine_count);
+          $testcase_count++;
+          $pass_count = 0;
+          $row = "<td><a href='testcase?s={$this->m_test_suite}&c={$testcase}'>{$testcase}</a></td>";
+        }
+        $engine_pass[$result['engine']] = $result['pass'];
+        $engine_fail[$result['engine']] = $result['fail'];
+        $engine_uncertain[$result['engine']] = $result['uncertain'];
+        $engine_count[$result['engine']] = $result['count'];
+        
+        $last_testcase = $testcase;
+      }
+      echo $indent . '</table>' . "\n";
+      echo $indent . "<p>{$testcase_pass_count} of {$testcase_count} tests meet exit criteria.</p>\n";
 
+/*
+      echo $indent . '<table>' . "\n";
       echo $indent . '  <tr>' ."\n";
       foreach($this->m_data[0] as $key=>$value) {
         echo $indent . '    <th>' ."\n";
@@ -175,8 +242,8 @@ class test_results extends db_connection
         }
         echo $indent . '  </tr>' ."\n";
       }
-
       echo $indent . '</table>' . "\n";
+ */
     }
   }
 }

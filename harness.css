@@ -68,3 +68,13 @@ form p.ua {
   text-align: right;
   font-size: smaller;
 }
+tr.pass,
+td.pass {
+  background-color: #8F8;
+}
+td.fail {
+  background-color: #F66;
+}
+td.uncertain {
+  background-color: yellow;
+}
