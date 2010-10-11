@@ -99,14 +99,14 @@ class test_results extends db_connection
     
     if($test_select) {
       if($select_type == 1) {
-        $sql .= "AND testcases.testgroup = '".$test_select."' ";
+        $sql .= "AND t.testgroup = '".$test_select."' ";
       } elseif($select_type==2) {
-        $sql .= "AND testcases.testcase = '".$test_select."' ";
+        $sql .= "AND t.testcase = '".$test_select."' ";
       }
     }
     
     if($modified) {
-      $sql .= "AND results.modified <= '".$modified."' ";
+      $sql .= "AND t.modified <= '".$modified."' ";
     }  
     
     if($engine) {
@@ -219,6 +219,38 @@ class test_results extends db_connection
         
         $last_testcase = $testcase;
       }
+      
+      foreach ($this->m_engines as $engine) {
+        if (array_key_exists($engine, $engine_count)) {
+          $pass = $engine_pass[$engine];
+          $fail = $engine_fail[$engine];
+          $uncertain = $engine_uncertain[$engine];
+          if (0 < $pass) {
+            $pass_count++;
+            $row .= "<td class='pass'>";
+          }
+          else if (0 < $fail) {
+            $row .= "<td class='fail'>";
+          }
+          else {
+            $row .= "<td class='uncertain'>";
+          }
+          $row .= "{$pass}/{$fail}/{$uncertain}";
+          $row .= "</td>";
+        }
+        else {
+          $row .= "<td>&nbsp;</td>";
+        }
+      }
+      if (1 < $pass_count) {
+        echo "<tr class='pass'>";
+        $testcase_pass_count++;
+      }
+      else {
+        echo "<tr>";
+      }
+      echo "{$row}</tr>";
+      
       echo $indent . '</table>' . "\n";
       echo $indent . "<p>{$testcase_pass_count} of {$testcase_count} tests meet exit criteria.</p>\n";
 
