@@ -87,7 +87,7 @@ class test_results extends db_connection
 
     $sql  = "SELECT testcase, engine, SUM(pass) as pass, ";
     $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
-    $sql .= "COUNT(*) as count FROM (";
+    $sql .= "COUNT(pass + fail + uncertain) as count FROM (";
     
     $sql .= "SELECT testcases.title, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, results.useragent_id, ";
@@ -110,7 +110,7 @@ class test_results extends db_connection
     }  
     
     if($engine) {
-      $sql .= "WHERE engine='".$engine."' ";
+      $sql .= "AND engine='".$engine."' ";
       if($engine_version) {
         $sql .= "AND engine_version = '".$engine_version."' ";
       }
@@ -119,9 +119,9 @@ class test_results extends db_connection
       }
     }
     if($grouping == 's') {
-      $sql .= "GROUP BY testsuite, ";
+      $sql .= "GROUP BY testsuite, testcase, ";
     } elseif($grouping == 'g') {
-      $sql .= "GROUP BY testgroup, ";
+      $sql .= "GROUP BY testgroup, testcase, ";
     } else {
       $sql .= "GROUP BY testcase, ";
     }
@@ -130,9 +130,6 @@ class test_results extends db_connection
       $sql .= ", engine_version ";
     }
 
-    if($order) {
-      $sql .= "ORDER BY count";
-    }
 //print $sql;
     $r = $this->query($sql);
 
