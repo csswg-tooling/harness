@@ -347,6 +347,7 @@ class user_agent extends db_connection
       }
     }
     if ((0 === stripos($engine, 'AppleWebKit')) ||
+        (0 === stripos($engine, 'KHTML')) ||        // Not enough difference between KHTML and WebKit, aggregate results
         (0 === stripos($engine, 'WebKitGTK'))) {
       $engine = 'WebKit';
     }
