@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
   `testsuite` varchar(32) NOT NULL default '',
   `uri` varchar(255) default NULL,
   `title` varchar(255) default NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1',
   `description` longtext,
   PRIMARY KEY  (`testsuite`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

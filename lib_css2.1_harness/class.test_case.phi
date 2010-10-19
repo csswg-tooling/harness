@@ -243,6 +243,7 @@ class test_case extends db_connection
       $rank = 0;
     }
 
+/*  Select tet case ordered by result count per engine, this is slow
     $sql  = "SELECT t1.*, count FROM (";
     $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
@@ -264,9 +265,26 @@ class test_case extends db_connection
     $sql .= "GROUP BY testcase_id) AS t2 ";
     $sql .= "ON t1.id=t2.testcase_id ";
     if($order == 1) {
-      $sql .= "ORDER BY count ";
+      $sql .= "ORDER BY count, id ";
     }
-    $sql .= "LIMIT " . $rank . ",1";
+    $sql .= "LIMIT " . $rank . ", 1";
+*/
+    
+    // Select case ordered by total result count, fast but not as good
+    $sql  = "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
+    $sql .= "testcases.testgroup, testcases.testcase, ";
+    $sql .= "testcases.title AS casetitle, ";
+    $sql .= "testgroups.title AS grouptitle, ";
+    $sql .= "testsuites.title AS suitetitle, ";
+    $sql .= "COUNT(results.result) AS count ";
+    $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
+    $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup ";
+    $sql .= "LEFT JOIN results ON testcases.id=results.testcase_id) ";
+    $sql .= "WHERE (testcases.testsuite='" . $test_suite . "') GROUP BY id ";
+    if($order == 1) {
+      $sql .= "ORDER BY count, id ";
+    }
+    $sql .= "LIMIT " . $rank . ", 1";
 
     $r = $this->query($sql);
 

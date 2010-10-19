@@ -60,7 +60,8 @@ class test_suites extends db_connection
     $sql  = "SELECT DISTINCT testcases.testsuite, testsuites.uri, ";
     $sql .= "testsuites.title, testsuites.description ";
     $sql .= "FROM testcases LEFT JOIN testsuites ";
-    $sql .= "ON testcases.testsuite = testsuites.testsuite;";
+    $sql .= "ON testcases.testsuite = testsuites.testsuite ";
+    $sql .= "WHERE testsuites.active='1';";
     
     $r = $this->query($sql);
     
