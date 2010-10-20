@@ -118,27 +118,36 @@ class grandfather extends css_page
       
       echo "<tr><td>" . $new_testcase_id . "<td colspan='999'>" . $testcase;
       
-      $sql  = "SELECT useragent_id, source, result, results.modified FROM results ";
-      $sql .= "LEFT JOIN testcases ON results.testcase_id=testcases.id ";
-      $sql .= "WHERE testcases.testcase='{$testcase}' AND testcases.testsuite='CSS21_HTML_RC1'";
-      //print "<td>" . $sql;      
+      $sql  = "SELECT id FROM testcases ";
+      $sql .= "WHERE testcases.testcase='{$testcase}' AND testcases.testsuite='CSS21_HTML_RC1' ";
+      $sql .= "LIMIT 1";
       $r = $db->query($sql);
       if (! $r->is_false()) {
-        $result_list = $r->fetch_table();
-        foreach ($result_list as $result_data) {
-          $useragent_id = $result_data['useragent_id'];
-          $source = $result_data['source'];
-          $result = $result_data['result'];
-          $modified = $result_data['modified'];
-          
-          echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
-          
-          $sql  = "INSERT INTO results (testcase_id, useragent_id, source, result, modified) VALUES ";
-          $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}+', '{$result}', '{$modified}')";
-          //print "<td>" . $sql;        
-          $db->query($sql);
+        $testcase_list = $r->fetch_table();
+        $old_testcase_id = $testcase_list[0]['id'];
+        
+        $sql  = "SELECT useragent_id, source, result, results.modified FROM results ";
+        $sql .= "WHERE testcase_id='{$old_testcase_id}'";
+        //print "<td>" . $sql;      
+        $r = $db->query($sql);
+        if (! $r->is_false()) {
+          $result_list = $r->fetch_table();
+          foreach ($result_list as $result_data) {
+            $useragent_id = $result_data['useragent_id'];
+            $source = $result_data['source'];
+            $result = $result_data['result'];
+            $modified = $result_data['modified'];
+            
+            echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
+            
+            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, result, modified) VALUES ";
+            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}+', '{$result}', '{$modified}')";
+            //print "<td>" . $sql;        
+            $db->query($sql);
+          }
         }
       }
+      
       $sql  = "UPDATE testcases SET grandfather='2' WHERE id='{$new_testcase_id}'";
       //print "<td>". $sql;      
       $db->query($sql);      
@@ -156,27 +165,36 @@ class grandfather extends css_page
       
       echo "<tr><td>" . $new_testcase_id . "<td colspan='999'>" . $testcase;
       
-      $sql  = "SELECT useragent_id, source, result, results.modified FROM results ";
-      $sql .= "LEFT JOIN testcases ON results.testcase_id=testcases.id ";
-      $sql .= "WHERE testcases.testcase='{$testcase}' AND testcases.testsuite='CSS21_XHTML_RC1'";
-      //print "<td>" . $sql;      
+      $sql  = "SELECT id FROM testcases ";
+      $sql .= "WHERE testcases.testcase='{$testcase}' AND testcases.testsuite='CSS21_XHTML_RC1' ";
+      $sql .= "LIMIT 1";
       $r = $db->query($sql);
       if (! $r->is_false()) {
-        $result_list = $r->fetch_table();
-        foreach ($result_list as $result_data) {
-          $useragent_id = $result_data['useragent_id'];
-          $source = $result_data['source'];
-          $result = $result_data['result'];
-          $modified = $result_data['modified'];
-          
-          echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
-          
-          $sql  = "INSERT INTO results (testcase_id, useragent_id, source, result, modified) VALUES ";
-          $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}+', '{$result}', '{$modified}')";
-          //print "<td>" . $sql;        
-          $db->query($sql);
+        $testcase_list = $r->fetch_table();
+        $old_testcase_id = $testcase_list[0]['id'];
+        
+        $sql  = "SELECT useragent_id, source, result, results.modified FROM results ";
+        $sql .= "WHERE testcase_id='{$old_testcase_id}'";
+        //print "<td>" . $sql;      
+        $r = $db->query($sql);
+        if (! $r->is_false()) {
+          $result_list = $r->fetch_table();
+          foreach ($result_list as $result_data) {
+            $useragent_id = $result_data['useragent_id'];
+            $source = $result_data['source'];
+            $result = $result_data['result'];
+            $modified = $result_data['modified'];
+            
+            echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
+            
+            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, result, modified) VALUES ";
+            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}+', '{$result}', '{$modified}')";
+            //print "<td>" . $sql;        
+            $db->query($sql);
+          }
         }
       }
+
       $sql  = "UPDATE testcases SET grandfather='2' WHERE id='{$new_testcase_id}'";
       //print "<td>". $sql;      
       $db->query($sql);      
