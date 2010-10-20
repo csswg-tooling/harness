@@ -109,7 +109,7 @@ class grandfather extends css_page
 
     // update results 
     echo "<table>";
-    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_HTML_RC2' AND grandfather='1'";
+    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_HTML_RC2' AND grandfather='1' LIMIT 3000";
     $r = $db->query($sql);
     $db_list = $r->fetch_table(); 
     foreach ($db_list as $db_data) {
@@ -126,22 +126,23 @@ class grandfather extends css_page
         $testcase_list = $r->fetch_table();
         $old_testcase_id = $testcase_list[0]['id'];
         
-        $sql  = "SELECT useragent_id, source, result, results.modified FROM results ";
+        $sql  = "SELECT id, useragent_id, source, result, modified FROM results ";
         $sql .= "WHERE testcase_id='{$old_testcase_id}'";
         //print "<td>" . $sql;      
         $r = $db->query($sql);
         if (! $r->is_false()) {
           $result_list = $r->fetch_table();
           foreach ($result_list as $result_data) {
+            $result_id    = $result_data['id'];
             $useragent_id = $result_data['useragent_id'];
-            $source = $result_data['source'];
-            $result = $result_data['result'];
-            $modified = $result_data['modified'];
+            $source       = $result_data['source'];
+            $result       = $result_data['result'];
+            $modified     = $result_data['modified'];
             
             echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
             
-            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, result, modified) VALUES ";
-            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}+', '{$result}', '{$modified}')";
+            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, original_id, result, modified) VALUES ";
+            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}', '{$result_id}', '{$result}', '{$modified}')";
             //print "<td>" . $sql;        
             $db->query($sql);
           }
@@ -156,7 +157,7 @@ class grandfather extends css_page
     
     // update results 
     echo "<table>";
-    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_XHTML_RC2' AND grandfather='1'";
+    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_XHTML_RC2' AND grandfather='1' LIMIT 3000";
     $r = $db->query($sql);
     $db_list = $r->fetch_table(); 
     foreach ($db_list as $db_data) {
@@ -173,13 +174,14 @@ class grandfather extends css_page
         $testcase_list = $r->fetch_table();
         $old_testcase_id = $testcase_list[0]['id'];
         
-        $sql  = "SELECT useragent_id, source, result, results.modified FROM results ";
+        $sql  = "SELECT id, useragent_id, source, result, modified FROM results ";
         $sql .= "WHERE testcase_id='{$old_testcase_id}'";
         //print "<td>" . $sql;      
         $r = $db->query($sql);
         if (! $r->is_false()) {
           $result_list = $r->fetch_table();
           foreach ($result_list as $result_data) {
+            $result_id    = $result_data['id'];
             $useragent_id = $result_data['useragent_id'];
             $source = $result_data['source'];
             $result = $result_data['result'];
@@ -187,8 +189,8 @@ class grandfather extends css_page
             
             echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
             
-            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, result, modified) VALUES ";
-            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}+', '{$result}', '{$modified}')";
+            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, original_id, result, modified) VALUES ";
+            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}', '{$result_id}', '{$result}', '{$modified}')";
             //print "<td>" . $sql;        
             $db->query($sql);
           }

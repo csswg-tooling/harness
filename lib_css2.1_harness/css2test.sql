@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `results` (
   `testcase_id` int(11) unsigned NOT NULL default '0',
   `useragent_id` int(11) unsigned NOT NULL default '0',
   `source` varchar(16) NULL default '',
+  `original_id` int(11) NULL,
   `result` enum('pass','fail','uncertain','na') NOT NULL default 'pass',
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
