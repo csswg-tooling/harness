@@ -295,6 +295,7 @@ class user_agent extends db_connection
     }
     
     // find engine and possibly browser
+    $mobile = FALSE;
     foreach ($ua_data as $ua_chunk) {
       $comment = '';
       $version = '';
@@ -306,6 +307,9 @@ class user_agent extends db_connection
       }
       else {
         $product = $ua_chunk;
+      }
+      if (0 === stripos($product, 'Mobile')) {
+        $mobile = TRUE;
       }
       if ((0 === stripos($product, 'Amaya')) ||
           (0 === stripos($product, 'AppleWebKit')) ||
@@ -320,20 +324,33 @@ class user_agent extends db_connection
       }
       if ('' == $browser) {
         if ((0 === stripos($product, 'Firefox')) ||
-            (0 === stripos($product, 'Chrome'))) {
+            (0 === stripos($product, 'Chrome')) ||
+            (0 === stripos($product, 'rekonq'))) {
           $browser = $product;
           $browser_version = $version;
         }
-        if (0 === stripos($product, 'Version')) {
-          $browser = 'Safari';
-          $browser_version = $version;
-        }
+      }
+      if (0 === stripos($product, 'Version')) {
+        $browser_version = $version;
+      }
+      if ((0 === stripos($product, 'Midori')) ||
+          (0 === stripos($product, 'Iceweasel'))) {
+        $browser = $product;
+        $browser_version = $version;
       }
     }
     
     // no browser yet, take last product
     if ('' == $browser) {
-      $browser = $product;
+      if ('Mobile' == $product) {
+        $product = 'Safari';
+      }
+      if ($mobile) {
+        $browser = 'Mobile ';
+      }
+      $browser .= $product;
+    }
+    if ('' == $browser_version) {
       $browser_version = $version;
     }
     
@@ -370,7 +387,7 @@ class user_agent extends db_connection
   function update()
   {
     $ua = $this->lookup($this->get_ua_string());
-
+    
     if($ua['id'] == null) {
       $sql  = "INSERT INTO useragents ";
       $sql .= "(useragent, engine, engine_version, browser, browser_version, platform) ";
@@ -385,10 +402,37 @@ class user_agent extends db_connection
       $r = $this->query($sql);
       $ua = $this->lookup($ua['useragent']);
     }
-
+    
     $this->m_info = $ua;
   }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  reparse()
+  //
+  //  Reset in about the user agent in the database.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function reparse()
+  {
+    $id = $this->get_id();
+    if (0 < $id) {
+      $ua = $this->parse_ua_string($this->get_ua_string());
+      $ua['id'] = $id;
 
+      $sql  = "UPDATE useragents SET ";
+      $sql .= "engine='{$ua['engine']}', ";
+      $sql .= "engine_version='{$ua['engine_version']}', ";
+      $sql .= "browser='{$ua['browser']}', ";
+      $sql .= "browser_version='{$ua['browser_version']}', ";
+      $sql .= "platform='{$ua['platform']}' ";
+      $sql .= "WHERE id='{$id}' ";
+      $r = $this->query($sql);
+
+      $this->m_info = $ua;
+    }
+  }
+  
   ////////////////////////////////////////////////////////////////////////////
   //
   //  write
