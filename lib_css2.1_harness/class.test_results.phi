@@ -198,13 +198,13 @@ class test_results extends db_connection
               }
             }
             if (1 < $pass_count) {
-              echo "<tr class='pass'>";
+              echo $indent . "  <tr class='pass'>";
               $testcase_pass_count++;
             }
             else {
-              echo "<tr>";
+              echo $indent . "  <tr>";
             }
-            echo "{$row}</tr>";
+            echo "{$row}</tr>\n";
           }
           unset ($engine_pass);
           unset ($engine_fail);
