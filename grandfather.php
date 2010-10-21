@@ -109,7 +109,7 @@ class grandfather extends css_page
 
     // update results 
     echo "<table>";
-    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_HTML_RC2' AND grandfather='1' LIMIT 3000";
+    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_HTML_RC2' AND grandfather='1' LIMIT 1000";
     $r = $db->query($sql);
     $db_list = $r->fetch_table(); 
     foreach ($db_list as $db_data) {
@@ -157,7 +157,7 @@ class grandfather extends css_page
     
     // update results 
     echo "<table>";
-    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_XHTML_RC2' AND grandfather='1' LIMIT 3000";
+    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='CSS21_XHTML_RC2' AND grandfather='1' LIMIT 1000";
     $r = $db->query($sql);
     $db_list = $r->fetch_table(); 
     foreach ($db_list as $db_data) {
