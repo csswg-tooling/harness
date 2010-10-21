@@ -1,0 +1,155 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//
+//  This work is distributed under the W3C¬ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+//
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.test_result_details.phi
+//
+//  Provides results reporting functionality as a proxy to that provided to the
+//  Mobile Test Harness [1].
+//
+//  Currently, this file represents a place holder for a work in progress.
+//  Additional requested functionality, including various results concolidations
+//  and cross tabulations, are in active development.
+//
+// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("./lib_test_harness/class.db_connection.phi");
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class test_result_details
+//
+//  test_results is a concrete db_connection taylored for storing the 
+//  testing results tables.
+//
+////////////////////////////////////////////////////////////////////////////////
+class test_result_details extends db_connection
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_data;
+  var $m_test_suite;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function test_result_details
+    ( $test_suite
+    , $test_select
+    , $select_type
+    , $engine
+    , $engine_version
+    , $platform
+    , $grouping
+    , $modified
+    , $order
+    )
+  {
+    parent::db_connection();
+    
+    $this->m_test_suite = $test_suite;
+
+    $sql  = "SELECT Testcase, Result, ";
+    $sql .= "Engine, Engine_Version, ";
+    $sql .= "Browser, Browser_Version, ";
+    $sql .= "Platform, ";
+    $sql .= "results.modified AS Date, Source ";
+    $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
+    $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id) ";
+    $sql .= "WHERE testcases.testsuite LIKE '{$test_suite}' ";
+    $sql .= "AND testcases.active='1' ";
+    
+    if ($test_select) {
+      if ($select_type == 1) {
+        $sql .= "AND testcases.testgroup = '{$test_select}' ";
+      } elseif ($select_type == 2) {
+        $sql .= "AND testcases.testcase = '{$test_select}' ";
+      }
+    }
+    
+    if ($modified) {
+      $sql .= "AND results.modified <= '{$modified}' ";
+    }  
+     
+    if($engine) {
+      $sql .= "AND Engine='{$engine}' ";
+      if ($engine_version) {
+        $sql .= "AND Engine_Eersion = '{$engine_version}' ";
+      }
+      if ($platform) {
+        $sql .= "AND Platform = '{$platform}' ";
+      }
+    }
+    $sql .= "ORDER BY Testcase, Result, Engine, Engine_Version, Browser, Browser_Version, Date ";
+
+//print $sql;
+    $r = $this->query($sql);
+
+    if ($r->is_false()) {
+      $msg = 'Unable to obtain results.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    $this->m_data = $r->fetch_table();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write
+  //
+  //  Write HTML for a table displaying the results data.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write($indent)
+  {
+
+    if (!($this->m_data)) {
+      echo $indent . "<p>No results entered matching this query.</p>\n";
+    } else {
+      echo $indent . "<table>\n";
+      echo $indent . "  <tr>\n";
+      foreach($this->m_data[0] as $key => $value) {
+        echo $indent . "    <th>{$key}</th>\n";
+      }
+      echo $indent . "  </tr>\n";
+
+      foreach($this->m_data as $result) {
+
+        echo $indent . "  <tr class='{$result['Result']}'>\n";
+        foreach($result as $key => $value) {
+          if ('Testcase' == $key) {
+            echo $indent . "    <td><a href='testcase?s={$this->m_test_suite}&c={$value}'>{$value}</a></td>\n";
+
+          }
+          else {
+            echo $indent . "    <td>{$value}</td>\n";
+          }
+        }
+        echo $indent . "  </tr>\n";
+      }
+      echo $indent . "</table>\n";
+ 
+    }
+  }
+}
+
+?>

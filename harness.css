@@ -72,9 +72,17 @@ tr.pass,
 td.pass {
   background-color: #8F8;
 }
+tr.fail,
 td.fail {
   background-color: #F66;
 }
+tr.uncertain,
 td.uncertain {
   background-color: yellow;
+}
+tr.invalid {
+  background-color: #AAA;
+}
+td.pass, td.fail, td.uncertain {
+  text-align: right;
 }
