@@ -203,6 +203,7 @@ class test_case extends db_connection
     $sql  = "SELECT COUNT(*) AS count ";
     $sql .= "FROM testcases ";
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.active='1' ";
     $sql .= "LIMIT 1";
     
     $r = $this->query($sql);
@@ -254,7 +255,9 @@ class test_case extends db_connection
     $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
     $sql .= "LEFT JOIN testgroups ";
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='" . $test_suite . "') AS t1 ";
+    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.active='1' ";
+    $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testcase_id, COUNT(*) AS count ";
     $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id=useragents.id) ";
@@ -280,7 +283,9 @@ class test_case extends db_connection
     $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
     $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup ";
     $sql .= "LEFT JOIN results ON testcases.id=results.testcase_id) ";
-    $sql .= "WHERE (testcases.testsuite='" . $test_suite . "') GROUP BY id ";
+    $sql .= "WHERE (testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "AND testcases.active='1' ";
+    $sql .= ") GROUP BY id ";
     if($order == 1) {
       $sql .= "ORDER BY count, id ";
     }
@@ -314,6 +319,7 @@ class test_case extends db_connection
     $sql .= "FROM testcases ";
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
     $sql .= "AND testcases.testgroup='" . $test_group . "' ";
+    $sql .= "AND testcases.active='1' ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
@@ -367,6 +373,7 @@ class test_case extends db_connection
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
     $sql .= "AND testcases.testgroup='" . $test_group . "' ";
+    $sql .= "AND testcases.active='1' ";
     $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testcase_id, COUNT(*) AS count ";
@@ -410,6 +417,7 @@ class test_case extends db_connection
     $sql .= "FROM testcases ";
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
     $sql .= "AND testcases.testcase='" . $test_case . "' ";
+    $sql .= "AND testcases.active='1' ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
@@ -452,6 +460,7 @@ class test_case extends db_connection
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
     $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
     $sql .= "AND testcases.testcase='" . $test_case . "' ";
+    $sql .= "AND testcases.active='1' ";
     $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testcase_id, COUNT(*) AS count ";

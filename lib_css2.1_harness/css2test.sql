@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS `testcases` (
   `flags` set('ahem','dom','font','history','HTMLonly','image','interact','invalid','namespace','nonHTML','may','paged','should','scroll','svg','96dpi') default NULL,
   `assertion` varchar(255) default NULL,
   `testgroup` varchar(32) default NULL,
-  `grandfather` tinyint(1) default '0',
+  `grandfather` tinyint(1) NOT NULL default '0',
+  `active` tinyint(1) NOT NULL DEFAULT '1',
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
