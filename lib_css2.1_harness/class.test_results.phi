@@ -53,6 +53,7 @@ class test_results extends db_connection
   var $m_testcase_may_count;
   var $m_testcase_may_pass_count;
   var $m_testcase_invalid_count;
+  var $m_testcase_needed_count;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -215,6 +216,11 @@ class test_results extends db_connection
         $this->m_testcase_pass_count++;
       }
     }
+    else {
+      if ((! $test_invalid) && (! $may)) {
+        $this->m_testcase_needed_count++;
+      }
+    }
     return "  <tr class='{$class}'>{$row}</tr>\n";
   }
 
@@ -275,6 +281,7 @@ class test_results extends db_connection
       echo $indent . "<p>{$this->m_testcase_pass_count} of {$this->m_testcase_count} required tests meet exit criteria.</p>\n";
       echo $indent . "<p>{$this->m_testcase_may_pass_count} of {$this->m_testcase_may_count} optional tests meet exit criteria.</p>\n";
       echo $indent . "<p>{$this->m_testcase_invalid_count} tests reported as invalid.</p>\n";
+      echo $indent . "<p>{$this->m_testcase_needed_count} required tests are considered valid and do not meet exit criteria.</p>\n";
 
 /*
       echo $indent . '<table>' . "\n";
