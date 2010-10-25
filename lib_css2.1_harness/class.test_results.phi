@@ -47,6 +47,12 @@ class test_results extends db_connection
   var $m_engines;
   var $m_data;
   var $m_test_suite;
+  
+  var $m_testcase_count;
+  var $m_testcase_pass_count;
+  var $m_testcase_may_count;
+  var $m_testcase_may_pass_count;
+  var $m_testcase_invalid_count;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -85,16 +91,20 @@ class test_results extends db_connection
       }
     }
 
-    $sql  = "SELECT testcase, engine, SUM(pass) as pass, ";
+    $sql  = "SELECT testcase, engine, flags, SUM(pass) as pass, ";
     $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
-    $sql .= "COUNT(pass + fail + uncertain) as count FROM (";
+    $sql .= "SUM(invalid) as invalid, SUM(na) as na, ";
+    $sql .= "COUNT(pass + fail + uncertain + invalid + na) as count FROM (";
     
     $sql .= "SELECT testcases.title, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, results.useragent_id, ";
-    $sql .= "results.modified, useragents.engine, testcases.active, result='pass' AS pass, ";
-    $sql .= "result='fail' AS fail, result='uncertain' AS uncertain ";
+    $sql .= "results.modified, useragents.engine, testcases.active, ";
+    $sql .= "testcases.flags, result='pass' AS pass, ";
+    $sql .= "result='fail' AS fail, result='uncertain' AS uncertain, ";
+    $sql .= "result='invalid' AS invalid, result='na' AS na ";
     $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
     $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id)) as t ";
+    
     $sql .= "WHERE t.testsuite LIKE '{$test_suite}' ";
     $sql .= "AND t.active='1' ";
     
@@ -141,6 +151,72 @@ class test_results extends db_connection
 
     $this->m_data = $r->fetch_table();
   }
+  
+  function _generate_row($testcase, $engine_results, $may)
+  {
+    $row = "<td><a href='details?s={$this->m_test_suite}&c={$testcase}'>{$testcase}</a></td>";
+
+    $test_invalid = FALSE;
+    $pass_count = 0;
+    foreach ($this->m_engines as $engine) {
+      if (array_key_exists($engine, $engine_results['count'])) {
+        $pass      = $engine_results['pass'][$engine];
+        $fail      = $engine_results['fail'][$engine];
+        $uncertain = $engine_results['uncertain'][$engine];
+        $invalid   = $engine_results['invalid'][$engine];
+        $na        = $engine_results['na'][$engine];
+        $class = '';
+        if (0 < $pass) {
+          $pass_count++;
+          $class .= 'pass ';
+        }
+        if (0 < $fail) {
+          $class .= 'fail ';
+        }
+        if (0 < $uncertain) {
+          $class .= 'uncertain ';
+        }
+        if (0 < $invalid) {
+          $class .= 'invalid ';
+          $test_invalid = TRUE;
+        }
+        if (0 < $na) {
+          $class .= 'na ';
+        }
+        $row .= "<td class='{$class}'>";
+        $row .= "<a href='details?s={$this->m_test_suite}&c={$testcase}&e={$engine}'>";
+        $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
+        $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
+        $row .= ((0 < $uncertain) ? $uncertain : '.');
+        $row .= "</a>";
+        $row .= "</td>";
+      }
+      else {
+        $row .= "<td>&nbsp;</td>";
+      }
+    }
+    $class = '';
+    if ($test_invalid) {
+      $class = 'invalid ';
+      $this->m_testcase_invalid_count++;
+    }
+    if ($may) {
+      $class .= 'may ';
+      $this->m_testcase_may_count++;
+    }
+    else {
+      $this->m_testcase_count++;
+    }
+    if (1 < $pass_count) {
+      $class .= 'pass';
+      if ($may) {
+        $this->m_testcase_may_pass_count++;
+      } else {
+        $this->m_testcase_pass_count++;
+      }
+    }
+    return "  <tr class='{$class}'>{$row}</tr>\n";
+  }
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -164,101 +240,41 @@ class test_results extends db_connection
       }
       echo $indent . "  </tr>\n";
       
-      $testcase_count = 0;
-      $testcase_pass_count = 0;
+      $this->m_testcase_count = 0;
+      $this->m_testcase_pass_count = 0;
+      $this->m_testcase_may_count = 0;
+      $this->m_testcase_may_pass_count = 0;
+      $this->m_testcase_invalid_count = 0;
+
       $last_testcase = '';
+      $may = FALSE;
       foreach ($this->m_data as $result) {
         $testcase = $result['testcase'];
+        $flags    = $result['flags'];
+        $may = (FALSE !== stripos($flags, 'may'));
         if ($testcase != $last_testcase) {
           if ($last_testcase) {
-            foreach ($this->m_engines as $engine) {
-              if (array_key_exists($engine, $engine_count)) {
-                $pass = $engine_pass[$engine];
-                $fail = $engine_fail[$engine];
-                $uncertain = $engine_uncertain[$engine];
-                if (0 < $pass) {
-                  $pass_count++;
-                  $row .= "<td class='pass'>";
-                }
-                else if (0 < $fail) {
-                  $row .= "<td class='fail'>";
-                }
-                else {
-                  $row .= "<td class='uncertain'>";
-                }
-                $row .= "<a href='details?s={$this->m_test_suite}&c={$last_testcase}&e={$engine}'>";
-                $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
-                $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
-                $row .= ((0 < $uncertain) ? $uncertain : '.');
-                $row .= "</a>";
-                $row .= "</td>";
-              }
-              else {
-                $row .= "<td>&nbsp;</td>";
-              }
-            }
-            if (1 < $pass_count) {
-              echo $indent . "  <tr class='pass'>";
-              $testcase_pass_count++;
-            }
-            else {
-              echo $indent . "  <tr>";
-            }
-            echo "{$row}</tr>\n";
+            echo $indent . $this->_generate_row($last_testcase, $engine_results, $may);
           }
-          unset ($engine_pass);
-          unset ($engine_fail);
-          unset ($engine_uncertain);
-          unset ($engine_count);
-          $testcase_count++;
-          $pass_count = 0;
-          $row = "<td><a href='details?s={$this->m_test_suite}&c={$testcase}'>{$testcase}</a></td>";
+          unset ($engine_results);
         }
-        $engine_pass[$result['engine']] = $result['pass'];
-        $engine_fail[$result['engine']] = $result['fail'];
-        $engine_uncertain[$result['engine']] = $result['uncertain'];
-        $engine_count[$result['engine']] = $result['count'];
+        $engine = $result['engine'];
+        $engine_results['pass'][$engine]      = $result['pass'];
+        $engine_results['fail'][$engine]      = $result['fail'];
+        $engine_results['uncertain'][$engine] = $result['uncertain'];
+        $engine_results['invalid'][$engine]   = $result['invalid'];
+        $engine_results['na'][$engine]        = $result['na'];
+        $engine_results['count'][$engine]     = $result['count'];
         
         $last_testcase = $testcase;
       }
       
-      foreach ($this->m_engines as $engine) {
-        if (array_key_exists($engine, $engine_count)) {
-          $pass = $engine_pass[$engine];
-          $fail = $engine_fail[$engine];
-          $uncertain = $engine_uncertain[$engine];
-          if (0 < $pass) {
-            $pass_count++;
-            $row .= "<td class='pass'>";
-          }
-          else if (0 < $fail) {
-            $row .= "<td class='fail'>";
-          }
-          else {
-            $row .= "<td class='uncertain'>";
-          }
-          $row .= "<a href='details?s={$this->m_test_suite}&c={$testcase}&e={$engine}'>";
-          $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
-          $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
-          $row .= ((0 < $uncertain) ? $uncertain : '.');
-          $row .= "</a>";
-          $row .= "</td>";
-        }
-        else {
-          $row .= "<td>&nbsp;</td>";
-        }
-      }
-      if (1 < $pass_count) {
-        echo $indent . "  <tr class='pass'>";
-        $testcase_pass_count++;
-      }
-      else {
-        echo $indent . "  <tr>";
-      }
-      echo "{$row}</tr>\n";
+      echo $indent . $this->_generate_row($testcase, $engine_results, $may);
       
       echo $indent . "</table>\n";
-      echo $indent . "<p>{$testcase_pass_count} of {$testcase_count} tests meet exit criteria.</p>\n";
+      echo $indent . "<p>{$this->m_testcase_pass_count} of {$this->m_testcase_count} required tests meet exit criteria.</p>\n";
+      echo $indent . "<p>{$this->m_testcase_may_pass_count} of {$this->m_testcase_may_count} optional tests meet exit criteria.</p>\n";
+      echo $indent . "<p>{$this->m_testcase_invalid_count} tests reported as invalid.</p>\n";
 
 /*
       echo $indent . '<table>' . "\n";
