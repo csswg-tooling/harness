@@ -81,7 +81,8 @@ class test_cases extends db_connection
     parent::db_connection();
     
     $sql  = "SELECT * FROM testcases ";
-    $sql .= "WHERE testsuite='$test_suite'";
+    $sql .= "WHERE testsuite='$test_suite' ";
+    $sql .= "AND active='1'";
     
     $r = $this->query($sql);
 

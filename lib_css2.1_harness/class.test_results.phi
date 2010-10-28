@@ -257,7 +257,7 @@ class test_results extends db_connection
       foreach ($this->m_data as $result) {
         $testcase = $result['testcase'];
         $flags    = $result['flags'];
-        $may = (FALSE !== stripos($flags, 'may'));
+        $may = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
         if ($testcase != $last_testcase) {
           if ($last_testcase) {
             echo $indent . $this->_generate_row($last_testcase, $engine_results, $may);

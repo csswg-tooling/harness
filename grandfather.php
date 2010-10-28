@@ -113,7 +113,8 @@ class grandfather extends css_page
         $old_testcase_id = $testcase_list[0]['id'];
         
         $sql  = "SELECT id, useragent_id, source, result, modified FROM results ";
-        $sql .= "WHERE testcase_id='{$old_testcase_id}'";
+        $sql .= "WHERE testcase_id='{$old_testcase_id}' ";
+        $sql .= "AND result!='na'";
         //print "<td>" . $sql;      
         $r = $db->query($sql);
         if (! $r->is_false()) {
@@ -149,8 +150,8 @@ class grandfather extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_content($indent = '') {
 
-    $this->copy_results('CSS21_HTML_RC1', 'CSS21_HTML_RC2');
-    $this->copy_results('CSS21_XHTML_RC1', 'CSS21_XHTML_RC2');
+    $this->copy_results('CSS21_HTML_RC2', 'CSS21_HTML_RC3');
+    $this->copy_results('CSS21_XHTML_RC2', 'CSS21_XHTML_RC3');
 
   }
 }
