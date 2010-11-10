@@ -100,3 +100,9 @@ td.uncertain.invalid {
 td.pass, td.fail, td.uncertain, td.invalid, td.na {
   text-align: right;
 }
+table.legend {
+  margin-bottom: 1em;
+}
+table.legend tr td {
+  text-align: left;
+}

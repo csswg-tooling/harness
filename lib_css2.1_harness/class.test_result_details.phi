@@ -72,7 +72,7 @@ class test_result_details extends db_connection
     $sql .= "Engine, Engine_Version, ";
     $sql .= "Browser, Browser_Version, ";
     $sql .= "Platform, ";
-    $sql .= "results.modified AS Date, Source ";
+    $sql .= "results.modified AS Date, Source, Useragent ";
     $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
     $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id) ";
     $sql .= "WHERE testcases.testsuite LIKE '{$test_suite}' ";

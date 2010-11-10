@@ -33,7 +33,7 @@ require_once("./lib_test_harness/class.db_connection.phi");
 //
 //  class test_results
 //
-//  test_results is a concrete db_connection taylored for storing the 
+//  test_results is a concrete db_connection tailored for storing the 
 //  testing results tables.
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,13 +48,16 @@ class test_results extends db_connection
   var $m_data;
   var $m_test_suite;
   
-  var $m_testcase_count;
-  var $m_testcase_pass_count;
-  var $m_testcase_may_count;
-  var $m_testcase_may_pass_count;
-  var $m_testcase_invalid_count;
-  var $m_testcase_needed_count;
-
+  var $m_engine_count;                // number of engines
+  var $m_testcase_count;              // number of required tests
+  var $m_testcase_pass_count;         // number of required tests with 2 or more passes
+  var $m_testcase_may_count;          // number of optional tests ('may' or 'should')
+  var $m_testcase_may_pass_count;     // number of optional tests with 2 or more passes
+  var $m_testcase_invalid_count;      // number of tests reported as invalid
+  var $m_testcase_needed_count;       // number of required, valid tests that do not have 2 or more passes
+  var $m_testcase_need_more_results;  // number of needed tests that might pass but need more results
+  var $m_testcase_too_many_fails;     // number of needed tests that have fails blocking exit criteria
+    
   ////////////////////////////////////////////////////////////////////////////
   //
   //  Constructor
@@ -91,6 +94,8 @@ class test_results extends db_connection
         $this->m_engines[] = $db_engine['engine'];
       }
     }
+    $this->m_engine_count = count($this->m_engines);
+
 
     $sql  = "SELECT testcase, engine, flags, SUM(pass) as pass, ";
     $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
@@ -159,6 +164,7 @@ class test_results extends db_connection
 
     $test_invalid = FALSE;
     $pass_count = 0;
+    $fail_count = 0;
     foreach ($this->m_engines as $engine) {
       if (array_key_exists($engine, $engine_results['count'])) {
         $pass      = $engine_results['pass'][$engine];
@@ -172,6 +178,7 @@ class test_results extends db_connection
           $class .= 'pass ';
         }
         if (0 < $fail) {
+          $fail_count++;
           $class .= 'fail ';
         }
         if (0 < $uncertain) {
@@ -219,6 +226,14 @@ class test_results extends db_connection
     else {
       if ((! $test_invalid) && (! $may)) {
         $this->m_testcase_needed_count++;
+        if ($fail_count < ($this->m_engine_count - 1)) {
+          $class .= 'uncertain';
+          $this->m_testcase_need_more_results++;
+        }
+        else {
+          $class .= 'fail';
+          $this->m_testcase_too_many_fails++;
+        }
       }
     }
     return "  <tr class='{$class}'>{$row}</tr>\n";
@@ -282,6 +297,34 @@ class test_results extends db_connection
       echo $indent . "<p>{$this->m_testcase_may_pass_count} of {$this->m_testcase_may_count} optional tests meet exit criteria.</p>\n";
       echo $indent . "<p>{$this->m_testcase_invalid_count} tests reported as invalid.</p>\n";
       echo $indent . "<p>{$this->m_testcase_needed_count} required tests are considered valid and do not meet exit criteria.</p>\n";
+      if (0 < $this->m_testcase_needed_count) {
+        echo $indent . "<p>{$this->m_testcase_need_more_results} required tests might pass but lack data.</p>\n";
+        echo $indent . "<p>{$this->m_testcase_too_many_fails} required tests have blocking failures.</p>\n";
+      }
+      else {
+        echo $indent . "<p>Exit criteria have been met.</p>\n";
+      }
+      
+      echo $indent . "<h2>Legend</h2>\n";
+      echo $indent . "<table class='legend'>\n";
+      echo $indent . "  <tr><th>Row color codes</tr>\n";
+      echo $indent . "  <tr class='pass'><td>two or more passes</tr>\n";
+      echo $indent . "  <tr class='fail'><td>blocking failures</tr>\n";
+      echo $indent . "  <tr class='uncertain'><td>not enough results</tr>\n";
+      echo $indent . "  <tr class='invalid'><td>reported as invalid</tr>\n";
+      echo $indent . "  <tr class='may'><td>not passing, but optional</tr>\n";
+      echo $indent . "</table>\n";
+
+      echo $indent . "<table class='legend'>\n";
+      echo $indent . "  <tr><th>Result color codes</tr>\n";
+      echo $indent . "  <tr><td class='pass'>all results pass</tr>\n";
+      echo $indent . "  <tr><td class='pass fail'>pass reported, but also other results</tr>\n";
+      echo $indent . "  <tr><td class='fail'>all results fail</tr>\n";
+      echo $indent . "  <tr><td class='fail uncertain'>fail reported, but also other results</tr>\n";
+      echo $indent . "  <tr><td class='uncertain'>all results uncertain</tr>\n";
+      echo $indent . "  <tr><td class='invalid'>reported as invalid</tr>\n";
+      echo $indent . "  <tr><td># pass / # fail / # uncertian</tr>\n";
+      echo $indent . "</table>\n";
 
 /*
       echo $indent . '<table>' . "\n";
