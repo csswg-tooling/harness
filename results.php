@@ -144,10 +144,10 @@ class results_page extends css_page
       $type = 0;
     }
 
-    if(isset($_GET['o'])) {
-      $order = $_GET['o'];
+    if(isset($_GET['f'])) {
+      $filter = $_GET['f'];
     } else {
-      $order = 0;
+      $filter = 0;
     }
 
     if(isset($_GET['m'])) {
@@ -189,7 +189,7 @@ class results_page extends css_page
       , $platform
       , $grouping
       , $modified
-      , $order
+      , $filter
       );
 
   }

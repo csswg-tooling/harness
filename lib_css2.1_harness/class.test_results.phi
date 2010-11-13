@@ -47,6 +47,7 @@ class test_results extends db_connection
   var $m_engines;
   var $m_data;
   var $m_test_suite;
+  var $m_filter;                      // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=may
   
   var $m_engine_count;                // number of engines
   var $m_testcase_count;              // number of required tests
@@ -57,6 +58,7 @@ class test_results extends db_connection
   var $m_testcase_needed_count;       // number of required, valid tests that do not have 2 or more passes
   var $m_testcase_need_more_results;  // number of needed tests that might pass but need more results
   var $m_testcase_too_many_fails;     // number of needed tests that have fails blocking exit criteria
+  var $m_engine_needed_count;         // number of needed results per engine
     
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -72,12 +74,13 @@ class test_results extends db_connection
     , $platform
     , $grouping
     , $modified
-    , $order
+    , $filter
     )
   {
     parent::db_connection();
     
     $this->m_test_suite = $test_suite;
+    $this->m_filter = $filter;
 /*    
     $sql  = "SELECT testcase as Test, useragent as UserAgent, ";
     $sql .= "SUM(result='pass') as Pass, SUM(result='fail') as Fail, ";
@@ -92,6 +95,7 @@ class test_results extends db_connection
       $db_engines = $r->fetch_table();
       foreach ($db_engines as $db_engine) {
         $this->m_engines[] = $db_engine['engine'];
+        $this->m_engine_needed_count[$db_engine['engine']] = 0;
       }
     }
     $this->m_engine_count = count($this->m_engines);
@@ -166,6 +170,7 @@ class test_results extends db_connection
     $pass_count = 0;
     $fail_count = 0;
     foreach ($this->m_engines as $engine) {
+      $engine_missing[$engine] = true;
       if (array_key_exists($engine, $engine_results['count'])) {
         $pass      = $engine_results['pass'][$engine];
         $fail      = $engine_results['fail'][$engine];
@@ -175,10 +180,12 @@ class test_results extends db_connection
         $class = '';
         if (0 < $pass) {
           $pass_count++;
+          $engine_missing[$engine] = false;
           $class .= 'pass ';
         }
         if (0 < $fail) {
           $fail_count++;
+          $engine_missing[$engine] = false;
           $class .= 'fail ';
         }
         if (0 < $uncertain) {
@@ -203,13 +210,16 @@ class test_results extends db_connection
         $row .= "<td>&nbsp;</td>";
       }
     }
+    $display = true;
     $class = '';
     if ($test_invalid) {
       $class = 'invalid ';
+      $display = (($this->m_filter & 0x8) == 0);
       $this->m_testcase_invalid_count++;
     }
     if ($may) {
       $class .= 'may ';
+      $display = $display & (($this->m_filter & 0x10) == 0);
       $this->m_testcase_may_count++;
     }
     else {
@@ -217,6 +227,7 @@ class test_results extends db_connection
     }
     if (1 < $pass_count) {
       $class .= 'pass';
+      $display = $display & (($this->m_filter & 0x01) == 0);
       if ($may) {
         $this->m_testcase_may_pass_count++;
       } else {
@@ -228,15 +239,25 @@ class test_results extends db_connection
         $this->m_testcase_needed_count++;
         if ($fail_count < ($this->m_engine_count - 1)) {
           $class .= 'uncertain';
+          $display = $display & (($this->m_filter & 0x04) == 0);
           $this->m_testcase_need_more_results++;
+          foreach ($engine_missing as $engine => $missing) {
+            if ($missing) {
+              $this->m_engine_needed_count[$engine]++;
+            }
+          }
         }
         else {
           $class .= 'fail';
+          $display = $display & (($this->m_filter & 0x02) == 0);
           $this->m_testcase_too_many_fails++;
         }
       }
     }
-    return "  <tr class='{$class}'>{$row}</tr>\n";
+    if ($display) {
+      return "  <tr class='{$class}'>{$row}</tr>\n";
+    }
+    return "";
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -266,7 +287,10 @@ class test_results extends db_connection
       $this->m_testcase_may_count = 0;
       $this->m_testcase_may_pass_count = 0;
       $this->m_testcase_invalid_count = 0;
-
+      $this->m_testcase_needed_count = 0;
+      $this->m_testcase_need_more_results = 0;
+      $this->m_testcase_too_many_fails = 0;
+      
       $last_testcase = '';
       $may = FALSE;
       foreach ($this->m_data as $result) {
@@ -298,8 +322,18 @@ class test_results extends db_connection
       echo $indent . "<p>{$this->m_testcase_invalid_count} tests reported as invalid.</p>\n";
       echo $indent . "<p>{$this->m_testcase_needed_count} required tests are considered valid and do not meet exit criteria.</p>\n";
       if (0 < $this->m_testcase_needed_count) {
-        echo $indent . "<p>{$this->m_testcase_need_more_results} required tests might pass but lack data.</p>\n";
         echo $indent . "<p>{$this->m_testcase_too_many_fails} required tests have blocking failures.</p>\n";
+        echo $indent . "<p>{$this->m_testcase_need_more_results} required tests might pass but lack data.</p>\n";
+        if (0 < $this->m_testcase_need_more_results) {
+          echo $indent . "<p>Additional results needed from:</p>\n";
+          echo $indent . "<ul>\n";
+          foreach ($this->m_engine_needed_count as $engine => $count) {
+            if (0 < $count) {
+              echo $indent . "  <li>{$engine}: $count</li>\n";
+            }
+          }
+          echo $indent . "</ul>\n";
+        }
       }
       else {
         echo $indent . "<p>Exit criteria have been met.</p>\n";

@@ -143,12 +143,14 @@ class review_page extends css_page
     echo $this->m_test_suite->get_name();
     echo '" />';
     echo $indent . '  The full test suite '."\n";
+/*    
     echo $indent . '  <select name="o" style="width: 15em">'."\n";
     echo $indent . '    <option selected="selected" value="0">';
     echo 'in order</option>'."\n";
     echo $indent . '    <option value="1">with least tested cases first';
     echo '</option>'."\n";
     echo $indent . '  </select>'."\n";
+*/
     echo $indent . '  <input type="submit" value="Go" />'."\n";
     echo $indent . '  </form>'."\n";
     
@@ -161,12 +163,14 @@ class review_page extends css_page
     echo '" />';
     echo $indent . '  A group of test cases: '."\n";
     $this->m_test_groups->write($indent);
+/*    
     echo $indent . '  <select name="o" style="width: 15em">'."\n";
     echo $indent . '    <option selected="selected" value="0">';
     echo 'in order</option>'."\n";
     echo $indent . '    <option value="1">with least tested cases ';
     echo 'first</option>'."\n";
     echo $indent . '  </select>'."\n";
+*/
     echo $indent . '  <input type="submit" value="Go" />'."\n";
     echo $indent . '  </form>'."\n";
     
