@@ -36,12 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_test_harness/class.db_connection.phi");
-//require_once("./lib_css2.1_harness/class.test_suite.phi");
-//require_once("./lib_css2.1_harness/class.user_agent.phi");
-//require_once("./lib_css2.1_harness/class.test_groups.phi");
-//require_once("./lib_css2.1_harness/class.test_cases.phi");
+require_once("lib_test_harness/class.db_connection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -50,6 +45,8 @@ require_once("./lib_test_harness/class.db_connection.phi");
 //  This class regenerates the testsequence table, maintaining an ordering 
 //  of testcases per testsuite, per engine in order of least number of
 //  results per testcase
+//
+//  This is meant to be run from by a periodic cron job or on the command line
 //
 ////////////////////////////////////////////////////////////////////////////////
 class resequence extends db_connection
@@ -93,9 +90,7 @@ class resequence extends db_connection
   
   ////////////////////////////////////////////////////////////////////////////
   //
-  //  Copy test results from one suite to another.
-  //
-  //  id of source result is preserved in original_id
+  //  Build or update testsequence table based on test result count per engine
   //
   ////////////////////////////////////////////////////////////////////////////
   function rebuild()
