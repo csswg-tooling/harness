@@ -98,3 +98,16 @@ CREATE TABLE IF NOT EXISTS `useragents` (
   `platform` varchar(32) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ;
+
+-- --------------------------------------------------------
+
+-- -- Table structure for table `testsequence`
+-- 
+CREATE TABLE `testsequence` (
+ `engine` varchar(16) NOT NULL default '',
+ `testcase_id` int(11) NOT NULL,
+ `sequence` int(11) NOT NULL,
+ PRIMARY KEY  (`engine`,`testcase_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
