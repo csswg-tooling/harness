@@ -244,7 +244,7 @@ class test_case extends db_connection
       $rank = 0;
     }
 
-/*  Select tet case ordered by result count per engine, this is slow
+/*  Select test case ordered by result count per engine, this is slow
     $sql  = "SELECT t1.*, count FROM (";
     $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
@@ -273,21 +273,23 @@ class test_case extends db_connection
     $sql .= "LIMIT " . $rank . ", 1";
 */
     
-    // Select case ordered by total result count, fast but not as good
+    // Select case ordered by sequence table
     $sql  = "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle, ";
-    $sql .= "COUNT(results.result) AS count ";
+    $sql .= "testsuites.title AS suitetitle ";
     $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
     $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup ";
-    $sql .= "LEFT JOIN results ON testcases.id=results.testcase_id) ";
+    $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id) ";
     $sql .= "WHERE (testcases.testsuite='" . $test_suite . "' ";
+    if (1 == $order) {
+      $sql .= "AND testsequence.engine='" . $user_agent->get_engine() . "' ";
+    }
     $sql .= "AND testcases.active='1' ";
     $sql .= ") GROUP BY id ";
     if($order == 1) {
-      $sql .= "ORDER BY count, id ";
+      $sql .= "ORDER BY sequence, id ";
     }
     $sql .= "LIMIT " . $rank . ", 1";
 
