@@ -68,7 +68,7 @@ class resequence extends db_connection
   {
     parent::db_connection();
 
-    $sql = "SELECT DISTINCT `engine` FROM `useragents` ORDER BY `engine`";
+    $sql = "SELECT DISTINCT `engine` FROM `useragents` WHERE `engine`!='' ORDER BY `engine`";
     $r = $this->query($sql);
     if (! $r->is_false()) {
       $db_engines = $r->fetch_table();

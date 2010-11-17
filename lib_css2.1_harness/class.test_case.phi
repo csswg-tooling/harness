@@ -243,6 +243,15 @@ class test_case extends db_connection
     if($rank < 0) {
       $rank = 0;
     }
+    
+    $ua_engine = $user_agent->get_engine();
+    if (1 == $order) {  // if current engine isn't sequenced, use normal ordering
+      $sql  = "SELECT * FROM `testsequence` WHERE `engine`='{$ua_engine}' LIMIT 1, 1";
+      $r = $this->query($sql);
+      if ($r->is_false() || (0 == $r->num_rows())) {
+        $order = 0;
+      }
+    }
 
 /*  Select test case ordered by result count per engine, this is slow
     $sql  = "SELECT t1.*, count FROM (";
@@ -255,22 +264,22 @@ class test_case extends db_connection
     $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
     $sql .= "LEFT JOIN testgroups ";
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
+    $sql .= "WHERE testcases.testsuite='{$test_suite}' ";
     $sql .= "AND testcases.active='1' ";
     $sql .= ") AS t1 ";
     $sql .= "LEFT JOIN (";
     $sql .= "SELECT testcase_id, COUNT(*) AS count ";
     $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id=useragents.id) ";
-    $sql .= "WHERE engine='" . $user_agent->get_engine() . "' ";
+    $sql .= "WHERE engine='{$ua_engine}' ";
     if($modified) {
-      $sql .= "AND modified <= '" . $modified . "' ";
+      $sql .= "AND modified <= '{$modified}' ";
     }
     $sql .= "GROUP BY testcase_id) AS t2 ";
     $sql .= "ON t1.id=t2.testcase_id ";
-    if($order == 1) {
+    if(1 == $order) {
       $sql .= "ORDER BY count, id ";
     }
-    $sql .= "LIMIT " . $rank . ", 1";
+    $sql .= "LIMIT {$rank}, 1";
 */
     
     // Select case ordered by sequence table
@@ -280,18 +289,23 @@ class test_case extends db_connection
     $sql .= "testgroups.title AS grouptitle, ";
     $sql .= "testsuites.title AS suitetitle ";
     $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
-    $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup ";
-    $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id) ";
-    $sql .= "WHERE (testcases.testsuite='" . $test_suite . "' ";
     if (1 == $order) {
-      $sql .= "AND testsequence.engine='" . $user_agent->get_engine() . "' ";
+      $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id ";
+    }
+    $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup) ";
+    $sql .= "WHERE (testcases.testsuite='{$test_suite}' ";
+    if (1 == $order) {
+      $sql .= "AND testsequence.engine='{$ua_engine}' ";
     }
     $sql .= "AND testcases.active='1' ";
     $sql .= ") GROUP BY id ";
-    if($order == 1) {
+    if(1 == $order) {
       $sql .= "ORDER BY sequence, id ";
     }
-    $sql .= "LIMIT " . $rank . ", 1";
+    else {
+      $sql .= "ORDER BY id ";
+    }
+    $sql .= "LIMIT {$rank}, 1";
 
     $r = $this->query($sql);
 

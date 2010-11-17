@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `results` (
   PRIMARY KEY  (`id`)
   KEY `useragent_id` (`useragent_id`),
   KEY `testcase_id` (`testcase_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
 
 -- --------------------------------------------------------
 
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS `testcases` (
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `description` longtext,
   PRIMARY KEY  (`testsuite`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
