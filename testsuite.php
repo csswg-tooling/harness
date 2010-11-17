@@ -1,13 +1,13 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2007 World Wide Web Consortium, 
+//  Copyright Â© 2007 World Wide Web Consortium, 
 //  (Massachusetts Institute of Technology, European Research 
 //  Consortium for Informatics and Mathematics, Keio 
 //  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -147,9 +147,9 @@ class testsuite_page extends css_page
 			<p>The <?php echo $this->m_test_suite->get_title() ?> test suite contains <?php echo $this->m_test_cases->get_count() ?> test cases.
 			You can stop running tests at any time without causing trouble.
 
-                        <!--  You can choose to conduct:</p>
+      <p>You can choose to conduct:</p>
 			<ul>
-				<li> -->
+				<li>
 					<form action=testcase method=get><strong>
 						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">
 						<input type=hidden name=u value="<?php echo $this->m_user_agent->get_id() ?>">
@@ -160,7 +160,6 @@ class testsuite_page extends css_page
 						</select>
 						<input type=submit value="Start"></strong>
 					</form>
-			<!--
 				</li>
 				<li>
 					<form action=testcase method=get>
@@ -171,7 +170,7 @@ class testsuite_page extends css_page
 							<option selected value=1>with least tested cases first</option>
 							<option value=0>in order</option>
 						</select>
-						<input type=submit value="Go">
+						<input type=submit value="Start">
 					</form>
 				</li>
 				<li>
@@ -179,10 +178,10 @@ class testsuite_page extends css_page
 						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">
 						<input type=hidden name=u value="<?php echo $this->m_user_agent->get_id() ?>">
 						A single test case: <?php echo $this->m_test_cases->write($indent) ?>
-						<input type=submit value="Go">
+						<input type=submit value="Start">
 					</form>
 				</li>
-			</ul> -->
+			</ul>
 			<p><strong>Note:</strong> The harness adds automatically in each test case
 				the number of remaining test cases and a form to submit results; these
 				additions are not part of the original test cases, and their influence
