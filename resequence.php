@@ -126,46 +126,19 @@ class resequence extends db_connection
           $count = $engine_count;
         }
         else {
-          if ($optional) {
-            if ($pass_count < 2) {
-              if (0 < $engine_count) {
-                $count = -3;
-              }
-              else {
-                $count = -4;
-              }
-            }
-            else {
-              if (0 < $engine_count) {
-                $count = -1;
-              }
-              else {
-                $count = -2;
-              }
-            }
+          if ($pass_count < 2) {
+            $count -= 4;
           }
-          else {
-            if ($pass_count < 2) {
-              if (0 < $engine_count) {
-                $count = -7;
-              }
-              else {
-                $count = -8;
-              }
-            }
-            else {
-              if (0 < $engine_count) {
-                $count = -5;
-              }
-              else {
-                $count = -6;
-              }
-            }
+          if (false == $optional) {
+            $count -= 2;
+          }
+          if (0 == $engine_count) {
+            $count -= 1;
           }
         }
       }
     
-      $this->m_counts[$engine][$testcase_id] = ($count + 10) + ($testcase_id / 1000000);
+      $this->m_counts[$engine][$testcase_id] = ($count + 16) + ($testcase_id / 1000000);
     }
   }
   
@@ -174,16 +147,16 @@ class resequence extends db_connection
   //  Build or update testsequence table based on test result count per engine
   //
   //  Sequence is:
-  //    1) required tests with no results for engine and 0 or 1 passes for other engines    (-8)
-  //    2) required tests with no passes for engine and 0 or 1 passes for other engines     (-7)
-  //    3) required tests with no results for engine and 2 or more passes for other engines (-6)
-  //    4) required tests with no passes for engine and 2 or more passes for other engines  (-5)
-  //    5) optional tests with no results for engine and 0 or 1 passes for other engines    (-4)
-  //    6) optional tests with no passes for engine and 0 or 1 passes for other engines     (-3)
-  //    7) optional tests with no results for engine and 2 or more passes for other engines (-2)
-  //    8) optional tests with no passes for engine and 2 or more passes for other engines  (-1)
-  //    9) tests with pass results in order of pass count
-  //    10) invalid tests                                                                   (+1000000)
+  //    1) required tests with no results for engine and 0 or 1 passes for other engines    (-7)
+  //    2) required tests with no passes for engine and 0 or 1 passes for other engines     (-6)
+  //    3) optional tests with no results for engine and 0 or 1 passes for other engines    (-5)
+  //    4) optional tests with no passes for engine and 0 or 1 passes for other engines     (-4)
+  //    5) required tests with no results for engine and 2 or more passes for other engines (-3)
+  //    6) required tests with no passes for engine and 2 or more passes for other engines  (-2)
+  //    7) optional tests with no results for engine and 2 or more passes for other engines (-1)
+  //    8) optional tests with no passes for engine and 2 or more passes for other engines  ( 0)
+  //    9) tests with pass results                                                          (count)                        
+  //    10) invalid tests                                                                   (count+1000000)
   //
   ////////////////////////////////////////////////////////////////////////////
   function rebuild()

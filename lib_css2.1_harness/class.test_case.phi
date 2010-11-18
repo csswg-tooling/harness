@@ -246,7 +246,11 @@ class test_case extends db_connection
     
     $engine = $user_agent->get_engine();
     if (1 == $order) {  // if current engine isn't sequenced, use normal ordering
-      $sql  = "SELECT * FROM `testsequence` WHERE `engine`='{$engine}' LIMIT 1, 1";
+      $sql  = "SELECT * FROM `testsequence` INNER JOIN `testcases` ";
+      $sql .= "ON testsequence.testcase_id=testcases.id ";
+      $sql .= "WHERE `engine`='{$engine}' AND `testsuite`='{$test_suite}' ";
+      $sql .= "LIMIT 0, 1";
+      
       $r = $this->query($sql);
       if ($r->is_false() || (0 == $r->num_rows())) {
         $order = 0;
@@ -382,7 +386,11 @@ class test_case extends db_connection
 
     $engine = $user_agent->get_engine();
     if (1 == $order) {  // if current engine isn't sequenced, use normal ordering
-      $sql  = "SELECT * FROM `testsequence` WHERE `engine`='{$engine}' LIMIT 1, 1";
+      $sql  = "SELECT * FROM `testsequence` INNER JOIN `testcases` ";
+      $sql .= "ON testsequence.testcase_id=testcases.id ";
+      $sql .= "WHERE `engine`='{$engine}' AND `testsuite`='{$test_suite}' ";
+      $sql .= "LIMIT 0, 1";
+
       $r = $this->query($sql);
       if ($r->is_false() || (0 == $r->num_rows())) {
         $order = 0;
