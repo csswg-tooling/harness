@@ -194,14 +194,14 @@ print "Processing results\n";
           $last_testcase_id = -1;
           foreach ($data as $result) {
             $testcase_id = $result['id'];
-            $flags       = $result['flags'];
-            $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
             if ($testcase_id != $last_testcase_id) {
               if (-1 != $last_testcase_id) {
                 $this->_process_testcase($last_testcase_id, $engine_results, $optional);
               }
               unset ($engine_results);
             }
+            $flags       = $result['flags'];
+            $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
             $engine = $result['engine'];
             $engine_results['pass'][$engine]      = $result['pass'];
             $engine_results['fail'][$engine]      = $result['fail'];
