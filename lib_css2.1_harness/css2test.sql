@@ -111,3 +111,20 @@ CREATE TABLE `testsequence` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ir_import`
+--
+
+CREATE TABLE IF NOT EXISTS `ir_import` (
+  `testcase_id` int(11) NOT NULL,
+  `testsuite` varchar(32) NOT NULL,
+  `testcase` varchar(64) NOT NULL,
+  `useragent_id` int(11) NOT NULL,
+  `source` varchar(16) COLLATE NULL,
+  `result` enum('pass','fail','uncertain','na','invalid') NOT NULL,
+  `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+

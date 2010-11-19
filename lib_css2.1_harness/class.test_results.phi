@@ -217,40 +217,42 @@ class test_results extends db_connection
       $display = (($this->m_filter & 0x8) == 0);
       $this->m_testcase_invalid_count++;
     }
-    if ($may) {
-      $class .= 'may ';
-      $display = $display & (($this->m_filter & 0x10) == 0);
-      $this->m_testcase_may_count++;
-    }
     else {
-      $this->m_testcase_count++;
-    }
-    if (1 < $pass_count) {
-      $class .= 'pass';
-      $display = $display & (($this->m_filter & 0x01) == 0);
       if ($may) {
-        $this->m_testcase_may_pass_count++;
-      } else {
-        $this->m_testcase_pass_count++;
+        $class .= 'may ';
+        $display = $display & (($this->m_filter & 0x10) == 0);
+        $this->m_testcase_may_count++;
       }
-    }
-    else {
-      if ((! $test_invalid) && (! $may)) {
-        $this->m_testcase_needed_count++;
-        if ($fail_count < ($this->m_engine_count - 1)) {
-          $class .= 'uncertain';
-          $display = $display & (($this->m_filter & 0x04) == 0);
-          $this->m_testcase_need_more_results++;
-          foreach ($engine_missing as $engine => $missing) {
-            if ($missing) {
-              $this->m_engine_needed_count[$engine]++;
+      else {
+        $this->m_testcase_count++;
+      }
+      if (1 < $pass_count) {
+        $class .= 'pass';
+        $display = $display & (($this->m_filter & 0x01) == 0);
+        if ($may) {
+          $this->m_testcase_may_pass_count++;
+        } else {
+          $this->m_testcase_pass_count++;
+        }
+      }
+      else {
+        if ((! $test_invalid) && (! $may)) {
+          $this->m_testcase_needed_count++;
+          if ($fail_count < ($this->m_engine_count - 1)) {
+            $class .= 'uncertain';
+            $display = $display & (($this->m_filter & 0x04) == 0);
+            $this->m_testcase_need_more_results++;
+            foreach ($engine_missing as $engine => $missing) {
+              if ($missing) {
+                $this->m_engine_needed_count[$engine]++;
+              }
             }
           }
-        }
-        else {
-          $class .= 'fail';
-          $display = $display & (($this->m_filter & 0x02) == 0);
-          $this->m_testcase_too_many_fails++;
+          else {
+            $class .= 'fail';
+            $display = $display & (($this->m_filter & 0x02) == 0);
+            $this->m_testcase_too_many_fails++;
+          }
         }
       }
     }
