@@ -68,7 +68,7 @@ form p.ua {
   text-align: right;
   font-size: smaller;
 }
-tr.may {
+tr.optional {
   background-color: #DDD;
 }
 tr.uncertain,

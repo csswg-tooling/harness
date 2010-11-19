@@ -47,18 +47,18 @@ class test_results extends db_connection
   var $m_engines;
   var $m_data;
   var $m_test_suite;
-  var $m_filter;                      // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=may
+  var $m_filter;                        // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   
-  var $m_engine_count;                // number of engines
-  var $m_testcase_count;              // number of required tests
-  var $m_testcase_pass_count;         // number of required tests with 2 or more passes
-  var $m_testcase_may_count;          // number of optional tests ('may' or 'should')
-  var $m_testcase_may_pass_count;     // number of optional tests with 2 or more passes
-  var $m_testcase_invalid_count;      // number of tests reported as invalid
-  var $m_testcase_needed_count;       // number of required, valid tests that do not have 2 or more passes
-  var $m_testcase_need_more_results;  // number of needed tests that might pass but need more results
-  var $m_testcase_too_many_fails;     // number of needed tests that have fails blocking exit criteria
-  var $m_engine_needed_count;         // number of needed results per engine
+  var $m_engine_count;                  // number of engines
+  var $m_testcase_count;                // number of required tests
+  var $m_testcase_pass_count;           // number of required tests with 2 or more passes
+  var $m_testcase_optional_count;       // number of optional tests ('may' or 'should')
+  var $m_testcase_optional_pass_count;  // number of optional tests with 2 or more passes
+  var $m_testcase_invalid_count;        // number of tests reported as invalid
+  var $m_testcase_needed_count;         // number of required, valid tests that do not have 2 or more passes
+  var $m_testcase_need_more_results;    // number of needed tests that might pass but need more results
+  var $m_testcase_too_many_fails;       // number of needed tests that have fails blocking exit criteria
+  var $m_engine_needed_count;           // number of needed results per engine
     
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -120,9 +120,9 @@ class test_results extends db_connection
     
     if($test_select) {
       if($select_type == 1) {
-        $sql .= "AND t.testgroup = '{$test_select}' ";
+        $sql .= "AND t.testgroup LIKE '{$test_select}' ";
       } elseif($select_type==2) {
-        $sql .= "AND t.testcase = '{$test_select}' ";
+        $sql .= "AND t.testcase LIKE '{$test_select}' ";
       }
     }
     
@@ -162,7 +162,7 @@ class test_results extends db_connection
     $this->m_data = $r->fetch_table();
   }
   
-  function _generate_row($testcase, $engine_results, $may)
+  function _generate_row($testcase, $engine_results, $optional)
   {
     $row = "<td><a href='details?s={$this->m_test_suite}&c={$testcase}'>{$testcase}</a></td>";
 
@@ -184,7 +184,9 @@ class test_results extends db_connection
           $class .= 'pass ';
         }
         if (0 < $fail) {
-          $fail_count++;
+          if (0 == $pass) {
+            $fail_count++;
+          }
           $engine_missing[$engine] = false;
           $class .= 'fail ';
         }
@@ -213,15 +215,15 @@ class test_results extends db_connection
     $display = true;
     $class = '';
     if ($test_invalid) {
-      $class = 'invalid ';
+      $class .= 'invalid ';
       $display = (($this->m_filter & 0x8) == 0);
       $this->m_testcase_invalid_count++;
     }
     else {
-      if ($may) {
-        $class .= 'may ';
+      if ($optional) {
+        $class .= 'optional ';
         $display = $display & (($this->m_filter & 0x10) == 0);
-        $this->m_testcase_may_count++;
+        $this->m_testcase_optional_count++;
       }
       else {
         $this->m_testcase_count++;
@@ -229,14 +231,14 @@ class test_results extends db_connection
       if (1 < $pass_count) {
         $class .= 'pass';
         $display = $display & (($this->m_filter & 0x01) == 0);
-        if ($may) {
-          $this->m_testcase_may_pass_count++;
+        if ($optional) {
+          $this->m_testcase_optional_pass_count++;
         } else {
           $this->m_testcase_pass_count++;
         }
       }
       else {
-        if ((! $test_invalid) && (! $may)) {
+        if ((! $test_invalid) && (! $optional)) {
           $this->m_testcase_needed_count++;
           if ($fail_count < ($this->m_engine_count - 1)) {
             $class .= 'uncertain';
@@ -286,25 +288,26 @@ class test_results extends db_connection
       
       $this->m_testcase_count = 0;
       $this->m_testcase_pass_count = 0;
-      $this->m_testcase_may_count = 0;
-      $this->m_testcase_may_pass_count = 0;
+      $this->m_testcase_optional_count = 0;
+      $this->m_testcase_optional_pass_count = 0;
       $this->m_testcase_invalid_count = 0;
       $this->m_testcase_needed_count = 0;
       $this->m_testcase_need_more_results = 0;
       $this->m_testcase_too_many_fails = 0;
       
       $last_testcase = '';
-      $may = FALSE;
+      $optional = FALSE;
       foreach ($this->m_data as $result) {
         $testcase = $result['testcase'];
-        $flags    = $result['flags'];
-        $may = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
         if ($testcase != $last_testcase) {
           if ($last_testcase) {
-            echo $indent . $this->_generate_row($last_testcase, $engine_results, $may);
+            echo $indent . $this->_generate_row($last_testcase, $engine_results, $optional);
           }
           unset ($engine_results);
         }
+        $flags    = $result['flags'];
+        $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
+
         $engine = $result['engine'];
         $engine_results['pass'][$engine]      = $result['pass'];
         $engine_results['fail'][$engine]      = $result['fail'];
@@ -316,11 +319,11 @@ class test_results extends db_connection
         $last_testcase = $testcase;
       }
       
-      echo $indent . $this->_generate_row($testcase, $engine_results, $may);
+      echo $indent . $this->_generate_row($testcase, $engine_results, $optional);
       
       echo $indent . "</table>\n";
       echo $indent . "<p>{$this->m_testcase_pass_count} of {$this->m_testcase_count} required tests meet exit criteria.</p>\n";
-      echo $indent . "<p>{$this->m_testcase_may_pass_count} of {$this->m_testcase_may_count} optional tests meet exit criteria.</p>\n";
+      echo $indent . "<p>{$this->m_testcase_optional_pass_count} of {$this->m_testcase_optional_count} optional tests meet exit criteria.</p>\n";
       echo $indent . "<p>{$this->m_testcase_invalid_count} tests reported as invalid.</p>\n";
       echo $indent . "<p>{$this->m_testcase_needed_count} required tests are considered valid and do not meet exit criteria.</p>\n";
       if (0 < $this->m_testcase_needed_count) {
@@ -348,7 +351,7 @@ class test_results extends db_connection
       echo $indent . "  <tr class='fail'><td>blocking failures</tr>\n";
       echo $indent . "  <tr class='uncertain'><td>not enough results</tr>\n";
       echo $indent . "  <tr class='invalid'><td>reported as invalid</tr>\n";
-      echo $indent . "  <tr class='may'><td>not passing, but optional</tr>\n";
+      echo $indent . "  <tr class='optional'><td>not passing, but optional</tr>\n";
       echo $indent . "</table>\n";
 
       echo $indent . "<table class='legend'>\n";
