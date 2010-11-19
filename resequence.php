@@ -126,6 +126,7 @@ class resequence extends db_connection
           $count = $engine_count;
         }
         else {
+          $count = 0;
           if ($pass_count < 2) {
             $count -= 4;
           }
