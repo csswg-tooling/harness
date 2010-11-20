@@ -108,16 +108,14 @@ class test_cases extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function write($indent)
   {
-    echo $indent . '<select name="c" style="width: 25em">' ."\n";
+    echo $indent . "<select name='c' style='width: 25em'>\n";
 
     foreach($this->m_toc as $test_case) {
-      echo $indent . '  <option value="';
-      echo $test_case['testcase'];
-      echo '">';
+      echo $indent . "  <option value='{$test_case['testcase']}'>";
       echo $test_case['title'];
-      echo '</option>' ."\n";
+      echo "</option>\n";
     }
-    echo $indent . '</select>' . "\n";
+    echo $indent . "</select>\n";
   }
 
 }

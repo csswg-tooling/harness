@@ -119,6 +119,42 @@ class review_page extends css_page
     //   = '$Id: review.php,v 1.2 2008/08/12 18:26:59 dberfang Exp $';    
   }  
   
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write_head_script()
+  //
+  //  This <script> element provides script available to the document
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write_head_script($indent = '')
+  {
+    echo $indent . "<script type='text/javascript'>\n";
+    
+    echo $indent . "  onunload=function() {\n";
+    echo $indent . "    document.result_form.g.disabled = false;\n";
+    echo $indent . "    document.result_form.c.disabled = false;\n";
+    echo $indent . "  }\n";
+    echo $indent . "  function filterTypes() {\n";
+    echo $indent . "    if (document.result_form.t[0].checked) {\n";
+    echo $indent . "      document.result_form.g.disabled = true;\n";
+    echo $indent . "      document.result_form.c.disabled = true;\n";
+    echo $indent . "    }\n";
+    echo $indent . "    if (document.result_form.t[1].checked) {\n";
+    echo $indent . "      document.result_form.g.disabled = false;\n";
+    echo $indent . "      document.result_form.c.disabled = true;\n";
+    echo $indent . "    }\n";
+    echo $indent . "    if (document.result_form.t[2].checked) {\n";
+    echo $indent . "      document.result_form.g.disabled = true;\n";
+    echo $indent . "      document.result_form.c.disabled = false;\n";
+    echo $indent . "    }\n";
+    echo $indent . "    return true;\n";
+    echo $indent . "  }\n";
+    
+    echo $indent . "</script>\n";;  
+  }
+  
+  
   ////////////////////////////////////////////////////////////////////////////
   //
   // write_body_content()
@@ -127,67 +163,43 @@ class review_page extends css_page
   function write_body_content($indent = '')
   {
 
-    echo $indent . '<p>'."\n";
-    echo $indent . '  The ';
-    echo $this->m_test_suite->get_title();
-    echo ' test suite contains ';
-    echo $this->m_test_cases->get_count();
-    echo ' test cases. '."\n";
-    echo 'You can choose to review:'."\n";
-    echo $indent . '</p>'."\n";
-    echo $indent . '<ul>'."\n";
-    echo $indent . '<li>'."\n";
-    echo $indent . '  <form action="results" method="get">'."\n";
+    echo $indent . "<p>\n";
+    echo $indent . "  The " . $this->m_test_suite->get_title() . " test suite contains ";
+    echo              $this->m_test_cases->get_count() . " test cases. \n";
+    echo $indent . "  You can choose to review:\n";
+    echo $indent . "</p>\n";
 
-    echo $indent . '    <input type="hidden" name="s" value="';
-    echo $this->m_test_suite->get_name();
-    echo '" />';
-    echo $indent . '  The full test suite '."\n";
-/*    
-    echo $indent . '  <select name="o" style="width: 15em">'."\n";
-    echo $indent . '    <option selected="selected" value="0">';
-    echo 'in order</option>'."\n";
-    echo $indent . '    <option value="1">with least tested cases first';
-    echo '</option>'."\n";
-    echo $indent . '  </select>'."\n";
-*/
-    echo $indent . '  <input type="submit" value="Go" />'."\n";
-    echo $indent . '  </form>'."\n";
+    echo $indent . "<form action='results' method='get' name='result_form' onSubmit='return filterTypes();'>\n";
+    echo $indent . "  <input type='hidden' name='s' value='" .$this->m_test_suite->get_name() . "' />\n";
+    echo $indent . "  <p>\n";
+    echo $indent . "    <input type='radio' name='t' value='0' checked />\n";
+    echo $indent . "    The full test suite<br />\n";
     
-    echo $indent . '</li>'."\n";
-    echo $indent . '<li>'."\n";
+    if (0 < $this->m_test_groups->get_count()) {
+      echo $indent . "    <input type='radio' name='t' value='1' />\n";
+      echo $indent . "    A group of test cases: \n";
+      $this->m_test_groups->write($indent);
+      
+      echo $indent . "  <br />\n";
+    }
     
-    echo $indent . '  <form action="results" method="get">'."\n";
-    echo $indent . '    <input type="hidden" name="s" value="';
-    echo $this->m_test_suite->get_name();
-    echo '" />';
-    echo $indent . '  A group of test cases: '."\n";
-    $this->m_test_groups->write($indent);
-/*    
-    echo $indent . '  <select name="o" style="width: 15em">'."\n";
-    echo $indent . '    <option selected="selected" value="0">';
-    echo 'in order</option>'."\n";
-    echo $indent . '    <option value="1">with least tested cases ';
-    echo 'first</option>'."\n";
-    echo $indent . '  </select>'."\n";
-*/
-    echo $indent . '  <input type="submit" value="Go" />'."\n";
-    echo $indent . '  </form>'."\n";
-    
-    echo $indent . '</li>'."\n";
-    echo $indent . '<li>'."\n";
-    
-    echo $indent . '  <form action="results" method="get">'."\n";
-    echo $indent . '    <input type="hidden" name="s" value="';
-    echo $this->m_test_suite->get_name();
-    echo '" />';
-    echo $indent . '  A single test case:'."\n";
+    echo $indent . "    <input type='radio' name='t' value='2' />\n";
+    echo $indent . "    A single test case:\n";
     $this->m_test_cases->write($indent);
-    echo $indent . '  <input type="submit" value="Go" />'."\n";
-    echo $indent . '  </form>'."\n";
-    
-    echo $indent . '</li>'."\n";
-    echo $indent . '</ul>'."\n";
+    echo $indent . "    <br />\n";
+    echo $indent . "  </p>\n";
+
+    echo $indent . "  <p>\n";
+    echo $indent . "    Do not display tests that:<br />\n";
+    echo $indent . "    <input type='checkbox' name='f[]' value='1'> Meet exit criteria<br />\n";
+    echo $indent . "    <input type='checkbox' name='f[]' value='2'> Have blocking failures<br />\n";
+    echo $indent . "    <input type='checkbox' name='f[]' value='4'> Lack sufficient data<br />\n";
+    echo $indent . "    <input type='checkbox' name='f[]' value='8'> Have been reported as invalid<br />\n";
+    echo $indent . "    <input type='checkbox' name='f[]' value='16'> Are not required<br />\n";
+    echo $indent . "  </p>\n";
+
+    echo $indent . "  <input type='submit' value='Go' />\n";
+    echo $indent . "</form>\n";
 
   }
 }

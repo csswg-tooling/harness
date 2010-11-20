@@ -46,6 +46,7 @@ class test_groups extends db_connection
   //
   ////////////////////////////////////////////////////////////////////////////
   var $m_toc;
+  var $m_count;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -61,27 +62,39 @@ class test_groups extends db_connection
   {
     parent::db_connection();
     
+    $this->m_count = 0;
+    
     $sql  = "SELECT DISTINCT testcases.testgroup, testgroups.title ";
     $sql .= "FROM testcases LEFT JOIN testgroups ";
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='$test_suite'";
+    $sql .= "WHERE testcases.testsuite='{$test_suite}'";
     
     $r = $this->query($sql);
     
-    if($r->is_false()) {
+    if ($r->is_false()) {
       $msg = 'Unable to obtain list of test groups.';
       trigger_error($msg, E_USER_ERROR);
     }
     
     $this->m_toc = $r->fetch_table();
 
-    if(!($this->m_toc)) {
-      $msg = 'Unable to obtain list of test groups.';
-      trigger_error($msg, E_USER_ERROR);
+    if ($this->m_toc) {
+      $this->m_count = count($this->m_toc);
     }
-
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_count
+  //
+  //  Get count of available test groups.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_count()
+  {
+    return $this->m_count;
+  }
+  
   ////////////////////////////////////////////////////////////////////////////
   //
   //  write
@@ -91,24 +104,17 @@ class test_groups extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function write($indent)
   {
-    echo $indent . '<select name="g" style="width: 25em">' ."\n";
+    echo $indent . "<select name='g'>\n";
 
-    foreach($this->m_toc as $test_group) {
-      if($test_group['testgroup'] != '') {
-        echo $indent . '  <option value="';
-        echo $test_group['testgroup'];
-        echo '">';
+    foreach ($this->m_toc as $test_group) {
+      if ($test_group['testgroup'] != '') {
+        echo $indent . "  <option value='{$test_group['testgroup']}'>";
         echo $test_group['title'];
-        echo '</option>' ."\n";
+        echo "</option>\n";
       }
     }
-    echo $indent . '  <option value="';
-    echo $test_group['testgroup'];
-    echo '">';
-    echo 'misc.';
-    echo '</option>' ."\n";
     
-    echo $indent . '</select>' . "\n";
+    echo $indent . "</select>\n";
   }
 }
 

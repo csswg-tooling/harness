@@ -132,20 +132,49 @@ class results_page extends css_page
       $msg = 'No test suite identified.';
       $this->trigger_client_error($msg, E_USER_ERROR);
     }
-
-    if( isset($_GET['c']) ) {
-      $select = $_GET['c'];
-      $type = 2;
-    } elseif ( isset($_GET['g']) ) {
-      $select = $_GET['g'];
-      $type = 1;
-    } else {
+    
+    if (isset($_GET['t'])) {
+      $type = intval($_GET['t']);
       $select = null;
-      $type = 0;
+      if (2 === $type) {
+        if (isset($_GET['c'])) {
+          $select = $_GET['c'];
+        }
+      }
+      else if (1 === $type) {
+        if (isset($_GET['g'])) {
+          $select = $_GET['g'];
+        }
+      }
+      if (! $select) {
+        $type = 0;
+      }
+    }
+    else {
+      if( isset($_GET['c']) ) {
+        $select = $_GET['c'];
+        $type = 2;
+      } elseif ( isset($_GET['g']) ) {
+        $select = $_GET['g'];
+        $type = 1;
+      } else {
+        $select = null;
+        $type = 0;
+      }
     }
 
     if(isset($_GET['f'])) {
       $filter = $_GET['f'];
+      if (is_array($filter)) {
+        $filter_value = 0;
+        foreach ($filter as $value) {
+          $filter_value = $filter_value | intval($value);
+        }
+        $filter = $filter_value;
+      }
+      else {
+        $filter = intval($filter);
+      }
     } else {
       $filter = 0;
     }

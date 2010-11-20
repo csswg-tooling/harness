@@ -208,13 +208,14 @@ class static_page
   ////////////////////////////////////////////////////////////////////////////
   function write_html_head($indent = '')
   {
-    echo $indent . '<head>' . "\n";
+    echo $indent . "<head>\n";
     $this->write_head_base($indent . '  ');
     $this->write_head_title($indent . '  ');
     $this->write_head_metas($indent . '  ');
     $this->write_head_style($indent . '  ');
     $this->write_head_links($indent . '  ');
-    echo $indent . '</head>' . "\n";
+    $this->write_head_script($indent . '  ');
+    echo $indent . "</head>\n";
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -307,6 +308,17 @@ class static_page
   //
   ////////////////////////////////////////////////////////////////////////////
   function write_head_links($indent = '')
+  {
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  write_head_script()
+  //
+  //  This <script> element provides script available to the document
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function write_head_script($indent = '')
   {
   }
   
