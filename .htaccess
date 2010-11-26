@@ -1,11 +1,2 @@
 Options +MultiViews
 
-SetEnvIfNoCase User-Agent "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.0) Fetch API Request" bad_bot
-SetEnvIfNoCase User-Agent "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.0)" bad_bot
-
-<Limit GET POST HEAD>
-  Order Allow,Deny
-  Allow from all
-  Deny from env=bad_bot
-</Limit>
-
