@@ -115,7 +115,7 @@ class test_results extends db_connection
     $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
     $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id)) as t ";
     
-    $sql .= "WHERE t.testsuite = '{$test_suite}' ";
+    $sql .= "WHERE t.testsuite LIKE '{$test_suite}' ";
     $sql .= "AND t.active='1' ";
     
     if($test_select) {

@@ -75,14 +75,14 @@ class test_result_details extends db_connection
     $sql .= "results.modified AS Date, Source, Useragent ";
     $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
     $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id) ";
-    $sql .= "WHERE testcases.testsuite = '{$test_suite}' ";
+    $sql .= "WHERE testcases.testsuite LIKE '{$test_suite}' ";
     $sql .= "AND testcases.active='1' ";
     
     if ($test_select) {
       if ($select_type == 1) {
-        $sql .= "AND testcases.testgroup = '{$test_select}' ";
+        $sql .= "AND testcases.testgroup LIKE '{$test_select}' ";
       } elseif ($select_type == 2) {
-        $sql .= "AND testcases.testcase = '{$test_select}' ";
+        $sql .= "AND testcases.testcase LIKE '{$test_select}' ";
       }
     }
     
