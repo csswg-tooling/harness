@@ -128,3 +128,21 @@ CREATE TABLE IF NOT EXISTS `ir_import` (
   `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `honeypot`
+--
+
+CREATE TABLE `honeypot` (
+ `ip_address` varchar(15) collate utf8_bin NOT NULL,
+ `user_agent` varchar(255) collate utf8_bin default NULL,
+ `last_query` varchar(255) collate utf8_bin default NULL,
+ `visit_count` int(11) NOT NULL default '0',
+ `banned` tinyint(1) NOT NULL default '0',
+ `first_visit` timestamp NULL default NULL,
+ `last_action` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+ PRIMARY KEY  (`ip_address`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+

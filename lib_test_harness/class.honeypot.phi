@@ -1,0 +1,136 @@
+<?php
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+//
+//  This work is distributed under the W3C¬ Software License 
+//  [1] in the hope that it will be useful, but WITHOUT ANY 
+//  WARRANTY; without even the implied warranty of 
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+//
+//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+//////////////////////////////////////////////////////////////////////////////// 
+//
+//  class.honeypot.phi
+//
+//  Provides functionality for detecting and blocking misbehaving web crawlers
+//
+//
+//////////////////////////////////////////////////////////////////////////////// 
+
+require_once("class.db_connection.phi");
+  
+define('HONEYPOT_URL', 'report');
+define('HONEYPOT_IMAGE', 'images/link.gif');
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  class honeypot
+//
+//  test_results is a concrete db_connection tailored for storing the 
+//  testing results tables.
+//
+////////////////////////////////////////////////////////////////////////////////
+class honeypot  
+{
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_db;
+  
+  var $m_sequence;
+  var $m_page_query;
+
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  Constructor
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function honeypot()
+  {
+    $this->m_sequence = 0;
+    $this->m_page_query = $_SERVER['QUERY_STRING'];
+  }
+  
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  generate link
+  //
+  //  Write HTML for a link to the honeypot
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function generate_link($indent = '')
+  {
+    if ($this->m_page_query) {
+      parse_str($this->m_page_query, $query);
+      $query['seq'] = ++$this->m_sequence;
+      $query_str = http_build_query($query);
+    }
+    else {
+      $query_str = 'seq=' . ++$this->m_sequence;
+    }
+    echo $indent . "<a href='" . HONEYPOT_URL . "?{$query_str}'><img src='" . HONEYPOT_IMAGE . "'></a>\n";
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  _get_db
+  //
+  //  Bring db connection online
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  protected function _get_db()
+  {
+    if (! isset($this->m_db)) {
+      $this->m_db = new db_connection();
+    }
+    return $this->m_db;
+  }
+  
+  protected function _get_client_ip()
+  {
+    if (! empty($_SERVER['HTTP_CLIENT_IP'])) {
+      $ip = $_SERVER['HTTP_CLIENT_IP'];
+    }
+    elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
+    else {
+      $ip = $_SERVER['REMOTE_ADDR'];
+    }
+    return $ip;
+  }
+  
+
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  record_visit
+  //
+  //  Capture data about a visit to the honey pot
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function record_visit()
+  {
+    $ip_address = $this->_get_client_ip();
+    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+
+    $sql  = "INSERT INTO honeypot (ip_address, user_agent, last_query, visit_count, first_visit) ";
+    $sql .= "VALUES ('{$ip_address}', '{$user_agent}', '{$this->m_page_query}', '1', NOW()) ";
+    $sql .= "ON DUPLICATE KEY UPDATE user_agent='{$user_agent}', last_query='{$this->m_page_query}', visit_count=visit_count+1";
+    
+    $db = $this->_get_db();
+    $db->query($sql);
+  }
+  
+}
+
+?>

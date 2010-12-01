@@ -50,12 +50,21 @@ class css_page extends dynamic_page
 {
   ////////////////////////////////////////////////////////////////////////////
   //
+  //  Instance variables.
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  var $m_honeypot;
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
   //  Constructor.
   //
   ////////////////////////////////////////////////////////////////////////////
   function css_page() 
   {
     parent::dynamic_page();
+
+    $this->m_honeypot = new honeypot();
   }  
   
   ////////////////////////////////////////////////////////////////////////////
@@ -88,25 +97,23 @@ class css_page extends dynamic_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_header($indent = '')
   {
-    echo $indent . '<p>' . "\n";
+    echo $indent . "<p>\n";
     
-    echo $indent . '  <a class="logo" href="http://www.w3.org/" ';
-    echo 'rel="home">'."\n";
+    $this->m_honeypot->generate_link($indent . '  ');
     
-    echo $indent . '    <img alt="W3C" height="48" width="315" ';
-    echo 'src="http://www.w3.org/Icons/w3c_main">'."\n";
-
-    echo $indent . '  </a>'."\n";
-    echo $indent . '</p>'."\n";
-    echo $indent . '<h1>'."\n";
-    echo $indent . '  <a href="http://csswg.org/test">'."\n";
-    echo $indent . '    CSS Test Suite Project'."\n";
-    echo $indent . '  </a>'."\n";
-    echo $indent . '</h1>'."\n";
-    echo $indent . '<hr>'."\n";
-    echo $indent . '<h1>'."\n";
-    echo $indent . '  ' . $this->m_content_title . "\n";
-    echo $indent . '</h1>'."\n\n";
+    echo $indent . "  <a class='logo' href='http://www.w3.org/' rel='home'>\n";
+    echo $indent . "    <img alt='W3C' height='48' width='315' src='http://www.w3.org/Icons/w3c_main'>\n";
+    echo $indent . "  </a>\n";
+    echo $indent . "</p>\n";
+    echo $indent . "<h1>\n";
+    echo $indent . "  <a href='http://csswg.org/test'>\n";
+    echo $indent . "    CSS Test Suite Project\n";
+    echo $indent . "  </a>\n";
+    echo $indent . "</h1>\n";
+    echo $indent . "<hr>\n";
+    echo $indent . "<h1>\n";
+    echo $indent . "  {$this->m_content_title}\n";
+    echo $indent . "</h1>\n\n";
     
   }
 
@@ -119,20 +126,19 @@ class css_page extends dynamic_page
   {
     echo "\n";
     
-    echo $indent.'<hr />'."\n";
+    echo $indent . "<hr />\n";
 
 
-    echo $indent.'<address>'."\n";
-    echo $indent.'Please send comments, questions, and error reports to'."\n";
-    echo $indent.'<a href="http://lists.w3.org/Archives/Public/public-css-testsuite">public-css-testsuite@w3.org</a>.'."\n";    
-    echo $indent.'</address>'."\n";
+    echo $indent . "<address>\n";
+    echo $indent . "  Please send comments, questions, and error reports to\n";
+    echo $indent . "  <a href='http://lists.w3.org/Archives/Public/public-css-testsuite'>public-css-testsuite@w3.org</a>.\n";    
+    echo $indent . "</address>\n";
 
     if ($this->m_resource_id) {
-      echo $indent . '<p><em>';
-      echo $this->m_resource_id;
-      echo '</em></p>' . "\n";
+      echo $indent . "<p><em>{$this->m_resource_id}</em></p>\n";
     }
 
+    $this->m_honeypot->generate_link($indent);
   }
 }
 
