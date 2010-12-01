@@ -210,9 +210,8 @@ class testcase_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_head_style($indent = '')
   {  
-    echo $indent . '<link rel="stylesheet" href="http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css">';
-    echo "\n";
-    echo $indent . '<link rel="stylesheet" href="harness.css">';
+    echo $indent . "<link rel='stylesheet' href='http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css'>\n";
+    echo $indent . "<link rel='stylesheet' href='harness.css'>\n";
   }
 
   ////////////////////////////////////////////////////////////////////////////

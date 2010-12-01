@@ -79,15 +79,11 @@ class css_page extends dynamic_page
   ////////////////////////////////////////////////////////////////////////////
   function write_head_style($indent = '')
   {  
-    echo $indent . '<style type="text/css">' . "\n";
-    
-    echo $indent . '  @import ';
-    echo 'url(http://www.w3.org/StyleSheets/TR/base.css);' . "\n";
-    
-    echo $indent . '  @import url(http://www.w3.org/Style/CSS/Test/CSS2.1/';
-    echo 'current/indices.css)' . "\n";
-        
-    echo $indent . '</style>' . "\n";;  
+    echo $indent . "<style type='text/css'>\n";
+    echo $indent . "  @import url(http://www.w3.org/StyleSheets/TR/base.css);\n";
+    echo $indent . "  @import url(http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css);\n";
+    echo $indent . "  a.report {display:none;}\n";
+    echo $indent . "</style>\n";  
   }
   
 

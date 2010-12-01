@@ -70,7 +70,7 @@ class honeypot
     else {
       $query_str = 'seq=' . ++$this->m_sequence;
     }
-    $link = "<a href='" . HONEYPOT_URL . "?{$query_str}'><img src='" . HONEYPOT_IMAGE . "'></a>";
+    $link = "<a href='" . HONEYPOT_URL . "?{$query_str}' class='report'>{$this->m_sequence}</a>";
     return $link;
   }
   
