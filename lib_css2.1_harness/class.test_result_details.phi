@@ -119,7 +119,7 @@ class test_result_details extends db_connection
   //  Write HTML for a table displaying the results data.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function write($indent)
+  function write($indent, $honeypot)
   {
 
     if (!($this->m_data)) {
@@ -137,7 +137,9 @@ class test_result_details extends db_connection
         echo $indent . "  <tr class='{$result['Result']}'>\n";
         foreach($result as $key => $value) {
           if ('Testcase' == $key) {
-            echo $indent . "    <td><a href='testcase?s={$this->m_test_suite}&c={$value}'>{$value}</a></td>\n";
+            echo $indent . "    <td>";
+            echo           $honeypot->get_link();
+            echo           "<a href='testcase?s={$this->m_test_suite}&c={$value}'>{$value}</a></td>\n";
 
           }
           else {
