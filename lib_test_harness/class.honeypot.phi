@@ -62,17 +62,18 @@ class honeypot
 
   function get_link()
   {
+    $large_number = mt_rand(1000000, 9999999999);
     if ($this->m_page_query) {
       parse_str($this->m_page_query, $query);
       $query['seq'] = ++$this->m_sequence;
-      $query['uid'] = mt_rand(1000000, 9999999999);
+      $query['uid'] = $large_number;
       $query_str = http_build_query($query);
     }
     else {
       $query_str  = 'seq=' . ++$this->m_sequence;
-      $query_str .= '&uid=' . mt_rand(1000000, 9999999999);
+      $query_str .= "&uid={$large_number}";
     }
-    $link = "<a href='" . HONEYPOT_URL . "?{$query_str}' class='report'>{$this->m_sequence}</a>";
+    $link = "<a href='" . HONEYPOT_URL . "?{$query_str}' class='report'>{$this->m_sequence}-{$large_number}</a>";
     return $link;
   }
   
