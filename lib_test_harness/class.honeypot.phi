@@ -65,10 +65,12 @@ class honeypot
     if ($this->m_page_query) {
       parse_str($this->m_page_query, $query);
       $query['seq'] = ++$this->m_sequence;
+      $query['uid'] = mt_rand(1000000, 9999999999);
       $query_str = http_build_query($query);
     }
     else {
-      $query_str = 'seq=' . ++$this->m_sequence;
+      $query_str  = 'seq=' . ++$this->m_sequence;
+      $query_str .= '&uid=' . mt_rand(1000000, 9999999999);
     }
     $link = "<a href='" . HONEYPOT_URL . "?{$query_str}' class='report'>{$this->m_sequence}</a>";
     return $link;
