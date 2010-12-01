@@ -162,7 +162,7 @@ class test_results extends db_connection
     $this->m_data = $r->fetch_table();
   }
   
-  function _generate_row($testcase, $engine_results, $optional, $honeypot)
+  function _generate_row($indent, $testcase, $engine_results, $optional, $honeypot)
   {
     $row  = "<td>";
     $row .= $honeypot->get_link();
@@ -261,9 +261,8 @@ class test_results extends db_connection
       }
     }
     if ($display) {
-      return "  <tr class='{$class}'>{$row}</tr>\n";
+      echo $indent . "  <tr class='{$class}'>{$row}</tr>\n";
     }
-    return "";
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -303,7 +302,7 @@ class test_results extends db_connection
         $testcase = $result['testcase'];
         if ($testcase != $last_testcase) {
           if ($last_testcase) {
-            echo $indent . $this->_generate_row($last_testcase, $engine_results, $optional, $honeypot);
+            $this->_generate_row($indent, $last_testcase, $engine_results, $optional, $honeypot);
           }
           unset ($engine_results);
         }
@@ -321,7 +320,7 @@ class test_results extends db_connection
         $last_testcase = $testcase;
       }
       
-      echo $indent . $this->_generate_row($testcase, $engine_results, $optional, $honeypot);
+      $this->_generate_row($indent, $testcase, $engine_results, $optional, $honeypot);
       
       echo $indent . "</table>\n";
       echo $indent . "<p>{$this->m_testcase_pass_count} of {$this->m_testcase_count} required tests meet exit criteria.</p>\n";
