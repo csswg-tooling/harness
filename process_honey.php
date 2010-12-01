@@ -73,7 +73,7 @@
       foreach ($this->m_suspects as $suspect) {
         $ip_address = $suspect['ip_address'];
         if ($ip_address != '::1') {
-          $command = "iptables -I INPUT -s {$ip_address} -j DROP";
+          $command = "/sbin/iptables -I INPUT -s {$ip_address} -j DROP";
           exec($command);
           $sql = "UPDATE `honeypot` SET `banned`=1 WHERE `ip_address`='{$ip_address}'";
           $this->query($sql);
@@ -83,7 +83,7 @@
       foreach ($this->m_banned as $banned) {
         $ip_address = $banned['ip_address'];
         if ($ip_address != '::1') {
-          $command = "iptables --delete INPUT -s {$ip_address} -j DROP";
+          $command = "/sbin/iptables --delete INPUT -s {$ip_address} -j DROP";
           exec($command);
           $sql = "UPDATE `honeypot` SET banned=0, visit_count=0 WHERE `ip_address`='{$ip_address}'";
           $this->query($sql);
