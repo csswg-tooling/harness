@@ -242,7 +242,7 @@ class results_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_content($indent = '')
   {
-    $this->m_results_table->write($indent);
+    $this->m_results_table->write($indent, $this->m_honeypot);
   }
 }
 
