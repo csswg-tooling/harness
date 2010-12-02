@@ -230,9 +230,10 @@ class results_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_head_style($indent = '')
   {  
-    echo $indent . "<link rel='stylesheet' href='http://www.w3.org/StyleSheets/TR/base.css'>\n";
-    echo $indent . "<link rel='stylesheet' href='http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css'>\n";
-    echo $indent . "<link rel='stylesheet' href='harness.css'>\n";
+    parent::write_head_style($indent);
+    echo $indent . "<style type='text/css'>\n";
+    echo $indent . "  @import url(harness.css);\n";
+    echo $indent . "</style>\n";  
   }
 
   ////////////////////////////////////////////////////////////////////////////

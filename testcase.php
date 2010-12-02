@@ -1,13 +1,13 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2007 World Wide Web Consortium, 
+//  Copyright Â© 2007 World Wide Web Consortium, 
 //  (Massachusetts Institute of Technology, European Research 
 //  Consortium for Informatics and Mathematics, Keio 
 //  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -209,9 +209,12 @@ class testcase_page extends css_page
   //
   ////////////////////////////////////////////////////////////////////////////
   function write_head_style($indent = '')
-  {  
-    echo $indent . "<link rel='stylesheet' href='http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css'>\n";
-    echo $indent . "<link rel='stylesheet' href='harness.css'>\n";
+  {  // XXX-pl why not base.css?
+    echo $indent . "<style type='text/css'>\n";
+    echo $indent . "  @import url(http://www.w3.org/Style/CSS/Test/CSS2.1/current/indices.css);\n";
+    echo $indent . "  @import url(harness.css);\n";
+    echo $indent . "  a.report {display:none;}\n";
+    echo $indent . "</style>\n";  
   }
 
   ////////////////////////////////////////////////////////////////////////////
