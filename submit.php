@@ -68,14 +68,14 @@ class submit_results_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   protected function _get_client_ip()
   {
-    if (! empty($_SERVER['HTTP_CLIENT_IP'])) {
-      $ip = $_SERVER['HTTP_CLIENT_IP'];
+    if (! empty($_SERVER['REMOTE_ADDR'])) {
+      $ip = $_SERVER['REMOTE_ADDR'];
     }
     elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
       $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
     }
     else {
-      $ip = $_SERVER['REMOTE_ADDR'];
+      $ip = $_SERVER['HTTP_CLIENT_IP'];
     }
     return $ip;
   }
