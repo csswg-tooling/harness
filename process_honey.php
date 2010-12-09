@@ -63,13 +63,14 @@
       
       // remove suspects under trigger count for test period
       $sql  = "DELETE FROM `honeypot` ";
-      $sql .= "WHERE `banned` = 0 AND `visit_count` < {$this->m_ban_threshold} AND ";
+      $sql .= "WHERE `banned` = 0 AND ";
+      $sql .= "0 < `visit_count` AND `visit_count` < {$this->m_ban_threshold} AND ";
       $sql .= "`last_action` < DATE_SUB(NOW(), INTERVAL {$this->m_test_period} DAY)";
       $r = $this->query($sql);
       
       // find offenders needing to be banned
       $sql  = "SELECT `ip_address` FROM `honeypot` ";
-      $sql .= "WHERE `banned` = 0 AND `visit_count` >= {$this->m_ban_threshold}";
+      $sql .= "WHERE `banned` = 0 AND {$this->m_ban_threshold} <= `visit_count` ";
       $r = $this->query($sql);
       if (! $r->is_false()) {
         $this->m_offenders = $r->fetch_table();
@@ -89,20 +90,20 @@
     {
       foreach ($this->m_offenders as $offender) {
         $ip_address = $offender['ip_address'];
-        if ($ip_address != '::1') {
+        if (($ip_address != '::1') && ($ip_address != '127.0.0.1')) {
           $command = "/sbin/iptables -I INPUT -s {$ip_address} -j DROP";
           exec($command);
-          $sql = "UPDATE `honeypot` SET `banned`=1 WHERE `ip_address`='{$ip_address}'";
+          $sql = "UPDATE `honeypot` SET `banned` = 1 WHERE `ip_address` = '{$ip_address}'";
           $this->query($sql);
         }
       }
 
       foreach ($this->m_banned as $banned) {
         $ip_address = $banned['ip_address'];
-        if ($ip_address != '::1') {
+        if (($ip_address != '::1') && ($ip_address != '127.0.0.1')) {
           $command = "/sbin/iptables --delete INPUT -s {$ip_address} -j DROP";
           exec($command);
-          $sql = "UPDATE `honeypot` SET banned=0, visit_count=0 WHERE `ip_address`='{$ip_address}'";
+          $sql = "UPDATE `honeypot` SET `banned` = 0, `visit_count` = 0 WHERE `ip_address` = '{$ip_address}'";
           $this->query($sql);
         }
       }
