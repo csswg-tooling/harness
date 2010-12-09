@@ -67,7 +67,7 @@ class honeypot
       parse_str($this->m_page_query, $query);
       $query['seq'] = ++$this->m_sequence;
       $query['uid'] = $large_number;
-      $query_str = http_build_query($query);
+      $query_str = http_build_query($query, 'var_');
     }
     else {
       $query_str  = 'seq=' . ++$this->m_sequence;

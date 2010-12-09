@@ -1,9 +1,9 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -38,7 +38,7 @@ class test_flags extends db_connection
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $m_list;
+  var $m_flags;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -52,24 +52,33 @@ class test_flags extends db_connection
   {
     parent::db_connection();
 
-    $sql  = "SELECT description ";
+    $sql  = "SELECT flag, description ";
     $sql .= "FROM testcases ";
     $sql .= "LEFT JOIN flags ";
     $sql .= "ON FIND_IN_SET(flags.flag, testcases.flags) ";
-    $sql .= "WHERE testsuite='";
-    $sql .= $test_suite;
-    $sql .= "' ";
-    $sql .= "AND testcase='";
-    $sql .= $test_case;
-    $sql .="'";
+    $sql .= "WHERE testsuite='{$test_suite}' ";
+    $sql .= "AND testcase='{$test_case}' ";
 
     $r = $this->query($sql);
 
-    if($r->is_false()) {
-      $this->m_list = null;
+    if ($r->is_false()) {
+      $this->m_flags = null;
     } else {
-      $this->m_list = $r->fetch_field_data('description');
+      $flags = $r->fetch_table();
+      foreach ($flags as $flag) {
+        $this->m_flags[$flag['flag']] = $flag['description'];
+      }
     }
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  has_flag
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function has_flag($flag)
+  {
+    return array_key_exists($flag, $this->m_flags);
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -79,13 +88,13 @@ class test_flags extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function write($indent)
   {
-    if($this->m_list && count($this->m_list) && $this->m_list[0] != '') {
+    if ($this->m_flags && count($this->m_flags)) {
       echo "\n";
-      echo $indent . '<p class="notes">'."\n";
-      foreach($this->m_list as $flag) {
-        echo $indent . '  ' . $flag . "\n";
+      echo $indent . "<p class='notes'>\n";
+      foreach($this->m_flags as $flag => $description) {
+        echo $indent . "  {$description}\n";
       }
-      echo $indent . '</p>'."\n";
+      echo $indent . "</p>\n";
       echo "\n";
     }
   }

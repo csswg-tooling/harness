@@ -41,8 +41,12 @@
     //  Instance variables.
     //
     ////////////////////////////////////////////////////////////////////////////
-    var $m_suspects;
+    var $m_offenders;
     var $m_banned;
+    
+    var $m_ban_threshold;
+    var $m_test_period;
+    var $m_ban_period;
     
     ////////////////////////////////////////////////////////////////////////////
     //
@@ -52,16 +56,29 @@
     function process_honey() 
     {
       parent::db_connection();
+
+      $this->m_ban_threshold  = 2;
+      $this->m_test_period    = 3;
+      $this->m_ban_period     = 7;
       
+      // remove suspects under trigger count for test period
+      $sql  = "DELETE FROM `honeypot` ";
+      $sql .= "WHERE `banned` = 0 AND `visit_count` < {$this->m_ban_threshold} AND ";
+      $sql .= "`last_action` < DATE_SUB(NOW(), INTERVAL {$this->m_test_period} DAY)";
+      $r = $this->query($sql);
+      
+      // find offenders needing to be banned
       $sql  = "SELECT `ip_address` FROM `honeypot` ";
-      $sql .= "WHERE `banned`=0 AND `visit_count`>1";
+      $sql .= "WHERE `banned` = 0 AND `visit_count` >= {$this->m_ban_threshold}";
       $r = $this->query($sql);
       if (! $r->is_false()) {
-        $this->m_suspects = $r->fetch_table();
+        $this->m_offenders = $r->fetch_table();
       }
       
+      // find banned offenders due for release
       $sql  = "SELECT `ip_address` FROM `honeypot` ";
-      $sql .= "WHERE `banned`=1 AND `last_action`<DATE_SUB(NOW(), INTERVAL 7 DAY)";
+      $sql .= "WHERE `banned` = 1 AND ";
+      $sql .= "`last_action` < DATE_SUB(NOW(), INTERVAL {$this->m_ban_period} DAY)";
       $r = $this->query($sql);
       if (! $r->is_false()) {
         $this->m_banned = $r->fetch_table();
@@ -70,8 +87,8 @@
     
     function process()
     {
-      foreach ($this->m_suspects as $suspect) {
-        $ip_address = $suspect['ip_address'];
+      foreach ($this->m_offenders as $offender) {
+        $ip_address = $offender['ip_address'];
         if ($ip_address != '::1') {
           $command = "/sbin/iptables -I INPUT -s {$ip_address} -j DROP";
           exec($command);

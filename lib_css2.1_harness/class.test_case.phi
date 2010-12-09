@@ -62,6 +62,7 @@ class test_case extends db_connection
   var $m_count;
   var $m_timestamp;
   var $m_flags;
+  var $m_references;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -166,6 +167,19 @@ class test_case extends db_connection
       , $this->get_test_case()
       );
 
+    if ($this->is_reference_test()) {
+      $testcase_id = $this->get_id();
+      
+      $sql  = "SELECT id, reference, uri, type ";
+      $sql .= "FROM reftests ";
+      $sql .= "WHERE testcase_id='{$testcase_id}'";
+      
+      $r = $this->query($sql);
+      if (! $r->is_false()) {
+        $this->m_references = $r->fetch_table();
+      }
+    }
+    
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -556,28 +570,24 @@ class test_case extends db_connection
   //  write
   //
   ////////////////////////////////////////////////////////////////////////////
-  function write($indent)
+  function write($indent, $refID)
   {
-    echo "\n";
-    
-    echo $indent . '<div class="test">'."\n";
-    echo $indent . '  <p>'."\n";
-    
-    echo $indent . '    <object data="';
-    echo $this->get_uri();
-    echo '" type="text/html">'."\n";
-
-    echo $indent . '      <a href="';
-    echo $this->get_uri();
-    echo '">'."\n";
-    echo $indent . '        Run test'."\n";
-    echo $indent . '      </a>'."\n";
-
-    echo $indent . '    </object>'."\n";
-    echo $indent . '  </p>'."\n";
-    echo $indent . '</div>'."\n";
-    echo "\n";
-  
+    $refURI = $this->get_reference_uri($refID);
+    if ($refURI) {
+      echo $indent . "<object data='{$refURI}' type='text/html'>\n";
+      echo $indent . "  <a href='{$refURI}'>\n";
+      echo $indent . "    Show reference\n";
+      echo $indent . "  </a>\n";
+      echo $indent . "</object>\n";
+    }
+    else {
+      $uri = $this->get_uri();
+      echo $indent . "<object data='{$uri}' type='text/html'>\n";
+      echo $indent . "  <a href='{$uri}'>\n";
+      echo $indent . "    Run test\n";
+      echo $indent . "  </a>\n";
+      echo $indent . "</object>\n";
+    }
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -696,6 +706,68 @@ class test_case extends db_connection
   function get_count()
   {
     return $this->m_count;
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  is_reference_test()
+  //
+  //  does this test have reference pages
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function is_reference_test()
+  {
+    return $this->m_flags && $this->m_flags->has_flag('reftest');
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_references()
+  //
+  //  get table of reference page data
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_references()
+  {
+    return $this->m_references;
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_reference_uri($id)
+  //
+  //  get uri of specific reference page
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_reference_uri($refID)
+  {
+    if (0 < $refID) {
+      foreach ($this->m_references as $reference) {
+        if ($reference['id'] == $refID) {
+          return $reference['uri'];
+        }
+      }
+    }
+    return null;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  //
+  //  get_reference_uri($id)
+  //
+  //  get type of specific reference page ('==', '!=')
+  //
+  ////////////////////////////////////////////////////////////////////////////
+  function get_reference_type($refID)
+  {
+    if (0 < $refID) {
+      foreach ($this->m_references as $reference) {
+        if ($reference['id'] == $refID) {
+          return $reference['type'];
+        }
+      }
+    }
+    return null;
   }
 
 }

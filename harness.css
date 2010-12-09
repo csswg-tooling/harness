@@ -35,6 +35,43 @@ span {
   margin-bottom: 0.4em;
   font-size: smaller;
 }
+
+ul.tabbar {
+  list-style: none;
+  padding: 0;
+  margin: .5em 0 0 0;
+}
+ul.tabbar li {
+  float: left;
+  border: 1px solid #888;
+  border-bottom-width: 0;
+  margin: 0 0 0 1em;
+}
+ul.tabbar a {
+  text-decoration: none;
+  display: block;
+  padding: 0.24em 1em;
+  text-align: center;
+  background: #eee;
+}
+ul.tabbar a:hover {
+  background: #ddd;
+}
+ul.tabbar .active {
+  border-color: black;
+}
+ul.tabbar .active a {
+  position: relative;
+  top: 1px;
+  background: white;
+  color: black;
+}
+p.instruct {
+  border-top: 1px solid black;
+  clear: both;
+  padding: .5em 1em 0 1em;
+}
+
 .test {
   height: 80%;
   width: 100%;

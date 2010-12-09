@@ -76,6 +76,8 @@ class testcase_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   var $m_test_case;
   var $m_user_agent;
+  var $m_post_data;
+  var $m_ref_id;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -156,10 +158,8 @@ class testcase_page extends css_page
       $type = 0;
     }
 
-    $_GET['type'] = $type;
-
     if(isset($_GET['r'])) {
-      $rank = $_GET['r'];
+      $rank = intval($_GET['r']);
     } else {
       $rank = 0;
     }
@@ -191,7 +191,19 @@ class testcase_page extends css_page
       , $order 
       , $rank);
 
-    $_GET['c'] = $this->m_test_case->get_test_case();
+    $this->m_post_data = $_GET;
+    $this->m_post_data['type'] = $type;
+    $this->m_post_data['c'] = $this->m_test_case->get_test_case();
+    if (isset($this->m_post_data['ref'])) {
+      unset($this->m_post_data['ref']);
+    }
+
+    if (isset($_GET['ref'])) {
+      $this->m_ref_id = intval($_GET['ref']);
+    } else {
+      $this->m_ref_id = 0;
+    }
+
 
     $this->m_page_title = $this->m_test_case->get_title_suite() . 
       ' CSS 2.1 Test Suite';
@@ -251,11 +263,19 @@ class testcase_page extends css_page
       echo $this->m_test_case->get_count();
       echo ')'."\n";
     }
-    echo $indent . '      <a href="';
-    echo $this->m_test_case->get_uri();
-    echo '">'."\n";
-    echo $indent . '        '. $this->m_test_case->get_test_case()."\n";
-    echo $indent . '      </a>'."\n";
+    echo $indent . "      <a href='" . $this->m_test_case->get_uri() . "'>";
+    echo $this->m_test_case->get_test_case() . "</a>\n";
+    
+    if ($this->m_test_case->is_reference_test()) {
+      $ref_tests = $this->m_test_case->get_references();
+      
+      foreach ($ref_tests as $ref_test) {
+        $ref_name = $ref_test['reference'];
+        $ref_type = $ref_test['type'];
+        $ref_uri  = $ref_test['uri'];
+        echo $indent . "      {$ref_type} <a href='{$ref_uri}'>{$ref_name}</a>\n";
+      }
+    }
     echo $indent . '    </span>'."\n";
     
     echo $indent . '  </p>'."\n";
@@ -263,7 +283,7 @@ class testcase_page extends css_page
     echo $indent . '    ' . $this->m_test_case->get_title() . "\n";
     echo $indent . '  </h1>'."\n";
     
-    $this->m_test_case->m_flags->write($indent);
+    $this->m_test_case->m_flags->write($indent . '  ');
 
     echo $indent . '</div>'."\n";
 
@@ -276,17 +296,60 @@ class testcase_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_content($indent = '')
   {
+  
+    
+    if ($this->m_test_case->is_reference_test()) {  // write ref test UI
+      $ref_tests = $this->m_test_case->get_references();
+      
+      if (count($ref_tests)) {
+        echo $indent . "<ul class='tabbar'>\n";
+        if (0 == $this->m_ref_id) {
+          echo $indent . "  <li class='reftab active'><a>Test Case</a></li>\n";
+        }
+        else {
+          $query = $_GET;
+          unset($query['ref']);
+          $query_str = http_build_query($query, 'var_');
+          echo $indent . "  <li class='reftab'><a href='testcase?{$query_str}'>Test Case</a></li>\n";
+        }
+        foreach ($ref_tests as $ref_test) {
+          $ref_id = $ref_test['id'];
+          $ref_type = $ref_test['type'];
+          if ($ref_id == $this->m_ref_id) {
+            echo $indent . "  <li class='reftab active'><a>{$ref_type} Reference Page</a></li>\n";
+          }
+          else {
+            $query = $_GET;
+            $query['ref'] = $ref_id;
+            $query_str = http_build_query($query, 'var_');
+            echo $indent . "  <li class='reftab'><a href='testcase?{$query_str}'>";
+            echo              "{$ref_type} Reference Page";
+            echo              "</a></li>\n";
+          }
+        }
+        echo $indent . "</ul>\n";
 
-    $this->m_test_case->write($indent);
+        if (0 == $this->m_ref_id) {
+          $plural = ((1 < count($ref_tests)) ? 's' : '');
+          echo $indent . "<p class='instruct'>This page must be compared to the Reference Page{$plural}</p>\n";
+        }
+        else {
+          $not = (('!=' == $this->m_test_case->get_reference_type($this->m_ref_id)) ? 'NOT ' : '');
+          echo $indent . "<p class='instruct'>This page must {$not}match the Test Case</p>\n";
+        }
+      }
+    }
+
+    echo $indent . "<div class='test'>\n";
+    echo $indent . "  <p>\n";
+    $this->m_test_case->write($indent . '    ', $this->m_ref_id);
+    echo $indent . '  </p>'."\n";
+    echo $indent . '</div>'."\n";
 
     echo $indent . '<form name="eval" action="submit" method="post">'."\n";
     echo $indent . '  <p class="buttons">'."\n";
-    foreach($_GET as $opt => $value) {
-      echo $indent . '    <input type="hidden" name="';
-      echo $opt;
-      echo '" value="';
-      echo $value;
-      echo '" />'."\n";
+    foreach($this->m_post_data as $opt => $value) {
+      echo $indent . "    <input type='hidden' name='{$opt}' value='{$value}'>\n";
     }
     echo $indent . '    <input type="submit" name="result" value="Pass [1]" accesskey="1" />'."\n";
     echo $indent . '    <input type="submit" name="result" value="Fail [2]" accesskey="2" />'."\n";
