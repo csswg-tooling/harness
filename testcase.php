@@ -263,7 +263,7 @@ class testcase_page extends css_page
       echo $this->m_test_case->get_count();
       echo ')'."\n";
     }
-    echo $indent . "      <a href='" . $this->m_test_case->get_uri() . "'>";
+    echo $indent . "      <a href='" . $this->m_test_case->get_uri() . "' target='test_case'>";
     echo $this->m_test_case->get_test_case() . "</a>\n";
     
     if ($this->m_test_case->is_reference_test()) {
@@ -273,7 +273,7 @@ class testcase_page extends css_page
         $ref_name = $ref_test['reference'];
         $ref_type = $ref_test['type'];
         $ref_uri  = $ref_test['uri'];
-        echo $indent . "      {$ref_type} <a href='{$ref_uri}'>{$ref_name}</a>\n";
+        echo $indent . "      {$ref_type} <a href='{$ref_uri}' target='reference'>{$ref_name}</a>\n";
       }
     }
     echo $indent . '    </span>'."\n";

@@ -575,7 +575,7 @@ class test_case extends db_connection
     $refURI = $this->get_reference_uri($refID);
     if ($refURI) {
       echo $indent . "<object data='{$refURI}' type='text/html'>\n";
-      echo $indent . "  <a href='{$refURI}'>\n";
+      echo $indent . "  <a href='{$refURI}' target='reference'>\n";
       echo $indent . "    Show reference\n";
       echo $indent . "  </a>\n";
       echo $indent . "</object>\n";
@@ -583,7 +583,7 @@ class test_case extends db_connection
     else {
       $uri = $this->get_uri();
       echo $indent . "<object data='{$uri}' type='text/html'>\n";
-      echo $indent . "  <a href='{$uri}'>\n";
+      echo $indent . "  <a href='{$uri}' target='test_case'>\n";
       echo $indent . "    Run test\n";
       echo $indent . "  </a>\n";
       echo $indent . "</object>\n";
