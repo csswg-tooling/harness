@@ -183,10 +183,14 @@ class Resequence extends DBConnection
       unset ($r);
       unset ($data);
       unset ($this->mCounts);
-      unset ($this->mTestCases);
       
-print "Querying for results for {$testSuite} ({$sequenceQuery})\n";      
-      $sql  = "SELECT id, testcase, engine, flags, SUM(pass) as pass, ";
+      print "Loading test cases for {$testSuite}\n";      
+
+      $this->_loadTestCases($testSuite);
+
+      print "Querying for results {$sequenceQuery}\n";      
+
+      $sql  = "SELECT testcase, engine, flags, SUM(pass) as pass, ";
       $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
       $sql .= "SUM(invalid) as invalid, SUM(na) as na, ";
       $sql .= "COUNT(pass + fail + uncertain + invalid + na) as count ";
@@ -204,22 +208,21 @@ print "Querying for results for {$testSuite} ({$sequenceQuery})\n";
       $sql .= "WHERE t.testsuite LIKE '{$sequenceQuery}' ";
       $sql .= "AND t.active='1' ";
       $sql .= "GROUP BY testcase, engine";
-//print $sql;      
+
       $r = $this->query($sql);
       
       if (! $r->is_false()) {
         $data = $r->fetch_table();
         
         if ($data) {
-print "Processing results\n";      
-          $lastTestCaseId = -1;
+          print "Processing results\n";
+          
           $lastTestCase   = '';
           foreach ($data as $result) {
-            $testCaseId = $result['id'];
-            $testCase   = $result['testcase'];
+            $testCase = $result['testcase'];
             if ($testCase != $lastTestCase) {
-              if (-1 != $lastTestCaseId) {
-                $this->_processTestcase($lastTestCaseId, $lastTestCase, $engineResults, $optional);
+              if ('' != $lastTestCase) {
+                $this->_processTestcase($this->mTestCases[$lastTestCase], $lastTestCase, $engineResults, $optional);
               }
               unset ($engineResults);
             }
@@ -233,15 +236,13 @@ print "Processing results\n";
             $engineResults['na'][$engine]         = $result['na'];
             $engineResults['count'][$engine]      = $result['count'];
             
-            $lastTestCaseId = $testCaseId;
             $lastTestCase   = $testCase;
           }
-          $this->_processTestcase($testCaseId, $testCase, $engineResults, $optional);
-          
-          $this->_loadTestCases($testSuite);
+          $this->_processTestcase($this->mTestCases[$testCase], $testCase, $engineResults, $optional);
           
           foreach ($this->mEngines as $engine) {
-print "Storing sequence for {$engine}\n";      
+            print "Storing sequence for {$engine}\n";
+            
             $engineCounts = $this->mCounts[$engine];
             asort($engineCounts);
             $sequence = 0;
