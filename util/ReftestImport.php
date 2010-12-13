@@ -51,14 +51,16 @@
       
     }
     
-    function loadTestCases($testSuite)
+    protected function _loadTestCases($testSuite)
     {
-      $sql  = "SELECT id, testcase FROM testcases ";
-      $sql .= "WHERE testsuite='{$testSuite}' ";
+      $sql  = "SELECT `id`, `testcase` FROM `testcases` ";
+      $sql .= "WHERE `testsuite` = '{$testSuite}' ";
       
       $r = $this->query($sql);
       
       $testCases = $r->fetch_table();
+      
+      unset($this->mTestCases);
       
       foreach ($testCases as $testCase) {
         $this->mTestCases[$testCase['testcase']] = $testCase['id'];
@@ -77,7 +79,7 @@
     
     function import($manifest, $testSuite, $baseURI)
     {
-      $this->loadTestCases($testSuite);
+      $this->_loadTestCases($testSuite);
       
       $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
       

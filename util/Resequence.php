@@ -56,9 +56,10 @@ class Resequence extends DBConnection
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $m_engines;
-  var $m_testsuites;
-  var $m_counts;
+  var $mEngines;
+  var $mTestSuites;
+  var $mCounts;
+  var $mTestCases;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -72,74 +73,90 @@ class Resequence extends DBConnection
     $sql = "SELECT DISTINCT `engine` FROM `useragents` WHERE `engine`!='' ORDER BY `engine`";
     $r = $this->query($sql);
     if (! $r->is_false()) {
-      $db_engines = $r->fetch_table();
-      foreach ($db_engines as $db_engine) {
-        $this->m_engines[] = $db_engine['engine'];
+      $dbEngines = $r->fetch_table();
+      foreach ($dbEngines as $dbEngine) {
+        $this->mEngines[] = $dbEngine['engine'];
       }
     }
-    $this->m_engine_count = count($this->m_engines);
 
-    $sql = "SELECT DISTINCT `testsuite` FROM `testsuites` WHERE `active`!='0' ORDER BY `testsuite`";
+    $sql = "SELECT DISTINCT `testsuite`, `sequence_query` FROM `testsuites` WHERE `active`!='0' ORDER BY `testsuite`";
     $r = $this->query($sql);
     if (! $r->is_false()) {
-      $db_testsuites = $r->fetch_table();
-      foreach ($db_testsuites as $db_testsuite) {
-        $this->m_testsuites[] = $db_testsuite['testsuite'];
+      $dbTestSuites = $r->fetch_table();
+      foreach ($dbTestSuites as $dbTestSuite) {
+        $this->mTestSuites[$dbTestSuite['testsuite']] = $dbTestSuite['sequence_query'];
       }
     }
   }
-
-  function _process_testcase($testcase_id, $engine_results, $optional)
+  
+  protected function _loadTestCases($testSuite)
   {
-    $pass_count = 0;
-    $test_invalid = false;
+    $sql  = "SELECT `id`, `testcase` FROM `testcases` ";
+    $sql .= "WHERE `testsuite` = '{$testSuite}' ";
     
-    foreach ($this->m_engines as $engine) {
-      if (array_key_exists($engine, $engine_results['count'])) {
-        $pass      = $engine_results['pass'][$engine];
-        $invalid   = $engine_results['invalid'][$engine];
+    $r = $this->query($sql);
+    
+    $testCases = $r->fetch_table();
+    
+    unset($this->mTestCases);
+    
+    foreach ($testCases as $testCase) {
+      $this->mTestCases[$testCase['testcase']] = $testCase['id'];
+    }
+  }
+
+
+  protected function _processTestcase($testCaseId, $testCase, $engineResults, $optional)
+  {
+    $passCount = 0;
+    $testInvalid = FALSE;
+    
+    foreach ($this->mEngines as $engine) {
+      if (array_key_exists($engine, $engineResults['count'])) {
+        $pass      = $engineResults['pass'][$engine];
+        $invalid   = $engineResults['invalid'][$engine];
         if (0 < $pass) {
-          $pass_count++;
+          $passCount++;
         }
         if (0 < $invalid) {
-          $test_invalid = true;
+          $testInvalid = TRUE;
         }
       }
     }
     
-    foreach ($this->m_engines as $engine) {
-      $engine_passes = false;
-      $engine_count  = 0;
-      if (array_key_exists($engine, $engine_results['count'])) {
-        $engine_count = $engine_results['count'][$engine];
-        $pass = $engine_results['pass'][$engine];
+    foreach ($this->mEngines as $engine) {
+      $enginePasses = FALSE;
+      $engineCount  = 0;
+      if (array_key_exists($engine, $engineResults['count'])) {
+        $engineCount = $engineResults['count'][$engine];
+        $pass = $engineResults['pass'][$engine];
         if (0 < $pass) {
-          $engine_passes = true;
+          $enginePasses = TRUE;
         }
       }
       
-      if ($test_invalid) {
-        $count = $engine_count + 1000000;
+      if ($testInvalid) {
+        $count = $engineCount + 1000000;
       }
       else {
-        if ($engine_passes) {
-          $count = $engine_count;
+        if ($enginePasses) {
+          $count = $engineCount;
         }
         else {
           $count = 0;
-          if ($pass_count < 2) {
+          if ($passCount < 2) {
             $count -= 4;
           }
-          if (false == $optional) {
+          if (FALSE == $optional) {
             $count -= 2;
           }
-          if (0 == $engine_count) {
+          if (0 == $engineCount) {
             $count -= 1;
           }
         }
       }
     
-      $this->m_counts[$engine][$testcase_id] = ($count + 16) + ($testcase_id / 1000000);
+      $this->mCounts[$engine][$testCase] = ($count + 16) + ($testCaseId / 1000000);
     }
   }
   
@@ -162,16 +179,21 @@ class Resequence extends DBConnection
   ////////////////////////////////////////////////////////////////////////////
   function rebuild()
   {
-    foreach ($this->m_testsuites as $testsuite) {
-print "Querying for results for {$testsuite}\n";      
-      $sql  = "SELECT id, engine, flags, SUM(pass) as pass, ";
+    foreach ($this->mTestSuites as $testSuite => $sequenceQuery) {
+      unset ($r);
+      unset ($data);
+      unset ($this->mCounts);
+      unset ($this->mTestCases);
+      
+print "Querying for results for {$testSuite} ({$sequenceQuery})\n";      
+      $sql  = "SELECT id, testcase, engine, flags, SUM(pass) as pass, ";
       $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
       $sql .= "SUM(invalid) as invalid, SUM(na) as na, ";
       $sql .= "COUNT(pass + fail + uncertain + invalid + na) as count ";
       $sql .= "FROM (";
       
       $sql .= "SELECT testcases.id, testcases.testsuite, ";
-      $sql .= "testcases.flags, ";
+      $sql .= "testcases.testcase, testcases.flags, ";
       $sql .= "useragents.engine, testcases.active, ";
       $sql .= "result='pass' AS pass, ";
       $sql .= "result='fail' AS fail, result='uncertain' AS uncertain, ";
@@ -179,9 +201,9 @@ print "Querying for results for {$testsuite}\n";
       $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
       $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id)) as t ";
       
-      $sql .= "WHERE t.testsuite='{$testsuite}' ";
+      $sql .= "WHERE t.testsuite LIKE '{$sequenceQuery}' ";
       $sql .= "AND t.active='1' ";
-      $sql .= "GROUP BY id, engine";
+      $sql .= "GROUP BY testcase, engine";
 //print $sql;      
       $r = $this->query($sql);
       
@@ -190,42 +212,48 @@ print "Querying for results for {$testsuite}\n";
         
         if ($data) {
 print "Processing results\n";      
-          unset ($this->m_counts);
-          $last_testcase_id = -1;
+          $lastTestCaseId = -1;
+          $lastTestCase   = '';
           foreach ($data as $result) {
-            $testcase_id = $result['id'];
-            if ($testcase_id != $last_testcase_id) {
-              if (-1 != $last_testcase_id) {
-                $this->_process_testcase($last_testcase_id, $engine_results, $optional);
+            $testCaseId = $result['id'];
+            $testCase   = $result['testcase'];
+            if ($testCase != $lastTestCase) {
+              if (-1 != $lastTestCaseId) {
+                $this->_processTestcase($lastTestCaseId, $lastTestCase, $engineResults, $optional);
               }
-              unset ($engine_results);
+              unset ($engineResults);
             }
-            $flags       = $result['flags'];
+            $flags    = $result['flags'];
             $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
-            $engine = $result['engine'];
-            $engine_results['pass'][$engine]      = $result['pass'];
-            $engine_results['fail'][$engine]      = $result['fail'];
-            $engine_results['uncertain'][$engine] = $result['uncertain'];
-            $engine_results['invalid'][$engine]   = $result['invalid'];
-            $engine_results['na'][$engine]        = $result['na'];
-            $engine_results['count'][$engine]     = $result['count'];
+            $engine   = $result['engine'];
+            $engineResults['pass'][$engine]       = $result['pass'];
+            $engineResults['fail'][$engine]       = $result['fail'];
+            $engineResults['uncertain'][$engine]  = $result['uncertain'];
+            $engineResults['invalid'][$engine]    = $result['invalid'];
+            $engineResults['na'][$engine]         = $result['na'];
+            $engineResults['count'][$engine]      = $result['count'];
             
-            $last_testcase_id = $testcase_id;
+            $lastTestCaseId = $testCaseId;
+            $lastTestCase   = $testCase;
           }
-          $this->_process_testcase($testcase_id, $engine_results, $optional);
+          $this->_processTestcase($testCaseId, $testCase, $engineResults, $optional);
           
-          foreach ($this->m_engines as $engine) {
+          $this->_loadTestCases($testSuite);
+          
+          foreach ($this->mEngines as $engine) {
 print "Storing sequence for {$engine}\n";      
-            $engine_counts = $this->m_counts[$engine];
-            asort($engine_counts);
+            $engineCounts = $this->mCounts[$engine];
+            asort($engineCounts);
             $sequence = 0;
-            foreach ($engine_counts as $testcase_id => $count) {
+            foreach ($engineCounts as $testCase => $count) {
               $sequence++;
               
-              $sql  = "INSERT INTO testsequence (engine, testcase_id, sequence) ";
-              $sql .= "VALUES ('{$engine}', '{$testcase_id}', '{$sequence}') ";
-              $sql .= "ON DUPLICATE KEY UPDATE sequence='{$sequence}'";
+              $testCaseId = $this->mTestCases[$testCase];
               
+              $sql  = "INSERT INTO testsequence (engine, testcase_id, sequence) ";
+              $sql .= "VALUES ('{$engine}', '{$testCaseId}', '{$sequence}') ";
+              $sql .= "ON DUPLICATE KEY UPDATE sequence='{$sequence}'";
+
               $this->query($sql);
             }
           }
