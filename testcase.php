@@ -272,7 +272,7 @@ class testcase_page extends css_page
       foreach ($ref_tests as $ref_test) {
         $ref_name = $ref_test['reference'];
         $ref_type = $ref_test['type'];
-        $ref_uri  = $ref_test['uri'];
+        $ref_uri  = $this->m_test_case->getBaseURI() . $ref_test['uri'];
         echo $indent . "      {$ref_type} <a href='{$ref_uri}' target='reference'>{$ref_name}</a>\n";
       }
     }

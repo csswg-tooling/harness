@@ -39,18 +39,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 require_once("./lib_css2.1_harness/class.test_flags.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  class test_case
 //
-//  test_case is a concrete db_connection taylored for storing the 
+//  test_case is a concrete DBConnection taylored for storing the 
 //  information about a particular test case.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class test_case extends db_connection
+class test_case extends DBConnection
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -89,7 +89,7 @@ class test_case extends db_connection
   //  for a given user agent string as of a given timestamp.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function test_case
+  function __construct
     ( $test_suite
     , $test_select
     , $select_type
@@ -99,7 +99,7 @@ class test_case extends db_connection
     , $rank  // $rank = 1 is the first member of the list.
     )
   {
-    parent::db_connection();
+    parent::__construct();
 
     if($rank < 1) $rank = 1;
 
@@ -277,7 +277,8 @@ class test_case extends db_connection
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "testsuites.title AS suitetitle, ";
+    $sql .= "testsuites.base_uri ";
     $sql .= "FROM (testcases LEFT JOIN testsuites ";
     $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
     $sql .= "LEFT JOIN testgroups ";
@@ -305,7 +306,8 @@ class test_case extends db_connection
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "testsuites.title AS suitetitle, ";
+    $sql .= "testsuites.base_uri ";
     $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
     if (1 == $order) {
       $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id ";
@@ -416,7 +418,8 @@ class test_case extends db_connection
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "testsuites.title AS suitetitle, ";
+    $sql .= "testsuites.base_uri ";
     $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
     if (1 == $order) {
       $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id ";
@@ -504,7 +507,8 @@ class test_case extends db_connection
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle ";
+    $sql .= "testsuites.title AS suitetitle, ";
+    $sql .= "testsuites.base_uri ";
     $sql .= "FROM (testcases LEFT JOIN testsuites ";
     $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
     $sql .= "LEFT JOIN testgroups ";
@@ -635,7 +639,12 @@ class test_case extends db_connection
   ////////////////////////////////////////////////////////////////////////////
   function get_uri()
   {
-    return $this->m_info['uri'];
+    return $this->m_info['base_uri'] . $this->m_info['uri'];
+  }
+
+  function getBaseURI()
+  {
+    return $this->m_info['base_uri'];
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -744,7 +753,7 @@ class test_case extends db_connection
     if (0 < $refID) {
       foreach ($this->m_references as $reference) {
         if ($reference['id'] == $refID) {
-          return $reference['uri'];
+          return $this->m_info['base_uri'] . $reference['uri'];
         }
       }
     }
@@ -753,7 +762,7 @@ class test_case extends db_connection
 
   ////////////////////////////////////////////////////////////////////////////
   //
-  //  get_reference_uri($id)
+  //  get_reference_type($id)
   //
   //  get type of specific reference page ('==', '!=')
   //

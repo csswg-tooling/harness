@@ -18,23 +18,23 @@
   
   //////////////////////////////////////////////////////////////////////////////// 
   //
-  //  process_honey.php
+  //  ProcessSpiders.php
   //
   //////////////////////////////////////////////////////////////////////////////// 
   
-  require_once("lib_test_harness/class.db_connection.phi");
+  require_once("lib_test_harness/class.DBConnection.phi");
   
   ////////////////////////////////////////////////////////////////////////////////
   //
-  //  class process_honey
+  //  class ProcessSpiders
   //
-  //  This class checks the honeypot and bans offenders at the firewall
+  //  This class checks the spidertrap and bans offenders at the firewall
   //  Bans are released after 7 days
   //
   //  This is meant to be run from by a periodic cron job 
   //
   ////////////////////////////////////////////////////////////////////////////////
-  class process_honey extends db_connection
+  class ProcessSpiders extends DBConnection
   {  
     ////////////////////////////////////////////////////////////////////////////
     //
@@ -53,23 +53,23 @@
     //  Constructor.
     //
     ////////////////////////////////////////////////////////////////////////////
-    function process_honey() 
+    function __construct() 
     {
-      parent::db_connection();
+      parent::__construct();
 
       $this->m_ban_threshold  = 2;
       $this->m_test_period    = 3;
       $this->m_ban_period     = 7;
       
       // remove suspects under trigger count for test period
-      $sql  = "DELETE FROM `honeypot` ";
+      $sql  = "DELETE FROM `spidertrap` ";
       $sql .= "WHERE `banned` = 0 AND ";
       $sql .= "0 < `visit_count` AND `visit_count` < {$this->m_ban_threshold} AND ";
       $sql .= "`last_action` < DATE_SUB(NOW(), INTERVAL {$this->m_test_period} DAY)";
       $r = $this->query($sql);
       
       // find offenders needing to be banned
-      $sql  = "SELECT `ip_address` FROM `honeypot` ";
+      $sql  = "SELECT `ip_address` FROM `spidertrap` ";
       $sql .= "WHERE `banned` = 0 AND {$this->m_ban_threshold} <= `visit_count` ";
       $r = $this->query($sql);
       if (! $r->is_false()) {
@@ -77,7 +77,7 @@
       }
       
       // find banned offenders due for release
-      $sql  = "SELECT `ip_address` FROM `honeypot` ";
+      $sql  = "SELECT `ip_address` FROM `spidertrap` ";
       $sql .= "WHERE `banned` = 1 AND ";
       $sql .= "`last_action` < DATE_SUB(NOW(), INTERVAL {$this->m_ban_period} DAY)";
       $r = $this->query($sql);
@@ -93,7 +93,7 @@
         if (($ip_address != '::1') && ($ip_address != '127.0.0.1')) {
           $command = "/sbin/iptables -I INPUT -s {$ip_address} -j DROP";
           exec($command);
-          $sql = "UPDATE `honeypot` SET `banned` = 1 WHERE `ip_address` = '{$ip_address}'";
+          $sql = "UPDATE `spidertrap` SET `banned` = 1 WHERE `ip_address` = '{$ip_address}'";
           $this->query($sql);
         }
       }
@@ -103,14 +103,14 @@
         if (($ip_address != '::1') && ($ip_address != '127.0.0.1')) {
           $command = "/sbin/iptables --delete INPUT -s {$ip_address} -j DROP";
           exec($command);
-          $sql = "UPDATE `honeypot` SET `banned` = 0, `visit_count` = 0 WHERE `ip_address` = '{$ip_address}'";
+          $sql = "UPDATE `spidertrap` SET `banned` = 0, `visit_count` = 0 WHERE `ip_address` = '{$ip_address}'";
           $this->query($sql);
         }
       }
     }
   }
   
-  $worker = new process_honey();
+  $worker = new ProcessSpiders();
   $worker->process();
   
 ?>

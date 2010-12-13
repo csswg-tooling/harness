@@ -32,17 +32,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  class user_agent
 //
-//  user_agent is a concrete db_connection taylored for storing the 
+//  user_agent is a concrete DBConnection taylored for storing the 
 //  information about a particular user agent.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class user_agent extends db_connection
+class user_agent extends DBConnection
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -56,9 +56,9 @@ class user_agent extends db_connection
   //  Constructor
   //
   ////////////////////////////////////////////////////////////////////////////
-  function user_agent($id='') 
+  function __construct($id='') 
   {
-    parent::db_connection();
+    parent::__construct();
 
     $this->m_info = $this->lookup($id);
   }

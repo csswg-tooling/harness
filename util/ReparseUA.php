@@ -37,11 +37,8 @@
 //////////////////////////////////////////////////////////////////////////////// 
 
 require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_test_harness/class.db_connection.phi");
-//require_once("./lib_css2.1_harness/class.test_suite.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 require_once("./lib_css2.1_harness/class.user_agent.phi");
-//require_once("./lib_css2.1_harness/class.test_groups.phi");
-//require_once("./lib_css2.1_harness/class.test_cases.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -78,7 +75,7 @@ class reparse_ua extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_content($indent = '') {
 
-    $db = new db_connection();
+    $db = new DBConnection();
     
     echo $indent . "<table>";
     $sql = "SELECT id FROM useragents";

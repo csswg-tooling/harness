@@ -35,17 +35,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  class test_suite
 //
-//  test_suite is a concrete db_connection taylored for storing the 
+//  test_suite is a concrete DBConnection taylored for storing the 
 //  information about a particular test suite.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class test_suite extends db_connection
+class test_suite extends DBConnection
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -62,9 +62,9 @@ class test_suite extends db_connection
   //  and store the results.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function test_suite($test_suite) 
+  function __construct($test_suite) 
   {
-    parent::db_connection();
+    parent::__construct();
     
     $sql  = "SELECT * FROM testsuites ";
     $sql .= "WHERE testsuite='$test_suite' ";

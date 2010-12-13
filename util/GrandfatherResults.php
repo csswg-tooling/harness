@@ -36,12 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_test_harness/class.db_connection.phi");
-//require_once("./lib_css2.1_harness/class.test_suite.phi");
-//require_once("./lib_css2.1_harness/class.user_agent.phi");
-//require_once("./lib_css2.1_harness/class.test_groups.phi");
-//require_once("./lib_css2.1_harness/class.test_cases.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -52,18 +47,14 @@ require_once("./lib_test_harness/class.db_connection.phi");
 //  and not all tests have changed. 
 //  
 //  To use this class, set a value of '1' in the grandfather field for
-//  all testcases where results should be copied, then call copy_results
+//  all testcases where results should be copied, then call copyRresults
 //  with the relevant test suites.
 //
 //  The copy function resets the grandfather field to '2' to avoid multiple
 //  copies of results. 
 //  
-//  The copy function is also limited to copy results from 1000 testcases
-//  at a time to avoid timeout issues. Run the script repeatedly if more than
-//  1000 testcases are present.
-//
 ////////////////////////////////////////////////////////////////////////////////
-class grandfather extends css_page
+class GrandfatherResults extends DBConnection
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -77,10 +68,9 @@ class grandfather extends css_page
   //  Constructor.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function grandfather() 
+  function __construct() 
   {
-    parent::css_page();
-
+    parent::__construct();
   }
   
   ////////////////////////////////////////////////////////////////////////////
@@ -90,73 +80,64 @@ class grandfather extends css_page
   //  id of source result is preserved in original_id
   //
   ////////////////////////////////////////////////////////////////////////////
-  function copy_results($from_suite, $to_suite)
+  function copyResults($fromSuite, $toSuite)
   {
-    $db = new db_connection();
-
-    echo "<table>";
-    $sql = "SELECT id, testcase FROM testcases WHERE testsuite='{$to_suite}' AND grandfather='1' LIMIT 1000";
-    $r = $db->query($sql);
-    $db_list = $r->fetch_table(); 
-    foreach ($db_list as $db_data) {
-      $new_testcase_id = $db_data['id'];
-      $testcase = $db_data['testcase'];
+    $sql = "SELECT `id`, `testcase` FROM `testcases` WHERE `testsuite` = '{$toSuite}' AND `grandfather` = '1'";
+    $r = $this->query($sql);
+    $dbList = $r->fetch_table(); 
+    foreach ($dbList as $dbData) {
+      $newTestcaseId = $dbData['id'];
+      $testCase = $dbData['testcase'];
       
-      echo "<tr><td>" . $new_testcase_id . "<td colspan='999'>" . $testcase;
+      echo "Copy results from {$testCase} ";
       
-      $sql  = "SELECT id FROM testcases ";
-      $sql .= "WHERE testcases.testcase='{$testcase}' AND testcases.testsuite='{$from_suite}' ";
+      $sql  = "SELECT `id` FROM `testcases` ";
+      $sql .= "WHERE `testcase` = '{$testCase}' AND `testsuite` = '{$fromSuite}' ";
       $sql .= "LIMIT 1";
-      $r = $db->query($sql);
-      if (! $r->is_false()) {
-        $testcase_list = $r->fetch_table();
-        $old_testcase_id = $testcase_list[0]['id'];
+      $r = $this->query($sql);
+      
+      if ($r->is_false()) {
+        echo "not in new suite\n";
+      }
+      else {
+        $testCaseList = $r->fetch_table();
+        $oldTestcaseId = $testCaseList[0]['id'];
         
-        $sql  = "SELECT id, useragent_id, source, result, modified FROM results ";
-        $sql .= "WHERE testcase_id='{$old_testcase_id}' ";
-        $sql .= "AND result!='na'";
-        //print "<td>" . $sql;      
-        $r = $db->query($sql);
+        echo "{$oldTestcaseId} to {$newTestcaseId}\n";
+        
+        $sql  = "SELECT `id`, `useragent_id`, `source`, `result`, `modified` FROM `results` ";
+        $sql .= "WHERE `testcase_id` = '{$oldTestcaseId}' ";
+        $sql .= "AND `result` != 'na'";
+        $r = $this->query($sql);
+
         if (! $r->is_false()) {
-          $result_list = $r->fetch_table();
-          foreach ($result_list as $result_data) {
-            $result_id    = $result_data['id'];
-            $useragent_id = $result_data['useragent_id'];
-            $source       = $result_data['source'];
-            $result       = $result_data['result'];
-            $modified     = $result_data['modified'];
+          $resultList = $r->fetch_table();
+          foreach ($resultList as $resultData) {
+            $resultId     = $resultData['id'];
+            $useragentId  = $resultData['useragent_id'];
+            $source       = $resultData['source'];
+            $result       = $resultData['result'];
+            $modified     = $resultData['modified'];
             
-            echo "<tr><td>&nbsp;<td>" . $useragent_id . "<td>" . $source . "<td>" . $result . "<td>" . $modified;
+            echo "  {$useragentId} {$source} {$result} {$modified}\n";
             
             $sql  = "INSERT INTO results (testcase_id, useragent_id, source, original_id, result, modified) VALUES ";
-            $sql .= "('{$new_testcase_id}', '{$useragent_id}', '{$source}', '{$result_id}', '{$result}', '{$modified}')";
-            //print "<td>" . $sql;        
-            $db->query($sql);
+            $sql .= "('{$newTestcaseId}', '{$useragentId}', '{$source}', '{$resultId}', '{$result}', '{$modified}')";
+
+            $this->query($sql);
           }
         }
       }
       
-      $sql  = "UPDATE testcases SET grandfather='2' WHERE id='{$new_testcase_id}'";
-      //print "<td>". $sql;      
-      $db->query($sql);      
+      $sql  = "UPDATE testcases SET grandfather='2' WHERE id='{$newTestcaseId}'";
+      $this->query($sql);      
     }
-    echo "</table>";
-  }
-  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // write_body_content()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write_body_content($indent = '') {
-
-    $this->copy_results('CSS21_HTML_RC2', 'CSS21_HTML_RC3');
-    $this->copy_results('CSS21_XHTML_RC2', 'CSS21_XHTML_RC3');
-
   }
 }
 
-$page = new grandfather();
-$page -> write();
+$worker = new GrandfatherResults();
+
+$worker->copyResults('CSS21_HTML_RC3', 'CSS21_HTML_RC4');
+$worker->copyResults('CSS21_XHTML_RC3', 'CSS21_XHTML_RC4');
 
 ?>

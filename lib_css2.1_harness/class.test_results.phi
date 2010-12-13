@@ -27,17 +27,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  class test_results
 //
-//  test_results is a concrete db_connection tailored for storing the 
+//  test_results is a concrete DBConnection tailored for storing the 
 //  testing results tables.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class test_results extends db_connection
+class test_results extends DBConnection
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -65,7 +65,7 @@ class test_results extends db_connection
   //  Constructor
   //
   ////////////////////////////////////////////////////////////////////////////
-  function test_results
+  function __construct
     ( $test_suite
     , $test_select
     , $select_type
@@ -77,7 +77,7 @@ class test_results extends db_connection
     , $filter
     )
   {
-    parent::db_connection();
+    parent::__construct();
     
     $this->m_test_suite = $test_suite;
     $this->m_filter = $filter;
@@ -162,10 +162,10 @@ class test_results extends db_connection
     $this->m_data = $r->fetch_table();
   }
   
-  function _generate_row($indent, $testcase, $engine_results, $optional, $honeypot)
+  function _generate_row($indent, $testcase, $engine_results, $optional, $spiderTrap)
   {
     $row  = "<td>";
-    $row .= $honeypot->get_link();
+    $row .= $spiderTrap->getLink();
     $row .= "<a href='details?s={$this->m_test_suite}&c={$testcase}'>{$testcase}</a></td>";
 
     $test_invalid = FALSE;
@@ -272,7 +272,7 @@ class test_results extends db_connection
   //  Write HTML for a table displaying the results data.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function write($indent, $honeypot)
+  function write($indent, $spiderTrap)
   {
 
     if(!($this->m_data)) {
@@ -302,7 +302,7 @@ class test_results extends db_connection
         $testcase = $result['testcase'];
         if ($testcase != $last_testcase) {
           if ($last_testcase) {
-            $this->_generate_row($indent, $last_testcase, $engine_results, $optional, $honeypot);
+            $this->_generate_row($indent, $last_testcase, $engine_results, $optional, $spiderTrap);
           }
           unset ($engine_results);
         }
@@ -320,7 +320,7 @@ class test_results extends db_connection
         $last_testcase = $testcase;
       }
       
-      $this->_generate_row($indent, $testcase, $engine_results, $optional, $honeypot);
+      $this->_generate_row($indent, $testcase, $engine_results, $optional, $spiderTrap);
       
       echo $indent . "</table>\n";
       echo $indent . "<p>{$this->m_testcase_pass_count} of {$this->m_testcase_count} required tests meet exit criteria.</p>\n";

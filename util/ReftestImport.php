@@ -18,11 +18,11 @@
   
   //////////////////////////////////////////////////////////////////////////////// 
   //
-  //  reftest_import.php
+  //  ReftestImport.php
   //
   //////////////////////////////////////////////////////////////////////////////// 
   
-  require_once("lib_test_harness/class.db_connection.phi");
+  require_once("lib_test_harness/class.DBConnection.phi");
   
   ////////////////////////////////////////////////////////////////////////////////
   //
@@ -31,7 +31,7 @@
   //  Import reftest data from manifest file
   //
   ////////////////////////////////////////////////////////////////////////////////
-  class ReftestImport extends db_connection
+  class ReftestImport extends DBConnection
   {  
     ////////////////////////////////////////////////////////////////////////////
     //
@@ -47,7 +47,7 @@
     ////////////////////////////////////////////////////////////////////////////
     function ReftestImport() 
     {
-      parent::db_connection();
+      parent::__construct();
       
     }
     
@@ -90,14 +90,14 @@
         $testCaseID = $this->mTestCases[$testCase];
         
         if (0 != $testCaseID) {
-          $sql  = "INSERT INTO reftests (testcase_id, reference, uri, type) ";
+          $sql  = "INSERT INTO `reftests` (`testcase_id`, `reference`, `uri`, `type`) ";
           $sql .= "VALUES ('{$testCaseID}', '{$reference}', '{$uri}', '{$type}');";
           
           $this->query($sql);
           
-          $sql  = "UPDATE testcases ";
-          $sql .= "SET flags = CONCAT(flags,',reftest'), modified = modified ";
-          $sql .= "WHERE id={$testCaseID} ";
+          $sql  = "UPDATE `testcases` ";
+          $sql .= "SET `flags` = CONCAT(`flags`,',reftest'), `modified` = `modified` ";
+          $sql .= "WHERE `id` = {$testCaseID} ";
           
           $this->query($sql);
         }
@@ -111,7 +111,7 @@
   
   $worker = new ReftestImport();
 
-  $worker->import("reftest_html.list", "CSS21_HTML_RC3", "http://test.csswg.org/suites/css2.1/20101027/html4/");
-  $worker->import("reftest_xhtml.list", "CSS21_XHTML_RC3", "http://test.csswg.org/suites/css2.1/20101027/xhtml1/");
+  $worker->import("reftest_html.list", "CSS21_HTML_RC4", "html4/");
+  $worker->import("reftest_xhtml.list", "CSS21_XHTML_RC4", "xhtml1/");
   
 ?>

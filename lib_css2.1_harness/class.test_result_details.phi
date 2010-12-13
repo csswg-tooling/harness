@@ -27,17 +27,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  class test_result_details
 //
-//  test_results is a concrete db_connection taylored for storing the 
+//  test_results is a concrete DBConnection taylored for storing the 
 //  testing results tables.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class test_result_details extends db_connection
+class test_result_details extends DBConnection
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -52,7 +52,7 @@ class test_result_details extends db_connection
   //  Constructor
   //
   ////////////////////////////////////////////////////////////////////////////
-  function test_result_details
+  function __construct
     ( $test_suite
     , $test_select
     , $select_type
@@ -64,7 +64,7 @@ class test_result_details extends db_connection
     , $order
     )
   {
-    parent::db_connection();
+    parent::__construct();
     
     $this->m_test_suite = $test_suite;
 
@@ -119,7 +119,7 @@ class test_result_details extends db_connection
   //  Write HTML for a table displaying the results data.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function write($indent, $honeypot)
+  function write($indent, $spiderTrap)
   {
 
     if (!($this->m_data)) {
@@ -138,7 +138,7 @@ class test_result_details extends db_connection
         foreach($result as $key => $value) {
           if ('Testcase' == $key) {
             echo $indent . "    <td>";
-            echo           $honeypot->get_link();
+            echo           $spiderTrap->getLink();
             echo           "<a href='testcase?s={$this->m_test_suite}&c={$value}'>{$value}</a></td>\n";
 
           }

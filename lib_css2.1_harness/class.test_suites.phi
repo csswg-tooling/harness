@@ -1,9 +1,9 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -25,17 +25,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.db_connection.phi");
+require_once("./lib_test_harness/class.DBConnection.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  class test_suites
 //
-//  test_suites is a concrete db_connection class taylored for storing the 
+//  test_suites is a concrete DBConnection class taylored for storing the 
 //  table of contents of available test suites.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class test_suites extends db_connection
+class test_suites extends DBConnection
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -53,15 +53,16 @@ class test_suites extends db_connection
   //  human readable listing.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function test_suites() 
+  function __construct() 
   {
-    parent::db_connection();
+    parent::__construct();
     
-    $sql  = "SELECT DISTINCT testcases.testsuite, testsuites.uri, ";
-    $sql .= "testsuites.title, testsuites.description ";
-    $sql .= "FROM testcases LEFT JOIN testsuites ";
-    $sql .= "ON testcases.testsuite = testsuites.testsuite ";
-    $sql .= "WHERE testsuites.active='1';";
+    $sql  = "SELECT DISTINCT `testcases`.`testsuite`, `testsuites`.`base_uri`, ";
+    $sql .= "`testsuites`.`home_uri`, `testsuites`.`spec_uri`, ";
+    $sql .= "`testsuites`.`title`, `testsuites`.`description` ";
+    $sql .= "FROM `testcases` LEFT JOIN `testsuites` ";
+    $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
+    $sql .= "WHERE `testsuites`.`active` = '1';";
     
     $r = $this->query($sql);
     
@@ -102,31 +103,19 @@ class test_suites extends db_connection
   {
     echo "\n";
 
-    echo $indent . '<dl>'."\n";
+    echo $indent . "<dl>\n";
 
-    foreach($this->m_toc as $test_suite) {
-      echo $indent . '  <dt>'."\n";
-      echo $indent . '    <a href="';
-      echo $test_suite['uri'];
-      echo '">'."\n";
-      echo $indent . '      ' . $test_suite['title'] . "\n";
-      echo $indent . '    </a>'."\n";
-      echo $indent . '    (<a href="';
-      echo 'testsuite?s=' . $test_suite['testsuite'];
-      echo '">'."\n";
-      echo $indent . '      Enter Data'."\n";
-      echo $indent . '    </a>,'."\n";
-      echo $indent . '    <a href="';
-      echo 'review?s=' . $test_suite['testsuite'];
-      echo '">'."\n";
-      echo $indent . '      Review Results'."\n";
-      echo $indent . '    </a>)'."\n";
-      echo $indent . '  </dt>'."\n";
-      echo $indent . '  <dd>'."\n";
-      echo $indent . '    ' . $test_suite['description'] . "\n";
-      echo $indent . '  </dd>'."\n";
+    foreach($this->m_toc as $testSuite) {
+      echo $indent . "  <dt>\n";
+      echo $indent . "    <a href='{$testSuite['base_uri']}{$testSuite['home_uri']}'>{$testSuite['title']}</a>\n";
+      echo $indent . "    (<a href='testsuite?s={$testSuite['testsuite']}'>Enter Data</a>,\n";
+      echo $indent . "    <a href='review?s={$testSuite['testsuite']}'>Review Results</a>)\n";
+      echo $indent . "  </dt>\n";
+      echo $indent . "  <dd>\n";
+      echo $indent . "    {$testSuite['description']}\n";
+      echo $indent . "  </dd>\n";
     }
-    echo $indent . '</dl>'."\n";
+    echo $indent . "</dl>\n";
 
     echo "\n";
   }

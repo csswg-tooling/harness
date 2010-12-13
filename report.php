@@ -16,21 +16,21 @@
   //
   //  report.php
   //
-  //  this page is meant to only be fetched by bad robots via the honey pot link
+  //  this page is meant to only be fetched by bad robots via the spider trap link
   //
   //  When installing the harness, take care to exclude this file by robots.txt
   //
   //////////////////////////////////////////////////////////////////////////////// 
   
   require_once("./lib_css2.1_harness/class.css_page.phi");
-  require_once("./lib_test_harness/class.honeypot.phi");
+  require_once("./lib_test_harness/class.SpiderTrap.phi");
   
   ////////////////////////////////////////////////////////////////////////////////
   //
-  //  class honeypot_page
+  //  class SpiderTrapPage
   //
   ////////////////////////////////////////////////////////////////////////////////
-  class honeypot_page extends css_page
+  class SpiderTrapPage extends css_page
   {  
     
     
@@ -39,14 +39,14 @@
     //  Constructor.
     //
     ////////////////////////////////////////////////////////////////////////////
-    function honeypot_page() 
+    function __construct() 
     {
       parent::css_page();
       
-      $this->m_page_title  = 'W3C CSS 2.1 Conformance Test Harness ';
-      $this->m_content_title = 'W3C CSS 2.1 Conformance Test Harness';
+      $this->m_page_title  = 'W3C CSS Conformance Test Harness ';
+      $this->m_content_title = 'W3C CSS Conformance Test Harness';
 
-      $this->m_honeypot->record_visit();
+      $this->mSpiderTrap->recordVisit();
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -62,12 +62,12 @@
       echo $indent . "  </p>\n";
       echo $indent . "  <p>\n";
       echo $indent . "    Subsequent visits by automated agents will result in ";
-      echo               "all visitors form your IP address being banned from this site.\n";
+      echo               "all visitors from your IP address being banned from this site.\n";
       echo $indent . "  </p>\n";
     }
   }
   
-  $page = new honeypot_page();
+  $page = new SpiderTrapPage();
   $page->write();
   
 ?>

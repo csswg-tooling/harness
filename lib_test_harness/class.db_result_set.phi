@@ -33,12 +33,12 @@
 //  In php, MySQL query results are returned as resource handles. This object 
 //  stores a handle and provides an interface to access the contained data.
 //
-//  db_result_set works with db_connection (defined separately) as part of a 
-//  Factory Design Pattern, where db_connection is a specialized object solely 
+//  db_result_set works with DBConnection (defined separately) as part of a 
+//  Factory Design Pattern, where DBConnection is a specialized object solely 
 //  used to create other instances of db_result_set. 
 //
 //  Other objects needing to get, post, update, or delete information from the 
-//  database will function as a client to an instance of db_connection which, 
+//  database will function as a client to an instance of DBConnection which, 
 //  in turn, will produce a db_result_set.
 //
 //  In this way, the client object that requires an instance of db_result_set

@@ -1,13 +1,13 @@
 <?php
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright © 2007 World Wide Web Consortium, 
+//  Copyright Â© 2007 World Wide Web Consortium, 
 //  (Massachusetts Institute of Technology, European Research 
 //  Consortium for Informatics and Mathematics, Keio 
 //  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
+//  Copyright Â© 2008 Hewlett-Packard Development Company, L.P. 
 // 
-//  This work is distributed under the W3CÂ Software License 
+//  This work is distributed under the W3CÂ¬ Software License 
 //  [1] in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of 
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
@@ -243,11 +243,11 @@ class results_page extends css_page
   ////////////////////////////////////////////////////////////////////////////
   function write_body_content($indent = '')
   {
-    $this->m_results_table->write($indent, $this->m_honeypot);
+    $this->m_results_table->write($indent, $this->mSpiderTrap);
   }
 }
 
 $page = new results_page();
-$page -> write();
+$page->write();
 
 ?>

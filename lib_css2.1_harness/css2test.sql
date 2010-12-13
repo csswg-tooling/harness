@@ -147,10 +147,10 @@ CREATE TABLE `reftests` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `honeypot`
+-- Table structure for table `spidertrap`
 --
 
-CREATE TABLE `honeypot` (
+CREATE TABLE `spidertrap` (
  `ip_address` varchar(15) collate utf8_bin NOT NULL,
  `user_agent` varchar(255) collate utf8_bin default NULL,
  `last_query` varchar(255) collate utf8_bin default NULL,

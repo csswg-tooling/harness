@@ -161,6 +161,9 @@ class testsuite_page extends css_page
 						<input type=submit value="Start"></strong>
 					</form>
 				</li>
+<?php        
+        if (0 < $this->m_test_groups->get_count()) {
+?>        
 				<li>
 					<form action=testcase method=get>
 						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">
@@ -173,6 +176,9 @@ class testsuite_page extends css_page
 						<input type=submit value="Start">
 					</form>
 				</li>
+<?php   
+        }
+?>
 				<li>
 					<form action=testcase method=get>
 						<input type=hidden name=s value="<?php echo $this->m_test_suite->get_name() ?>">

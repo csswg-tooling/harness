@@ -14,38 +14,37 @@
 
 //////////////////////////////////////////////////////////////////////////////// 
 //
-//  class.honeypot.phi
+//  class.SpiderTrap.phi
 //
 //  Provides functionality for detecting and blocking misbehaving web crawlers
 //
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("class.db_connection.phi");
+require_once("class.DBConnection.phi");
   
-define('HONEYPOT_URL', 'report');
-define('HONEYPOT_IMAGE', 'images/link.gif');
+define('SPIDER_TRAP_URL', 'report');
+define('SPIDER_TRAP_IMAGE', 'images/link.gif');
 
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  class honeypot
+//  class SpiderTrap
 //
-//  test_results is a concrete db_connection tailored for storing the 
-//  testing results tables.
+//  
 //
 ////////////////////////////////////////////////////////////////////////////////
-class honeypot  
+class SpiderTrap
 {
   ////////////////////////////////////////////////////////////////////////////
   //
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $m_db;
+  var $mDB;
   
-  var $m_sequence;
-  var $m_page_query;
+  var $mSequence;
+  var $mPageQuery;
 
   
   ////////////////////////////////////////////////////////////////////////////
@@ -53,27 +52,27 @@ class honeypot
   //  Constructor
   //
   ////////////////////////////////////////////////////////////////////////////
-  function honeypot()
+  function __construct()
   {
-    $this->m_sequence = 0;
-    $this->m_page_query = $_SERVER['QUERY_STRING'];
+    $this->mSequence = 0;
+    $this->mPageQuery = $_SERVER['QUERY_STRING'];
   }
   
 
-  function get_link()
+  function getLink()
   {
-    $large_number = mt_rand(1000000, 9999999999);
-    if ($this->m_page_query) {
-      parse_str($this->m_page_query, $query);
-      $query['seq'] = ++$this->m_sequence;
-      $query['uid'] = $large_number;
-      $query_str = http_build_query($query, 'var_');
+    $largeNumber = mt_rand(1000000, 9999999999);
+    if ($this->mPageQuery) {
+      parse_str($this->mPageQuery, $query);
+      $query['seq'] = ++$this->mSequence;
+      $query['uid'] = $largeNumber;
+      $queryStr = http_build_query($query, 'var_');
     }
     else {
-      $query_str  = 'seq=' . ++$this->m_sequence;
-      $query_str .= "&uid={$large_number}";
+      $queryStr  = 'seq=' . ++$this->mSequence;
+      $queryStr .= "&uid={$largeNumber}";
     }
-    $link = "<a href='" . HONEYPOT_URL . "?{$query_str}' class='report'>{$this->m_sequence}-{$large_number}</a>";
+    $link = "<a href='" . SPIDER_TRAP_URL . "?{$queryStr}' class='report'>{$this->mSequence}-{$largeNumber}</a>";
     return $link;
   }
   
@@ -81,31 +80,31 @@ class honeypot
   //
   //  generate link
   //
-  //  Write HTML for a link to the honeypot
+  //  Write HTML for a link to the spider trap
   //
   ////////////////////////////////////////////////////////////////////////////
-  function generate_link($indent = '')
+  function generateLink($indent = '')
   {
-    $link = $this->get_link();
+    $link = $this->getLink();
     echo $indent . $link . "\n";
   }
   
   ////////////////////////////////////////////////////////////////////////////
   //
-  //  _get_db
+  //  _getDB
   //
-  //  Bring db connection online
+  //  Bring DBConnection online lazily
   //
   ////////////////////////////////////////////////////////////////////////////
-  protected function _get_db()
+  protected function _getDB()
   {
-    if (! isset($this->m_db)) {
-      $this->m_db = new db_connection();
+    if (! isset($this->mDB)) {
+      $this->mDB = new DBConnection();
     }
-    return $this->m_db;
+    return $this->mDB;
   }
   
-  protected function _get_client_ip()
+  protected function _getClientIP()
   {
     if (! empty($_SERVER['REMOTE_ADDR'])) {
       $ip = $_SERVER['REMOTE_ADDR'];
@@ -123,21 +122,21 @@ class honeypot
   
   ////////////////////////////////////////////////////////////////////////////
   //
-  //  record_visit
+  //  recordVisit
   //
-  //  Capture data about a visit to the honey pot
+  //  Capture data about a visit to the spider trap
   //
   ////////////////////////////////////////////////////////////////////////////
-  function record_visit()
+  function recordVisit()
   {
-    $ip_address = $this->_get_client_ip();
-    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+    $ipAddress = $this->_getClientIP();
+    $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
-    $sql  = "INSERT INTO honeypot (ip_address, user_agent, last_query, visit_count, first_visit) ";
-    $sql .= "VALUES ('{$ip_address}', '{$user_agent}', '{$this->m_page_query}', '1', NOW()) ";
-    $sql .= "ON DUPLICATE KEY UPDATE user_agent='{$user_agent}', last_query='{$this->m_page_query}', visit_count=visit_count+1";
+    $sql  = "INSERT INTO `spidertrap` (`ip_address`, `user_agent`, `last_query`, `visit_count`, `first_visit`) ";
+    $sql .= "VALUES ('{$ipAddress}', '{$userAgent}', '{$this->mPageQuery}', '1', NOW()) ";
+    $sql .= "ON DUPLICATE KEY UPDATE `user_agent` = '{$userAgent}', `last_query` = '{$this->mPageQuery}', `visit_count` = visit_count + 1";
     
-    $db = $this->_get_db();
+    $db = $this->_getDB();
     $db->query($sql);
   }
   

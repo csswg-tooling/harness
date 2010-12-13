@@ -36,7 +36,7 @@
 //////////////////////////////////////////////////////////////////////////////// 
 
 require_once("./lib_test_harness/class.dynamic_page.phi");
-require_once("./lib_test_harness/class.honeypot.phi");
+require_once("./lib_test_harness/class.SpiderTrap.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -54,7 +54,7 @@ class css_page extends dynamic_page
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $m_honeypot;
+  var $mSpiderTrap;
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -65,7 +65,7 @@ class css_page extends dynamic_page
   {
     parent::dynamic_page();
 
-    $this->m_honeypot = new honeypot();
+    $this->mSpiderTrap = new SpiderTrap();
   }  
   
   ////////////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ class css_page extends dynamic_page
   {
     echo $indent . "<p>\n";
     
-    $this->m_honeypot->generate_link($indent . '  ');
+    $this->mSpiderTrap->generateLink($indent . '  ');
     
     echo $indent . "  <a class='logo' href='http://www.w3.org/' rel='home'>\n";
     echo $indent . "    <img alt='W3C' height='48' width='315' src='http://www.w3.org/Icons/w3c_main'>\n";
@@ -135,7 +135,7 @@ class css_page extends dynamic_page
       echo $indent . "<p><em>{$this->m_resource_id}</em></p>\n";
     }
 
-    $this->m_honeypot->generate_link($indent);
+    $this->mSpiderTrap->generateLink($indent);
   }
 }
 
