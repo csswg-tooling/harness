@@ -113,7 +113,7 @@
       }
       
       if ($changedRules) {
-        $command = "iptables-save > /etc/firewall.conf";
+        $command = "/sbin/iptables-save > /etc/firewall.conf";
         exec($command);
       }
     }
