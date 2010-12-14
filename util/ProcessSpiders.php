@@ -88,6 +88,8 @@
     
     function process()
     {
+      $changedRules = FALSE;
+      
       foreach ($this->m_offenders as $offender) {
         $ip_address = $offender['ip_address'];
         if (($ip_address != '::1') && ($ip_address != '127.0.0.1')) {
@@ -95,6 +97,7 @@
           exec($command);
           $sql = "UPDATE `spidertrap` SET `banned` = 1 WHERE `ip_address` = '{$ip_address}'";
           $this->query($sql);
+          $changedRules = TRUE;
         }
       }
 
@@ -105,7 +108,13 @@
           exec($command);
           $sql = "UPDATE `spidertrap` SET `banned` = 0, `visit_count` = 0 WHERE `ip_address` = '{$ip_address}'";
           $this->query($sql);
+          $changedRules = TRUE;
         }
+      }
+      
+      if ($changedRules) {
+        $command = "iptables-save > /etc/firewall.conf";
+        exec($command);
       }
     }
   }

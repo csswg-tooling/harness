@@ -67,7 +67,7 @@
       }
     }
     
-    function _getFileName($path)
+    protected function _getFileName($path)
     {
       $pathInfo = pathinfo($path);
       
@@ -76,6 +76,17 @@
       }
       return basename($pathInfo['basename'], '.' . $pathInfo['extension']);
     }
+    
+    protected function _validate($value, $maxLength)
+    {
+      if ($maxLength < strlen($value)) {
+        die("ERROR: data too long for database: '{$value}'");
+      }
+      if (FALSE !== strpos($value, "'")) {
+        die("ERROR: data contains single quote: '{$value}'");
+      }
+    }
+    
     
     function import($manifest, $testSuite, $baseURI)
     {
@@ -90,6 +101,12 @@
         $uri = $baseURI . $reference;
         $reference = $this->_getFileName($reference);
         $testCaseID = $this->mTestCases[$testCase];
+        
+        $this->_validate($reference, 255);
+        $this->_validate($uri, 255);
+        if (('==' != $type) && ('!=' != $type)) {
+          die("ERROR: bad type {$type}\n");
+        }
         
         if (0 != $testCaseID) {
           $sql  = "INSERT INTO `reftests` (`testcase_id`, `reference`, `uri`, `type`) ";

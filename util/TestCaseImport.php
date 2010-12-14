@@ -50,8 +50,20 @@
       
     }
     
+    protected function _validate($value, $maxLength)
+    {
+      if ($maxLength < strlen($value)) {
+        die("ERROR: data too long for database: '{$value}'");
+      }
+      if (FALSE !== strpos($value, "'")) {
+        die("ERROR: data contains single quote: '{$value}'");
+      }
+    }
+    
     function import($manifest, $testSuite, $baseURI, $extension, $skipFlag, $modified)
     {
+      $this->_validate($testSuite, 32);
+      
       $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
       
       $count = 0;
@@ -74,6 +86,12 @@
         if ((0 < count($flagArray)) && (FALSE !== array_search($skipFlag, $flagArray))) {
           $active = 0;
         }
+        
+        $this->_validate($uri, 255);
+        $this->_validate($testCase, 64);
+        $this->_validate($title, 255);
+        $this->_validate($assertion, 255);
+        
         $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `title`, `flags`, `assertion`, `active`, `modified`) ";
         $sql .= "VALUES ('{$uri}', '{$testSuite}', '{$testCase}', '{$title}', '{$flags}', '{$assertion}', '{$active}', '{$modified}');";
         
@@ -85,6 +103,8 @@
           $linkArray = explode(',', $links);
           foreach ($linkArray as $link) {
             if (0 < strlen($link)) {
+              $this->_validate($link, 255);
+              
               $sql  = "INSERT INTO `testlinks` (`testcase_id`, `uri`) ";
               $sql .= "VALUES ('{$testCaseId}', '{$link}') ";
 
