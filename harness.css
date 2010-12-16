@@ -36,6 +36,19 @@ span {
   font-size: smaller;
 }
 
+.prerequisites {
+  margin: 1em 0;
+  clear: both;
+}
+p.userstyle { 
+  color: green; 
+  display: none; 
+}
+p.nouserstyle {
+  color: red; 
+  display: none;
+}
+
 ul.tabbar {
   list-style: none;
   padding: 0;

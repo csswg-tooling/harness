@@ -89,13 +89,11 @@ class test_flags extends DBConnection
   function write($indent)
   {
     if ($this->m_flags && count($this->m_flags)) {
-      echo "\n";
       echo $indent . "<p class='notes'>\n";
       foreach($this->m_flags as $flag => $description) {
         echo $indent . "  {$description}\n";
       }
       echo $indent . "</p>\n";
-      echo "\n";
     }
   }
 

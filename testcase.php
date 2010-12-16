@@ -284,8 +284,21 @@ class testcase_page extends css_page
     echo $indent . '  </h1>'."\n";
     
     $this->m_test_case->m_flags->write($indent . '  ');
-
+    
     echo $indent . '</div>'."\n";
+
+    echo $indent . "<div class='prerequisites'>\n";
+    if ($this->m_test_case->m_flags->has_flag('userstyle')) {
+      echo $indent . "  <p id='user-stylesheet-indication' class='userstyle'>\n";
+      echo $indent . "    A user style sheet is applied.\n";
+      echo $indent . "  </p>\n";
+    }
+    else {
+      echo $indent . "  <p id='user-stylesheet-indication' class='nouserstyle'>\n";
+      echo $indent . "    A user style sheet is applied. Please remove it.\n";
+      echo $indent . "  </p>\n";
+    }
+    echo $indent . "</div>\n";
 
   }
 
