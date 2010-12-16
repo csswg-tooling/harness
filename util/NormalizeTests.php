@@ -29,23 +29,63 @@
     return $input;
   }
   
+  function parseAttributes($attrString)
+  {
+    $attrs = null;
+    
+    $length = strlen($attrString);
+    $start = 0;
+    $index = -1;
+    while (++$index < $length) {
+      if (('"' == $attrString[$index]) || ("'" == $attrString[$index])) {
+        $quote = $attrString[$index];
+        $index = strpos($attrString, $quote, $index + 1);
+        if (FALSE === $index) {
+          $index = $length;
+        }
+      }
+      elseif (' ' == $attrString[$index]) {
+        $attrs[] = substr($attrString, $start, $index - $start);
+        while (($index < ($length - 1)) && (' ' == $attrString[$index + 1])) {
+          $index++;
+        }
+        $start = $index;
+      }
+    }
+    if ($start < $index) {
+      $attr = trim(substr($attrString, $start, $index - $start));
+      if ('' != $attr) {
+        $attrs[] = $attr;
+      }
+    }
+    
+    return $attrs;
+  }
+  
   function sortAttributes($input, $element)
   {
     $index = 0;
     do {
-      $start = stripos($input, "<{$element} ", $index);
+      $search = "<{$element} ";
+      $start = stripos($input, $search, $index);
       if (FALSE === $start) {
         return $input;
       }
-      $end = stripos($input, '>', $start + strlen($element) + 2);
+      $end = stripos($input, '/>', $start + strlen($search));
       if (FALSE === $end) {
-        exit("ERROR: end '>' not found for <{$element}\n");
+        $end = stripos($input, '>', $start + strlen($search));
+        if (FALSE === $end) {
+          exit("ERROR: end '>' not found for <{$element}\n");
+        }
+        $index = $end + 1;
       }
-      $index = $end + 1;
+      else {
+        $index = $end + 2;
+      }
       
-      $attrStart = $start + strlen($element) + 2;
-      $attrString = substr($input, $attrStart, $end - $attrStart);
-      $attributes = explode(' ', $attrString);
+      $attrStart = $start + strlen($search);
+      $attrString = trim(substr($input, $attrStart, $end - $attrStart));
+      $attributes = parseAttributes($attrString);
       sort($attributes, SORT_STRING);
       $attrString = implode(' ', $attributes);
       $input = substr($input, 0, $attrStart) . $attrString . substr($input, $end);
@@ -71,24 +111,23 @@
       $contents = strip($contents, '<link ', 'rel="reference"', '>', '<==remove==>');
       $contents = sortAttributes($contents, 'meta');
 
-      $search = array("        <==remove==>\n",
+      $search = array("ahem",
+                      "        <==remove==>\r\n",
+                      "        <==remove==>\n",
+                      "      <==remove==>\r\n",
                       "      <==remove==>\n",
+                      "    <==remove==>\r\n",
                       "    <==remove==>\n",
+                      "  <==remove==>\r\n",
                       "  <==remove==>\n",
+                      "<==remove==>\r\n",
                       "<==remove==>\n",
+                      "\t\t<==remove==>\r\n",
                       "\t\t<==remove==>\n",
+                      "\t<==remove==>\r\n",
                       "\t<==remove==>\n",
-                      "<==remove==>",
-                      "ahem");
-      $replace = array('',
-                       '',
-                       '',
-                       '',
-                       '',
-                       '',
-                       '',
-                       '',
-                       "Ahem");
+                      "<==remove==>");
+      $replace = array("Ahem");
       $contents = str_ireplace($search, $replace, $contents);
       
       file_put_contents($outFileName, $contents);
@@ -101,5 +140,5 @@
   
   fixup($inPath, "xhtml1/*.xht", $outPath);
   fixup($inPath, "html4/*.htm", $outPath);
-  
+
 ?>
