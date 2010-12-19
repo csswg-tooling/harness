@@ -52,7 +52,7 @@
 //////////////////////////////////////////////////////////////////////////////// 
 
 require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_results.phi");
+require_once("./lib_test_harness/class.TestResults.phi");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -209,7 +209,7 @@ class results_page extends css_page
       $platform = null;
     }
 
-    $this->m_results_table = new test_results
+    $this->m_results_table = new TestResults
       ( $suite
       , $select
       , $type

@@ -107,7 +107,8 @@ class GrandfatherResults extends DBConnection
         
         $sql  = "SELECT `id`, `useragent_id`, `source`, `result`, `modified` FROM `results` ";
         $sql .= "WHERE `testcase_id` = '{$oldTestcaseId}' ";
-        $sql .= "AND `result` != 'na'";
+        $sql .= "AND `result` != 'na' ";
+        $sql .= "AND `ignore` = '0' ";
         $r = $this->query($sql);
 
         if (! $r->is_false()) {

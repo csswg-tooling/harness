@@ -74,9 +74,10 @@ class test_result_details extends DBConnection
     $sql .= "Platform, ";
     $sql .= "results.modified AS Date, Source, Useragent ";
     $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
-    $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id) ";
+    $sql .= "ON (testcases.id = results.testcase_id AND results.useragent_id = useragents.id) ";
     $sql .= "WHERE testcases.testsuite LIKE '{$test_suite}' ";
-    $sql .= "AND testcases.active='1' ";
+    $sql .= "AND testcases.active = '1' ";
+    $sql .= "AND results.ignore = '0' ";
     
     if ($test_select) {
       if ($select_type == 1) {

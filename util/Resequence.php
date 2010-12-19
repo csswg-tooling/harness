@@ -1,76 +1,47 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2010 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  resequence.php
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: resequence.php
-//      Lines: 103-142
-//
-//  where herein specific contents provided by the original harness have
-//  been adapted for CSS2.1 conformance testing. Separately, controls have
-//  been added to allow entering data for user agents other than the one
-//  accessing the harness, and the means by which test presentation order
-//  is provided have been altered. Separately, the ability to request
-//  only those tests in a particular named group has been added.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2010 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2008 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
 require_once("lib_test_harness/class.DBConnection.phi");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class resequence
-//
-//  This class regenerates the testsequence table, maintaining an ordering 
-//  of testcases per testsuite, per engine in order of least number of
-//  results per testcase
-//
-//  This is meant to be run from by a periodic cron job or on the command line
-//
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * This class regenerates the testsequence table, maintaining an ordering 
+ * of testcases per testsuite, per engine in order of least number of
+ * results per testcase
+ *
+ * This is meant to be run from by a periodic cron job or on the command line
+ */
 class Resequence extends DBConnection
-{  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
+{
   var $mEngines;
   var $mTestSuites;
   var $mCounts;
   var $mTestCases;
+  var $mTestCaseOptional;
+  var $mResults;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor.
-  //
-  ////////////////////////////////////////////////////////////////////////////
   function __construct() 
   {
     parent::__construct();
 
-    $sql = "SELECT DISTINCT `engine` FROM `useragents` WHERE `engine`!='' ORDER BY `engine`";
+    $sql  = "SELECT DISTINCT `engine` ";
+    $sql .= "FROM `useragents` ";
+    $sql .= "WHERE `engine` != '' ";
+    $sql .= "ORDER BY `engine` ";
     $r = $this->query($sql);
     if (! $r->is_false()) {
       $dbEngines = $r->fetch_table();
@@ -79,7 +50,10 @@ class Resequence extends DBConnection
       }
     }
 
-    $sql = "SELECT DISTINCT `testsuite`, `sequence_query` FROM `testsuites` WHERE `active`!='0' ORDER BY `testsuite`";
+    $sql  = "SELECT DISTINCT `testsuite`, `sequence_query` ";
+    $sql .= "FROM `testsuites` ";
+    $sql .= "WHERE `active` = '1' ";
+    $sql .= "ORDER BY `testsuite` ";
     $r = $this->query($sql);
     if (! $r->is_false()) {
       $dbTestSuites = $r->fetch_table();
@@ -91,17 +65,57 @@ class Resequence extends DBConnection
   
   protected function _loadTestCases($testSuite)
   {
-    $sql  = "SELECT `id`, `testcase` FROM `testcases` ";
+    unset ($this->mTestCases);
+    unset ($this->mTestCaseOptional);
+    
+    $sql  = "SELECT `id`, `testcase`, `flags` ";
+    $sql .= "FROM `testcases` ";
     $sql .= "WHERE `testsuite` = '{$testSuite}' ";
+    $sql .= "AND `active` = '1' ";
     
     $r = $this->query($sql);
-    
-    $testCases = $r->fetch_table();
-    
-    unset($this->mTestCases);
-    
-    foreach ($testCases as $testCase) {
-      $this->mTestCases[$testCase['testcase']] = $testCase['id'];
+    if (! $r->is_false()) {
+      $testCases = $r->fetch_table();
+      
+      foreach ($testCases as $testCaseData) {
+        $testCase   = $testCaseData['testcase'];
+        $testCaseId = $testCaseData['id'];
+        $flags      = $testCaseData['flags'];
+
+        $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
+        
+        $this->mTestCases[$testCase] = $testCaseId;
+        $this->mTestCaseOptional[$testCaseId] = $optional;
+      }
+    }
+  }
+  
+  protected function _loadResults($testSuiteQuery)
+  {
+    unset ($this->mResults);
+
+    $sql  = "SELECT `testcases`.`testcase`, `useragents`.`engine`, `results`.`result` ";
+    $sql .= "FROM `results` INNER JOIN (`testcases`, `useragents`) ";
+    $sql .= "ON `results`.`testcase_id` = `testcases`.`id` ";
+    $sql .= "AND `results`.`useragent_id` = `useragents`.`id` ";
+    $sql .= "WHERE `testcases`.`testsuite` LIKE '{$testSuiteQuery}' ";
+    $sql .= "AND `testcases`.`active` = '1' ";
+    $sql .= "AND `results`.`ignore` = '0' ";
+    $sql .= "AND `results`.`result` != 'na' ";
+
+    $r = $this->query($sql);
+    if (! $r->is_false()) {
+      $results = $r->fetch_table();
+      
+      foreach ($results as $resultData) {
+        $engine   = $resultData['engine'];
+        if ('' != $engine) {
+          $testCase = $resultData['testcase'];
+          $result   = $resultData['result'];
+
+          $this->mResults[$testCase][$engine][] = $result;
+        }
+      }
     }
   }
 
@@ -112,9 +126,9 @@ class Resequence extends DBConnection
     $testInvalid = FALSE;
     
     foreach ($this->mEngines as $engine) {
-      if (array_key_exists($engine, $engineResults['count'])) {
-        $pass      = $engineResults['pass'][$engine];
-        $invalid   = $engineResults['invalid'][$engine];
+      if (array_key_exists($engine, $engineResults)) {
+        $pass      = ((array_key_exists('pass', $engineResults[$engine])) ? $engineResults[$engine]['pass'] : 0);
+        $invalid   = ((array_key_exists('invalid', $engineResults[$engine])) ? $engineResults[$engine]['invalid'] : 0);
         if (0 < $pass) {
           $passCount++;
         }
@@ -127,16 +141,16 @@ class Resequence extends DBConnection
     foreach ($this->mEngines as $engine) {
       $enginePasses = FALSE;
       $engineCount  = 0;
-      if (array_key_exists($engine, $engineResults['count'])) {
-        $engineCount = $engineResults['count'][$engine];
-        $pass = $engineResults['pass'][$engine];
+      if (array_key_exists($engine, $engineResults)) {
+        $engineCount = ((array_key_exists('count', $engineResults[$engine])) ? $engineResults[$engine]['count'] : 0);
+        $pass = ((array_key_exists('pass', $engineResults[$engine])) ? $engineResults[$engine]['pass'] : 0);
         if (0 < $pass) {
           $enginePasses = TRUE;
         }
       }
       
       if ($testInvalid) {
-        $count = $engineCount + 1000000;
+        $count = $engineCount + 10000000;
       }
       else {
         if ($enginePasses) {
@@ -156,27 +170,27 @@ class Resequence extends DBConnection
         }
       }
     
-      $this->mCounts[$engine][$testCase] = ($count + 16) + ($testCaseId / 1000000);
+      $this->mCounts[$engine][$testCase] = ($count + 8) + ($testCaseId / 10000000);
     }
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Build or update testsequence table based on test result count per engine
-  //
-  //  Sequence is:
-  //    1) required tests with no results for engine and 0 or 1 passes for other engines    (-7)
-  //    2) required tests with no passes for engine and 0 or 1 passes for other engines     (-6)
-  //    3) optional tests with no results for engine and 0 or 1 passes for other engines    (-5)
-  //    4) optional tests with no passes for engine and 0 or 1 passes for other engines     (-4)
-  //    5) required tests with no results for engine and 2 or more passes for other engines (-3)
-  //    6) required tests with no passes for engine and 2 or more passes for other engines  (-2)
-  //    7) optional tests with no results for engine and 2 or more passes for other engines (-1)
-  //    8) optional tests with no passes for engine and 2 or more passes for other engines  ( 0)
-  //    9) tests with pass results                                                          (count)                        
-  //    10) invalid tests                                                                   (count+1000000)
-  //
-  ////////////////////////////////////////////////////////////////////////////
+  /**
+   *
+   * Build or update testsequence table based on test result count per engine
+   *
+   * Sequence is:
+   *   1) required tests with no results for engine and 0 or 1 passes for other engines    (-7)
+   *   2) required tests with no passes for engine and 0 or 1 passes for other engines     (-6)
+   *   3) optional tests with no results for engine and 0 or 1 passes for other engines    (-5)
+   *   4) optional tests with no passes for engine and 0 or 1 passes for other engines     (-4)
+   *   5) required tests with no results for engine and 2 or more passes for other engines (-3)
+   *   6) required tests with no passes for engine and 2 or more passes for other engines  (-2)
+   *   7) optional tests with no results for engine and 2 or more passes for other engines (-1)
+   *   8) optional tests with no passes for engine and 2 or more passes for other engines  ( 0)
+   *   9) tests with pass results                                                          (count)                        
+   *   10) invalid tests                                                                   (count+1000000)
+   *
+   */
   function rebuild()
   {
     foreach ($this->mTestSuites as $testSuite => $sequenceQuery) {
@@ -188,76 +202,51 @@ class Resequence extends DBConnection
 
       $this->_loadTestCases($testSuite);
 
-      print "Querying for results {$sequenceQuery}\n";      
+      print "Querying for results {$sequenceQuery}\n";
+      
+      $this->_loadResults($sequenceQuery);
 
-      $sql  = "SELECT testcase, engine, flags, SUM(pass) as pass, ";
-      $sql .= "SUM(fail) as fail, SUM(uncertain) as uncertain, ";
-      $sql .= "SUM(invalid) as invalid, SUM(na) as na, ";
-      $sql .= "COUNT(pass + fail + uncertain + invalid + na) as count ";
-      $sql .= "FROM (";
+      print "Processing results\n";
       
-      $sql .= "SELECT testcases.id, testcases.testsuite, ";
-      $sql .= "testcases.testcase, testcases.flags, ";
-      $sql .= "useragents.engine, testcases.active, ";
-      $sql .= "result='pass' AS pass, ";
-      $sql .= "result='fail' AS fail, result='uncertain' AS uncertain, ";
-      $sql .= "result='invalid' AS invalid, result='na' AS na ";
-      $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
-      $sql .= "ON (testcases.id=results.testcase_id AND results.useragent_id=useragents.id)) as t ";
-      
-      $sql .= "WHERE t.testsuite LIKE '{$sequenceQuery}' ";
-      $sql .= "AND t.active='1' ";
-      $sql .= "GROUP BY testcase, engine";
-
-      $r = $this->query($sql);
-      
-      if (! $r->is_false()) {
-        $data = $r->fetch_table();
+      foreach ($this->mTestCases as $testCase => $testCaseId) {
+        $optional = $this->mTestCaseOptional[$testCaseId];
         
-        if ($data) {
-          print "Processing results\n";
-          
-          $lastTestCase   = '';
-          foreach ($data as $result) {
-            $testCase = $result['testcase'];
-            if ($testCase != $lastTestCase) {
-              if ('' != $lastTestCase) {
-                $this->_processTestcase($this->mTestCases[$lastTestCase], $lastTestCase, $engineResults, $optional);
+        unset ($engineResults);
+        $engineResults[''] = 0;
+        if (array_key_exists($testCase, $this->mResults)) {
+          foreach ($this->mResults[$testCase] as $engine => $engineData) {
+            $engineResults[$engine]['count'] = 0;
+            foreach ($engineData as $result) {
+              $engineResults[$engine]['count']++;
+              if (array_key_exists($result, $engineResults[$engine])) {
+                $engineResults[$engine][$result]++;
               }
-              unset ($engineResults);
+              else {
+                $engineResults[$engine][$result] = 1;
+              }
             }
-            $flags    = $result['flags'];
-            $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
-            $engine   = $result['engine'];
-            $engineResults['pass'][$engine]       = $result['pass'];
-            $engineResults['fail'][$engine]       = $result['fail'];
-            $engineResults['uncertain'][$engine]  = $result['uncertain'];
-            $engineResults['invalid'][$engine]    = $result['invalid'];
-            $engineResults['na'][$engine]         = $result['na'];
-            $engineResults['count'][$engine]      = $result['count'];
-            
-            $lastTestCase   = $testCase;
           }
-          $this->_processTestcase($this->mTestCases[$testCase], $testCase, $engineResults, $optional);
+        }
+        
+        $this->_processTestCase($testCaseId, $testCase, $engineResults, $optional);
+      }
           
-          foreach ($this->mEngines as $engine) {
-            print "Storing sequence for {$engine}\n";
-            
-            $engineCounts = $this->mCounts[$engine];
-            asort($engineCounts);
-            $sequence = 0;
-            foreach ($engineCounts as $testCase => $count) {
-              $sequence++;
-              
-              $testCaseId = $this->mTestCases[$testCase];
-              
-              $sql  = "INSERT INTO testsequence (engine, testcase_id, sequence) ";
-              $sql .= "VALUES ('{$engine}', '{$testCaseId}', '{$sequence}') ";
-              $sql .= "ON DUPLICATE KEY UPDATE sequence='{$sequence}'";
+      foreach ($this->mEngines as $engine) {
+        print "Storing sequence for {$engine}\n";
+        
+        $engineCounts = $this->mCounts[$engine];
+        asort($engineCounts);
+        $sequence = 0;
+        foreach ($engineCounts as $testCase => $count) {
+          $sequence++;
+          
+          $testCaseId = $this->mTestCases[$testCase];
+          
+          $sql  = "INSERT INTO testsequence (engine, testcase_id, sequence) ";
+          $sql .= "VALUES ('{$engine}', '{$testCaseId}', '{$sequence}') ";
+          $sql .= "ON DUPLICATE KEY UPDATE sequence='{$sequence}' ";
 
-              $this->query($sql);
-            }
-          }
+          $this->query($sql);
         }
       }
     }

@@ -140,7 +140,6 @@ class test_case extends DBConnection
       $this->m_info = $this->select_case
         ( $test_suite
         , $test_select
-        , $user_agent
         );
 
       $this->m_rank = $rank;
@@ -497,13 +496,11 @@ class test_case extends DBConnection
   //
   ////////////////////////////////////////////////////////////////////////////
   function select_case
-    ( $test_suite
-    , $test_case
-    , $user_agent
+    ( $testSuite
+    , $testCase
     )
   {
-    $sql  = "SELECT t1.*, count FROM (";
-    $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
+    $sql  = "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
     $sql .= "testcases.testgroup, testcases.testcase, ";
     $sql .= "testcases.title AS casetitle, ";
     $sql .= "testgroups.title AS grouptitle, ";
@@ -513,16 +510,9 @@ class test_case extends DBConnection
     $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
     $sql .= "LEFT JOIN testgroups ";
     $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
-    $sql .= "AND testcases.testcase='" . $test_case . "' ";
+    $sql .= "WHERE testcases.testsuite='{$testSuite}' ";
+    $sql .= "AND testcases.testcase='{$testCase}' ";
     $sql .= "AND testcases.active='1' ";
-    $sql .= ") AS t1 ";
-    $sql .= "LEFT JOIN (";
-    $sql .= "SELECT testcase_id, COUNT(*) AS count ";
-    $sql .= "FROM results ";
-    $sql .= "WHERE useragent_id='" . $user_agent->get_id() . "' ";
-    $sql .= "GROUP BY testcase_id) AS t2 ";
-    $sql .= "ON t1.id=t2.testcase_id ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
