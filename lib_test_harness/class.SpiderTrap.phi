@@ -45,6 +45,7 @@ class SpiderTrap
   
   var $mSequence;
   var $mPageQuery;
+  var $mPageURI;
 
   
   ////////////////////////////////////////////////////////////////////////////
@@ -56,6 +57,7 @@ class SpiderTrap
   {
     $this->mSequence = 0;
     $this->mPageQuery = $_SERVER['QUERY_STRING'];
+    $this->mPageURI = $_SERVER['REQUEST_URI'];
   }
   
 
@@ -132,9 +134,9 @@ class SpiderTrap
     $ipAddress = $this->_getClientIP();
     $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
-    $sql  = "INSERT INTO `spidertrap` (`ip_address`, `user_agent`, `last_query`, `visit_count`, `first_visit`) ";
-    $sql .= "VALUES ('{$ipAddress}', '{$userAgent}', '{$this->mPageQuery}', '1', NOW()) ";
-    $sql .= "ON DUPLICATE KEY UPDATE `user_agent` = '{$userAgent}', `last_query` = '{$this->mPageQuery}', `visit_count` = visit_count + 1";
+    $sql  = "INSERT INTO `spidertrap` (`ip_address`, `user_agent`, `last_uri`, `visit_count`, `first_visit`) ";
+    $sql .= "VALUES ('{$ipAddress}', '{$userAgent}', '{$this->mPageURI}', '1', NOW()) ";
+    $sql .= "ON DUPLICATE KEY UPDATE `user_agent` = '{$userAgent}', `last_uri` = '{$this->mPageURI}', `visit_count` = visit_count + 1";
     
     $db = $this->_getDB();
     $db->query($sql);
