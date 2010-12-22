@@ -18,10 +18,10 @@ CREATE TABLE IF NOT EXISTS `flags` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `reftests`
+-- Table structure for table `references`
 --
 
-CREATE TABLE IF NOT EXISTS `reftests` (
+CREATE TABLE IF NOT EXISTS `references` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `testcase_id` int(11) unsigned NOT NULL,
   `reference` varchar(255) NOT NULL,

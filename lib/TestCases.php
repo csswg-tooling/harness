@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -76,22 +76,22 @@ class test_cases extends DBConnection
   //  generating a desired human readable listings.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function __construct($test_suite) 
+  function __construct($testSuite) 
   {
     parent::__construct();
     
-    $sql  = "SELECT * FROM testcases ";
-    $sql .= "WHERE testsuite='$test_suite' ";
-    $sql .= "AND active='1'";
+    $sql  = "SELECT * FROM `testcases` ";
+    $sql .= "WHERE `testsuite` = '{$testSuite}' ";
+    $sql .= "AND `active` = '1' ";
     
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to obtain list of test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $this->m_toc = $r->fetch_table();
+    $this->m_toc = $r->fetchTable();
 
     if(!($this->m_toc)) {
       $msg = 'Unable to obtain list of test cases.';

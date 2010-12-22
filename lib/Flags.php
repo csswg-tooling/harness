@@ -21,7 +21,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -60,14 +60,8 @@ class test_flags extends DBConnection
     $sql .= "AND testcase='{$test_case}' ";
 
     $r = $this->query($sql);
-
-    if ($r->is_false()) {
-      $this->m_flags = null;
-    } else {
-      $flags = $r->fetch_table();
-      foreach ($flags as $flag) {
-        $this->m_flags[$flag['flag']] = $flag['description'];
-      }
+    while ($flag = $r->fetchRow()) {
+      $this->m_flags[$flag['flag']] = $flag['description'];
     }
   }
   

@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -76,9 +76,8 @@ class ir_import extends DBConnection
   {
     $sql =  "SELECT id, testsuite, testcase FROM testcases";
     $r = $this->query($sql);
-    $data = $r->fetch_table();
     
-    foreach ($data as $result) {
+    while ($result = $r->fetchRow()) {
       $testcase_id = $result['id'];
       $test_suite  = $result['testsuite'];
       $test_case   = $result['testcase'];
@@ -89,9 +88,7 @@ class ir_import extends DBConnection
     $sql =  "SELECT * FROM ir_import WHERE testcase_id='0'";
     
     $r = $this->query($sql);
-    $data = $r->fetch_table();
-    
-    foreach ($data as $result) {
+    while ($result = $r->fetchRow()) {
       $test_suite   = $result['testsuite'];
       $test_case    = $result['testcase'];
       
@@ -111,7 +108,7 @@ class ir_import extends DBConnection
     $sql =  "SELECT * FROM ir_import WHERE testcase_id='0'";
     
     $r = $this->query($sql);
-    $data = $r->fetch_table();
+    $data = $r->fetchTable();
     
     foreach ($data as $result) {
       $test_suite   = $result['testsuite'];
@@ -125,8 +122,8 @@ print "{$test_suite} / {$test_case} = ";
       $sql .= "WHERE testsuite='{$test_suite}' AND testcase='{$test_case}'";
       
       $r = $this->query($sql);
-      if (! $r->is_false()) {
-        $testcase_id = $r->result(0, 'id');
+      if ($r->succeeded()) {
+        $testcase_id = $r->fetchField(0, 'id');
 print "{$testcase_id}\n";        
         if (0 < $testcase_id) {
           $sql  = "UPDATE ir_import SET testcase_id='{$testcase_id}' ";

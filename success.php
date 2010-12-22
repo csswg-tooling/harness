@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_suites.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/TestSuites.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -42,23 +42,17 @@ require_once("./lib_css2.1_harness/class.test_suites.phi");
 //	A class for generating the welcome page for a test harness
 //
 ////////////////////////////////////////////////////////////////////////////////
-class success_page extends css_page
+class SuccessPage extends HarnessPage
 {	
 	////////////////////////////////////////////////////////////////////////////
 	//
 	//	Constructor.
 	//
 	////////////////////////////////////////////////////////////////////////////
-	function welcome_page() 
+	function __construct() 
 	{
-		parent::css_page();
+		parent::__construct();
 
-		$this->m_page_title = 'W3C CSS 2.1 Conformance Test Harness';
-		
-		$this->m_content_title = 'W3C CSS 2.1 Conformance Test Harness';
-
-		// $this->m_resource_id 
-		// 	= '$Id: success.php,v 1.1 2008/08/05 15:38:44 dom Exp $';		
 	}	
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -67,11 +61,11 @@ class success_page extends css_page
 	//
 	////////////////////////////////////////////////////////////////////////////
 	function write_body_content($indent = '')
-	{	
-		echo $indent . '<p>'."\n";
-		echo $indent . '  Thank you for providing data ';
-		echo 'for conducting CSS 2.1 conformance'."\n";
-		echo $indent . '  testing using the ';
+	{ // XXX link to submit more results, link to review results
+      // XXX factor getting test suite to base class
+      echo $indent . "<p>\n";
+		echo $indent . "  Thank you for providing data for conducting conformance\n";
+		echo $indent . "  testing using the ";
 		echo '<a href="http://www.w3.org/Style/CSS/Test/CSS2.1/">';
 		echo 'CSS 2.1'."\n";
 		echo $indent . '  Conformance Test Suite</a>.'."\n";
@@ -88,7 +82,7 @@ class success_page extends css_page
 	}
 }
 
-$page = new success_page();
-$page -> write();
+$page = new SuccessPage();
+$page->write();
 
 ?>

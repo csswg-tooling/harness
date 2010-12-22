@@ -54,10 +54,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_suite.phi");
-require_once("./lib_css2.1_harness/class.test_case.phi");
-require_once("./lib_css2.1_harness/class.user_agent.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/TestSuite.php");
+require_once("lib/TestCase.php");
+require_once("lib/UserAgent.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -67,7 +67,7 @@ require_once("./lib_css2.1_harness/class.user_agent.phi");
 //  individual tests.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class testcase_page extends css_page
+class TestcasePage extends HarnessPage
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -136,9 +136,9 @@ class testcase_page extends css_page
   //  All other URL parameters are ignored.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function testcase_page() 
+  function __construct() 
   {
-    parent::css_page();
+    parent::__construct();
 
     if(isset($_GET['s'])) {
       $suite = new test_suite($_GET['s']);
@@ -203,16 +203,6 @@ class testcase_page extends css_page
     } else {
       $this->m_ref_id = 0;
     }
-
-
-    $this->m_page_title = $this->m_test_case->get_title_suite() . 
-      ' CSS 2.1 Test Suite';
-    
-    $this->m_content_title = 'CSS 2.1 Conformance Test Suite (' .
-      $this->m_test_case->get_title_suite() . ')';
-
-    // $this->m_resource_id 
-    //   = '$Id: testcase.php,v 1.3 2008/09/03 18:55:53 dberfang Exp $';    
   }  
   
   ////////////////////////////////////////////////////////////////////////////
@@ -250,7 +240,7 @@ class testcase_page extends css_page
     echo $indent . '      <a href="testsuite?s=';
     echo $this->m_test_case->get_test_suite();
     echo '">'."\n";
-    echo $indent . '        ' . $this->m_content_title . "\n";
+    echo $indent . '        ' . $this->getContentTitle() . "\n";
     echo $indent . '      </a>'."\n";
     echo $indent . '    </span>'."\n";
 
@@ -392,7 +382,7 @@ class testcase_page extends css_page
   }
 }
 
-$page = new testcase_page();
-$page -> write();
+$page = new TestcasePage();
+$page->write();
 
 ?>

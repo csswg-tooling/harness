@@ -35,8 +35,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_suites.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/TestSuites.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -45,7 +45,7 @@ require_once("./lib_css2.1_harness/class.test_suites.phi");
 //  A class for generating the welcome page for a test harness
 //
 ////////////////////////////////////////////////////////////////////////////////
-class WelcomePage extends css_page
+class WelcomePage extends HarnessPage
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -63,10 +63,6 @@ class WelcomePage extends css_page
   {
     parent::__construct();
 
-    $this->m_page_title = 'W3C CSS Conformance Test Harness';
-    
-    $this->m_content_title = 'W3C CSS Conformance Test Harness';
-    
     $this->mTestSuites = new test_suites();
   }  
   

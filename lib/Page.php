@@ -1,44 +1,21 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2007 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3CÂ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.static_page.phi
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: mthlib.phi
-//      Function: htmlify()
-//      Function: WriteHTMLTop()
-//      Function: WriteHTMLFoot()
-//
-//  where herein abstract functionalities of these functions are encapsulated
-//  in a base classs for generating generic HTML content and where other
-//  specific functionalities are deferred for implementation by subsequent
-//  derived classes.
-//
-//  The function contentNegotiationHeaders() is no longer needed; also, 
-//  the error handling provided by the WriteErrorpage() is deferred for
-//  implementation by subsequent derived classes.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2010 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C¨ Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -49,31 +26,25 @@
 // specific pages.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class static_page
+
+class Page
 {
   ////////////////////////////////////////////////////////////////////////////
   //
   //  Instance variables.
   //
   ////////////////////////////////////////////////////////////////////////////
-  var $m_should_cache;
-  var $m_page_title;
-  var $m_content_title;
-  var $m_resource_id;
-  var $m_page_base;
+  protected $mShouldCache;
+  protected $mPageBase;
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function static_page() 
+  
+  
+  function __construct() 
   {
-    $this->m_should_cache = false;
-    $this->m_page_title = '';
-    $this->m_content_title = '';
-    $this->m_resource_id = '';
-    $this->m_page_base = '';
+    $this->mShouldCache = FALSE;
+    $this->mPageBase = '';
+    
+
   }  
   
   ////////////////////////////////////////////////////////////////////////////
@@ -93,11 +64,26 @@ class static_page
   //  See also php documentation for htmlspecialchars.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function htmlify($string)
+  static function Encode($string)
   {
-    return htmlspecialchars($string,ENT_QUOTES);
+    return htmlspecialchars($string, ENT_QUOTES);
   }
-
+  
+  static function Decode($string)
+  {
+    return html_entity_decode($string, ENT_QUOTES);
+  }
+  
+  function getPageTitle()
+  {
+    return '';
+  }
+  
+  function getContentTitle()
+  {
+    return $this->getPageTitle();
+  }
+  
   ////////////////////////////////////////////////////////////////////////////
   //
   //  write()
@@ -150,11 +136,7 @@ class static_page
   ////////////////////////////////////////////////////////////////////////////
   function write_http_headers()
   {
-    //
-    // Use member varable "m_cache" to descide if the page should indicate 
-    //  that browsers should cache this page.
-    //
-    if (!$this->m_should_cache) {
+    if (! $this->mShouldCache) {
       header("Cache-Control: max-age=0");
     }
   }
@@ -230,11 +212,11 @@ class static_page
   function write_head_base($indent = '')
   {
     //
-    // If the member varable "m_page_base" is not empty then output the
+    // If the member varable "mPageBase" is not empty then output the
     // base tag.
     //
-    if ($this->m_page_base) {
-      echo $indent . '<base href="' . $this->m_page_base .'">' . "\n";
+    if ($this->mPageBase) {
+      echo $indent . "<base href='{$this->mPageBase}'>\n";  // XXX htmlEncode!
     }
   }
 
@@ -249,12 +231,11 @@ class static_page
   ////////////////////////////////////////////////////////////////////////////
   function write_head_title($indent = '')
   {
-    //
-    // If the member varable "m_page_title" is not empty then output the
-    //  title tag.
-    //
-    if ($this->m_page_title) {
-      echo $indent . '<title>' . $this->m_page_title . '</title>' . "\n";
+    $title = $this->getPageTitle();
+    
+    if ($title) {
+      $title = Page::Encode($title);
+      echo $indent . "<title>{$title}</title>\n";
     }
   }
 

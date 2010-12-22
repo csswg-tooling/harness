@@ -51,8 +51,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_result_details.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/ResultDetails.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -62,7 +62,7 @@ require_once("./lib_css2.1_harness/class.test_result_details.phi");
 //  individual tests.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class details_page extends css_page
+class DetailsPage extends HarnessPage
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -115,13 +115,9 @@ class details_page extends css_page
   //  All other URL parameters are ignored.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function details_page() 
+  function __construct() 
   {
-    parent::css_page();
-
-    $this->m_page_title = 'CSS 2.1 Conformance Testing Results';
-    
-    $this->m_content_title = 'Test Results for CSS 2.1 Conformance Testing';
+    parent::__construct();
 
     if(isset($_GET['s'])) {
       $suite = $_GET['s'];
@@ -191,6 +187,13 @@ class details_page extends css_page
 
   }
   
+  function getPageTitle()
+  {
+    $title = parent::getPageTitle();
+    return "{$title} Results";
+  }
+  
+  
   ////////////////////////////////////////////////////////////////////////////
   //
   //  write_head_style()
@@ -215,7 +218,7 @@ class details_page extends css_page
   }
 }
 
-$page = new details_page();
-$page -> write();
+$page = new DetailsPage();
+$page->write();
 
 ?>

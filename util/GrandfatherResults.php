@@ -1,91 +1,56 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2010 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  grandfather.php
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: grandfather.php
-//      Lines: 103-142
-//
-//  where herein specific contents provided by the original harness have
-//  been adapted for CSS2.1 conformance testing. Separately, controls have
-//  been added to allow entering data for user agents other than the one
-//  accessing the harness, and the means by which test presentation order
-//  is provided have been altered. Separately, the ability to request
-//  only those tests in a particular named group has been added.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+define('COMMAND_LINE', TRUE);
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class grandfather
-//
-//  This class copies test results fom one testsuite to another
-//  The intended usage is when a new version of a testuite is posted
-//  and not all tests have changed. 
-//  
-//  To use this class, set a value of '1' in the grandfather field for
-//  all testcases where results should be copied, then call copyRresults
-//  with the relevant test suites.
-//
-//  The copy function resets the grandfather field to '2' to avoid multiple
-//  copies of results. 
-//  
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * This class copies test results fom one testsuite to another
+ *  The intended usage is when a new version of a testuite is posted
+ *  and not all tests have changed. 
+ *  
+ *  To use this class, set a value of '1' in the grandfather field for
+ *  all testcases where results should be copied, then call copyRresults
+ *  with the relevant test suites.
+ *
+ *  The copy function resets the grandfather field to '2' to avoid multiple
+ *  copies of results. 
+ */
 class GrandfatherResults extends DBConnection
 {  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
 
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor.
-  //
-  ////////////////////////////////////////////////////////////////////////////
   function __construct() 
   {
     parent::__construct();
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Copy test results from one suite to another.
-  //
-  //  id of source result is preserved in original_id
-  //
-  ////////////////////////////////////////////////////////////////////////////
+  /**
+   * Copy test results from one suite to another.
+   * 
+   * id of source result is preserved in original_id
+   */
   function copyResults($fromSuite, $toSuite)
   {
-    $sql = "SELECT `id`, `testcase` FROM `testcases` WHERE `testsuite` = '{$toSuite}' AND `grandfather` = '1'";
+    $sql = "SELECT `id`, `testcase` FROM `testcases` WHERE `testsuite` = '{$toSuite}' AND `grandfather` = '1' ";
     $r = $this->query($sql);
-    $dbList = $r->fetch_table(); 
-    foreach ($dbList as $dbData) {
+    
+    while ($dbData = $r->fetchRow()) {
       $newTestcaseId = $dbData['id'];
       $testCase = $dbData['testcase'];
       
@@ -96,12 +61,11 @@ class GrandfatherResults extends DBConnection
       $sql .= "LIMIT 1";
       $r = $this->query($sql);
       
-      if ($r->is_false()) {
+      if (! $r->succeeded()) {
         echo "not in new suite\n";
       }
       else {
-        $testCaseList = $r->fetch_table();
-        $oldTestcaseId = $testCaseList[0]['id'];
+        $oldTestcaseId = $r->fetchField(0, 'id');
         
         echo "{$oldTestcaseId} to {$newTestcaseId}\n";
         
@@ -111,9 +75,8 @@ class GrandfatherResults extends DBConnection
         $sql .= "AND `ignore` = '0' ";
         $r = $this->query($sql);
 
-        if (! $r->is_false()) {
-          $resultList = $r->fetch_table();
-          foreach ($resultList as $resultData) {
+        if ($r->succeeded()) {
+          while ($resultData = $r->fetchRow()) {
             $resultId     = $resultData['id'];
             $useragentId  = $resultData['useragent_id'];
             $source       = $resultData['source'];
@@ -121,6 +84,8 @@ class GrandfatherResults extends DBConnection
             $modified     = $resultData['modified'];
             
             echo "  {$useragentId} {$source} {$result} {$modified}\n";
+            
+            $source = $this->encode($source);
             
             $sql  = "INSERT INTO results (testcase_id, useragent_id, source, original_id, result, modified) VALUES ";
             $sql .= "('{$newTestcaseId}', '{$useragentId}', '{$source}', '{$resultId}', '{$result}', '{$modified}')";

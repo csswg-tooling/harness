@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -102,10 +102,10 @@ class user_agent extends DBConnection
     $sql .= "WHERE id='$id' ";
     $sql .= "LIMIT 1";
     $r = $this->query($sql);
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       return null;
     }
-    return $r->fetch_array();
+    return $r->fetchRow();
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -119,10 +119,10 @@ class user_agent extends DBConnection
     $sql .= "WHERE useragent='$ua_string' ";
     $sql .= "LIMIT 1";
     $r = $this->query($sql);
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       return null;
     }
-    return $r->fetch_array();
+    return $r->fetchRow();
   }
 
 

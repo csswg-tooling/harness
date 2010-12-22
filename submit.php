@@ -36,10 +36,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_suite.phi");
-require_once("./lib_css2.1_harness/class.test_case.phi");
-require_once("./lib_css2.1_harness/class.user_agent.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/TestSuite.php");
+require_once("lib/TestCase.php");
+require_once("lib/UserAgent.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -52,7 +52,7 @@ require_once("./lib_css2.1_harness/class.user_agent.phi");
 //  of requested test cases.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class submit_results_page extends css_page
+class SubmitResultsPage extends HarnessPage
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -66,6 +66,7 @@ class submit_results_page extends css_page
   //  Get ip addr of client submitting result
   //
   ////////////////////////////////////////////////////////////////////////////
+//   XXX move to base class
   protected function _get_client_ip()
   {
     if (! empty($_SERVER['REMOTE_ADDR'])) {
@@ -109,14 +110,10 @@ class submit_results_page extends css_page
   //  from the subsequent redirection.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function submit_results_page() 
+  function __construct() 
   {
-    parent::css_page();
+    parent::__construct();
     
-    $this->m_page_title  = 'W3C CSS 2.1 Conformance Test Harness ';
-    $this->m_page_title .= '(Precessing Submission)';
-    $this->m_content_title = 'W3C CSS 2.1 Conformance Test Harness';
-
     if(isset($_POST['result'])) {
       switch (strtolower(substr($_POST['result'],0,4))) {
         case 'pass':
@@ -291,7 +288,7 @@ class submit_results_page extends css_page
   }
 }
 
-$page = new submit_results_page();
-$page -> write();
+$page = new SubmitResultsPage();
+$page->write();
 
 ?>

@@ -39,8 +39,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
-require_once("./lib_css2.1_harness/class.test_flags.phi");
+require_once("lib/DBConnection.php");
+require_once("lib/Flags.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -169,13 +169,13 @@ class test_case extends DBConnection
     if ($this->is_reference_test()) {
       $testcase_id = $this->get_id();
       
-      $sql  = "SELECT id, reference, uri, type ";
-      $sql .= "FROM reftests ";
-      $sql .= "WHERE testcase_id='{$testcase_id}'";
+      $sql  = "SELECT `id`, `reference`, `uri`, `type` ";
+      $sql .= "FROM `references` ";
+      $sql .= "WHERE `testcase_id` = '{$testcase_id}' ";
       
       $r = $this->query($sql);
-      if (! $r->is_false()) {
-        $this->m_references = $r->fetch_table();
+      if ($r->succeeded()) {
+        $this->m_references = $r->fetchTable();
       }
     }
     
@@ -191,12 +191,12 @@ class test_case extends DBConnection
     $sql  = "SELECT CURRENT_TIMESTAMP";
     $r = $this->query($sql);
     
-    if($r->is_false()) {
+    if(! $r->succeeded()) {
       $msg = 'Unable to obtain timestamp.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t) || !isset($t['CURRENT_TIMESTAMP'])) {
       $msg = 'Unable to obtain timestamp.';
@@ -221,12 +221,12 @@ class test_case extends DBConnection
     
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if(! $r->succeeded()) {
       $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t) || !isset($t['count'])) {
       $msg = 'Unable to access information about test cases.';
@@ -265,7 +265,7 @@ class test_case extends DBConnection
       $sql .= "LIMIT 0, 1";
       
       $r = $this->query($sql);
-      if ($r->is_false() || (0 == $r->num_rows())) {
+      if (0 == $r->rowCount()) {
         $order = 0;
       }
     }
@@ -331,12 +331,12 @@ class test_case extends DBConnection
 
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t)) {
       $msg = 'Unable to access information about test case.';
@@ -362,12 +362,12 @@ class test_case extends DBConnection
 
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t) || !isset($t['count'])) {
       $msg = 'Unable to access information about test cases.';
@@ -407,7 +407,7 @@ class test_case extends DBConnection
       $sql .= "LIMIT 0, 1";
 
       $r = $this->query($sql);
-      if ($r->is_false() || (0 == $r->num_rows())) {
+      if (0 == $r->rowCount()) {
         $order = 0;
       }
     }
@@ -444,12 +444,12 @@ class test_case extends DBConnection
 
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t)) {
       $msg = 'Unable to access information about test case.';
@@ -475,12 +475,12 @@ class test_case extends DBConnection
 
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t) || !isset($t['count'])) {
       $msg = 'Unable to access information about test cases.';
@@ -517,12 +517,12 @@ class test_case extends DBConnection
 
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetch_array();
+    $t = $r->fetchRow();
     
     if(!($t)) {
       $msg = 'Unable to access information about test case.';
@@ -552,7 +552,7 @@ class test_case extends DBConnection
     
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Operation Failed. We were unable to record you submission.';
       trigger_error($msg, E_USER_ERROR);
     }

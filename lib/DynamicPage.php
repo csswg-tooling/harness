@@ -26,7 +26,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("class.static_page.phi");
+require_once("lib/Page.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -37,7 +37,7 @@ require_once("class.static_page.phi");
 //  class will add functionality needed by specific pages.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class dynamic_page extends static_page
+class DynamicPage extends Page
 {
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -50,6 +50,40 @@ class dynamic_page extends static_page
   var $m_error_file;
   var $m_error_line;
   var $m_error_context;
+  
+  var $mGetData;
+  var $mPostData;
+  
+  /**
+   * Static function to condition get or post input
+   *
+   * sets all keys to lower case and removes any slashes from 
+   * "magic quotes"
+   *
+   * @param array
+   * @return array
+   */
+  static function _ConditionInput($input)
+  {
+    $output = array();
+    if (is_array($input) && (0 < count($input))) {
+      if (get_magic_quotes_gpc()) {
+        foreach ($input as $key => $value) {
+          if (is_array($value)) {
+            $output[strtolower($key)] = _ConditionInput($value);
+          }
+          else {
+            $output[strtolower($key)] = stripslashes($value);
+          }
+        }
+      }
+      else {
+        $output = array_change_key_case($input, CASE_LOWER);
+      }
+    }
+    return $output;
+  }
+  
   
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -66,6 +100,10 @@ class dynamic_page extends static_page
     $this->m_error_line = null;
     $this->m_error_context = null;
     set_error_handler(array(&$this, 'error_handler'));
+    
+//XXX    $this->mGetData = DynamicPage::_ConditionInput($_GET);
+//XXX    $this->mPostData = DynamicPage::_ConditionInput($_POST);
+
   }  
 
   ////////////////////////////////////////////////////////////////////////////

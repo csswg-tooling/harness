@@ -27,7 +27,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -105,12 +105,12 @@ class test_result_details extends DBConnection
 //print $sql;
     $r = $this->query($sql);
 
-    if ($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to obtain results.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $this->m_data = $r->fetch_table();
+    $this->m_data = $r->fetchTable();
   }
 
   ////////////////////////////////////////////////////////////////////////////

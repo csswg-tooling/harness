@@ -35,8 +35,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.dynamic_page.phi");
-require_once("./lib_test_harness/class.SpiderTrap.phi");
+require_once("lib/DynamicPage.php");
+require_once("lib/SpiderTrap.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -47,26 +47,29 @@ require_once("./lib_test_harness/class.SpiderTrap.phi");
 //  functionality needed by specific pages.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class css_page extends dynamic_page
+class HarnessPage extends DynamicPage
 {
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $mSpiderTrap;
+  protected $mSpiderTrap;
+// XXX  test suite
+// XXX  user agent
 
   ////////////////////////////////////////////////////////////////////////////
   //
   //  Constructor.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function css_page() 
+  function __construct() 
   {
-    parent::dynamic_page();
-
+    parent::__construct();
+    
     $this->mSpiderTrap = new SpiderTrap();
   }  
+  
+  function getPageTitle()
+  {
+//XXX if ($this->mTestSuite) {...}
+    return "W3C Conformance Test Harness";
+  }
   
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -109,7 +112,7 @@ class css_page extends dynamic_page
     echo $indent . "</h1>\n";
     echo $indent . "<hr>\n";
     echo $indent . "<h1>\n";
-    echo $indent . "  {$this->m_content_title}\n";
+    echo $indent . "  " . $this->getContentTitle() . "\n";
     echo $indent . "</h1>\n\n";
     
   }
@@ -130,10 +133,6 @@ class css_page extends dynamic_page
     echo $indent . "  Please send comments, questions, and error reports to\n";
     echo $indent . "  <a href='http://lists.w3.org/Archives/Public/public-css-testsuite'>public-css-testsuite@w3.org</a>.\n";    
     echo $indent . "</address>\n";
-
-    if ($this->m_resource_id) {
-      echo $indent . "<p><em>{$this->m_resource_id}</em></p>\n";
-    }
 
     $this->mSpiderTrap->generateLink($indent);
   }

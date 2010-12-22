@@ -35,7 +35,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -72,12 +72,12 @@ class test_suite extends DBConnection
     
     $r = $this->query($sql);
 
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to obtain information about ' . $test_suite;
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $this->m_info = $r->fetch_array();
+    $this->m_info = $r->fetchRow();
     
     if(!($this->m_info)) {
       $msg = 'Unable to obtain information about ' . $test_suite;

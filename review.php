@@ -53,10 +53,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.test_suite.phi");
-require_once("./lib_css2.1_harness/class.test_groups.phi");
-require_once("./lib_css2.1_harness/class.test_cases.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/TestSuite.php");
+require_once("lib/Groups.php");
+require_once("lib/TestCases.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -66,7 +66,7 @@ require_once("./lib_css2.1_harness/class.test_cases.phi");
 //  for inspection.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class review_page extends css_page
+class ReviewPage extends HarnessPage
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -92,9 +92,9 @@ class review_page extends css_page
   //  All other URL parameters are ignored.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function review_page() 
+  function __construct() 
   {
-    parent::css_page();
+    parent::__construct();
 
     if(isset($_GET['s'])) {
       $this->m_test_suite = new test_suite($_GET['s']);
@@ -103,23 +103,19 @@ class review_page extends css_page
       $this->trigger_client_error($msg, E_USER_ERROR);
     }
 
-    $this->m_page_title = $this->m_test_suite->get_title() . 
-      ' CSS 2.1 Test Suite';
-    
-    $this->m_content_title = $this->m_test_suite->get_title() . 
-      ' Test Suite for CSS 2.1 Conformance Testing';
-
     $this->m_test_groups = new test_groups(
       $this->m_test_suite->get_name());
 
     $this->m_test_cases = new test_cases(
       $this->m_test_suite->get_name());
-
-    // $this->m_resource_id 
-    //   = '$Id: review.php,v 1.2 2008/08/12 18:26:59 dberfang Exp $';    
   }  
   
-  
+  function getPageTitle()
+  {
+    $title = parent::getPageTitle();
+    return "{$title} Results";
+  }
+
   ////////////////////////////////////////////////////////////////////////////
   //
   //  write_head_script()
@@ -204,7 +200,7 @@ class review_page extends css_page
   }
 }
 
-$page = new review_page();
-$page -> write();
+$page = new ReviewPage();
+$page->write();
 
 ?>

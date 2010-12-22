@@ -25,7 +25,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -66,12 +66,12 @@ class test_suites extends DBConnection
     
     $r = $this->query($sql);
     
-    if($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to obtain list of test suites.';
       trigger_error($msg, E_USER_ERROR);
     }
     
-    $this->m_toc = $r->fetch_table();
+    $this->m_toc = $r->fetchTable();
 
     if(!($this->m_toc)) {
       $msg = 'Unable to obtain list of test suites.';

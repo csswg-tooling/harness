@@ -11,12 +11,12 @@
  *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
  *
  *  Adapted from the Mobile Test Harness
- *  Copyright © 2008 World Wide Web Consortium
+ *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
  * 
  ******************************************************************************/
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once('lib/DBConnection.php');
 
 /**
  * Gather and report test results per engine, computing CR Exit Criteria
@@ -62,12 +62,9 @@ class TestResults extends DBConnection
 
     $sql = "SELECT DISTINCT `engine` FROM `useragents` WHERE `engine` != '' ORDER BY `engine`";
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $db_engines = $r->fetch_table();
-      foreach ($db_engines as $db_engine) {
-        $this->mEngines[] = $db_engine['engine'];
-        $this->mTestCaseNeededCountPerEngine[$db_engine['engine']] = 0;
-      }
+    while ($dbEngine = $r->fetchRow()) {
+      $this->mEngines[] = $dbEngine['engine'];
+      $this->mTestCaseNeededCountPerEngine[$dbEngine['engine']] = 0;
     }
     $this->mEngineCount = count($this->mEngines);
 
@@ -85,8 +82,8 @@ class TestResults extends DBConnection
     $sql .= "ORDER BY `testcase` ";
     
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $this->mTestCases = $r->fetch_table();
+    if ($r->succeeded()) {
+      $this->mTestCases = $r->fetchTable();
     }
     
     $sql  = "SELECT `testcases`.`testcase`, `useragents`.`engine`, `results`.`result` ";
@@ -110,16 +107,12 @@ class TestResults extends DBConnection
     }
 
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $results = $r->fetch_table();
-      
-      foreach ($results as $resultData) {
-        $engine   = $resultData['engine'];
-        if ('' != $engine) {
-          $testCase = $resultData['testcase'];
-          $result   = $resultData['result'];
-          $this->mResults[$testCase][$engine][] = $result;
-        }
+    while ($resultData = $r->fetchRow()) {
+      $engine   = $resultData['engine'];
+      if ('' != $engine) {
+        $testCase = $resultData['testcase'];
+        $result   = $resultData['result'];
+        $this->mResults[$testCase][$engine][] = $result;
       }
     }
   }

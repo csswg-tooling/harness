@@ -36,8 +36,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_css2.1_harness/class.user_agent.phi");
+require_once("lib/HarnessPage.php");
+require_once("lib/UserAgent.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -48,7 +48,7 @@ require_once("./lib_css2.1_harness/class.user_agent.phi");
 //  user back to testsuite.php where the requested user agent will be used.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class request_user_agent extends css_page
+class RequestUserAgent extends HarnessPage
 {  
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -82,12 +82,9 @@ class request_user_agent extends css_page
   //  from the subsequent redirection.
   //
   ////////////////////////////////////////////////////////////////////////////
-  function request_user_agent() 
+  function __construct() 
   {
-    parent::css_page();
-    $this->m_page_title  = 'W3C CSS 2.1 Conformance Test Harness ';
-    $this->m_page_title .= '(Precessing Request)';
-    $this->m_content_title = 'W3C CSS 2.1 Conformance Test Harness';
+    parent::__construct();
     
     $this->m_new_uri = 'testsuite';
     
@@ -139,7 +136,7 @@ class request_user_agent extends css_page
   }
 }
 
-$page = new request_user_agent();
-$page -> write();
+$page = new RequestUserAgent();
+$page->write();
 
 ?>

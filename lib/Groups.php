@@ -27,7 +27,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////// 
 
-require_once("./lib_test_harness/class.DBConnection.phi");
+require_once("lib/DBConnection.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -71,17 +71,14 @@ class test_groups extends DBConnection
     
     $r = $this->query($sql);
     
-    if ($r->is_false()) {
+    if (! $r->succeeded()) {
       $msg = 'Unable to obtain list of test groups.';
       trigger_error($msg, E_USER_ERROR);
     }
     
-    $toc = $r->fetch_table();
-    if ($toc) {
-      foreach ($toc as $testGroup) {
-        if ($testGroup['testgroup'] != '') {
-          $this->m_toc[] = $testGroup;
-        }
+    while ($testGroup = $r->fetchRow()) {
+      if ($testGroup['testgroup'] != '') {
+        $this->m_toc[] = $testGroup;
       }
     }
 

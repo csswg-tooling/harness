@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -11,12 +11,14 @@
  *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
  *
  *  Adapted from the Mobile Test Harness
- *  Copyright © 2008 World Wide Web Consortium
+ *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
  * 
  ******************************************************************************/
 
-require_once("lib_test_harness/class.DBConnection.phi");
+define('COMMAND_LINE', TRUE);
+
+require_once('lib/DBConnection.php');
 
 /**
  * This class regenerates the testsequence table, maintaining an ordering 
@@ -43,11 +45,8 @@ class Resequence extends DBConnection
     $sql .= "WHERE `engine` != '' ";
     $sql .= "ORDER BY `engine` ";
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $dbEngines = $r->fetch_table();
-      foreach ($dbEngines as $dbEngine) {
-        $this->mEngines[] = $dbEngine['engine'];
-      }
+    while ($dbEngine = $r->fetchRow()) {
+      $this->mEngines[] = $dbEngine['engine'];
     }
 
     $sql  = "SELECT DISTINCT `testsuite`, `sequence_query` ";
@@ -55,11 +54,8 @@ class Resequence extends DBConnection
     $sql .= "WHERE `active` = '1' ";
     $sql .= "ORDER BY `testsuite` ";
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $dbTestSuites = $r->fetch_table();
-      foreach ($dbTestSuites as $dbTestSuite) {
-        $this->mTestSuites[$dbTestSuite['testsuite']] = $dbTestSuite['sequence_query'];
-      }
+    while ($dbTestSuite = $r->fetchRow()) {
+      $this->mTestSuites[$dbTestSuite['testsuite']] = $dbTestSuite['sequence_query'];
     }
   }
   
@@ -74,19 +70,15 @@ class Resequence extends DBConnection
     $sql .= "AND `active` = '1' ";
     
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $testCases = $r->fetch_table();
-      
-      foreach ($testCases as $testCaseData) {
-        $testCase   = $testCaseData['testcase'];
-        $testCaseId = $testCaseData['id'];
-        $flags      = $testCaseData['flags'];
+    while ($testCaseData = $r->fetchRow()) {
+      $testCase   = $testCaseData['testcase'];
+      $testCaseId = $testCaseData['id'];
+      $flags      = $testCaseData['flags'];
 
-        $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
-        
-        $this->mTestCases[$testCase] = $testCaseId;
-        $this->mTestCaseOptional[$testCaseId] = $optional;
-      }
+      $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
+      
+      $this->mTestCases[$testCase] = $testCaseId;
+      $this->mTestCaseOptional[$testCaseId] = $optional;
     }
   }
   
@@ -104,17 +96,13 @@ class Resequence extends DBConnection
     $sql .= "AND `results`.`result` != 'na' ";
 
     $r = $this->query($sql);
-    if (! $r->is_false()) {
-      $results = $r->fetch_table();
-      
-      foreach ($results as $resultData) {
-        $engine   = $resultData['engine'];
-        if ('' != $engine) {
-          $testCase = $resultData['testcase'];
-          $result   = $resultData['result'];
+    while ($resultData = $r->fetchRow()) {
+      $engine   = $resultData['engine'];
+      if ('' != $engine) {
+        $testCase = $resultData['testcase'];
+        $result   = $resultData['result'];
 
-          $this->mResults[$testCase][$engine][] = $result;
-        }
+        $this->mResults[$testCase][$engine][] = $result;
       }
     }
   }

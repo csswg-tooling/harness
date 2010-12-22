@@ -1,44 +1,26 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2010 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  reparse_ua.php
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: reparse_ua.php
-//      Lines: 103-142
-//
-//  where herein specific contents provided by the original harness have
-//  been adapted for CSS2.1 conformance testing. Separately, controls have
-//  been added to allow entering data for user agents other than the one
-//  accessing the harness, and the means by which test presentation order
-//  is provided have been altered. Separately, the ability to request
-//  only those tests in a particular named group has been added.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+define('COMMAND_LINE', TRUE);
 
-require_once("./lib_css2.1_harness/class.css_page.phi");
-require_once("./lib_test_harness/class.DBConnection.phi");
-require_once("./lib_css2.1_harness/class.user_agent.phi");
+  
+require_once("lib/DBConnection.php");
+require_once("lib/UserAgent.php");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -48,44 +30,25 @@ require_once("./lib_css2.1_harness/class.user_agent.phi");
 //  engine data. Used when the useragent parsing algorithm changes.
 //
 ////////////////////////////////////////////////////////////////////////////////
-class reparse_ua extends css_page
+class ReparseUA extends DBConnection
 {  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function reparse_ua() 
+  function __construct() 
   {
-    parent::css_page();
+    parent::__construct();
 
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // write_body_content()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write_body_content($indent = '') {
+  function reparse() 
+  {
 
-    $db = new DBConnection();
-    
-    echo $indent . "<table>";
     $sql = "SELECT id FROM useragents";
-    $r = $db->query($sql);
-    $db_list = $r->fetch_table(); 
-    foreach ($db_list as $db_data) {
-      $ua_id = $db_data['id'];
+    $r = $this->query($sql);
+    while ($dbData = $r->fetchRow()) {
+      $uaId = $dbData['id'];
       
-      $ua = new user_agent($ua_id);
-      echo $indent . "  <tr><td>" . $ua_id . "<td colspan='999'>" . $ua->get_ua_string();
+      $ua = new user_agent($uaId);
+// XXXX rewrite for command line      
+      echo $indent . "  <tr><td>{$uaId}<td colspan='999'>" . $ua->get_ua_string();
       echo $indent . "  <tr><td>&nbsp;<td>" . $ua->get_engine();
       echo "<td>" . $ua->get_engine_version();
       echo "<td>" . $ua->get_browser();
@@ -103,7 +66,7 @@ class reparse_ua extends css_page
   }
 }
 
-$page = new reparse_ua();
-$page -> write();
+$worker = new ReparseUA();
+$worker->reparse();
 
 ?>
