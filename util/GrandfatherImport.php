@@ -97,7 +97,7 @@ class GrandfatherImport extends DBConnection
   
   function grandfather($testSuite)
   {
-/*  
+    // check test cases for changes
     $this->_loadTestCases($testSuite);
     
     foreach ($this->mTestCases as $testCase => $testCaseId) {
@@ -126,7 +126,6 @@ class GrandfatherImport extends DBConnection
         exit("ERROR: unknown testcase '{$testCase}'\n");
       }
     }
-*/
 
     // look for changed references
     $this->_loadReferences($testSuite);
@@ -152,9 +151,12 @@ class GrandfatherImport extends DBConnection
           
           $this->query($sql);
           
+          // remove previously grandfathered results
+          // normally not needed, but was once used to fixup a grandfather process where reference diffs were omitted
           $sql  = "UPDATE `results` ";
-          $sql .= "SET `ignore` = '1' ";
+          $sql .= "SET `ignore` = '1', `modified` = `modified` ";
           $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+          $sql .= "AND `original_id` != '0' ";
           $this->query($sql);
           $count = $this->affectedRowCount();
           if (0 < $count) {
