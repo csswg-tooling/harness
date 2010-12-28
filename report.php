@@ -28,7 +28,7 @@ class SpiderTrapPage extends HarnessPage
 {  
   function __construct() 
   {
-    parent::css_page();
+    parent::__construct();
     
     $this->mSpiderTrap->recordVisit();
   }
