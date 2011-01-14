@@ -51,7 +51,7 @@ class DynamicPage extends Page
       if (get_magic_quotes_gpc()) {
         foreach ($input as $key => $value) {
           if (is_array($value)) {
-            $output[strtolower($key)] = _ConditionInput($value);
+            $output[strtolower($key)] = DynamicPage::_ConditionInput($value);
           }
           else {
             $output[strtolower($key)] = stripslashes($value);
