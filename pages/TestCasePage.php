@@ -189,12 +189,14 @@ class TestCasePage extends HarnessPage
     
     if ($this->mTestCase->isReferenceTest()) {
       $refTests = $this->mTestCase->getReferences();
-      foreach ($refTests as $refTest) {
-        $refId    = $refTest['id'];
-        $refName  = Page::Encode($refTest['reference']);
-        $refType  = Page::Encode($this->mTestCase->getReferenceType($refId));
-        $refURI   = $this->mTestCase->getReferenceURI($refId);
-        echo $indent . "  {$refType} <a href='{$refURI}' target='reference'>{$refName}</a>\n";
+      if ($refTests) {
+        foreach ($refTests as $refTest) {
+          $refId    = $refTest['id'];
+          $refName  = Page::Encode($refTest['reference']);
+          $refType  = Page::Encode($this->mTestCase->getReferenceType($refId));
+          $refURI   = $this->mTestCase->getReferenceURI($refId);
+          echo $indent . "  {$refType} <a href='{$refURI}' target='reference'>{$refName}</a>\n";
+        }
       }
     }
     
@@ -236,7 +238,7 @@ class TestCasePage extends HarnessPage
     if ($this->mTestCase->isReferenceTest()) {
       $refTests = $this->mTestCase->getReferences();
       
-      if (count($refTests)) {
+      if ($refTests && count($refTests)) {
         echo $indent . "<div class='tabbar'>\n";
         echo $indent . "  <ul>\n";
         if (0 == $this->mRefId) {

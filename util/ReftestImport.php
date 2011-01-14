@@ -98,7 +98,7 @@ class ReftestImport extends DBConnection
 
 $worker = new ReftestImport();
 
-$worker->import("reftest_html.list", "CSS21_HTML_RC4", "html4/");
-$worker->import("reftest_xhtml.list", "CSS21_XHTML_RC4", "xhtml1/");
+$worker->import("reftest_html.list", "CSS21_HTML_RC5", "html4/");
+$worker->import("reftest_xhtml.list", "CSS21_XHTML_RC5", "xhtml1/");
 
 ?>
