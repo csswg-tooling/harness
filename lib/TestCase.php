@@ -1,409 +1,236 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2007 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.test_case.phi
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: tests.phi
-//      Class: TestResult
-//      Lines: 20-39
-//      Class: TestSuite
-//      Class: TestCase
-//      Lines: 246-380
-//
-//  where herein information about a particular test case is queried from 
-//  the database and stored internally. Also, the functionalities for 
-//  submitting test results are included herein. Other information queries 
-// (e.g. obtaining the next test case in a list of test cases) are deferred 
-//  for other object classes.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
 require_once("lib/DBConnection.php");
 require_once("lib/Flags.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class test_case
-//
-//  test_case is a concrete DBConnection taylored for storing the 
-//  information about a particular test case.
-//
-////////////////////////////////////////////////////////////////////////////////
-class test_case extends DBConnection
-{
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_info;
-  var $m_rank;  // $rank = 1 is the first entry of the list.
-  var $m_count;
-  var $m_timestamp;
-  var $m_flags;
-  var $m_references;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  //  Query the database for information about a specific test case 
-  //  and store the results.
-  //
-  //  Test cases can be indentified in three ways:
-  //
-  //    1) by name within a particular test suite
-  //
-  //    2a) by index within a particular test suite.
-  //    2b) by ordered rank within a particular test suite.
-  //
-  //    3a) by index within a particular test group.
-  //    3b) by ordered rank within a particular test group.
-  //
-  //  The index value of a particular test case is determined by the oder
-  //  the test case is stored in the database table.
-  //
-  //  The ordered rank is determined by sorting available test cases 
-  //  according to the number of responses the individual cases have 
-  //  for a given user agent string as of a given timestamp.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function __construct
-    ( $test_suite
-    , $test_select
-    , $select_type
-    , $user_agent
-    , $modified
-    , $order
-    , $rank  // $rank = 1 is the first member of the list.
-    )
+/**
+ * Wrapper class for information about a particular test case 
+ */
+class TestCase extends DBConnection
+{
+  protected $mInfo;
+  protected $mFlags;
+  protected $mReferences;
+  protected $mSpecURIs;
+
+
+  function __construct($testCaseId = 0)
   {
     parent::__construct();
-
-    if($rank < 1) $rank = 1;
-
-    if($modified) {
-      $this->m_timestamp = $modified;
-    } else {
-      $this->m_timestamp = $this->get_now();
-    }
     
-    switch ($select_type) {
-    
-    // Select test case by rank from list of cases in a particular test group.
-    case 1: 
-      $this->m_count = $this->count_cases_in_group
-        ( $test_suite
-        , $test_select
-        );
-        
-      $this->m_info = $this->select_case_from_group
-        ( $test_suite
-        , $test_select
-        , $user_agent
-        , $this->m_timestamp
-        , $order
-        , $rank
-        );
-        
-      $this->m_rank = $rank;
-      break;
-
-    // Select test case by explicit test case id.
-    case 2:
-      $this->m_count = $this->count_cases
-        ( $test_suite
-        , $test_select
-        );
-        
-      $this->m_info = $this->select_case
-        ( $test_suite
-        , $test_select
-        );
-
-      $this->m_rank = $rank;
-      break;
-
-    // Select test case by rank from list of cases in the particular test suite.
-    default:
-    
-      $this->m_count = $this->count_cases_in_suite($test_suite);
-
-      $this->m_info = $this->select_case_from_suite
-        ( $test_suite
-        , $user_agent
-        , $this->m_timestamp
-        , $order
-        , $rank
-        );
-        
-      $this->m_rank = $rank;
+    if (0 < $testCaseId) {
+      $this->mInfo = $this->_selectCaseById($testCaseId);
     }
 
-    $this->m_flags = new test_flags
-      ( $test_suite
-      , $this->get_test_case()
-      );
+    if ($this->isValid()) {
+      $this->mFlags = new Flags($this->mInfo['flags']);
+    }
+  }
+  
+  function load($testSuiteName, $testCaseName, $testGroupName,
+                $userAgent, $modified, $order, $index)
+  {
+    if ($index < 0) {
+      $index = 0;
+    }
 
-    if ($this->is_reference_test()) {
-      $testcase_id = $this->get_id();
+    if ($testCaseName) {  // load specific test case
+      $this->mInfo = $this->_selectCaseByName($testSuiteName, $testCaseName);
+    }
+    elseif ($testGroupName) { // load test from group
+      $this->mInfo = $this->_selectCaseFromGroup($testSuiteName, $testGroupName,
+                                                 $userAgent, $modified, $order, $index);
+      
+    }
+    else { // load test from suite
+      $this->mInfo = $this->_selectCaseFromSuite($testSuiteName, 
+                                                 $userAgent, $modified, $order, $index);
+    }
+
+    if ($this->isValid()) {
+      $this->mFlags = new Flags($this->mInfo['flags']);
+    }
+  }
+  
+  
+  protected function _loadReferences()
+  {
+    if ((null == $this->mReferences) && $this->isReferenceTest()) {
+      $testCaseId = $this->getId();
       
       $sql  = "SELECT `id`, `reference`, `uri`, `type` ";
       $sql .= "FROM `references` ";
-      $sql .= "WHERE `testcase_id` = '{$testcase_id}' ";
+      $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
       
       $r = $this->query($sql);
       if ($r->succeeded()) {
-        $this->m_references = $r->fetchTable();
+        $this->mReferences = $r->fetchTable();
       }
     }
-    
+    return (null != $this->mReferences);
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_now()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_now()
+  
+  
+  protected function _loadSpecURIs()
   {
-    $sql  = "SELECT CURRENT_TIMESTAMP";
-    $r = $this->query($sql);
-    
-    if(! $r->succeeded()) {
-      $msg = 'Unable to obtain timestamp.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $t = $r->fetchRow();
-    
-    if(!($t) || !isset($t['CURRENT_TIMESTAMP'])) {
-      $msg = 'Unable to obtain timestamp.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-    
-    return $t['CURRENT_TIMESTAMP'];
-  }
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  count_cases_in_suite()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function count_cases_in_suite($test_suite)
-  {
-    $sql  = "SELECT COUNT(*) AS count ";
-    $sql .= "FROM testcases ";
-    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
-    $sql .= "AND testcases.active='1' ";
-    $sql .= "LIMIT 1";
-    
-    $r = $this->query($sql);
-
-    if(! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $t = $r->fetchRow();
-    
-    if(!($t) || !isset($t['count'])) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    return $t['count'];
-  }
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  select_case_from_suite()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function select_case_from_suite
-    ( $test_suite
-    , $user_agent
-    , $modified
-    , $order
-    , $rank
-    )
-  {
-
-    // $rank = 1 is the first member of the list.
-    // MySQL needs $rank = 0 to be the first member of the list.
-    $rank = $rank - 1;
-    if($rank < 0) {
-      $rank = 0;
-    }
-    
-    $engine = $user_agent->get_engine();
-    if (1 == $order) {  // if current engine isn't sequenced, use normal ordering
-      $sql  = "SELECT * FROM `testsequence` INNER JOIN `testcases` ";
-      $sql .= "ON testsequence.testcase_id=testcases.id ";
-      $sql .= "WHERE `engine`='{$engine}' AND `testsuite`='{$test_suite}' ";
-      $sql .= "LIMIT 0, 1";
+    if (null == $this->mSpecURIs) {
+      $testCaseId = $this->getId();
+      
+      $sql  = "SELECT `title`, `uri` ";
+      $sql .= "FROM `testlinks` ";
+      $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
       
       $r = $this->query($sql);
+      while ($specURI = $r->fetchRow()) {
+        $uri = $this->mInfo['spec_uri'] . $specURI['uri'];    // XXX check for relative uri first
+        $title = $specURI['title'];
+        $this->mSpecURIs[] = compact('title', 'uri');
+      }
+    }
+  }
+
+
+  /**
+   * Count number of test cases in suite
+   */
+  function countCasesInSuite($testSuiteName)
+  {
+    $sql  = "SELECT COUNT(*) AS `count` ";
+    $sql .= "FROM `testcases` ";
+    $sql .= "WHERE `testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
+    $sql .= "AND `active` = '1' ";
+    $sql .= "LIMIT 1";
+    
+    $r = $this->query($sql);
+
+    $count = $r->fetchField(0, 'count');
+    
+    if (FALSE === $count) {
+      $msg = 'Unable to access information about test cases.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+
+    return $count;
+  }
+
+
+  /**
+   * Load data about a test case based on index within suite
+   */
+  protected function _selectCaseFromSuite($testSuiteName, $userAgent, $modified, $order, $index)
+  {
+    $engine = $userAgent->getEngine();
+    $index = intval($index);
+    
+    if (1 == $order) {  // if engine isn't sequenced, use normal ordering
+      $sql  = "SELECT * FROM `testsequence` INNER JOIN `testcases` ";
+      $sql .= "ON `testsequence`.`testcase_id` = `testcases`.`id` ";
+      $sql .= "WHERE `engine` = '" . $this->encode($engine, TESTSEQUENCE_MAX_ENGINE) . "' ";
+      $sql .= "AND `testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
+      $sql .= "LIMIT 0, 1";
+
+      $r = $this->query($sql);
       if (0 == $r->rowCount()) {
         $order = 0;
       }
     }
-
-/*  Select test case ordered by result count per engine, this is slow
-    $sql  = "SELECT t1.*, count FROM (";
-    $sql .= "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
-    $sql .= "testcases.testgroup, testcases.testcase, ";
-    $sql .= "testcases.title AS casetitle, ";
-    $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle, ";
-    $sql .= "testsuites.base_uri ";
-    $sql .= "FROM (testcases LEFT JOIN testsuites ";
-    $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
-    $sql .= "LEFT JOIN testgroups ";
-    $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='{$test_suite}' ";
-    $sql .= "AND testcases.active='1' ";
-    $sql .= ") AS t1 ";
-    $sql .= "LEFT JOIN (";
-    $sql .= "SELECT testcase_id, COUNT(*) AS count ";
-    $sql .= "FROM (results INNER JOIN useragents ON results.useragent_id=useragents.id) ";
-    $sql .= "WHERE engine='{$engine}' ";
-    if ($modified) {
-      $sql .= "AND modified <= '{$modified}' ";
-    }
-    $sql .= "GROUP BY testcase_id) AS t2 ";
-    $sql .= "ON t1.id=t2.testcase_id ";
-    if (1 == $order) {
-      $sql .= "ORDER BY count, id ";
-    }
-    $sql .= "LIMIT {$rank}, 1";
-*/
     
     // Select case ordered by sequence table
-    $sql  = "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
-    $sql .= "testcases.testgroup, testcases.testcase, ";
-    $sql .= "testcases.title AS casetitle, ";
-    $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle, ";
-    $sql .= "testsuites.base_uri ";
-    $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
+    $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
+    $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
+    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
     if (1 == $order) {
-      $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id ";
+      $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }
-    $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup) ";
-    $sql .= "WHERE (testcases.testsuite='{$test_suite}' ";
+    $sql .= ") ";
+    $sql .= "WHERE (`testcases`.`testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
     if (1 == $order) {
-      $sql .= "AND testsequence.engine='{$engine}' ";
+      $sql .= "AND `testsequence`.`engine` = '" . $this->encode($engine, TESTSEQUENCE_MAX_ENGINE) . "' ";
     }
     if ($modified) {
-      $sql .= "AND modified <= '{$modified}' ";
+      $sql .= "AND `modified` <= '" . $this->encode($modified) . "' ";
     }
-    $sql .= "AND testcases.active='1' ";
-    $sql .= ") GROUP BY id ";
+    $sql .= "AND `testcases`.`active` = '1' ";
+    $sql .= ") GROUP BY `id` ";
     if (1 == $order) {
-      $sql .= "ORDER BY sequence, id ";
+      $sql .= "ORDER BY `sequence`, `id` ";
     }
     else {
-      $sql .= "ORDER BY id ";
+      $sql .= "ORDER BY `id` ";
     }
-    $sql .= "LIMIT {$rank}, 1";
+    $sql .= "LIMIT {$index}, 1";
 
     $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test case.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $t = $r->fetchRow();
+    $data = $r->fetchRow();
     
-    if(!($t)) {
+    if (FALSE === $data) {
       $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    return $t;
+    return $data;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  count_cases_in_group()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function count_cases_in_group($test_suite, $test_group)
+
+  /**
+   * Count number of test cases in a particular group
+   */
+  function countCasesInGroup($testSuiteName, $testGroupName)
   {
-    $sql  = "SELECT COUNT(*) AS count ";
-    $sql .= "FROM testcases ";
-    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
-    $sql .= "AND testcases.testgroup='" . $test_group . "' ";
-    $sql .= "AND testcases.active='1' ";
+    $sql  = "SELECT COUNT(*) AS `count` ";
+    $sql .= "FROM `testcases` ";
+    $sql .= "WHERE `testcases`.`testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
+    $sql .= "AND `testcases`.`testgroup` = '" . $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP) . "' ";
+    $sql .= "AND `testcases`.`active` = '1' ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
-
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $t = $r->fetchRow();
     
-    if(!($t) || !isset($t['count'])) {
+    $count = $r->fetchField(0, 'count');
+    
+    if (FALSE === $count) {
       $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    return $t['count'];
+    return $count;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  select_case_from_group()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function select_case_from_group
-    ( $test_suite
-    , $test_group
-    , $user_agent
-    , $modified
-    , $order
-    , $rank
-    )
+  /**
+   * Load data about test case from group by index
+   */
+  protected function _selectCaseFromGroup($testSuiteName, $testGroupName,
+                                          $userAgent, $modified, $order, $index)
   {
-
-    // $rank = 1 is the first member of the list.
-    // MySQL needs $rank = 0 to be the first member of the list.
-    $rank = $rank - 1;
-    if($rank < 0) {
-      $rank = 0;
-    }
-
-    $engine = $user_agent->get_engine();
-    if (1 == $order) {  // if current engine isn't sequenced, use normal ordering
+    $engine = $userAgent->getEngine();
+    $index = intval($index);
+    
+    if (1 == $order) {  // if engine isn't sequenced, use normal ordering
       $sql  = "SELECT * FROM `testsequence` INNER JOIN `testcases` ";
-      $sql .= "ON testsequence.testcase_id=testcases.id ";
-      $sql .= "WHERE `engine`='{$engine}' AND `testsuite`='{$test_suite}' ";
+      $sql .= "ON `testsequence`.`testcase_id` = `testcases`.`id` ";
+      $sql .= "WHERE `engine` = '" . $this->encode($engine, TESTSEQUENCE_MAX_ENGINE) . "' ";
+      $sql .= "AND `testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
       $sql .= "LIMIT 0, 1";
 
       $r = $this->query($sql);
@@ -413,361 +240,288 @@ class test_case extends DBConnection
     }
 
     // Select case ordered by sequence table
-    $sql  = "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
-    $sql .= "testcases.testgroup, testcases.testcase, ";
-    $sql .= "testcases.title AS casetitle, ";
-    $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle, ";
-    $sql .= "testsuites.base_uri ";
-    $sql .= "FROM (testcases LEFT JOIN testsuites ON testcases.testsuite=testsuites.testsuite ";
+    $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
+    $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
+    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
+    $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
     if (1 == $order) {
-      $sql .= "LEFT JOIN testsequence ON testcases.id=testsequence.testcase_id ";
+      $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }
-    $sql .= "LEFT JOIN testgroups ON testcases.testgroup=testgroups.testgroup) ";
-    $sql .= "WHERE (testcases.testsuite='{$test_suite}' ";
+    $sql .= ") ";
+    $sql .= "WHERE (`testcases`.`testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
     if (1 == $order) {
-      $sql .= "AND testsequence.engine='{$engine}' ";
+      $sql .= "AND `testsequence`.`engine` = '" . $this->encode($engine, TESTSEQUENCE_MAX_ENGINE) . "' ";
     }
-    $sql .= "AND testcases.testgroup='{$test_group}' ";
+    $sql .= "AND `testcases`.`testgroup` = '" . $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP) . "' ";
     if ($modified) {
-      $sql .= "AND modified <= '{$modified}' ";
+      $sql .= "AND `modified` <= '" . $this->encode($modified) . "' ";
     }
-    $sql .= "AND testcases.active='1' ";
-    $sql .= ") GROUP BY id ";
+    $sql .= "AND `testcases`.`active` = '1' ";
+    $sql .= ") GROUP BY `id` ";
     if (1 == $order) {
-      $sql .= "ORDER BY sequence, id ";
+      $sql .= "ORDER BY `sequence`, `id` ";
     }
     else {
-      $sql .= "ORDER BY id ";
+      $sql .= "ORDER BY `id` ";
     }
-    $sql .= "LIMIT {$rank}, 1";
+    $sql .= "LIMIT {$index}, 1";
 
     $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test case.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $t = $r->fetchRow();
+    $data = $r->fetchRow();
     
-    if(!($t)) {
+    if (FALSE === $data) {
       $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    return $t;
+    return $data;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  count_cases()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function count_cases($test_suite, $test_case)
+
+  /**
+   * Load data about a test case by id
+   */
+  protected function _selectCaseById($testCaseId)
   {
-    $sql  = "SELECT COUNT(*) AS count ";
-    $sql .= "FROM testcases ";
-    $sql .= "WHERE testcases.testsuite='" . $test_suite . "' ";
-    $sql .= "AND testcases.testcase='" . $test_case . "' ";
-    $sql .= "AND testcases.active='1' ";
+    $testCaseId = intval($testCaseId);
+    
+    $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
+    $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
+    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
+    $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite`) ";
+    $sql .= "WHERE `testcases`.`id` = '{$testCaseId}' ";
+    $sql .= "AND `testcases`.`active` = '1' ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $t = $r->fetchRow();
+    $data = $r->fetchRow();
     
-    if(!($t) || !isset($t['count'])) {
-      $msg = 'Unable to access information about test cases.';
+    if (FALSE === $data) {
+      $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    return $t['count'];
+    return $data;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  select_case()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function select_case
-    ( $testSuite
-    , $testCase
-    )
+  /**
+   * Load data about a test case by name
+   */
+  protected function _selectCaseByName($testSuiteName, $testCaseName)
   {
-    $sql  = "SELECT testcases.id, testcases.uri, testcases.testsuite, ";
-    $sql .= "testcases.testgroup, testcases.testcase, ";
-    $sql .= "testcases.title AS casetitle, ";
-    $sql .= "testgroups.title AS grouptitle, ";
-    $sql .= "testsuites.title AS suitetitle, ";
-    $sql .= "testsuites.base_uri ";
-    $sql .= "FROM (testcases LEFT JOIN testsuites ";
-    $sql .= "ON testcases.testsuite = testsuites.testsuite) ";
-    $sql .= "LEFT JOIN testgroups ";
-    $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='{$testSuite}' ";
-    $sql .= "AND testcases.testcase='{$testCase}' ";
-    $sql .= "AND testcases.active='1' ";
+    $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
+    $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
+    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
+    $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite`) ";
+    $sql .= "WHERE `testcases`.`testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
+    $sql .= "AND `testcases`.`testcase` = '" . $this->encode($testCaseName, TESTCASES_MAX_TESTCASE) . "' ";
+    $sql .= "AND `testcases`.`active` = '1' ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
+    $data = $r->fetchRow();
+    
+    if (FALSE === $data) {
       $msg = 'Unable to access information about test case.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $t = $r->fetchRow();
-    
-    if(!($t)) {
-      $msg = 'Unable to access information about test case.';
-      trigger_error($msg, E_USER_ERROR);
+    return $data;
+  }
+
+
+  /**
+   * Store test result
+   */
+  function submitResult($userAgent, $source, $result)
+  {
+    if ($this->isValid()) {
+      $sql  = "INSERT INTO `results` ";
+      $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`) ";
+      $sql .= "VALUES (";
+      $sql .= "'" . $this->getId() . "',";
+      $sql .= "'" . $userAgent->getId() . "',";
+      $sql .= "'" . $this->encode($source, RESULTS_MAX_SOURCE) . "',";
+      $sql .= "'" . $this->encode($result) . "'";
+      $sql .= ")";
+      
+      $r = $this->query($sql);
+
+      if (! $r->succeeded()) {
+        $msg = 'Operation Failed. We were unable to record you submission.';
+        trigger_error($msg, E_USER_ERROR);
+      }
     }
-
-    return $t;
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  submit()
-  //
-  //  Submit results info about the test case.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function submit($user_agent, $client_ip, $response)
-  {
-    $sql  = "INSERT INTO results ";
-    $sql .= "(testcase_id, useragent_id, source, result) ";
-    $sql .= "VALUES (";
-    $sql .= "'".$this->get_id()."',";
-    $sql .= "'".$user_agent->get_id()."',";
-    $sql .= "'".$client_ip."',";
-    $sql .= "'".$response."'";
-    $sql .= ")";
-    
-    $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
-      $msg = 'Operation Failed. We were unable to record you submission.';
-      trigger_error($msg, E_USER_ERROR);
+  function isValid()
+  {
+    return ($this->mInfo && array_key_exists('id', $this->mInfo) && (0 < $this->mInfo['id']));
+  }
+
+
+  function getId()
+  {
+    if ($this->isValid()) {
+      return $this->mInfo['id'];
     }
-
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write($indent, $refID)
+
+  function getURI()
   {
-    $refURI = $this->get_reference_uri($refID);
-    if ($refURI) {
-      echo $indent . "<object data='{$refURI}' type='text/html'>\n";
-      echo $indent . "  <a href='{$refURI}' target='reference'>\n";
-      echo $indent . "    Show reference\n";
-      echo $indent . "  </a>\n";
-      echo $indent . "</object>\n";
+    if ($this->isValid()) {
+      return $this->mInfo['base_uri'] . $this->mInfo['uri'];
     }
-    else {
-      $uri = $this->get_uri();
-      echo $indent . "<object data='{$uri}' type='text/html'>\n";
-      echo $indent . "  <a href='{$uri}' target='test_case'>\n";
-      echo $indent . "    Run test\n";
-      echo $indent . "  </a>\n";
-      echo $indent . "</object>\n";
-    }
-  }
-
-  ////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Member functions for retrieving information about the test suite
-  //
-  //    get_timestamp()
-  //    get_id()
-  //    get_uri()
-  //    get_test_suite()
-  //    get_test_case()
-  //    get_title()
-  //    get_title_suite();
-  //    get_title_group();
-  //    get_count();
-  //    get_rank();
-  //
-  ////////////////////////////////////////////////////////////////////////////
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_timestamp()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_timestamp()
-  {
-    return $this->m_timestamp;
-  }
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_id()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_id()
-  {
-    return $this->m_info['id'];
-  }
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_uri()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_uri()
-  {
-    return $this->m_info['base_uri'] . $this->m_info['uri'];
+    return FALSE;
   }
 
   function getBaseURI()
   {
-    return $this->m_info['base_uri'];
+    if ($this->isValid()) {
+      return $this->mInfo['base_uri'];
+    }
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_test_case()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_test_case()
+
+  function getTestCaseName()
   {
-    return $this->m_info['testcase'];
+    if ($this->isValid()) {
+      return $this->mInfo['testcase'];
+    }
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_test_suite()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_test_suite()
+
+  function getTestSuiteName()
   {
-    return $this->m_info['testsuite'];
+    if ($this->isValid()) {
+      return $this->mInfo['testsuite'];
+    }
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_title()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_title()
+
+  function getTitle()
   {
-    return $this->m_info['casetitle'];
+    if ($this->isValid()) {
+      return $this->mInfo['title'];
+    }
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_title_suite()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_title_suite()
+
+  function getAssertion()
   {
-    return $this->m_info['suitetitle'];
+    if ($this->isValid()) {
+      return $this->mInfo['assertion'];
+    }
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_title_group()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_title_group()
+
+  function isReferenceTest()
   {
-    return $this->m_info['grouptitle'];
+    if ($this->isValid()) {
+      return $this->mFlags->hasFlag('reftest');
+    }
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_rank()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_rank()
-  {
-    return $this->m_rank;
-  }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_count()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_count()
+  /**
+   * Get Reference data
+   *
+   * @return FALSE|array
+   */
+  function getReferences()
   {
-    return $this->m_count;
+    if ($this->isValid()) {
+      if ($this->_loadReferences()) {
+        return $this->mReferences;
+      }
+    }
+    return FALSE;
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  is_reference_test()
-  //
-  //  does this test have reference pages
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function is_reference_test()
-  {
-    return $this->m_flags && $this->m_flags->has_flag('reftest');
-  }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_references()
-  //
-  //  get table of reference page data
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_references()
+  function getReferenceURI($refId)
   {
-    return $this->m_references;
-  }
-  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_reference_uri($id)
-  //
-  //  get uri of specific reference page
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_reference_uri($refID)
-  {
-    if (0 < $refID) {
-      foreach ($this->m_references as $reference) {
-        if ($reference['id'] == $refID) {
-          return $this->m_info['base_uri'] . $reference['uri'];
+    if ($this->isValid() && (0 < $refId)) {
+      if ($this->_loadReferences()) {
+        foreach ($this->mReferences as $reference) {
+          if ($reference['id'] == $refId) {
+            return $this->mInfo['base_uri'] . $reference['uri'];
+          }
         }
       }
     }
-    return null;
+    return FALSE;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_reference_type($id)
-  //
-  //  get type of specific reference page ('==', '!=')
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_reference_type($refID)
+
+  /**
+   * Get type of reference
+   * @param int $refId
+   * @return string ('==' or '!=')
+   */
+  function getReferenceType($refId)
   {
-    if (0 < $refID) {
-      foreach ($this->m_references as $reference) {
-        if ($reference['id'] == $refID) {
-          return $reference['type'];
+    if ($this->isValid() && (0 < $refId)) {
+      if ($this->_loadReferences()) {
+        foreach ($this->mReferences as $reference) {
+          if ($reference['id'] == $refId) {
+            return $reference['type'];
+          }
         }
       }
     }
-    return null;
+    return FALSE;
   }
+  
+  
+  function getFlags()
+  {
+    if ($this->isValid()) {
+      return $this->mFlags;
+    }
+    return FALSE;
+  }
+  
+  
+  function hasFlag($flag)
+  {
+    if ($this->isValid()) {
+      return $this->mFlags->hasFlag($flag);
+    }
+    return FALSE;
+  }
+  
+
+  function getSpecURIs()
+  {
+    if ($this->isValid()) {
+      $this->_loadSpecURIs();
+      return $this->mSpecURIs;
+    }
+    return FALSE;
+  }  
 
 }
 

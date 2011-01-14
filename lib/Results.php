@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -22,42 +22,34 @@ require_once('lib/DBConnection.php');
  * Gather and report test results per engine, computing CR Exit Criteria
  *
  */
-class TestResults extends DBConnection
+class Results extends DBConnection
 {
-  var $mEngines;
-  var $mEngineCount;                    // number of engines
-  var $mTestSuite;
-  var $mTestCases;
-  var $mResults;
+  protected $mEngines;
+  protected $mEngineCount;                    // number of engines
+  protected $mTestSuiteName;
+  protected $mTestCases;
+  protected $mResults;
 
-  var $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
+  protected $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   
-  var $mTestCaseRequiredCount;          // number of required tests
-  var $mTestCaseRequiredPassCount;      // number of required tests with 2 or more passes
-  var $mTestCaseOptionalCount;          // number of optional tests ('may' or 'should')
-  var $mTestCaseOptionalPassCount;      // number of optional tests with 2 or more passes
-  var $mTestCaseInvalidCount;           // number of tests reported as invalid
-  var $mTestCaseNeededCount;            // number of required, valid tests that do not have 2 or more passes
-  var $mTestCaseNeedMoreResults;        // number of needed tests that might pass but need more results
-  var $mTestCaseTooManyFails;           // number of needed tests that have fails blocking exit criteria
-  var $mTestCaseNeededCountPerEngine;   // number of needed results per engine
+  protected $mTestCaseRequiredCount;          // number of required tests
+  protected $mTestCaseRequiredPassCount;      // number of required tests with 2 or more passes
+  protected $mTestCaseOptionalCount;          // number of optional tests ('may' or 'should')
+  protected $mTestCaseOptionalPassCount;      // number of optional tests with 2 or more passes
+  protected $mTestCaseInvalidCount;           // number of tests reported as invalid
+  protected $mTestCaseNeededCount;            // number of required, valid tests that do not have 2 or more passes
+  protected $mTestCaseNeedMoreResults;        // number of needed tests that might pass but need more results
+  protected $mTestCaseTooManyFails;           // number of needed tests that have fails blocking exit criteria
+  protected $mTestCaseNeededCountPerEngine;   // number of needed results per engine
     
 
-  function __construct
-    ( $testSuite
-    , $testSelect
-    , $selectType
-    , $engine
-    , $engineVersion
-    , $platform
-    , $grouping
-    , $modified
-    , $filter
-    )
+  function __construct($testSuiteName, $testCaseName, $testGroupName,
+                       $engine, $engineVersion, $platform, 
+                       $grouping, $modified, $filter)
   {
     parent::__construct();
     
-    $this->mTestSuite = $testSuite;
+    $this->mTestSuiteName = $testSuiteName;
     $this->mDisplayFilter = $filter;
 
     $sql = "SELECT DISTINCT `engine` FROM `useragents` WHERE `engine` != '' ORDER BY `engine`";
@@ -67,17 +59,20 @@ class TestResults extends DBConnection
       $this->mTestCaseNeededCountPerEngine[$dbEngine['engine']] = 0;
     }
     $this->mEngineCount = count($this->mEngines);
+    
+    $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
 
     $sql  = "SELECT DISTINCT `testcase`, `flags` ";
     $sql .= "FROM `testcases` ";
-    $sql .= "WHERE `testsuite` LIKE '{$testSuite}' ";
+    $sql .= "WHERE `testsuite` LIKE '{$testSuiteName}' ";
     $sql .= "AND `active` = '1' ";
-    if ($testSelect) {
-      if (1 == $selectType) {
-        $sql .= "AND `testgroup` LIKE '{$testSelect}' ";
-      } elseif (2 == $selectType) {
-        $sql .= "AND `testcase` LIKE '{$testSelect}' ";
-      }
+    if ($testCaseName) {
+      $testCaseName = $this->encode($testCaseName, TESTCASES_MAX_TESTCASE);
+      $sql .= "AND `testcase` LIKE '{$testCaseName}' ";
+    }
+    elseif ($testGroupName) {
+      $testGroupName = $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP);
+      $sql .= "AND `testgroup` LIKE '{$testGroupName}' ";
     }
     $sql .= "ORDER BY `testcase` ";
     
@@ -90,18 +85,22 @@ class TestResults extends DBConnection
     $sql .= "FROM `results` INNER JOIN (`testcases`, `useragents`) ";
     $sql .= "ON `results`.`testcase_id` = `testcases`.`id` ";
     $sql .= "AND `results`.`useragent_id` = `useragents`.`id` ";
-    $sql .= "WHERE `testcases`.`testsuite` LIKE '{$testSuite}' ";
+    $sql .= "WHERE `testcases`.`testsuite` LIKE '{$testSuiteName}' ";
     $sql .= "AND `testcases`.`active` = '1' AND `results`.`ignore` = '0' ";
     $sql .= "AND `results`.`result` != 'na' ";
     if ($modified) {
+      $modified = $this->encode($modified);
       $sql .= "AND `result`.`modified` <= '{$modified}' ";
     }  
     if ($engine) {
+      $engine = $this->encode($engine, USERAGENTS_MAX_ENGINE);
       $sql .= "AND `useragents`.`engine` = '{$engine}' ";
       if ($engineVersion) {
+        $engineVersion = $this->encode($engineVersion, USERAGENTS_MAX_ENGINE_VERSION);
         $sql .= "AND `useragents`.`engine_version` = '{$engineVersion}' ";
       }
       if ($platform) {
+        $platform = $this->encode($platform, USERAGENTS_MAX_PLATFORM);
         $sql .= "AND `useragents`.`platform` = '{$platform}' ";
       }
     }
@@ -120,8 +119,8 @@ class TestResults extends DBConnection
   function _generateRow($indent, $testcase, $engineResults, $optional, $spiderTrap)
   {
     $row  = "<td>";
-    $row .= $spiderTrap->getLink();
-    $row .= "<a href='details?s={$this->mTestSuite}&c={$testcase}'>{$testcase}</a></td>";
+    $row .= $spiderTrap->getTrapLink();
+    $row .= "<a href='details?s={$this->mTestSuiteName}&c={$testcase}' target='details'>{$testcase}</a></td>";
 
     $testInvalid  = FALSE;
     $passCount    = 0;
@@ -158,7 +157,7 @@ class TestResults extends DBConnection
           $class .= 'na ';
         }
         $row .= "<td class='{$class}'>";
-        $row .= "<a href='details?s={$this->mTestSuite}&c={$testcase}&e={$engine}'>";
+        $row .= "<a href='details?s={$this->mTestSuiteName}&c={$testcase}&e={$engine}' target='details'>";
         $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $uncertain) ? $uncertain : '.');
@@ -296,27 +295,6 @@ class TestResults extends DBConnection
       else {
         echo $indent . "<p>Exit criteria have been met.</p>\n";
       }
-      
-      echo $indent . "<h2>Legend</h2>\n";
-      echo $indent . "<table class='legend'>\n";
-      echo $indent . "  <tr><th>Row color codes</tr>\n";
-      echo $indent . "  <tr class='pass'><td>two or more passes</tr>\n";
-      echo $indent . "  <tr class='fail'><td>blocking failures</tr>\n";
-      echo $indent . "  <tr class='uncertain'><td>not enough results</tr>\n";
-      echo $indent . "  <tr class='invalid'><td>reported as invalid</tr>\n";
-      echo $indent . "  <tr class='optional'><td>not passing, but optional</tr>\n";
-      echo $indent . "</table>\n";
-
-      echo $indent . "<table class='legend'>\n";
-      echo $indent . "  <tr><th>Result color codes</tr>\n";
-      echo $indent . "  <tr><td class='pass'>all results pass</tr>\n";
-      echo $indent . "  <tr><td class='pass fail'>pass reported, but also other results</tr>\n";
-      echo $indent . "  <tr><td class='fail'>all results fail</tr>\n";
-      echo $indent . "  <tr><td class='fail uncertain'>fail reported, but also other results</tr>\n";
-      echo $indent . "  <tr><td class='uncertain'>all results uncertain</tr>\n";
-      echo $indent . "  <tr><td class='invalid'>reported as invalid</tr>\n";
-      echo $indent . "  <tr><td># pass / # fail / # uncertian</tr>\n";
-      echo $indent . "</table>\n";
     }
   }
 }

@@ -1,137 +1,114 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.user_agent.php
-//
-//  In the Mobile Test Harness [1] user-agents where identified by full
-//  user-agent string. For the CSS2.1 test harness there is a desire to
-//  allow consolodated results for user-agent strings representing the
-//  same browser type, version number and/or platform (OS).
-//
-//  Herein functionallity is provided whereby a user-agent string can be
-//  summarized by a browser type, a version number, and a platform (OS).
-//  First, the database is queried using either a user-agent string or
-//  a unique id code. If the user-agent is not in the database, then the
-//  provided string is parsed to obtain a reasonable guess for the browser,
-//  version, and platform information.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class user_agent
-//
-//  user_agent is a concrete DBConnection taylored for storing the 
-//  information about a particular user agent.
-//
-////////////////////////////////////////////////////////////////////////////////
-class user_agent extends DBConnection
+/**
+ * Wrapper class for information about a particular User Agent 
+ */
+class UserAgent extends DBConnection
 {
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_info;
+  protected $mInfo;
+  protected $mActualUA;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function __construct($id='') 
+
+  function __construct($id = FALSE) 
   {
     parent::__construct();
-
-    $this->m_info = $this->lookup($id);
-  }
-
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  lookup()
-  //
-  //  Query the database for information about known user agents.
-  //  If the user agent is unknown or if an id is not provided,
-  //  then provide a guess of the required information using 
-  //  the get_browser() function.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function lookup($id) 
-  {
-    if(!isset($id) || $id=='') {
-      $id = $_SERVER['HTTP_USER_AGENT'];
-      $ua = $this->query_by_string($id);
-    } else {
-      $ua = $this->query_by_id($id);
-      if(!isset($ua) || !isset($ua['id'])) {
-        unset($ua);
-        $ua = $this->query_by_string($id);
+    
+    if ($id) {
+      $this->mInfo = $this->_queryById($id);
+    }
+    if (isset($this->mInfo)) {  // passed a UA id
+      $uaString = $_SERVER['HTTP_USER_AGENT'];
+      if ($uaString != $this->getUAString()) {  // and it's not the actual UA
+        $this->mActualUA = new UserAgent(); // capture actual UA info
       }
     }
-    if(!isset($ua) || !isset($ua['id']) || $ua['id']=='') {
-      $ua = $this->parse_ua_string($id);
+    else {  // determine UA from server
+      $uaString = $_SERVER['HTTP_USER_AGENT'];
+      $this->mInfo = $this->_queryByString($uaString);
+      
+      if (! isset($this->mInfo)) {
+        $this->mInfo = $this->_parseUAString($uaString);
+      }
     }
-    return $ua;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  query_by_id
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function query_by_id($id) 
+
+  /**
+   * Lookup UA info by numeric ID
+   *
+   * @param int $id database ID
+   * @return array
+   */
+  protected function _queryById($id) 
   {
-    $sql  = "SELECT id,useragent,engine,engine_version,browser,browser_version,platform FROM useragents ";
-    $sql .= "WHERE id='$id' ";
+    $id = intval($id);
+    $sql  = "SELECT `id`, `useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform` ";
+    $sql .= "FROM `useragents` ";
+    $sql .= "WHERE id = '{$id}' ";
     $sql .= "LIMIT 1";
+
     $r = $this->query($sql);
-    if (! $r->succeeded()) {
-      return null;
+
+    if ($r->succeeded()) {
+      $data = $r->fetchRow();
+      if ($data) {
+        return $data;
+      }
     }
-    return $r->fetchRow();
+    return null;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  query_by_string
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function query_by_string($ua_string) 
+
+  /**
+   * Lookup UA info by full User Agent string
+   *
+   * @param string $uaString User Agent String
+   * @return array
+   */
+  protected function _queryByString($uaString) 
   {
-    $sql  = "SELECT id,useragent,engine,engine_version,browser,browser_version,platform FROM useragents ";
-    $sql .= "WHERE useragent='$ua_string' ";
-    $sql .= "LIMIT 1";
+    $sql  = "SELECT `id`, `useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform` ";
+    $sql .= "FROM `useragents` ";
+    $sql .= "WHERE `useragent` = '" . $this->encode($uaString, USERAGENTS_MAX_USERAGENT) . "' ";
+    $sql .= "LIMIT 1 ";
+
     $r = $this->query($sql);
-    if (! $r->succeeded()) {
-      return null;
+
+    if ($r->succeeded()) {
+      $data = $r->fetchRow();
+      if ($data) {
+        return $data;
+      }
     }
-    return $r->fetchRow();
+    return null;
   }
 
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  helper functions to split useragent strings into component parts
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  protected function _split_ua_product_version($product)
+  /**
+   * Break product and version info into parts
+   *
+   * @param string $product
+   * @return string|array
+   */
+  protected function _splitUAProductVersion($product)
   {
     if (('(' == $product[0]) && (')' == substr($product, -1))) {
       return substr($product, 1, strlen($product) - 2);
@@ -145,82 +122,104 @@ class user_agent extends DBConnection
     return compact("product", "version");
   }
   
-  protected function _explode_ua_comment($ua_comment)
+  /**
+   * Break UA comment into sub strings
+   *
+   * @param string $uaComment comment section of UA string
+   *   without enclosing '(' ')'
+   * @return string|array
+   */
+  protected function _explodeUAComment($uaComment)
   {
-    if (FALSE === strpos($ua_comment, ';')) {
-      return $ua_comment;
+    if (FALSE === strpos($uaComment, ';')) {
+      return $uaComment;
     }
-    return preg_split('/;(\s)+/', $ua_comment);
+    return preg_split('/;(\s)+/', $uaComment);
   }
 
-  protected function _explode_ua_string($ua_string)
+  /**
+   * Helper function to break User Agent string into component parts
+   *
+   * Elements in returned array will be either strings or array
+   * Array component is pair of either 'product' and 'comment'
+   * or 'product' and 'version'.
+   *
+   * In the product/comment pair, the product may be a string or
+   * product/version array. The comment may be a string or array 
+   * of strings.
+   * 
+   * @param string $uaString User Agent string as reported by UA
+   * @return array
+   */
+  protected function _explodeUAString($uaString)
   {
-    $ua_string = str_replace(') (', '; ', $ua_string);  // collapse sequential comments (from Uzbl browser)
+    $uaString = str_replace(') (', '; ', $uaString);  // collapse sequential comments (from Uzbl browser)
     
     $index = -1;
-    $count = strlen($ua_string);
+    $count = strlen($uaString);
+    
+    $result = array();
     
     $start = 0;
     while (++$index < $count) {
-      if (' ' == $ua_string[$index]) {
-        $product = $this->_split_ua_product_version(substr($ua_string, $start, $index - $start));
-        while ((++$index < $count) && (' ' == $ua_string[$index])) ;
+      if (' ' == $uaString[$index]) {
+        $product = $this->_splitUAProductVersion(substr($uaString, $start, $index - $start));
+        while ((++$index < $count) && (' ' == $uaString[$index])) ;
         $start = $index;
         $comment = '';
-        if (($index < $count) && ('(' == $ua_string[$index])) { // grab comment
+        if (($index < $count) && ('(' == $uaString[$index])) { // grab comment
           $start++;
           $level = 0;
           while (++$index < $count) {
-            if ('(' == $ua_string[$index]) {
+            if ('(' == $uaString[$index]) {
               $level++;
             }
-            if (')' == $ua_string[$index]) {
+            if (')' == $uaString[$index]) {
               if (0 == $level) {
                 break;
               }
               $level--;
             }
           }
-          $comment = substr($ua_string, $start, $index - $start);
-          while ((++$index < $count) && (' ' == $ua_string[$index])) ;
+          $comment = substr($uaString, $start, $index - $start);
+          while ((++$index < $count) && (' ' == $uaString[$index])) ;
           $start = $index;
           $index--;
         }
         if ('' == $comment) {
-          $r[] = $product;
+          $result[] = $product;
         }
         else {
-          $comment = $this->_explode_ua_comment($comment);
-          $r[] = compact("product", "comment");
+          $comment = $this->_explodeUAComment($comment);
+          $result[] = compact("product", "comment");
         }
       }
     }
     if ($start < $index) {
-      $r[] = $this->_split_ua_product_version(substr($ua_string, $start, $index - $start));
+      $result[] = $this->_splitUAProductVersion(substr($uaString, $start, $index - $start));
     }
-    return $r;
+    return $result;
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  parse_ua_string
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function parse_ua_string($ua_string) 
+  /**
+   * Determine Browser, Browser Version, Engine, Engine Version and Platform
+   * from User Agent string
+   */
+  protected function _parseUAString($uaString) 
   {
-    $r['id'] = null;
-    $r['useragent'] = $ua_string;
+    $result['id'] = null;
+    $result['useragent'] = $uaString;
     
-    $ua_data = $this->_explode_ua_string($ua_string);
+    $uaData = $this->_explodeUAString($uaString);
     
     $browser = '';
-    $browser_version = '';
+    $browserVersion = '';
     $engine = '';
-    $engine_version = '';
+    $engineVersion = '';
     $platform = '';
     
     // find browser
-    $product = $ua_data[0];
+    $product = $uaData[0];
     $version = '';
     $comment = '';
     if (is_array($product)) {
@@ -231,33 +230,33 @@ class user_agent extends DBConnection
     }
     if ('mozilla' == strtolower($product)) {    // we have to go looking... search comments
       if (is_array($comment)) {
-        foreach ($comment as $comment_chunk) {
-          if (0 === stripos($comment_chunk, 'MSIE')) {
+        foreach ($comment as $commentChunk) {
+          if (0 === stripos($commentChunk, 'MSIE')) {
             $browser = 'Internet Explorer';
-            $browser_version = substr($comment_chunk, 5);
+            $browserVersion = substr($commentChunk, 5);
             $engine = 'Trident';
           }
-          if (0 === stripos($comment_chunk, 'Trident')) {
-            $product = $this->_split_ua_product_version($comment_chunk);
+          if (0 === stripos($commentChunk, 'Trident')) {
+            $product = $this->_splitUAProductVersion($commentChunk);
             if (is_array($product)) {
               extract($product);
-              $engine_version = $version;
+              $engineVersion = $version;
             }
             $engine = $product;
           }
-          if (0 === stripos($comment_chunk, 'Konqueror')) {
-            $product = $this->_split_ua_product_version($comment_chunk);
+          if (0 === stripos($commentChunk, 'Konqueror')) {
+            $product = $this->_splitUAProductVersion($commentChunk);
             if (is_array($product)) {
               extract($product);
-              $browser_version = $version;
+              $browserVersion = $version;
             }
             $browser = $product;
           }
-          if (0 === stripos($comment_chunk, 'Googlebot')) {
-            $product = $this->_split_ua_product_version($comment_chunk);
+          if (0 === stripos($commentChunk, 'Googlebot')) {
+            $product = $this->_splitUAProductVersion($commentChunk);
             if (is_array($product)) {
               extract($product);
-              $browser_version = $version;
+              $browserVersion = $version;
             }
             $browser = $product;
           }
@@ -266,26 +265,26 @@ class user_agent extends DBConnection
     }
     else {
       $browser = $product;
-      $browser_version = $version;
+      $browserVersion = $version;
     }
     
     // find platform in initial comment
     if (is_array($comment)) {
-      foreach($comment as $comment_chunk) {
-        if ((0 === stripos($comment_chunk, 'Linux')) || 
-            (0 === stripos($comment_chunk, 'Unix')) ||
-            (0 === stripos($comment_chunk, 'Android')) ||
-            (0 === stripos($comment_chunk, 'Windows')) ||
-            (0 === stripos($comment_chunk, 'Macintosh')) ||
-            (0 === stripos($comment_chunk, 'Chromium')) ||
-            (0 === stripos($comment_chunk, 'OpenBSD')) ||
-            (0 === stripos($comment_chunk, 'FreeBSD')) ||
-            (0 === stripos($comment_chunk, 'WebOS'))) {
-          $platform = $comment_chunk;
+      foreach($comment as $commentChunk) {
+        if ((0 === stripos($commentChunk, 'Linux')) || 
+            (0 === stripos($commentChunk, 'Unix')) ||
+            (0 === stripos($commentChunk, 'Android')) ||
+            (0 === stripos($commentChunk, 'Windows')) ||
+            (0 === stripos($commentChunk, 'Macintosh')) ||
+            (0 === stripos($commentChunk, 'Chromium')) ||
+            (0 === stripos($commentChunk, 'OpenBSD')) ||
+            (0 === stripos($commentChunk, 'FreeBSD')) ||
+            (0 === stripos($commentChunk, 'WebOS'))) {
+          $platform = $commentChunk;
         }
-        if ((0 === stripos($comment_chunk, 'iPad')) ||
-            (0 === stripos($comment_chunk, 'iPhone')) ||
-            (0 === stripos($comment_chunk, 'iPod'))) {
+        if ((0 === stripos($commentChunk, 'iPad')) ||
+            (0 === stripos($commentChunk, 'iPhone')) ||
+            (0 === stripos($commentChunk, 'iPod'))) {
           $platform = "iOS";
         }
       }
@@ -296,17 +295,17 @@ class user_agent extends DBConnection
     
     // find engine and possibly browser
     $mobile = FALSE;
-    foreach ($ua_data as $ua_chunk) {
+    foreach ($uaData as $uaChunk) {
       $comment = '';
       $version = '';
-      if (is_array($ua_chunk)) {
-        extract($ua_chunk);
+      if (is_array($uaChunk)) {
+        extract($uaChunk);
         if (is_array($product)) {
           extract($product);
         }
       }
       else {
-        $product = $ua_chunk;
+        $product = $uaChunk;
       }
       if (0 === stripos($product, 'Mobile')) {
         $mobile = TRUE;
@@ -320,23 +319,23 @@ class user_agent extends DBConnection
           (0 === stripos($product, 'Prince')) ||
           (0 === stripos($product, 'Trident'))) {
         $engine = $product;
-        $engine_version = $version;
+        $engineVersion = $version;
       }
       if ('' == $browser) {
         if ((0 === stripos($product, 'Firefox')) ||
             (0 === stripos($product, 'Chrome')) ||
             (0 === stripos($product, 'rekonq'))) {
           $browser = $product;
-          $browser_version = $version;
+          $browserVersion = $version;
         }
       }
       if (0 === stripos($product, 'Version')) {
-        $browser_version = $version;
+        $browserVersion = $version;
       }
       if ((0 === stripos($product, 'Midori')) ||
           (0 === stripos($product, 'Iceweasel'))) {
         $browser = $product;
-        $browser_version = $version;
+        $browserVersion = $version;
       }
     }
     
@@ -350,8 +349,8 @@ class user_agent extends DBConnection
       }
       $browser .= $product;
     }
-    if ('' == $browser_version) {
-      $browser_version = $version;
+    if ('' == $browserVersion) {
+      $browserVersion = $version;
     }
     
     // general cleanups
@@ -369,185 +368,135 @@ class user_agent extends DBConnection
       $engine = 'WebKit';
     }
     
-    $r['engine'] = $engine;
-    $r['engine_version'] = $engine_version;
-    $r['browser'] = $browser;
-    $r['browser_version'] = $browser_version;
-    $r['platform'] = $platform;
-    return $r;
+    $result['engine'] = $engine;
+    $result['engine_version'] = $engineVersion;
+    $result['browser'] = $browser;
+    $result['browser_version'] = $browserVersion;
+    $result['platform'] = $platform;
+    return $result;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  update()
-  //
-  //  Reload info about the user agent from the database.
-  //
-  ////////////////////////////////////////////////////////////////////////////
+  /**
+   * Write info into database if not loaded from there
+   */
   function update()
   {
-    $ua = $this->lookup($this->get_ua_string());
-    
-    if($ua['id'] == null) {
-      $sql  = "INSERT INTO useragents ";
-      $sql .= "(useragent, engine, engine_version, browser, browser_version, platform) ";
+    if ((! isset($this->mInfo['id'])) && (isset($this->mInfo['useragent']))) {
+      $sql  = "INSERT INTO `useragents` ";
+      $sql .= "(`useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform`) ";
       $sql .= "VALUES (";
-      $sql .= "'".$ua['useragent']."',";
-      $sql .= "'".$ua['engine']."',";
-      $sql .= "'".$ua['engine_version']."',";
-      $sql .= "'".$ua['browser']."',";
-      $sql .= "'".$ua['browser_version']."',";
-      $sql .= "'".$ua['platform']."'";
+      $sql .= "'" . $this->encode($this->mInfo['useragent'], USERAGENTS_MAX_USERAGENT) . "',";
+      $sql .= "'" . $this->encode($this->mInfo['engine'], USERAGENTS_MAX_ENGINE) . "',";
+      $sql .= "'" . $this->encode($this->mInfo['engine_version'], USERAGENTS_MAX_ENGINE_VERSION) . "',";
+      $sql .= "'" . $this->encode($this->mInfo['browser'], USERAGENTS_MAX_BROWSER) . "',";
+      $sql .= "'" . $this->encode($this->mInfo['browser_version'], USERAGENTS_MAX_BROWSER_VERSION) . "',";
+      $sql .= "'" . $this->encode($this->mInfo['platform'], USERAGENTS_MAX_PLATFORM) . "'";
       $sql .= ")";
       $r = $this->query($sql);
-      $ua = $this->lookup($ua['useragent']);
+      $this->mInfo['id'] = $this->lastInsertId();
     }
-    
-    $this->m_info = $ua;
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  reparse()
-  //
-  //  Reset in about the user agent in the database.
-  //
-  ////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Reset info about the user agent in the database
+   *
+   * Useful when the parsing algorithm has been updated
+   */
   function reparse()
   {
-    $id = $this->get_id();
+    $id = $this->getId();
     if (0 < $id) {
-      $ua = $this->parse_ua_string($this->get_ua_string());
+      $ua = $this->parseUAString($this->getUAString());
       $ua['id'] = $id;
 
-      $sql  = "UPDATE useragents SET ";
-      $sql .= "engine='{$ua['engine']}', ";
-      $sql .= "engine_version='{$ua['engine_version']}', ";
-      $sql .= "browser='{$ua['browser']}', ";
-      $sql .= "browser_version='{$ua['browser_version']}', ";
-      $sql .= "platform='{$ua['platform']}' ";
-      $sql .= "WHERE id='{$id}' ";
+      $sql  = "UPDATE `useragents` SET ";
+      $sql .= "`engine` = '" . $this->encode($ua['engine'], USERAGENTS_MAX_ENGINE) . "', ";
+      $sql .= "`engine_version` = '" . $this->encode($ua['engine_version'], USERAGENTS_MAX_ENGINE_VERSION) . "', ";
+      $sql .= "`browser` = '" . $this->encode($ua['browser'], USERAGENTS_MAX_BROWSER) . "', ";
+      $sql .= "`browser_version` = '" . $this->encode($ua['browser_version'], USERAGENTS_MAX_BROWSER_VERSION) . "', ";
+      $sql .= "`platform` = '" . $this->encode($ua['platform'], USERAGENTS_MAX_PLATFORM) . "' ";
+      $sql .= "WHERE `id` = '{$id}' ";
       $r = $this->query($sql);
 
-      $this->m_info = $ua;
+      $this->mInfo = $ua;
     }
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write
-  //
-  //  Write HTML for a human readable description of the user agent.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write($indent = '')
+
+  /**
+   * Get human readable description of the user agent
+   */
+  function getDescription()
   {
-    if($this->get_browser() == 'Default Browser') {
-      echo $indent . 'unknown';
-    } else {
-      echo $indent . $this->get_browser();
+    if ($this->getBrowser()) {
+      $description = $this->getBrowser();
       
-      if($this->get_browser_version() != '') {
-        echo ' ' . $this->get_browser_version();
+      if ($this->getBrowserVersion()) {
+        $description .= ' ' . $this->getBrowserVersion();
       }
       
-      if ($this->get_engine() != '') {
-        echo ' (' . $this->get_engine();
-        if ($this->get_engine_version() != '') {
-          echo ' ' . $this->get_engine_version();
+      if ($this->getEngine()) {
+        $version = '';
+        if ($this->getEngineVersion()) {
+          $version .= ' ' . $this->getEngineVersion();
         }
-        echo ')';
+        $description .= " ({$this->getEngine()}{$version})";
       }
 
-      if($this->get_platform() != '') {
-        echo ' on ' . $this->get_platform();
+      if ($this->getPlatform()) {
+        $description .= ' on ' . $this->getPlatform();
       }
     }
+    else {
+      $description = 'unknown';
+    }
+    
+    return $description;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Member functions for retrieving information about the user agent
-  //
-  //    get_id()
-  //    get_ua_string()
-  //    get_engine()
-  //    get_engine_version()
-  //    get_browser()
-  //    get_browser_version()
-  //    get_platform()
-  //
-  ////////////////////////////////////////////////////////////////////////////
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_id()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_id()
+  function getId()
   {
-    return $this->m_info['id'];
+    return $this->mInfo['id'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_ua_string()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_ua_string()
+  function getUAString()
   {
-    return $this->m_info['useragent'];
+    return $this->mInfo['useragent'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_engine()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_engine()
+  function getEngine()
   {
-    return $this->m_info['engine'];
+    return $this->mInfo['engine'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_engine_version()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_engine_version()
+  function getEngineVersion()
   {
-    return $this->m_info['engine_version'];
+    return $this->mInfo['engine_version'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_browser()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_browser()
+  function getBrowser()
   {
-    return $this->m_info['browser'];
+    return $this->mInfo['browser'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_browser_version()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_browser_version()
+  function getBrowserVersion()
   {
-    return $this->m_info['browser_version'];
+    return $this->mInfo['browser_version'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_platform()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_platform()
+  function getPlatform()
   {
-    return $this->m_info['platform'];
+    return $this->mInfo['platform'];
+  }
+  
+  function getActualUA()
+  {
+    if ($this->mActualUA) {
+      return $this->mActualUA;
+    }
+    return $this;
   }
 
 }

@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2010-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -141,6 +141,7 @@ class GrandfatherImport extends DBConnection
         $identical = FALSE;
         echo "No data for {$testSuite}:{$reference}\n";
       }
+      // XXX this handles added references, but does not detect removed references
       
       if (0 != $testCaseId) {
         if (! $identical) {

@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -16,17 +16,17 @@
  * 
  ******************************************************************************/
 
-require_once('Config.php');
-require_once('DBConnection.php');
-require_once('Page.php');  
+require_once('lib/Config.php');
+require_once('lib/DBConnection.php');
+require_once('lib/Page.php');  
 
 class SpiderTrap
 {
-  var $mDB;
+  protected $mDB;
   
-  var $mSequence;
-  var $mPageQuery;
-  var $mPageURI;
+  protected $mSequence;
+  protected $mPageQuery;
+  protected $mPageURI;
 
   
   function __construct()
@@ -37,7 +37,7 @@ class SpiderTrap
   }
   
 
-  function getLink()
+  function getTrapLink()
   {
     $largeNumber = mt_rand(1000000, 9999999999);
     if ($this->mPageQuery) {
@@ -55,14 +55,16 @@ class SpiderTrap
     return $link;
   }
 
+
   /**
    * Write HTML for a link to the spider trap
    */
-  function generateLink($indent = '')
+  function writeTrapLink($indent = '')
   {
-    $link = $this->getLink();
+    $link = $this->getTrapLink();
     echo $indent . $link . "\n";
   }
+
 
   /**
    * Bring DBConnection online lazily
@@ -75,21 +77,6 @@ class SpiderTrap
     return $this->mDB;
   }
   
-  protected function _getClientIP()
-  {
-    if (! empty($_SERVER['REMOTE_ADDR'])) {
-      $ip = $_SERVER['REMOTE_ADDR'];
-    }
-    elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-      $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    }
-    else {
-      $ip = $_SERVER['HTTP_CLIENT_IP'];
-    }
-    return $ip;
-  }
-  
-
   
   /**
    * Capture data about a visit to the spider trap
@@ -98,9 +85,9 @@ class SpiderTrap
   {
     $db = $this->_getDB();
 
-    $ipAddress = $db->encode($this->_getClientIP(), 15);
-    $userAgent = $db->encode($_SERVER['HTTP_USER_AGENT'], 255);
-    $pageURI = $db->encode($this->mPageURI, 255);
+    $ipAddress = $db->encode(Page::GetClientIP(), SPIDERTRAP_MAX_IP);
+    $userAgent = $db->encode($_SERVER['HTTP_USER_AGENT'], SPIDERTRAP_MAX_USER_AGENT);
+    $pageURI = $db->encode($this->mPageURI, SPIDERTRAP_MAX_URI);
 
     $sql  = "INSERT INTO `spidertrap` (`ip_address`, `user_agent`, `last_uri`, `visit_count`, `first_visit`) ";
     $sql .= "VALUES ('{$ipAddress}', '{$userAgent}', '{$pageURI}', '1', NOW()) ";

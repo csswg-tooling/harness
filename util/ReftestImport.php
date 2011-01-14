@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2010-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -22,7 +22,7 @@ require_once("lib/DBConnection.php");
 
 class ReftestImport extends DBConnection
 {  
-  var $mTestCases;
+  protected $mTestCases;
   
 
   function __construct() 
@@ -44,6 +44,7 @@ class ReftestImport extends DBConnection
     }
   }
   
+
   protected function _getFileName($path)
   {
     $pathInfo = pathinfo($path);
@@ -54,17 +55,7 @@ class ReftestImport extends DBConnection
     return basename($pathInfo['basename'], '.' . $pathInfo['extension']);
   }
   
-  protected function _validate($value, $maxLength)
-  {
-    if ($maxLength < strlen($value)) {
-      die("ERROR: data too long for database: '{$value}'");
-    }
-    if (FALSE !== strpos($value, "'")) {
-      die("ERROR: data contains single quote: '{$value}'");
-    }
-  }
-  
-  
+
   function import($manifest, $testSuite, $baseURI)
   {
     $this->_loadTestCases($testSuite);
@@ -79,8 +70,8 @@ class ReftestImport extends DBConnection
       $reference = $this->_getFileName($reference);
       $testCaseID = $this->mTestCases[$testCase];
       
-      $this->_validate($reference, 255);
-      $this->_validate($uri, 255);
+      $this->encode($reference, 255);
+      $this->encode($uri, 255);
       if (('==' != $type) && ('!=' != $type)) {
         die("ERROR: bad type {$type}\n");
       }

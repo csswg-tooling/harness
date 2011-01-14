@@ -1,73 +1,38 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-//
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-//
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.test_result_details.phi
-//
-//  Provides results reporting functionality as a proxy to that provided to the
-//  Mobile Test Harness [1].
-//
-//  Currently, this file represents a place holder for a work in progress.
-//  Additional requested functionality, including various results concolidations
-//  and cross tabulations, are in active development.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
+ 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class test_result_details
-//
-//  test_results is a concrete DBConnection taylored for storing the 
-//  testing results tables.
-//
-////////////////////////////////////////////////////////////////////////////////
-class test_result_details extends DBConnection
-{
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_data;
-  var $m_test_suite;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function __construct
-    ( $test_suite
-    , $test_select
-    , $select_type
-    , $engine
-    , $engine_version
-    , $platform
-    , $grouping
-    , $modified
-    , $order
-    )
+/**
+ * Class to load result details
+ */
+class ResultDetails extends DBConnection
+{
+  protected $mData;
+
+
+  function __construct($testSuiteName, $testCaseName, $testGroupName,
+                       $engine, $engineVersion, $platform, 
+                       $grouping, $modified, $order)
   {
     parent::__construct();
     
-    $this->m_test_suite = $test_suite;
-
     $sql  = "SELECT Testcase, Result, ";
     $sql .= "Engine, Engine_Version, ";
     $sql .= "Browser, Browser_Version, ";
@@ -75,30 +40,29 @@ class test_result_details extends DBConnection
     $sql .= "results.modified AS Date, Source, Useragent ";
     $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
     $sql .= "ON (testcases.id = results.testcase_id AND results.useragent_id = useragents.id) ";
-    $sql .= "WHERE testcases.testsuite LIKE '{$test_suite}' ";
+    $sql .= "WHERE testcases.testsuite LIKE '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
     $sql .= "AND testcases.active = '1' ";
     $sql .= "AND results.ignore = '0' ";
     
-    if ($test_select) {
-      if ($select_type == 1) {
-        $sql .= "AND testcases.testgroup LIKE '{$test_select}' ";
-      } elseif ($select_type == 2) {
-        $sql .= "AND testcases.testcase LIKE '{$test_select}' ";
-      }
+    if ($testCaseName) {
+      $sql .= "AND testcases.testcase LIKE '" . $this->encode($testCaseName, TESTCASES_MAX_TESTCASE) . "' ";
+    }
+    elseif ($testGroupName) {
+      $sql .= "AND testcases.testgroup LIKE '" . $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP) . "' ";
     }
     
     if ($modified) {
-      $sql .= "AND results.modified <= '{$modified}' ";
+      $sql .= "AND results.modified <= '" . $this->encode($modified) . "' ";
     }  
      
-    if($engine) {
-      $sql .= "AND Engine='{$engine}' ";
-      if ($engine_version) {
-        $sql .= "AND Engine_Eersion = '{$engine_version}' ";
+    if ($engine) {
+      $sql .= "AND Engine='" . $this->encode($engine, USERAGENTS_MAX_ENGINE) . "' ";
+      if ($engineVersion) {
+        $sql .= "AND Engine_Eersion = '" . $this->encode($engineVersion, USERAGENTS_MAX_ENGINE_VERSION) . "' ";
       }
-      if ($platform) {
-        $sql .= "AND Platform = '{$platform}' ";
-      }
+    }
+    if ($platform) {
+      $sql .= "AND Platform = '" . $this->encode($platform, USERAGENTS_MAX_PLATFORM) . "' ";
     }
     $sql .= "ORDER BY Testcase, Result, Engine, Engine_Version, Browser, Browser_Version, Date ";
 
@@ -110,48 +74,13 @@ class test_result_details extends DBConnection
       trigger_error($msg, E_USER_ERROR);
     }
 
-    $this->m_data = $r->fetchTable();
+    $this->mData = $r->fetchTable();
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write
-  //
-  //  Write HTML for a table displaying the results data.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write($indent, $spiderTrap)
+
+  function getData()
   {
-
-    if (!($this->m_data)) {
-      echo $indent . "<p>No results entered matching this query.</p>\n";
-    } else {
-      echo $indent . "<table>\n";
-      echo $indent . "  <tr>\n";
-      foreach($this->m_data[0] as $key => $value) {
-        echo $indent . "    <th>{$key}</th>\n";
-      }
-      echo $indent . "  </tr>\n";
-
-      foreach($this->m_data as $result) {
-
-        echo $indent . "  <tr class='{$result['Result']}'>\n";
-        foreach($result as $key => $value) {
-          if ('Testcase' == $key) {
-            echo $indent . "    <td>";
-            echo           $spiderTrap->getLink();
-            echo           "<a href='testcase?s={$this->m_test_suite}&c={$value}'>{$value}</a></td>\n";
-
-          }
-          else {
-            echo $indent . "    <td>{$value}</td>\n";
-          }
-        }
-        echo $indent . "  </tr>\n";
-      }
-      echo $indent . "</table>\n";
- 
-    }
+    return $this->mData;
   }
 }
 

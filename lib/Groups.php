@@ -1,73 +1,42 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.test_groups.phi
-//
-//  In the Mobile Test Harness [1] listings of there was no concept of named
-//  sub-groups within individual test suites. For the CSS2.1 test harness 
-//  working with such named test groups is a desired feature. 
-//
-//  Provided herein is functionalities for obtaining a listing of available
-//  named test groups within a particular test suite.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class test_groups
-//
-//  test_groups is a concrete DBConnection taylored for storing the 
-//  table of contents of available named test groups for a particular
-//  test suite.
-//
-////////////////////////////////////////////////////////////////////////////////
-class test_groups extends DBConnection
-{
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_toc;
-  var $m_count;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  //  Query the database for a list of available test groups within a
-  //  particular test suite. The results are to include information about 
-  //  each group as required for generating a desired human readable 
-  //  listings.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function __construct($test_suite) 
+/**
+ * Encapsulate data about test groups
+ */
+class Groups extends DBConnection
+{
+  protected $mGroups;
+
+
+  function __construct($testSuite) 
   {
     parent::__construct();
     
-    $this->m_count = 0;
+    $testSuite = $this->encode($testSuite, TESTCASES_MAX_TESTSUITE);
     
-    $sql  = "SELECT DISTINCT testcases.testgroup, testgroups.title ";
-    $sql .= "FROM testcases LEFT JOIN testgroups ";
-    $sql .= "ON testcases.testgroup = testgroups.testgroup ";
-    $sql .= "WHERE testcases.testsuite='{$test_suite}'";
+    $sql  = "SELECT DISTINCT `testcases`.`testgroup`, `testgroups`.`title` ";
+    $sql .= "FROM `testcases` LEFT JOIN `testgroups` ";
+    $sql .= "ON `testcases`.`testgroup` = `testgroups`.`testgroup` ";
+    $sql .= "WHERE `testcases`.`testsuite` = '{$testSuite}'";
     
     $r = $this->query($sql);
     
@@ -78,46 +47,28 @@ class test_groups extends DBConnection
     
     while ($testGroup = $r->fetchRow()) {
       if ($testGroup['testgroup'] != '') {
-        $this->m_toc[] = $testGroup;
+        $this->mGroups[] = $testGroup;
       }
     }
-
-    if ($this->m_toc) {
-      $this->m_count = count($this->m_toc);
-    }
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_count
-  //
-  //  Get count of available test groups.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_count()
+  function getCount()
   {
-    return $this->m_count;
+    if ($this->mGroups) {
+      return count($this->mGroups);
+    }
+    return 0;
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write
-  //
-  //  Write HTML for a drop down selection listing of available test groups.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write($indent)
+  
+  function getGroupData()
   {
-    echo $indent . "<select name='g'>\n";
-
-    foreach ($this->m_toc as $test_group) {
-      echo $indent . "  <option value='{$test_group['testgroup']}'>";
-      echo $test_group['title'];
-      echo "</option>\n";
+    if ($this->mGroups) {
+      return $this->mGroups;
     }
-    
-    echo $indent . "</select>\n";
+    return FALSE;
   }
+  
 }
 
 ?>

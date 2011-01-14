@@ -1,96 +1,91 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.test_flags.phi
-//
-//  Provides functionalities for acessing, storing, and displaying specific
-//  requirements for individual test cases.
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class test_flags
-//
-//  test_flags is a concrete DBConnection taylored for storing a list 
-//  of client requirements for a particular test case.
-//
-////////////////////////////////////////////////////////////////////////////////
-class test_flags extends DBConnection
+/**
+ * Wrapper class for flag data
+ */
+class Flags extends DBConnection
 {
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_flags;
+  protected $mFlags;
+  protected $mTests;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  //  Query the database for information about the client requirements
-  //  of a particular test case. Store the results.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function __construct($test_suite, $test_case) 
+
+  function __construct($flagsStr) 
   {
     parent::__construct();
+    
+    $flags = array_flip(explode(',', $flagsStr));
 
-    $sql  = "SELECT flag, description ";
-    $sql .= "FROM testcases ";
-    $sql .= "LEFT JOIN flags ";
-    $sql .= "ON FIND_IN_SET(flags.flag, testcases.flags) ";
-    $sql .= "WHERE testsuite='{$test_suite}' ";
-    $sql .= "AND testcase='{$test_case}' ";
+    $sql  = "SELECT `flag`, `description`, ";
+    $sql .= "`set_test`, `unset_test` ";
+    $sql .= "FROM `flags` ";
 
     $r = $this->query($sql);
-    while ($flag = $r->fetchRow()) {
-      $this->m_flags[$flag['flag']] = $flag['description'];
+    while ($flagData = $r->fetchRow()) {
+      $flag = $flagData['flag'];
+      if (array_key_exists($flag, $flags)) {
+        $this->mFlags[$flag] = $flagData['description'];
+        $test = $flagData['set_test'];
+      }
+      else {
+        $test = $flagData['unset_test'];
+      }
+      if ($test) {
+        $this->mTests[$flag] = $test;
+      }
     }
   }
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  has_flag
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function has_flag($flag)
-  {
-    return array_key_exists($flag, $this->m_flags);
-  }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write($indent)
+  /**
+   * Test for presence of particular flag
+   */
+  function hasFlag($flag)
   {
-    if ($this->m_flags && count($this->m_flags)) {
-      echo $indent . "<p class='notes'>\n";
-      foreach($this->m_flags as $flag => $description) {
-        echo $indent . "  {$description}\n";
-      }
-      echo $indent . "</p>\n";
+    if (is_array($this->mFlags)) {
+      return array_key_exists($flag, $this->mFlags);
     }
+    return FALSE;
+  }
+  
+  
+  /**
+   * Get array of flag descriptions
+   *
+   * @return array|null descriptions of all set flags, keyed by flag
+   */
+  function getDescriptions()
+  {
+    return $this->mFlags;
   }
 
+
+  /**
+   * Get array of flag tests
+   *
+   * @return array|null all available tests keyed by flag
+   */
+  function getTests()
+  {
+    return $this->mTests;
+  }
 }
 
 ?>

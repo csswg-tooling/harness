@@ -1,0 +1,142 @@
+html, body, div, p, form {
+  margin: 0;
+  padding: 0;
+}
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+img {
+  border: none;
+  float: left;
+  margin-right: 8pt;
+  margin-bottom: 4pt;
+}
+p.nav {
+  margin-bottom: 6pt;
+}
+h1, h2, h3, h4 {
+  margin: 0; padding: 0;
+}
+.suite {
+  font: inherit; 
+  font-size: 1.3em;
+  margin-bottom: 4pt;
+}
+.title {
+  clear: both;
+  font-size: 1.0em;
+  margin-bottom: 4pt;
+}
+.testname {
+  clear: both;
+  font-size: 1.0em;
+  margin-bottom: 4pt;
+}
+.notes {
+  font-size: smaller;
+}
+.testname {
+  font-weight: bold;
+}
+.header {
+  display: table-cell;
+  margin-bottom: 0.4em;
+  padding: 1em 1em 0em 1em;
+  height: auto;
+}
+
+.prerequisites {
+  margin: 1em 0;
+  clear: both;
+}
+p.userstyle { 
+  color: green; 
+  display: none; 
+}
+p.nouserstyle {
+  color: red; 
+  display: none;
+}
+
+.tabbar {
+  display: table-row;
+  height: 3.5em;
+}
+.tabbar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.tabbar ul li {
+  float: left;
+  border: 1px solid #888;
+  border-bottom-width: 0;
+  margin: 0 0 0 1em;
+}
+.tabbar ul a {
+  text-decoration: none;
+  display: block;
+  padding: 0.24em 1em;
+  text-align: center;
+  background: #eee;
+}
+.tabbar ul a:hover {
+  background: #ddd;
+}
+.tabbar ul .active {
+  border-color: black;
+}
+.tabbar ul .active a {
+  position: relative;
+  top: 1px;
+  background: white;
+  color: black;
+}
+p.instruct {
+  border-top: 1px solid black;
+  clear: both;
+  padding: 4pt 1em 0 1em;
+  margin: 0 0 4pt 0;
+  color: black;
+}
+
+.test {
+  height: 70%;
+  width: 100%;
+  text-align: center;
+  display: table-row;
+}
+.test p {
+  height: inherit;
+  display: table-cell;
+}
+object {
+  height: 98%;
+  width: 98%;
+  border: groove 2px;
+  margin: auto;
+  display: block;
+}
+object a {
+  display: block;
+}
+
+.footer {
+  margin-top: 0.4em;
+  padding: .5em;
+  display: table-cell;
+  height: 2em;
+}
+p.buttons {
+  float: left;
+}
+p.ua {
+  text-align: right;
+  font-size: smaller;
+}

@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C¨ Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -24,7 +24,7 @@
  */
 class DBResult
 {
-  var $mResult;
+  protected $mResult;
   
   /**
    * Store MySQL result resource or bool value
@@ -66,10 +66,10 @@ class DBResult
    *
    * @return bool
    */
-  function seekRow($index)
+  function seekRow($rowIndex)
   {
     if (is_resource($this->mResult)) {
-      return mysql_data_seek($this->mResult, $index);
+      return mysql_data_seek($this->mResult, $rowIndex);
     }
     return FALSE;
   }
@@ -77,14 +77,14 @@ class DBResult
   /**
    * Get a single field
    *
-   * @param int $index
+   * @param int $rowIndex
    * @param int|string $field
    * @return bool|string
    */
-  function fetchField($index, $field = 0)
+  function fetchField($rowIndex, $field = 0)
   {
     if (is_resource($this->mResult)) {
-      return mysql_result($this->mResult, $index, $field);
+      return mysql_result($this->mResult, $rowIndex, $field);
     }
     return FALSE;
   }

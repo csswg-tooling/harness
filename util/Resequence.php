@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2010-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -29,12 +29,12 @@ require_once('lib/DBConnection.php');
  */
 class Resequence extends DBConnection
 {
-  var $mEngines;
-  var $mTestSuites;
-  var $mCounts;
-  var $mTestCases;
-  var $mTestCaseOptional;
-  var $mResults;
+  protected $mEngines;
+  protected $mTestSuites;
+  protected $mCounts;
+  protected $mTestCases;
+  protected $mTestCaseOptional;
+  protected $mResults;
 
   function __construct() 
   {
@@ -224,15 +224,16 @@ class Resequence extends DBConnection
         
         $engineCounts = $this->mCounts[$engine];
         asort($engineCounts);
-        $sequence = 0;
+        $engine = $this->encode($engine, TESTSEQUENCE_MAX_ENGINE);
+        $sequence = -1;
         foreach ($engineCounts as $testCase => $count) {
           $sequence++;
           
           $testCaseId = $this->mTestCases[$testCase];
           
-          $sql  = "INSERT INTO testsequence (engine, testcase_id, sequence) ";
+          $sql  = "INSERT INTO `testsequence` (`engine`, `testcase_id`, `sequence`) ";
           $sql .= "VALUES ('{$engine}', '{$testCaseId}', '{$sequence}') ";
-          $sql .= "ON DUPLICATE KEY UPDATE sequence='{$sequence}' ";
+          $sql .= "ON DUPLICATE KEY UPDATE `sequence` = '{$sequence}' ";
 
           $this->query($sql);
         }

@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2010-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -29,12 +29,12 @@ require_once('lib/DBConnection.php');
  */
 class ProcessSpiders extends DBConnection
 {
-  var $mOffenders;
-  var $mBanned;
+  protected $mOffenders;
+  protected $mBanned;
   
-  var $mBanThreshold;
-  var $mTestPeriod;
-  var $mBanPeriod;
+  protected $mBanThreshold;
+  protected $mTestPeriod;
+  protected $mBanPeriod;
   
 
   function __construct() 

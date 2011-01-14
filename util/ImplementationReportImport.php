@@ -1,77 +1,40 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2010 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2010 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3C¬ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  ir_import.php
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: resequence.php
-//      Lines: 103-142
-//
-//  where herein specific contents provided by the original harness have
-//  been adapted for CSS2.1 conformance testing. Separately, controls have
-//  been added to allow entering data for user agents other than the one
-//  accessing the harness, and the means by which test presentation order
-//  is provided have been altered. Separately, the ability to request
-//  only those tests in a particular named group has been added.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3C® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright © 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
+ 
+define('COMMAND_LINE', TRUE);
 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class ir_import
-//
-//  This class imports data from implementation reports
-//
-//  This is meant to be run on the command line
-//
-////////////////////////////////////////////////////////////////////////////////
-class ir_import extends DBConnection
-{  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
 
-  
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor.
-  //
-  ////////////////////////////////////////////////////////////////////////////
+/**
+ * Under construction XXX
+ */
+class ImplementationReportImport extends DBConnection
+{  
+
+
   function __construct() 
   {
     parent::_construct();
 
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Read data from ir_import table, lookup testcase id and update
-  //
-  ////////////////////////////////////////////////////////////////////////////
+
   function import()
   {
     $sql =  "SELECT id, testsuite, testcase FROM testcases";
@@ -149,7 +112,7 @@ print "{$testcase_id}\n";
   }
 }
 
-$worker = new ir_import();
+$worker = new ImplementationReportImport();
 $worker->import();
 
 ?>

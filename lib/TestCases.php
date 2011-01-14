@@ -1,121 +1,69 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2007 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3CÂ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.test_cases.php
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: tests.php
-//      Class: TestSuite
-//      Lines: 246-344
-//
-//  where herein obtaining a list of available test cases in a particular
-//  test suite is queried from the database and stored internally.
-//  Other information queries (e.g. obtaining the indentity of the next
-//  test case in a particular progression of test cases) are deferred to 
-//  other object classes.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
+/*******************************************************************************
+ *
+ *  Copyright Â© 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3CÂ® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright Â© 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
+ 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class test_cases
-//
-//  test_cases is a concrete DBConnection taylored for storing the 
-//  table of contents of available test cases in a particular test suite.
-//
-////////////////////////////////////////////////////////////////////////////////
-class test_cases extends DBConnection
+
+/**
+ * Encapsulate data about full ilst of test cases in a suite
+ */
+class TestCases extends DBConnection
 {
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_toc;
+  protected $mTestCases;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_count
-  //
-  //  Return the number of test cases available.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_count()
-  {
-    return count($this->m_toc);
-  }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  //  Query the database for a list of available test cases in a particular
-  //  test suite, including information about each case as required for 
-  //  generating a desired human readable listings.
-  //
-  ////////////////////////////////////////////////////////////////////////////
   function __construct($testSuite) 
   {
     parent::__construct();
     
-    $sql  = "SELECT * FROM `testcases` ";
+    $testSuite = $this->encode($testSuite, TESTCASES_MAX_TESTSUITE);
+    
+    $sql  = "SELECT `id`, `testcase`, `title` ";
+    $sql .= "FROM `testcases` ";
     $sql .= "WHERE `testsuite` = '{$testSuite}' ";
     $sql .= "AND `active` = '1' ";
     
     $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
-      $msg = 'Unable to obtain list of test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
+    $this->mTestCases = $r->fetchTable();
 
-    $this->m_toc = $r->fetchTable();
-
-    if(!($this->m_toc)) {
+    if (! $this->mTestCases) {
       $msg = 'Unable to obtain list of test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write
-  //
-  //  Write HTML for a drop down selection listing of available test cases.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write($indent)
-  {
-    echo $indent . "<select name='c' style='width: 25em'>\n";
 
-    foreach($this->m_toc as $test_case) {
-      echo $indent . "  <option value='{$test_case['testcase']}'>";
-      echo $test_case['title'];
-      echo "</option>\n";
+  function getCount()
+  {
+    if ($this->mTestCases) {
+      return count($this->mTestCases);
     }
-    echo $indent . "</select>\n";
+    return 0;
+  }
+
+
+  function getTestCaseData()
+  {
+    if ($this->mTestCases) {
+      return $this->mTestCases;
+    }
+    return FALSE;
   }
 
 }

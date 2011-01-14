@@ -1,58 +1,39 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-//
-//  This work is distributed under the W3CÂ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-//
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
-
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.dynamic_page.phi
-//
-//  Provides error reporting functionality similar to that provided to the
-//  Mobile Test Harness [1] by the function WriteErrorpage() in the file
-//  dbconnection.phi, where rather than generating an error page as a result
-//  of a returned error flag, errors are triggered in flight and then caught
-//  by a provided error handler.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright Â© 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3CÂ® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright Â© 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
 require_once("lib/Page.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class dynamic_page
-//
-//  This derived class encapsulates the reporting of errors encountered while
-//  attempting to acquire the content of dynamic pages. Class derived from this
-//  class will add functionality needed by specific pages.
-//
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * This class encapsulates common functionality of dynamically generated pages.
+ * This includes processing page input and reporting of errors
+ */
 class DynamicPage extends Page
 {
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_error_client;
-  var $m_error_code;
-  var $m_error_message;
-  var $m_error_file;
-  var $m_error_line;
-  var $m_error_context;
+  protected $mErrorIsClient;
+  protected $mErrorType;
+  protected $mErrorMessage;
+  protected $mErrorFile;
+  protected $mErrorLine;
+  protected $mErrorContext;
   
-  var $mGetData;
-  var $mPostData;
+  protected $mGetData;
+  protected $mPostData;
+  protected $mRequestData;    // union of GET, POST and COOKIES
   
   /**
    * Static function to condition get or post input
@@ -85,60 +66,87 @@ class DynamicPage extends Page
   }
   
   
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function dynamic_page() 
+  function __construct() 
   {
-    parent::static_page();
-    $this->m_error_client = null;
-    $this->m_error_code = null;
-    $this->m_error_message = null;
-    $this->m_error_file = null;
-    $this->m_error_line = null;
-    $this->m_error_context = null;
-    set_error_handler(array(&$this, 'error_handler'));
+    parent::__construct();
     
-//XXX    $this->mGetData = DynamicPage::_ConditionInput($_GET);
-//XXX    $this->mPostData = DynamicPage::_ConditionInput($_POST);
+    $this->mShouldCache = FALSE;
+    
+    $this->mErrorIsClient = FALSE;
+    $this->mErrorType = null;
+    $this->mErrorMessage = null;
+    $this->mErrorFile = null;
+    $this->mErrorLine = null;
+    $this->mErrorContext = null;
+    set_error_handler(array(&$this, 'errorHandler'));
+    
+    $this->mGetData = DynamicPage::_ConditionInput($_GET);
+    $this->mPostData = DynamicPage::_ConditionInput($_POST);
+    $this->mRequestData = DynamicPage::_ConditionInput($_REQUEST);
 
   }  
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // error_handler()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function error_handler($errno, $errstr, $errfile, $errline, $errcontext)
+
+  protected function _getData($field)
   {
-    switch ($errno) {
+    if (isset($this->mGetData[$field])) {
+      return $this->mGetData[$field];
+    }
+    return null;
+  }
+  
+  
+  protected function _postData($field)
+  {
+    if (isset($this->mPostData[$field])) {
+      return $this->mPostData[$field];
+    }
+    return null;
+  }
+  
+  
+  protected function _requestData($field)
+  {
+    if (isset($this->mRequestData[$field])) {
+      return $this->mRequestData[$field];
+    }
+    return null;
+  }
+  
+  
+  /**
+   * Callback function to capture PHP generated errors
+   */
+  function errorHandler($errorNumber, $errorString, $errorFile, $errorLine, $errorContext)
+  {
+    switch ($errorNumber) {
       case E_WARNING:
       case E_USER_WARNING:
-        $this->m_error_code = 'WARNING:';
+        $this->mErrorType = 'WARNING:';
         break;
       case E_NOTICE:
       case E_USER_NOTICE:
-        $this->m_error_code = 'NOTICE:';
+        $this->mErrorType = 'NOTICE:';
         break;
       default:
-        $this->m_error_code = 'ERROR:';
+        $this->mErrorType = 'ERROR:';
     }
     
-    if(!$errstr) {
-      $errstr = 'Unknown Error';
+    if (! $errorString) {
+      $errorString = 'Unknown Error';
     }
     
-    $this->m_error_message = $errstr;
-    $this->m_error_file = $errfile;
-    $this->m_error_line = $errline;
-    $this->m_error_context = $errcontext;
+    $this->mErrorMessage = $errorString;
+    
+    $this->mErrorFile = $errorFile;
+    $this->mErrorLine = $errorLine;
+    $this->mErrorContext = $errorContext;
 
-    if(!headers_sent()) {
-      if ($this->m_error_client) {
+    if (! headers_sent()) {
+      if ($this->mErrorIsClient) {
         header('HTTP/1.1 400 Bad Request');
-      } else {
+      } 
+      else {
         header('HTTP/1.1 500 Internal Server Error');
       }
     }
@@ -148,87 +156,80 @@ class DynamicPage extends Page
     die();
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // trigger_server_error()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function trigger_server_error($error_msg, $error_type = E_USER_ERROR)
+
+  /**
+   * Trigger error due to problem at server
+   */
+  function triggerServerError($errorMessage, $errorType = E_USER_ERROR)
   {
-    trigger_error($error_msg, $error_type);
+    trigger_error($errorMessage, $errorType);
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // trigger_client_error()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function trigger_client_error($error_msg, $error_type = E_USER_ERROR)
+
+  /**
+   * Trigger error due to bad input from client
+   */
+  function triggerClientError($errorMessage, $errorType = E_USER_ERROR)
   {
-    $this->m_error_client = 1;
-    trigger_error($error_msg, $error_type);
+    $this->mErrorIsClient = TRUE;
+    trigger_error($errorMessage, $errorType);
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  write_html_body()
-  //
-  //  Member function to write common <body> tags at the start of the page 
-  //     content.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write_html_body($indent = '')
+
+  /**
+   * Generate html <body>
+   *
+   * Overridden to insert error text if present
+   */
+  function writeHTMLBody($indent = '')
   {
-    echo $indent . '<body>' . "\n";
-    $this->write_body_header($indent . '  ');
-    if($this->m_error_code == null) {
-      $this->write_body_content($indent . '  ');
-    } else {
-      $this->write_body_error($indent . '  ');
+    echo $indent . "<body>\n";
+    if (null == $this->mErrorType) {
+      $this->writeBodyHeader($indent . '  ');
+      $this->writeBodyContent($indent . '  ');
+      $this->writeBodyFooter($indent . '  ');
     }
-    $this->write_body_footer($indent . '  ');
-    echo $indent . '</body>' . "\n";
+    else {
+      $this->writeBodyError($indent . '  ');
+    }
+    echo $indent . "</body>\n";
   }
 
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // write_body_error()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function write_body_error($indent = '')
+  /**
+   * Generate error text
+   */
+  function writeBodyError($indent = '')
   {
-    if($this->m_error_code) {
-      echo $indent . '<p>' . "\n";
-      echo $indent . '  <strong>' . $this->m_error_code . '</strong>' . "\n";
-      if($this->m_error_message) {
-        echo $indent . '  ' . $this->m_error_message . "\n";
+    if ($this->mErrorType) {
+      echo $indent . "<p>\n";
+      echo $indent . "  <strong>{$this->mErrorType}</strong>\n";
+      if ($this->mErrorMessage) {
+        echo $indent . "  " . Page::Encode($this->mErrorMessage) . "\n";
       }
-      echo $indent . '</p>' . "\n";
-    } else {
-      if($this->m_error_message) {
-        echo $indent . '<p>' . "\n";
-        echo $indent . '  ' . $this->m_error_message . "\n";
-        echo $indent . '</p>' . "\n";
+      echo $indent . "</p>\n";
+    } 
+    else {
+      if ($this->mErrorMessage) {
+        echo $indent . "<p>" . Page::Encode($this->mErrorMessage) . "</p>\n";
       }
     }
-    if($this->m_error_file) {
-      echo $indent . '<p>File: ' . "\n";
-      echo $indent . '  ' . $this->m_error_file . "\n";
-      echo $indent . '</p>' . "\n";
-    }
-    if($this->m_error_line) {
-      echo $indent . '<p>Line: ' . "\n";
-      echo $indent . '  ' . $this->m_error_line . "\n";
-      echo $indent . '</p>' . "\n";
-    }
-    if($this->m_error_context) {
-      echo $indent . '<p>Context: ' . "\n";
-      echo $indent . '  ';
-      print_r($this->m_error_context);
-      echo "\n";
-      echo $indent . '</p>' . "\n";
+    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+      if ($this->mErrorFile) {
+        echo $indent . "<p>File: " . Page::Encode($this->mErrorFile) . "</p>\n";
+      }
+      if ($this->mErrorLine) {
+        echo $indent . "<p>Line: " . Page::Encode($this->mErrorLine) . "</p>\n";
+      }
+      if ($this->mErrorContext) {
+        echo $indent . "<p>Context: \n";
+        echo $indent . "  ";
+        print_r($this->mErrorContext);
+        echo           "\n";
+        echo $indent . "</p>\n";
+      }
     }
   }
 }
+
 ?>

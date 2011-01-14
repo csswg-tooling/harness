@@ -1,119 +1,112 @@
 <?php
-////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright © 2007 World Wide Web Consortium, 
-//  (Massachusetts Institute of Technology, European Research 
-//  Consortium for Informatics and Mathematics, Keio 
-//  University). All Rights Reserved. 
-//  Copyright © 2008 Hewlett-Packard Development Company, L.P. 
-// 
-//  This work is distributed under the W3CÂ Software License 
-//  [1] in the hope that it will be useful, but WITHOUT ANY 
-//  WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// 
-//  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
-//
-//////////////////////////////////////////////////////////////////////////////// 
+/*******************************************************************************
+ *
+ *  Copyright Â© 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *
+ *  This work is distributed under the W3CÂ® Software License [1] 
+ *  in the hope that it will be useful, but WITHOUT ANY 
+ *  WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *
+ *  Adapted from the Mobile Test Harness
+ *  Copyright Â© 2007 World Wide Web Consortium
+ *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
+ * 
+ ******************************************************************************/
 
-//////////////////////////////////////////////////////////////////////////////// 
-//
-//  class.test_suite.php
-//
-//  Adapted from Mobile Test Harness [1]
-//
-//    File: tests.php
-//      Class: TestSuite
-//      Lines: 246-344
-//
-//  where herein information about a particular test suite is queried from 
-//  the database and stored internally. Other information queries (e.g. 
-//  obtaining the number of test cases in the suite) are deferred for other
-//  object classes.
-//
-// [1] http://dev.w3.org/cvsweb/2007/mobile-test-harness/
-//
-//////////////////////////////////////////////////////////////////////////////// 
 
 require_once("lib/DBConnection.php");
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  class test_suite
-//
-//  test_suite is a concrete DBConnection taylored for storing the 
-//  information about a particular test suite.
-//
-////////////////////////////////////////////////////////////////////////////////
-class test_suite extends DBConnection
+/**
+ * Wrapper class for information about a particular test suite
+ */
+class TestSuite extends DBConnection
 {
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Instance variables.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  var $m_info;
+  protected $mInfo;
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Constructor
-  //
-  //  Query the database for information about a particular test suite
-  //  and store the results.
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function __construct($test_suite) 
+
+  /**
+   * Construct TestSuite object
+   *
+   * @param string  $testSuite  Suite name
+   */
+  function __construct($testSuite) 
   {
     parent::__construct();
     
-    $sql  = "SELECT * FROM testsuites ";
-    $sql .= "WHERE testsuite='$test_suite' ";
-    $sql .= "LIMIT 1";
-    
-    $r = $this->query($sql);
+    if ($testSuite) {
+      $testSuiteName = $this->encode($testSuite, TESTSUITES_MAX_TESTSUITE);
+      
+      $sql  = "SELECT * FROM `testsuites` ";
+      $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+      $sql .= "LIMIT 1";
+      
+      $r = $this->query($sql);
 
-    if (! $r->succeeded()) {
-      $msg = 'Unable to obtain information about ' . $test_suite;
-      trigger_error($msg, E_USER_ERROR);
+      $this->mInfo = $r->fetchRow();
+/* XXX  temp until format support landed
+      if (! ($this->mInfo)) {
+        $msg = "Unable to obtain information about test suite: '{$testSuite}'";
+        trigger_error($msg, E_USER_ERROR);
+      }
+*/
     }
+  }
+  
+  
+  /**
+   * Determine if valid test suite data has been loaded
+   *
+   * @return bool
+   */
+  function isValid()
+  {
+    return (null != $this->mInfo);
+  }
+  
 
-    $this->m_info = $r->fetchRow();
-    
-    if(!($this->m_info)) {
-      $msg = 'Unable to obtain information about ' . $test_suite;
-      trigger_error($msg, E_USER_ERROR);
-    }
-
+  /**
+   * Get name of Test Suite
+   *
+   * @return string
+   */
+  function getName()
+  {
+    return $this->mInfo['testsuite'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  Member functions for retrieving information about the test suite
-  //
-  //    get_name()
-  //    get_title()
-  //
-  ////////////////////////////////////////////////////////////////////////////
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_name()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_name()
+  /**
+   * Get title fo test suite
+   *
+   * @return string
+   */
+  function getTitle()
   {
-    return $this->m_info['testsuite'];
+    return $this->mInfo['title'];
+  }
+  
+  
+  function getDescription()
+  {
+    return $this->mInfo['description'];
+  }
+  
+  function getBaseURI()
+  {
+    return $this->mInfo['base_uri'];
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  //  get_title()
-  //
-  ////////////////////////////////////////////////////////////////////////////
-  function get_title()
+  function getHomeURI()
   {
-    return $this->m_info['title'];
+    return $this->mInfo['base_uri'] . $this->mInfo['home_uri'];
+  }
+
+  function getSpecURI()
+  {
+    return $this->mInfo['spec_uri'];
   }
 
 }

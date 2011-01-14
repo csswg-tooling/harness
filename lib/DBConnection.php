@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2010 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -17,15 +17,15 @@
  ******************************************************************************/
 
 
-require_once('Config.php');
-require_once('DBResult.php');
+require_once('lib/Config.php');
+require_once('lib/DBResult.php');
 
 /**
  * Manage connection to the MySQL database
  */
 class DBConnection
 {
-  var $mDatabaseLink;
+  protected $mDatabaseLink;
   
   /**
    * Connect to the database
@@ -79,6 +79,18 @@ class DBConnection
   function affectedRowCount()
   {
     return mysql_affected_rows($this->mDatabaseLink);
+  }
+  
+  
+  /**
+   * Get current timestamp from server
+   */
+  function getNow()
+  {
+    $sql  = "SELECT CURRENT_TIMESTAMP";
+    $r = $this->query($sql);
+  
+    return $r->fetchField(0, 'CURRENT_TIMESTAMP');
   }
   
   /**
