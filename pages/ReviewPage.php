@@ -149,6 +149,12 @@ class ReviewPage extends HarnessPage
       $this->writeTestGroupSelect($indent . '    ');
       echo $indent . "    <br />\n";
     }
+    else {  // write dummy controls so script still works
+      echo $indent . "    <span style='display: none'>\n";
+      echo $indent . "      <input type='radio' name='t' value='1' />\n";
+      echo $indent . "      <input type='hidden' name='g' value='' />\n";
+      echo $indent . "    </span>\n";
+    }
     
     echo $indent . "    <input type='radio' name='t' value='2' />\n";
     echo $indent . "    A single test case:\n";

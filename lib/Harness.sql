@@ -9,9 +9,11 @@
 -- Table structure for table `flags`
 --
 
-CREATE TABLE IF NOT EXISTS `flags` (
-  `flag` enum('ahem','animated','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','paged','reftest','should','scroll','svg','userstyle','96dpi') NOT NULL default 'ahem',
+CREATE TABLE `flags` (
+  `flag` enum('ahem','animated','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','paged','reftest','should','scroll','svg','userstyle','32bit','96dpi') NOT NULL default 'ahem',
   `description` varchar(255) NOT NULL,
+  `set_test` varchar(255) default NULL,
+  `unset_test` varchar(255) default NULL,
   PRIMARY KEY  (`flag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -21,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `flags` (
 -- Table structure for table `references`
 --
 
-CREATE TABLE IF NOT EXISTS `references` (
+CREATE TABLE `references` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `testcase_id` int(11) unsigned NOT NULL,
   `reference` varchar(255) NOT NULL,
@@ -36,12 +38,12 @@ CREATE TABLE IF NOT EXISTS `references` (
 -- Table structure for table `results`
 --
 
-CREATE TABLE IF NOT EXISTS `results` (
+CREATE TABLE `results` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `testcase_id` int(11) unsigned NOT NULL default '0',
   `useragent_id` int(11) unsigned NOT NULL default '0',
   `source` varchar(16) default NULL,
-  `original_id` int(11) unsigned default NULL,
+  `original_id` int(11) unsigned NOT NULL default '0',
   `result` enum('pass','fail','uncertain','na','invalid') NOT NULL default 'na',
   `ignore` int(1) unsigned NOT NULL,
   `modified` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
@@ -56,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `results` (
 -- Table structure for table `spidertrap`
 --
 
-CREATE TABLE IF NOT EXISTS `spidertrap` (
+CREATE TABLE `spidertrap` (
   `ip_address` varchar(15) NOT NULL,
   `user_agent` varchar(255) default NULL,
   `last_uri` varchar(255) default NULL,
@@ -73,14 +75,15 @@ CREATE TABLE IF NOT EXISTS `spidertrap` (
 -- Table structure for table `testcases`
 --
 
-CREATE TABLE IF NOT EXISTS `testcases` (
+CREATE TABLE `testcases` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `uri` varchar(255) NOT NULL default '',
   `testsuite` varchar(32) NOT NULL default '',
   `testcase` varchar(64) NOT NULL default '',
   `title` varchar(255) default NULL,
-  `flags` set('ahem','animated','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','paged','reftest','should','scroll','svg','userstyle','96dpi') default NULL,
-  `assertion` varchar(255) default NULL,
+  `flags` set('ahem','animated','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','paged','reftest','should','scroll','svg','userstyle','32bit','96dpi') default NULL,
+  `assertion` varchar(1023) default NULL,
+  `credits` varchar(255) default NULL,
   `testgroup` varchar(32) default NULL,
   `grandfather` tinyint(1) NOT NULL default '0',
   `active` tinyint(1) NOT NULL default '1',
@@ -94,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `testcases` (
 -- Table structure for table `testgroups`
 --
 
-CREATE TABLE IF NOT EXISTS `testgroups` (
+CREATE TABLE `testgroups` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `testgroup` varchar(32) NOT NULL default '',
   `title` varchar(255) NOT NULL default '',
@@ -107,7 +110,7 @@ CREATE TABLE IF NOT EXISTS `testgroups` (
 -- Table structure for table `testlinks`
 --
 
-CREATE TABLE IF NOT EXISTS `testlinks` (
+CREATE TABLE `testlinks` (
   `testcase_id` int(11) unsigned NOT NULL,
   `title` varchar(255) default NULL,
   `uri` varchar(255) default NULL,
@@ -120,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `testlinks` (
 -- Table structure for table `testsequence`
 --
 
-CREATE TABLE IF NOT EXISTS `testsequence` (
+CREATE TABLE `testsequence` (
   `engine` varchar(16) NOT NULL default '',
   `testcase_id` int(11) unsigned NOT NULL,
   `sequence` int(11) unsigned NOT NULL,
@@ -133,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `testsequence` (
 -- Table structure for table `testsuites`
 --
 
-CREATE TABLE IF NOT EXISTS `testsuites` (
+CREATE TABLE `testsuites` (
   `testsuite` varchar(32) NOT NULL default '',
   `base_uri` varchar(255) default NULL,
   `home_uri` varchar(64) default NULL,
@@ -151,7 +154,7 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
 -- Table structure for table `useragents`
 --
 
-CREATE TABLE IF NOT EXISTS `useragents` (
+CREATE TABLE `useragents` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `useragent` varchar(255) NOT NULL default '',
   `engine` varchar(16) default NULL,
@@ -161,3 +164,4 @@ CREATE TABLE IF NOT EXISTS `useragents` (
   `platform` varchar(32) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+

@@ -63,12 +63,12 @@ class TestCaseImport extends DBConnection
     $count = 0;
     foreach ($data as $record) {
       if (0 == $count++) {
-        if ("id\treferences\ttitle\tflags\tlinks\tassertion" == $record) {
+        if ("id\treferences\ttitle\tflags\tlinks\tcredits\tassertion" == $record) {
           continue;
         }
         die("ERROR: unknown format\n");
       }
-      list ($testCase, $references, $title, $flags, $links, $assertion) = explode("\t", $record);
+      list ($testCase, $references, $title, $flags, $links, $credits, $assertion) = explode("\t", $record);
       
       $active = 1;
       $flagArray = explode(',', $flags);
@@ -92,10 +92,12 @@ class TestCaseImport extends DBConnection
       
       $title = html_entity_decode($title, ENT_QUOTES, 'UTF-8');
       $assertion = html_entity_decode($assertion, ENT_QUOTES, 'UTF-8');
+      $credits = html_entity_decode($credits, ENT_QUOTES, 'UTF-8');
 
       $testCase   = $this->encode($testCase, TESTCASES_MAX_TESTCASE);
       $title      = $this->encode($title, TESTCASES_MAX_TITLE);
       $assertion  = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
+      $credits    = $this->encode($credits, TESTCASES_MAX_CREDITS);
       $uri        = $this->encode($uri, TESTCASES_MAX_URI);
       $flags      = $this->encode($flags);
 
@@ -103,8 +105,9 @@ class TestCaseImport extends DBConnection
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `uri` = '{$uri}', ";
         $sql .= "`title` = '{$title}', ";
-//XXX TEMP        $sql .= "`flags` = '{$flags}', ";
+        $sql .= "`flags` = '{$flags}', ";
         $sql .= "`assertion` = '{$assertion}', ";
+        $sql .= "`credits` = '{$credits}', ";
         $sql .= "`active` = '{$active}', ";
         $sql .= "`modified` = '{$modified}' ";
         $sql .= "WHERE `id` = '{$testCaseId}' ";
@@ -112,8 +115,8 @@ class TestCaseImport extends DBConnection
         $this->query($sql);
       }
       else {
-        $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `title`, `flags`, `assertion`, `active`, `modified`) ";
-        $sql .= "VALUES ('{$uri}', '{$testSuite}', '{$testCase}', '{$title}', '{$flags}', '{$assertion}', '{$active}', '{$modified}');";
+        $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `title`, `flags`, `assertion`, `credits`, `active`, `modified`) ";
+        $sql .= "VALUES ('{$uri}', '{$testSuite}', '{$testCase}', '{$title}', '{$flags}', '{$assertion}', '{$credits}', '{$active}', '{$modified}');";
         
         $this->query($sql);
         
@@ -147,7 +150,7 @@ class TestCaseImport extends DBConnection
 
 $worker = new TestCaseImport();
 
-$worker->import("testinfo.data", "CSS21_HTML_RC4", "html4/", "htm", "nonHTML", "2010-12-10 16:29:00");
-$worker->import("testinfo.data", "CSS21_XHTML_RC4", "xhtml1/", "xht", "HTMLOnly", "2010-12-10 16:29:00");
+$worker->import("testinfo.data", "CSS21_HTML_RC5", "html4/", "htm", "nonHTML", "2011-01-11 23:16:00");
+$worker->import("testinfo.data", "CSS21_XHTML_RC5", "xhtml1/", "xht", "HTMLOnly", "2011-01-11 23:16:00");
 
 ?>

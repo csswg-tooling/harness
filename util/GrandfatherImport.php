@@ -175,7 +175,7 @@ class GrandfatherImport extends DBConnection
 $worker = new GrandfatherImport();
 
 $worker->loadDiffs("out.diff");
-$worker->grandfather("CSS21_HTML_RC4");
-$worker->grandfather("CSS21_XHTML_RC4");
+$worker->grandfather("CSS21_HTML_RC5");
+$worker->grandfather("CSS21_XHTML_RC5");
   
 ?>

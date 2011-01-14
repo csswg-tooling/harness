@@ -156,7 +156,7 @@ class TestCase extends DBConnection
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
     if (1 == $order) {
@@ -243,7 +243,7 @@ class TestCase extends DBConnection
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
     $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
@@ -292,7 +292,7 @@ class TestCase extends DBConnection
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
     $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite`) ";
@@ -320,7 +320,7 @@ class TestCase extends DBConnection
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, ";
+    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
     $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite`) ";
@@ -522,6 +522,15 @@ class TestCase extends DBConnection
     }
     return FALSE;
   }  
+  
+  
+  function getCredits()
+  {
+    if ($this->isValid()) {
+      return $this->mInfo['credits'];
+    }
+    return FALSE;
+  }
 
 }
 

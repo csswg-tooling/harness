@@ -48,9 +48,9 @@ class GrandfatherResults extends DBConnection
   function copyResults($fromSuite, $toSuite)
   {
     $sql = "SELECT `id`, `testcase` FROM `testcases` WHERE `testsuite` = '{$toSuite}' AND `grandfather` = '1' ";
-    $r = $this->query($sql);
+    $testCasesResult = $this->query($sql);
     
-    while ($dbData = $r->fetchRow()) {
+    while ($dbData = $testCasesResult->fetchRow()) {
       $newTestcaseId = $dbData['id'];
       $testCase = $dbData['testcase'];
       
@@ -103,7 +103,7 @@ class GrandfatherResults extends DBConnection
 
 $worker = new GrandfatherResults();
 
-$worker->copyResults('CSS21_HTML_RC3', 'CSS21_HTML_RC4');
-$worker->copyResults('CSS21_XHTML_RC3', 'CSS21_XHTML_RC4');
+$worker->copyResults('CSS21_HTML_RC4', 'CSS21_HTML_RC5');
+$worker->copyResults('CSS21_XHTML_RC4', 'CSS21_XHTML_RC5');
 
 ?>

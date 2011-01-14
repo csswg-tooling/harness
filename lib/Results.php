@@ -226,10 +226,7 @@ class Results extends DBConnection
    */
   function write($indent, $spiderTrap)
   {
-    if (! ($this->mTestCases)) {
-      echo $indent . "<p>No results entered matching this query.</p>\n";
-    } 
-    else {
+    if ($this->mTestCases && $this->mResults) {
       echo $indent . "<table>\n";
       echo $indent . "  <tr>\n";
       echo $indent . "    <th>Testcase</th>\n";
@@ -295,6 +292,9 @@ class Results extends DBConnection
       else {
         echo $indent . "<p>Exit criteria have been met.</p>\n";
       }
+    }
+    else {
+      echo $indent . "<p>No results entered matching this query.</p>\n";
     }
   }
 }
