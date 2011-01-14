@@ -151,6 +151,6 @@ class TestCaseImport extends DBConnection
 $worker = new TestCaseImport();
 
 $worker->import("testinfo.data", "CSS21_HTML_RC5", "html4/", "htm", "nonHTML", "2011-01-11 23:16:00");
-$worker->import("testinfo.data", "CSS21_XHTML_RC5", "xhtml1/", "xht", "HTMLOnly", "2011-01-11 23:16:00");
+$worker->import("testinfo.data", "CSS21_XHTML_RC5", "xhtml1/", "xht", "HTMLonly", "2011-01-11 23:16:00");
 
 ?>
