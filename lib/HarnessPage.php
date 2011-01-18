@@ -45,7 +45,7 @@ class HarnessPage extends DynamicPage
       }
     }
     
-    $this->mUserAgent = new UserAgent($this->_requestData('u'));
+    $this->mUserAgent = new UserAgent(intval($this->_requestData('u')));
   }  
   
   function getPageTitle()

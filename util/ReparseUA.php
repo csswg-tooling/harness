@@ -38,28 +38,21 @@ class ReparseUA extends DBConnection
   function reparse() 
   {
 
-    $sql = "SELECT id FROM useragents";
+    $sql = "SELECT `id` FROM `useragents` ";
     $r = $this->query($sql);
+
     while ($dbData = $r->fetchRow()) {
       $uaId = $dbData['id'];
       
-      $ua = new UserAgent($uaId);
-// XXXX rewrite for command line      
-      echo $indent . "  <tr><td>{$uaId}<td colspan='999'>" . $ua->getUAString();
-      echo $indent . "  <tr><td>&nbsp;<td>" . $ua->getEngine();
-      echo "<td>" . $ua->getEngineVersion();
-      echo "<td>" . $ua->getBrowser();
-      echo "<td>" . $ua->getBrowserVersion();
-      echo "<td>" . $ua->getPlatform();
+      $ua = new UserAgent(intval($uaId));
+      
+      echo "{$uaId}: {$ua->getUAString()}\n";
+      echo "  was: {$ua->getDescription()}\n";
+
       $ua->reparse();
-      echo $indent . "  <tr><td>&nbsp;<td>" . $ua->getEngine();
-      echo "<td>" . $ua->getEngineVersion();
-      echo "<td>" . $ua->getBrowser();
-      echo "<td>" . $ua->getBrowserVersion();
-      echo "<td>" . $ua->getPlatform();
+      
+      echo "  now: {$ua->getDescription()}\n";
     }
-    echo $indent . "</table>";
-    
   }
 }
 

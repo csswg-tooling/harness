@@ -16,47 +16,31 @@
  * 
  ******************************************************************************/
 
-define('COMMAND_LINE', TRUE);
-
-require_once("lib/DBConnection.php");
+require_once("lib/CmdLineWorker.php");
+require_once("lib/Page.php");
 
 /**
  * Import test case data from manifest file
  *
  * Safe to run multiple times to update existing tests
  */
-class TestCaseImport extends DBConnection
+class TestCaseImport extends CmdLineWorker
 {  
-  protected $mTestCaseIds;
+  protected $mTestCaseActive;
 
   function __construct() 
   {
     parent::__construct();
 
+    $this->mTestCaseActive = array();
   }
 
-  protected function _loadTestCases($testSuite)
+    
+  function import($manifest, $testSuiteName, $baseURI, $extension, $skipFlag, $modified)
   {
-    $testSuite = $this->encode($testSuite, TESTCASES_MAX_TESTSUITE);
+    $this->_loadTestCases($testSuiteName);
     
-    $sql  = "SELECT `id`, `testcase` ";
-    $sql .= "FROM `testcases` ";
-    $sql .= "WHERE `testsuite` = '{$testSuite}' ";
-    
-    $r = $this->query($sql);
-    while ($testCase = $r->fetchRow()) {
-      $this->mTestCaseIds[$testCase['testcase']] = $testCase['id'];
-    }
-  }
-    
-  // XXX add verification that flag values are legal in the DB
-  // XXX add code to detect deleted test cases and deactivate them
-  
-  function import($manifest, $testSuite, $baseURI, $extension, $skipFlag, $modified)
-  {
-    $this->_loadTestCases($testSuite);
-
-    $testSuite = $this->encode($testSuite, TESTCASES_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
     
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
@@ -68,44 +52,38 @@ class TestCaseImport extends DBConnection
         }
         die("ERROR: unknown format\n");
       }
-      list ($testCase, $references, $title, $flags, $links, $credits, $assertion) = explode("\t", $record);
+      list ($testCase, $references, $title, $flagString, $links, $credits, $assertion) = explode("\t", $record);
       
       $active = 1;
-      $flagArray = explode(',', $flags);
+      $flagArray = $this->_explodeTrimAndFilter(',', $flagString);
       if ((0 < count($flagArray)) && (FALSE !== array_search($skipFlag, $flagArray))) {
         $active = 0;
       }
       if ($references) {
         $flagArray[] = 'reftest';
       }
-      $flags = implode(',', $flagArray);
+      $flagString = implode(',', $flagArray);
       
-      if ((0 < strlen($baseURI)) && ('/' != substr($baseURI, -1, 1))) {
-        $baseURI .= '/';
-      }
-      if ((0 < strlen($extension)) && ('.' != substr($extension, 0, 1))) {
-        $extension = '.' . $extension;
-      }
-      $uri = "{$baseURI}{$testCase}{$extension}";
+      $uri = $this->_combinePath($baseURI, testCase, $extension);
       
       $testCaseId = $this->mTestCaseIds[$testCase];
       
-      $title = html_entity_decode($title, ENT_QUOTES, 'UTF-8');
-      $assertion = html_entity_decode($assertion, ENT_QUOTES, 'UTF-8');
-      $credits = html_entity_decode($credits, ENT_QUOTES, 'UTF-8');
+      $title      = Page::Decode($title);
+      $assertion  = Page::Decode($assertion);
+      $credits    = Page::Decode($credits);
 
       $testCase   = $this->encode($testCase, TESTCASES_MAX_TESTCASE);
       $title      = $this->encode($title, TESTCASES_MAX_TITLE);
       $assertion  = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
       $credits    = $this->encode($credits, TESTCASES_MAX_CREDITS);
       $uri        = $this->encode($uri, TESTCASES_MAX_URI);
-      $flags      = $this->encode($flags);
+      $flagString = $this->encode($flagString);
 
       if (0 < $testCaseId) {
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `uri` = '{$uri}', ";
         $sql .= "`title` = '{$title}', ";
-        $sql .= "`flags` = '{$flags}', ";
+        $sql .= "`flags` = '{$flagString}', ";
         $sql .= "`assertion` = '{$assertion}', ";
         $sql .= "`credits` = '{$credits}', ";
         $sql .= "`active` = '{$active}', ";
@@ -116,7 +94,7 @@ class TestCaseImport extends DBConnection
       }
       else {
         $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `title`, `flags`, `assertion`, `credits`, `active`, `modified`) ";
-        $sql .= "VALUES ('{$uri}', '{$testSuite}', '{$testCase}', '{$title}', '{$flags}', '{$assertion}', '{$credits}', '{$active}', '{$modified}');";
+        $sql .= "VALUES ('{$uri}', '{$testSuiteName}', '{$testCase}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}', '{$active}', '{$modified}');";
         
         $this->query($sql);
         
@@ -124,25 +102,55 @@ class TestCaseImport extends DBConnection
       }
 
       if (0 < $testCaseId) {
+        $this->mTestCaseActive[$testCaseId] = TRUE;
+        
+        // verify flags
+        $sql  = "SELECT `flags` ";
+        $sql .= "FROM `testcases` ";
+        $sql .= "WHERE `id` = '{$testCaseId}' ";
+        
+        $r = $this->query($sql);
+        $storedFlags = $r->fetchField(0);
+        
+        $dbFlagArray = $this->_explodeTrimAndFilter(',', $storedFlags);
+
+        $diff = array_diff($flagArray, $dbFlagArray);
+        if (0 < count($diff)) {
+          foreach ($diff as $flag) {
+            echo "Flag not stored in database: '{$flag}'\n";
+          }
+          die("Need to update database schema to support flag(s).\n");
+        }
+
+        // update links
         $sql  = "DELETE FROM `testlinks` ";
         $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
         
         $this->query($sql);
       
-        $linkArray = explode(',', $links);
+        $linkArray = $this->_explodeTrimAndFilter(',', $links);
         foreach ($linkArray as $link) {
-          if (0 < strlen($link)) {
-            $link = $this->encode($link, TESTLINKS_MAX_URI);
-            
-            $sql  = "INSERT INTO `testlinks` (`testcase_id`, `uri`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$link}') ";
+          $link = $this->encode($link, TESTLINKS_MAX_URI);
+          
+          $sql  = "INSERT INTO `testlinks` (`testcase_id`, `uri`) ";
+          $sql .= "VALUES ('{$testCaseId}', '{$link}') ";
 
-            $this->query($sql);
-          }
+          $this->query($sql);
         }
       }
       else {
         exit("ERROR: insert failed\n");
+      }
+    }
+    
+    foreach ($this->mTestCaseIds as $testCaseId) {
+      if (! isset($this->mTestCaseActive[$testCaseId])) {
+        $sql  = "UPDATE `testcases` ";
+        $sql .= "SET `active` = '0', ";
+        $sql .= "`modified` = `modified` ";
+        $sql .= "WHERE `id` = '{$testCaseId}' ";
+        
+        $this->query($sql);
       }
     }
   }

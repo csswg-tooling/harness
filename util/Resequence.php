@@ -16,9 +16,7 @@
  * 
  ******************************************************************************/
 
-define('COMMAND_LINE', TRUE);
-
-require_once('lib/DBConnection.php');
+require_once('lib/CmdLineWorker.php');
 
 /**
  * This class regenerates the testsequence table, maintaining an ordering 
@@ -27,12 +25,11 @@ require_once('lib/DBConnection.php');
  *
  * This is meant to be run from by a periodic cron job or on the command line
  */
-class Resequence extends DBConnection
+class Resequence extends CmdLineWorker
 {
   protected $mEngines;
   protected $mTestSuites;
   protected $mCounts;
-  protected $mTestCases;
   protected $mTestCaseOptional;
   protected $mResults;
 
@@ -59,25 +56,25 @@ class Resequence extends DBConnection
     }
   }
   
-  protected function _loadTestCases($testSuite)
+  protected function _loadTestCases($testSuiteName)
   {
-    unset ($this->mTestCases);
+    unset ($this->mTestCaseIds);
     unset ($this->mTestCaseOptional);
     
     $sql  = "SELECT `id`, `testcase`, `flags` ";
     $sql .= "FROM `testcases` ";
-    $sql .= "WHERE `testsuite` = '{$testSuite}' ";
+    $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
     $sql .= "AND `active` = '1' ";
     
     $r = $this->query($sql);
     while ($testCaseData = $r->fetchRow()) {
-      $testCase   = $testCaseData['testcase'];
-      $testCaseId = $testCaseData['id'];
-      $flags      = $testCaseData['flags'];
+      $testCaseName = $testCaseData['testcase'];
+      $testCaseId   = $testCaseData['id'];
+      $flags        = $testCaseData['flags'];
 
       $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
       
-      $this->mTestCases[$testCase] = $testCaseId;
+      $this->mTestCaseIds[$testCaseName] = $testCaseId;
       $this->mTestCaseOptional[$testCaseId] = $optional;
     }
   }
@@ -99,16 +96,16 @@ class Resequence extends DBConnection
     while ($resultData = $r->fetchRow()) {
       $engine   = $resultData['engine'];
       if ('' != $engine) {
-        $testCase = $resultData['testcase'];
-        $result   = $resultData['result'];
+        $testCaseName = $resultData['testcase'];
+        $result       = $resultData['result'];
 
-        $this->mResults[$testCase][$engine][] = $result;
+        $this->mResults[$testCaseName][$engine][] = $result;
       }
     }
   }
 
 
-  protected function _processTestcase($testCaseId, $testCase, $engineResults, $optional)
+  protected function _processTestcase($testCaseId, $testCaseName, $engineResults, $optional)
   {
     $passCount = 0;
     $testInvalid = FALSE;
@@ -158,7 +155,7 @@ class Resequence extends DBConnection
         }
       }
     
-      $this->mCounts[$engine][$testCase] = ($count + 8) + ($testCaseId / 10000000);
+      $this->mCounts[$engine][$testCaseName] = ($count + 8) + ($testCaseId / 10000000);
     }
   }
   
@@ -181,14 +178,14 @@ class Resequence extends DBConnection
    */
   function rebuild()
   {
-    foreach ($this->mTestSuites as $testSuite => $sequenceQuery) {
+    foreach ($this->mTestSuites as $testSuiteName => $sequenceQuery) {
       unset ($r);
       unset ($data);
       unset ($this->mCounts);
       
-      print "Loading test cases for {$testSuite}\n";      
+      print "Loading test cases for {$testSuiteName}\n";      
 
-      $this->_loadTestCases($testSuite);
+      $this->_loadTestCases($testSuiteName);
 
       print "Querying for results {$sequenceQuery}\n";
       
@@ -196,13 +193,13 @@ class Resequence extends DBConnection
 
       print "Processing results\n";
       
-      foreach ($this->mTestCases as $testCase => $testCaseId) {
+      foreach ($this->mTestCaseIds as $testCaseName => $testCaseId) {
         $optional = $this->mTestCaseOptional[$testCaseId];
         
         unset ($engineResults);
         $engineResults[''] = 0;
-        if (array_key_exists($testCase, $this->mResults)) {
-          foreach ($this->mResults[$testCase] as $engine => $engineData) {
+        if (array_key_exists($testCaseName, $this->mResults)) {
+          foreach ($this->mResults[$testCaseName] as $engine => $engineData) {
             $engineResults[$engine]['count'] = 0;
             foreach ($engineData as $result) {
               $engineResults[$engine]['count']++;
@@ -216,7 +213,7 @@ class Resequence extends DBConnection
           }
         }
         
-        $this->_processTestCase($testCaseId, $testCase, $engineResults, $optional);
+        $this->_processTestCase($testCaseId, $testCaseName, $engineResults, $optional);
       }
           
       foreach ($this->mEngines as $engine) {
@@ -226,10 +223,10 @@ class Resequence extends DBConnection
         asort($engineCounts);
         $engine = $this->encode($engine, TESTSEQUENCE_MAX_ENGINE);
         $sequence = -1;
-        foreach ($engineCounts as $testCase => $count) {
+        foreach ($engineCounts as $testCaseName => $count) {
           $sequence++;
           
-          $testCaseId = $this->mTestCases[$testCase];
+          $testCaseId = $this->_getTestCaseId($testCaseName);
           
           $sql  = "INSERT INTO `testsequence` (`engine`, `testcase_id`, `sequence`) ";
           $sql .= "VALUES ('{$engine}', '{$testCaseId}', '{$sequence}') ";

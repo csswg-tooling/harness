@@ -16,14 +16,10 @@
  * 
  ******************************************************************************/
 
-define('COMMAND_LINE', TRUE);
+require_once("lib/CmdLineWorker.php");
 
-require_once("lib/DBConnection.php");
-
-class ReftestImport extends DBConnection
+class ReftestImport extends CmdLineWorker
 {  
-  protected $mTestCases;
-  
 
   function __construct() 
   {
@@ -31,67 +27,80 @@ class ReftestImport extends DBConnection
     
   }
   
-  protected function _loadTestCases($testSuite)
-  {
-    unset($this->mTestCases);
-
-    $sql  = "SELECT `id`, `testcase` FROM `testcases` ";
-    $sql .= "WHERE `testsuite` = '{$testSuite}' ";
-    
-    $r = $this->query($sql);
-    while ($testCase = $r->fetchRow()) {
-      $this->mTestCases[$testCase['testcase']] = $testCase['id'];
-    }
-  }
   
-
-  protected function _getFileName($path)
+  function import($manifest, $testSuiteName, $baseURI)
   {
-    $pathInfo = pathinfo($path);
-    
-    if (isset($pathInfo['filename'])) { // PHP 5.2+
-      return $pathInfo['filename'];
-    }
-    return basename($pathInfo['basename'], '.' . $pathInfo['extension']);
-  }
-  
-
-  function import($manifest, $testSuite, $baseURI)
-  {
-    $this->_loadTestCases($testSuite);
+    $this->_loadTestCases($testSuiteName);
+    $this->_loadReferences($testSuiteName);
     
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
     foreach ($data as $record) {
-      list ($type, $testCase, $reference) = explode(' ', $record);
+      list ($type, $testCaseName, $referencePath) = explode(' ', $record);
       
-      $testCase = $this->_getFileName($testCase);
-      $uri = $baseURI . $reference;
-      $reference = $this->_getFileName($reference);
-      $testCaseID = $this->mTestCases[$testCase];
+      $testCaseName = $this->_getFileName($testCaseName);
+      $uri = $this->_combinePath($baseURI, $referencePath);
+      $referenceName = $this->_getFileName($referencePath);
+      $testCaseId = $this->_getTestCaseId($testCaseName);
       
-      $this->encode($reference, 255);
-      $this->encode($uri, 255);
+      $this->encode($referenceName, REFERENCES_MAX_REFERENCE);
+      $this->encode($uri, REFERENCES_MAX_URI);
       if (('==' != $type) && ('!=' != $type)) {
         die("ERROR: bad type {$type}\n");
       }
       
-      if (0 != $testCaseID) {
-        $sql  = "INSERT INTO `references` (`testcase_id`, `reference`, `uri`, `type`) ";
-        $sql .= "VALUES ('{$testCaseID}', '{$reference}', '{$uri}', '{$type}');";
+      if ($testCaseId) {
+        $testCaseHasReference[$testCaseId] = TRUE;
         
-        $this->query($sql);
-        
-        $sql  = "UPDATE `testcases` ";
-        $sql .= "SET `flags` = CONCAT(`flags`,',reftest'), `modified` = `modified` ";
-        $sql .= "WHERE `id` = {$testCaseID} ";
-        
-        $this->query($sql);
+        $referenceId = $this->_getReferenceId($testCaseId, $referenceName);
+        if ($referenceId) { // existing reference, update it
+          $sql  = "UPDATE `references` ";
+          $sql .= "SET `uri` = '{$uri}', `type` = '{$type}' ";
+          $sql .= "WHERE `id` = '{$referenceId}' ";
+          
+          $this->query($sql);
+          
+          $usedReferenceIds[$referenceId] = TRUE;
+        }
+        else {  // new reference
+          $sql  = "INSERT INTO `references` (`testcase_id`, `reference`, `uri`, `type`) ";
+          $sql .= "VALUES ('{$testCaseId}', '{$referenceName}', '{$uri}', '{$type}');";
+          
+          $this->query($sql);
+          
+          $sql  = "UPDATE `testcases` ";
+          $sql .= "SET `flags` = CONCAT(`flags`, ',reftest'), `modified` = `modified` ";
+          $sql .= "WHERE `id` = {$testCaseId} ";
+          
+          $this->query($sql);
+        }
       }
       else {
-        echo "ERROR: unknown testcase '{$testCase}'\n";
+        echo "ERROR: unknown testcase '{$testCaseName}'\n";
       }
+    }
+    
+    // find old references no longer used and delete them
+    foreach ($this->mReferences as $referenceData) {
+      $referenceId = $referenceData['id'];
       
+      if (! isset($usedReferenceIds[$referenceId])) {
+        $sql  = "DELETE FROM `references` ";
+        $sql .= "WHERE `id` = '{$referenceId}' ";
+        
+        $this->query($sql);
+      }
+    }
+    
+    // clear reftest flags for tests that no longer have references
+    foreach ($this->mTestCaseIds as $testCaseId) {
+      if (! isset($testCaseHasReference[$testCaseId])) {
+        $sql  = "UPDATE `testacses` ";
+        $sql .= "SET `flags` = REPLACE(`flags`, 'reftest', ''), `modified` = `modified` ";
+        $sql .= "WHERE `id` = {$testCaseId} ";
+        
+        $this->query($sql);
+      }
     }
   }
 }

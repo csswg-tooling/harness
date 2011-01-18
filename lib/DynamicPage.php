@@ -44,14 +44,14 @@ class DynamicPage extends Page
    * @param array
    * @return array
    */
-  static function _ConditionInput($input)
+  static function ConditionInput($input)
   {
     $output = array();
     if (is_array($input) && (0 < count($input))) {
       if (get_magic_quotes_gpc()) {
         foreach ($input as $key => $value) {
           if (is_array($value)) {
-            $output[strtolower($key)] = DynamicPage::_ConditionInput($value);
+            $output[strtolower($key)] = DynamicPage::ConditionInput($value);
           }
           else {
             $output[strtolower($key)] = stripslashes($value);
@@ -80,9 +80,9 @@ class DynamicPage extends Page
     $this->mErrorContext = null;
     set_error_handler(array(&$this, 'errorHandler'));
     
-    $this->mGetData = DynamicPage::_ConditionInput($_GET);
-    $this->mPostData = DynamicPage::_ConditionInput($_POST);
-    $this->mRequestData = DynamicPage::_ConditionInput($_REQUEST);
+    $this->mGetData = DynamicPage::ConditionInput($_GET);
+    $this->mPostData = DynamicPage::ConditionInput($_POST);
+    $this->mRequestData = DynamicPage::ConditionInput($_REQUEST);
 
   }  
 

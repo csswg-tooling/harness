@@ -16,15 +16,11 @@
  * 
  ******************************************************************************/
 
-define('COMMAND_LINE', TRUE);
-  
-require_once("lib/DBConnection.php");
+require_once("lib/CmdLineWorker.php");
   
 
-class GrandfatherImport extends DBConnection
+class GrandfatherImport extends CmdLineWorker
 {  
-  protected $mTestCases;
-  protected $mReferences;
   protected $mDiffs;
   
   function __construct() 
@@ -33,41 +29,7 @@ class GrandfatherImport extends DBConnection
     
   }
   
-  protected function _loadTestCases($testSuite)
-  {
-    $sql  = "SELECT `id`, `testcase` FROM `testcases` ";
-    $sql .= "WHERE `testsuite` = '{$testSuite}' ";
-    
-    $r = $this->query($sql);
-    
-    while ($testCase = $r->fetchRow()) {
-      $this->mTestCases[$testCase['testcase']] = $testCase['id'];
-    }
-  }
-  
-  protected function _loadReferences($testSuite)
-  {
-    $sql  = "SELECT `references`.`testcase_id`, `references`.`reference` ";
-    $sql .= "FROM `references` INNER JOIN `testcases` ";
-    $sql .= "ON `references`.`testcase_id` = `testcases`.`id` ";
-    $sql .= "WHERE `testcases`.`testsuite` = '{$testSuite}' ";
-    
-    $r = $this->query($sql);
-    
-    $this->mReferences = $r->fetchTable();
-  }
-  
-  protected function _getFileName($path)
-  {
-    $pathInfo = pathinfo($path);
-    
-    if (isset($pathInfo['filename'])) { // PHP 5.2+
-      return $pathInfo['filename'];
-    }
-    return basename($pathInfo['basename'], '.' . $pathInfo['extension']);
-  }
 
-  
   function loadDiffs($diffFile)
   {
     $data = file($diffFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -80,13 +42,13 @@ class GrandfatherImport extends DBConnection
     foreach ($data as $record) {
       $fields = explode(' ', $record);
       if ("Files" == $fields[0]) {
-        $testCase = $this->_getFileName($fields[1]);
-        $this->mDiffs[$testCase] = ('identical' == end($fields));
+        $testCaseName = $this->_getFileName($fields[1]);
+        $this->mDiffs[$testCaseName] = ('identical' == end($fields));
       }
       else {
         if ("Only" == $fields[0]) {
-          $testCase = $this->_getFileName(end($fields));
-          $this->mDiffs[$testCase] = FALSE;
+          $testCaseName = $this->_getFileName(end($fields));
+          $this->mDiffs[$testCaseName] = FALSE;
         }
         else {
           exit("ERROR: unknown diff file format\n");
@@ -95,18 +57,20 @@ class GrandfatherImport extends DBConnection
     }
   }
   
-  function grandfather($testSuite)
+  
+  // XXX does not handle changes in support files
+  function grandfather($testSuiteName)
   {
     // check test cases for changes
-    $this->_loadTestCases($testSuite);
+    $this->_loadTestCases($testSuiteName);
     
-    foreach ($this->mTestCases as $testCase => $testCaseId) {
-      if (isset($this->mDiffs[$testCase])) {
-        $identical = $this->mDiffs[$testCase];
+    foreach ($this->mTestCaseIds as $testCaseName => $testCaseId) {
+      if (isset($this->mDiffs[$testCaseName])) {
+        $identical = $this->mDiffs[$testCaseName];
       }
       else {
         $identical = FALSE;
-        echo "No data for {$testSuite}:{$testCase}\n";
+        echo "No diff data for {$testSuiteName}:{$testCaseName}\n";
       }
       
       if (0 != $testCaseId) {
@@ -123,12 +87,12 @@ class GrandfatherImport extends DBConnection
         $this->query($sql);
       }
       else {
-        exit("ERROR: unknown testcase '{$testCase}'\n");
+        exit("ERROR: unknown testcase '{$testCaseName}'\n");
       }
     }
 
     // look for changed references
-    $this->_loadReferences($testSuite);
+    $this->_loadReferences($testSuiteName);
     
     foreach ($this->mReferences as $referenceData) {
       $reference = $referenceData['reference'];
@@ -139,13 +103,13 @@ class GrandfatherImport extends DBConnection
       }
       else {
         $identical = FALSE;
-        echo "No data for {$testSuite}:{$reference}\n";
+        echo "No diff data for reference {$testSuiteName}:{$reference}\n";
       }
       // XXX this handles added references, but does not detect removed references
       
       if (0 != $testCaseId) {
         if (! $identical) {
-          echo "{$reference} changed\n";
+          echo "reference '{$reference}' changed\n";
           $sql  = "UPDATE `testcases` ";
           $sql .= "SET `grandfather` = '0', `testgroup` = 'changed', `modified` = `modified` ";
           $sql .= "WHERE `id` = '{$testCaseId}'";

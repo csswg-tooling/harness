@@ -104,7 +104,7 @@ class DBConnection
       assert('strlen($string) <= $maxLength');
       return mysql_real_escape_string(substr(trim($string), 0, $maxLength), $this->mDatabaseLink);
     }
-    return mysql_real_escape_string($string, $this->mDatabaseLink);
+    return mysql_real_escape_string(trim($string), $this->mDatabaseLink);
   }
   
 }

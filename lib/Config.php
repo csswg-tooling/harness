@@ -56,6 +56,9 @@ define('SPIDER_POST_PROCESS_COMMAND', '/sbin/iptables-save > /etc/firewall.conf'
 /**
  * Max field lengths for database tables
  */
+define('REFERENCES_MAX_REFERENCE', 255);
+define('REFERENCES_MAX_URI', 255);
+
 define('RESULTS_MAX_SOURCE', 16);
 
 define('SPIDERTRAP_MAX_IP', 15);

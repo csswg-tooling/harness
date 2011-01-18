@@ -16,103 +16,92 @@
  * 
  ******************************************************************************/
  
-define('COMMAND_LINE', TRUE);
 
-require_once("lib/DBConnection.php");
-
+require_once("lib/CmdLineWorker.php");
+require_once("lib/UserAgent.php");
 
 /**
- * Under construction XXX
+ * Import results from implementation report files
  */
-class ImplementationReportImport extends DBConnection
+class ImplementationReportImport extends CmdLineWorker
 {  
 
 
   function __construct() 
   {
-    parent::_construct();
-
+    parent::__construct();
+    
   }
 
 
-  function import()
+  function import($reportFileName, $testSuiteName, $userAgentString, $source, $modified)
   {
-    $sql =  "SELECT id, testsuite, testcase FROM testcases";
-    $r = $this->query($sql);
+    $userAgent = new UserAgent($userAgentString);
+    $userAgent->update(); // force UA string into database and load Id
+    $userAgentId = $userAgent->getId();
     
-    while ($result = $r->fetchRow()) {
-      $testcase_id = $result['id'];
-      $test_suite  = $result['testsuite'];
-      $test_case   = $result['testcase'];
-      
-      $id[$test_suite][$test_case] = $testcase_id;
-    }
+    $this->_loadTestCases($testSuiteName);
+    $source = $this->encode($source, RESULTS_MAX_SOURCE);
+
+
+    $validResults = array("pass", "fail", "uncertain", "na", "invalid");
     
-    $sql =  "SELECT * FROM ir_import WHERE testcase_id='0'";
+    $data = file($reportFileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
-    $r = $this->query($sql);
-    while ($result = $r->fetchRow()) {
-      $test_suite   = $result['testsuite'];
-      $test_case    = $result['testcase'];
-      
-      print "{$test_suite} / {$test_case} = ";
-      $testcase_id = $id[$test_suite][$test_case];
-      print "{$testcase_id}\n";        
-      if (0 < $testcase_id) {
-        $sql  = "UPDATE ir_import SET testcase_id='{$testcase_id}' ";
-        $sql .= "WHERE testsuite='{$test_suite}' AND testcase='{$test_case}'";
+    // verify data set before import
+    foreach ($data as $record) {
+      $record = trim($record);
+      if (0 !== strpos($record, '#')) { // comment
+        list ($testCasePath, $result) = explode("\t", $record . "\t");
         
-        $this->query($sql);
+        if ($testCasePath && $result) {
+          $result = strtolower(trim($result));
+          
+          if (! in_array($result, $validResults)) {
+            die("Invalid result: '{$result}'\n");
+          }
+        
+          $testCaseName = trim(pathinfo($testCasePath, PATHINFO_BASENAME));
+          $testCaseId = $this->_getTestCaseId($testCaseName);
+          
+          if (! $testCaseId) {
+            die("Unknown test case: '{$testCaseName}'.\n");
+          }
+        }
       }
     }
-    
-    
-/*    
-    $sql =  "SELECT * FROM ir_import WHERE testcase_id='0'";
-    
-    $r = $this->query($sql);
-    $data = $r->fetchTable();
-    
-    foreach ($data as $result) {
-      $test_suite   = $result['testsuite'];
-      $test_case    = $result['testcase'];
-      $useragent_id = $result['useragent_id'];
-      $source       = $result['source'];
-      $modified     = $result['modified'];
-      
-print "{$test_suite} / {$test_case} = ";
-      $sql  = "SELECT id FROM testcases ";
-      $sql .= "WHERE testsuite='{$test_suite}' AND testcase='{$test_case}'";
-      
-      $r = $this->query($sql);
-      if ($r->succeeded()) {
-        $testcase_id = $r->fetchField(0, 'id');
-print "{$testcase_id}\n";        
-        if (0 < $testcase_id) {
-          $sql  = "UPDATE ir_import SET testcase_id='{$testcase_id}' ";
-          $sql .= "WHERE testsuite='{$test_suite}' AND testcase='{$test_case}'";
+
+    // import results
+    foreach ($data as $record) {
+      $record = trim($record);
+      if (0 !== strpos($record, '#')) { // comment
+        list ($testCasePath, $result, $comment) = explode("\t", $record . "\t\t");
+        
+        if ($testCasePath && $result) {
+          $result = strtolower(trim($result));
+          $testCaseName = trim(pathinfo($testCasePath, PATHINFO_BASENAME));
+          $testCaseId = $this->_getTestCaseId($testCaseName);
           
+          // XXX store comment if present
+          $sql  = "INSERT INTO `results` ";
+          if ($modified) {
+            $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`, `modified`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}', '{$modified}')";  
+          }
+          else {
+            $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}')";  
+          }
+  
           $this->query($sql);
         }
       }
     }
-*/
-    
-/*
- 
- INSERT INTO results (testcase_id, useragent_id, source, result, modified) 
- SELECT testcase_id, useragent_id, source, result, modified FROM ir_import
-
- UPDATE ir_import, testcases SET ir_import.testcase_id=testcases.id 
- WHERE ir_import.testsuite=testcases.testsuite AND ir_import.testcase=testcases.testcase
- 
- UPDATE ir_import LEFT JOIN testcases ON ir_import.testsuite=testcases.testsuite AND ir_import.testcase=testcases.testcase
- SET testcase_id=id 
- */
   }
 }
 
 $worker = new ImplementationReportImport();
-$worker->import();
+
+$worker->import("prince.data", "CSS21_HTML_RC5", "Prince/7.1 (http://www.princexml.com; Linux i686)", "ms2ger@gmail.com", "2011-01-15 12:01:00");
 
 ?>

@@ -32,12 +32,24 @@ class UserAgent extends DBConnection
     parent::__construct();
     
     if ($id) {
-      $this->mInfo = $this->_queryById($id);
+      if (is_integer($id)) {
+        $this->mInfo = $this->_queryById($id);
+      }
+      elseif (is_string($id)) {
+        $this->mInfo = $this->_queryByString($id);
+        
+        if (! $this->mInfo) {
+          $this->mInfo = $this->_parseUAString($id);
+        }
+      }
     }
-    if (isset($this->mInfo)) {  // passed a UA id
-      $uaString = $_SERVER['HTTP_USER_AGENT'];
-      if ($uaString != $this->getUAString()) {  // and it's not the actual UA
-        $this->mActualUA = new UserAgent(); // capture actual UA info
+    
+    if (isset($this->mInfo)) {  // passed a valid UA id or string
+      if (array_key_exists('HTTP_USER_AGENT', $_SERVER)) {
+        $uaString = $_SERVER['HTTP_USER_AGENT'];
+        if ($uaString != $this->getUAString()) {  // and it's not the actual UA
+          $this->mActualUA = new UserAgent(); // capture actual UA info
+        }
       }
     }
     else {  // determine UA from server
@@ -407,7 +419,7 @@ class UserAgent extends DBConnection
   {
     $id = $this->getId();
     if (0 < $id) {
-      $ua = $this->parseUAString($this->getUAString());
+      $ua = $this->_parseUAString($this->getUAString());
       $ua['id'] = $id;
 
       $sql  = "UPDATE `useragents` SET ";

@@ -18,7 +18,7 @@
 
 require_once('lib/Config.php');
 require_once('lib/DBConnection.php');
-require_once('lib/Page.php');  
+require_once('lib/DynamicPage.php');  
 
 class SpiderTrap
 {
@@ -42,6 +42,7 @@ class SpiderTrap
     $largeNumber = mt_rand(1000000, 9999999999);
     if ($this->mPageQuery) {
       parse_str($this->mPageQuery, $query);
+      $query = DynamicPage::ConditionInput($query);
       $query['seq'] = ++$this->mSequence;
       $query['uid'] = $largeNumber;
       $queryStr = http_build_query($query, 'var_');
