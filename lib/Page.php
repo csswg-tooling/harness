@@ -38,6 +38,37 @@ class Page
     return html_entity_decode($string, ENT_QUOTES, 'UTF-8');
   }
   
+  /**
+   * Static helper function to build URI with query string
+   * 
+   * @param string base uri
+   * @param array associative array of aurguments
+   * @return string URL encoded
+   */
+  static function BuildURI($baseURI, $queryArgs)
+  {
+    if (0 < count($queryArgs)) {
+      if ('?' != substr($baseURI, -1, 1)) {
+        $baseURI .= '?';
+      }
+      return $baseURI . http_build_query($queryArgs, 'var_');
+    }
+    return $baseURI;
+  }
+  
+  /**
+   * Static helper function to build URI with query string
+   * result is encoded ready for HTML output
+   * 
+   * @param string base uri
+   * @param array associative array of aurguments
+   * @return string URL encoded
+   */
+  static function EncodeURI($baseURI, $queryArgs)
+  {
+    return Page::Encode(Page::BuildURI($baseURI, $queryArgs));
+  }
+  
   static function GetClientIP()
   {
     if (! empty($_SERVER['REMOTE_ADDR'])) {

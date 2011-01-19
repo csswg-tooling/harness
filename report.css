@@ -71,18 +71,6 @@ td {
   font-size: 0.9em;
 }
 
-/* flags */
-td abbr {
-  border: solid thin gray;
-  padding: 0 0.1em;
-  cursor: help;
-}
-td abbr:hover {
-  background: #ffa;
-  color: black;
-}
-
-
 tr:hover {
   background: #F9F9F9;
   color: navy;

@@ -34,17 +34,30 @@ define('DB_NAME', 'testharness');
 define('CONTACT_URI', 'http://lists.w3.org/Archives/Public/public-css-testsuite');
 define('CONTACT_NAME', 'public-css-testsuite@w3.org');
 
+
+/**
+ * URIs used within the harness
+ */
+define('TESTSUITE_PAGE_URI', 'testsuite');
+define('TESTCASE_PAGE_URI', 'testcase');
+define('REVIEW_PAGE_URI', 'review');
+define('RESULTS_PAGE_URI', 'results');
+define('DETAILS_PAGE_URI', 'details');
+define('SUBMIT_PAGE_URI', 'submit');
+define('SUCCESS_PAGE_URI', 'success');
+
+ 
 /**
  * Spider trap config
  *
- * URL to use for spider trap
+ * URI to use for spider trap
  * Number of visits to trigger ban (within test period)
  * Period to test for spider behavior (days)
  * Period to ban activity (days)
  * Shell commands to ban & release spiders
  * Post process command to run after ban/release
  */
-define('SPIDER_TRAP_URL', 'report');
+define('SPIDER_TRAP_URI', 'report');
 define('SPIDER_BAN_THRESHOLD', 2);
 define('SPIDER_TEST_PERIOD', 3);
 define('SPIDER_BAN_PERIOD', 7);

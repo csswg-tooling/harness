@@ -44,9 +44,9 @@ class SuccessPage extends HarnessPage
     
     if ($this->mTestSuite) {
       $title = "Enter Data";
-      $query['s'] = $this->mTestSuite->getName();
-      $query['u'] = $this->mUserAgent->getId();
-      $uri = "testsuite?" . http_build_query($query, 'var_');
+      $args['s'] = $this->mTestSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+      $uri = Page::BuildURI(TESTSUITE_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Success";
@@ -64,13 +64,13 @@ class SuccessPage extends HarnessPage
     echo $indent . "  " . Page::Encode($this->mTestSuite->getTitle()) . "\n";
 		echo $indent . "</p>\n";
 
-    $query['s'] = $this->mTestSuite->getName();
-    $reviewURI = Page::Encode("review?" . http_build_query($query, 'var_'));
+    $args['s'] = $this->mTestSuite->getName();
+    $reviewURI = Page::EncodeURI(REVIEW_PAGE_URI, $args);
     
     if ($this->_getData('u')) {
-      $query['u'] = $this->_getData('u');
+      $args['u'] = $this->_getData('u');
     }
-    $enterURI = Page::Encode("testsuite?" . http_build_query($query, 'var_'));
+    $enterURI = Page::EncodeURI(TESTSUITE_PAGE_URI, $args);
 
 		echo $indent . "<p>\n";
 		echo $indent . "  You can <a href='{$enterURI}'>enter additional data</a>, \n";

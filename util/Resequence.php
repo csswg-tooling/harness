@@ -17,6 +17,8 @@
  ******************************************************************************/
 
 require_once('lib/CmdLineWorker.php');
+require_once('lib/TestSuites.php');
+require_once('lib/TestSuite.php');
 
 /**
  * This class regenerates the testsequence table, maintaining an ordering 
@@ -46,20 +48,15 @@ class Resequence extends CmdLineWorker
       $this->mEngines[] = $dbEngine['engine'];
     }
 
-    $sql  = "SELECT DISTINCT `testsuite`, `sequence_query` ";
-    $sql .= "FROM `testsuites` ";
-    $sql .= "WHERE `active` = '1' ";
-    $sql .= "ORDER BY `testsuite` ";
-    $r = $this->query($sql);
-    while ($dbTestSuite = $r->fetchRow()) {
-      $this->mTestSuites[$dbTestSuite['testsuite']] = $dbTestSuite['sequence_query'];
-    }
+    $this->mTestSuites = new TestSuites();
   }
   
   protected function _loadTestCases($testSuiteName)
   {
     unset ($this->mTestCaseIds);
     unset ($this->mTestCaseOptional);
+
+    $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
     
     $sql  = "SELECT `id`, `testcase`, `flags` ";
     $sql .= "FROM `testcases` ";
@@ -82,6 +79,8 @@ class Resequence extends CmdLineWorker
   protected function _loadResults($testSuiteQuery)
   {
     unset ($this->mResults);
+
+    $testSuiteQuery = $this->encode($testSuiteQuery);
 
     $sql  = "SELECT `testcases`.`testcase`, `useragents`.`engine`, `results`.`result` ";
     $sql .= "FROM `results` INNER JOIN (`testcases`, `useragents`) ";
@@ -178,7 +177,10 @@ class Resequence extends CmdLineWorker
    */
   function rebuild()
   {
-    foreach ($this->mTestSuites as $testSuiteName => $sequenceQuery) {
+    foreach ($this->mTestSuites->getTestSuites() as $testSuite) {
+      $testSuiteName = $testSuite->getName();
+      $sequenceQuery = $testSuite->getSequenceQuery();
+       
       unset ($r);
       unset ($data);
       unset ($this->mCounts);

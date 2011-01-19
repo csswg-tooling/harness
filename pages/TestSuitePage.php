@@ -138,7 +138,7 @@ class TestSuitePage extends HarnessPage
     echo $indent . "<ul>\n";
     
     echo $indent . "  <li>\n";
-    echo $indent . "    <form action='testcase' method='get'>\n";
+    echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
     $this->writeHiddenFormData($indent . '      ');
     echo $indent . "      <strong>The full test suite:</strong>\n";
     $this->writeOrderSelect($indent . '      ');
@@ -148,7 +148,7 @@ class TestSuitePage extends HarnessPage
     
     if (0 < $this->mTestGroups->getCount()) {
       echo $indent . "  <li>\n";
-      echo $indent . "    <form action='testcase' method='get'>\n";
+      echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
       $this->writeHiddenFormData($indent . '      ');
       echo $indent . "      A group of test cases:\n";
       $this->writeTestGroupSelect($indent . '      ');
@@ -159,7 +159,7 @@ class TestSuitePage extends HarnessPage
     }
 
     echo $indent . "  <li>\n";
-    echo $indent . "    <form action='testcase' method='get'>\n";
+    echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
     $this->writeHiddenFormData($indent . '      ');
     echo $indent . "      A single test case:\n";
     echo $this->writeTestCaseSelect($indent . '      ');

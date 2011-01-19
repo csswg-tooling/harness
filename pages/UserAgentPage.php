@@ -37,12 +37,12 @@ class UserAgentPage extends HarnessPage
     // XXX need to accept user agent string and initialize mUserAgent with it
     
     if ($this->mTestSuite) {
-      $query['s'] = $this->mTestSuite->getName();
+      $args['s'] = $this->mTestSuite->getName();
       
       $this->mUserAgent->update();
-      $query['u'] = $this->mUserAgent->getId();
+      $args['u'] = $this->mUserAgent->getId();
 
-      $this->mNewURI = 'testsuite?' . http_build_query($query, 'var_');
+      $this->mNewURI = Page::BuildURI(TESTSUITE_PAGE_URI, $args);
     }
 
   }  

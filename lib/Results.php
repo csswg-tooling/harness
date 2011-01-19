@@ -43,7 +43,7 @@ class Results extends DBConnection
   protected $mTestCaseNeededCountPerEngine;   // number of needed results per engine
     
 
-  function __construct($testSuiteName, $testCaseName, $testGroupName,
+  function __construct($testSuiteName, $testSuiteQuery, $testCaseName, $testGroupName,
                        $engine, $engineVersion, $platform, 
                        $grouping, $modified, $filter)
   {
@@ -59,20 +59,20 @@ class Results extends DBConnection
       $this->mTestCaseNeededCountPerEngine[$dbEngine['engine']] = 0;
     }
     $this->mEngineCount = count($this->mEngines);
-    
-    $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
+
+    $testSuiteQuery = $this->encode($testSuiteQuery);
 
     $sql  = "SELECT DISTINCT `testcase`, `flags` ";
     $sql .= "FROM `testcases` ";
-    $sql .= "WHERE `testsuite` LIKE '{$testSuiteName}' ";
+    $sql .= "WHERE `testsuite` LIKE '{$testSuiteQuery}' ";
     $sql .= "AND `active` = '1' ";
     if ($testCaseName) {
       $testCaseName = $this->encode($testCaseName, TESTCASES_MAX_TESTCASE);
-      $sql .= "AND `testcase` LIKE '{$testCaseName}' ";
+      $sql .= "AND `testcase` = '{$testCaseName}' ";
     }
     elseif ($testGroupName) {
       $testGroupName = $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP);
-      $sql .= "AND `testgroup` LIKE '{$testGroupName}' ";
+      $sql .= "AND `testgroup` = '{$testGroupName}' ";
     }
     $sql .= "ORDER BY `testcase` ";
     
@@ -85,7 +85,7 @@ class Results extends DBConnection
     $sql .= "FROM `results` INNER JOIN (`testcases`, `useragents`) ";
     $sql .= "ON `results`.`testcase_id` = `testcases`.`id` ";
     $sql .= "AND `results`.`useragent_id` = `useragents`.`id` ";
-    $sql .= "WHERE `testcases`.`testsuite` LIKE '{$testSuiteName}' ";
+    $sql .= "WHERE `testcases`.`testsuite` LIKE '{$testSuiteQuery}' ";
     $sql .= "AND `testcases`.`active` = '1' AND `results`.`ignore` = '0' ";
     $sql .= "AND `results`.`result` != 'na' ";
     if ($modified) {
@@ -109,25 +109,24 @@ class Results extends DBConnection
     while ($resultData = $r->fetchRow()) {
       $engine   = $resultData['engine'];
       if ('' != $engine) {
-        $testCase = $resultData['testcase'];
-        $result   = $resultData['result'];
-        $this->mResults[$testCase][$engine][] = $result;
+        $testCaseName = $resultData['testcase'];
+        $result       = $resultData['result'];
+        $this->mResults[$testCaseName][$engine][] = $result;
       }
     }
   }
   
-  function _generateRow($indent, $testcase, $engineResults, $optional, $spiderTrap)
+  function _generateRow($indent, $testCaseName, $engineResults, $optional, $spiderTrap)
   {
-    $row  = "<td>";
-    $row .= $spiderTrap->getTrapLink();
-    $row .= "<a href='details?s={$this->mTestSuiteName}&c={$testcase}' target='details'>{$testcase}</a></td>";
-
+    $hasResults   = FALSE;
     $testInvalid  = FALSE;
     $passCount    = 0;
     $failCount    = 0;
+    $row = '';
     foreach ($this->mEngines as $engine) {
       $engineMissing[$engine] = TRUE;
       if (array_key_exists($engine, $engineResults)) {
+        $hasResults = TRUE;
         $pass      = ((array_key_exists('pass', $engineResults[$engine])) ? $engineResults[$engine]['pass'] : 0);
         $fail      = ((array_key_exists('fail', $engineResults[$engine])) ? $engineResults[$engine]['fail'] : 0);
         $uncertain = ((array_key_exists('uncertain', $engineResults[$engine])) ? $engineResults[$engine]['uncertain'] : 0);
@@ -157,7 +156,11 @@ class Results extends DBConnection
           $class .= 'na ';
         }
         $row .= "<td class='{$class}'>";
-        $row .= "<a href='details?s={$this->mTestSuiteName}&c={$testcase}&e={$engine}' target='details'>";
+        $args['s'] = $this->mTestSuiteName;
+        $args['c'] = $testCaseName;
+        $args['e'] = $engine;
+        $detailsURI = Page::EncodeURI(DETAILS_PAGE_URI, $args);
+        $row .= "<a href='{$detailsURI}' target='details'>";
         $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $uncertain) ? $uncertain : '.');
@@ -215,7 +218,32 @@ class Results extends DBConnection
       }
     }
     if ($display) {
-      echo $indent . "  <tr class='{$class}'>{$row}</tr>\n";
+      echo $indent . "  <tr class='{$class}'>";
+      echo "<td>{$spiderTrap->getTrapLink()}";
+      unset($args);
+      $args['s'] = $this->mTestSuiteName;
+      $args['c'] = $testCaseName;
+      if ($hasResults) {
+        $uri = Page::EncodeURI(DETAILS_PAGE_URI, $args);
+        $uriTarget = " target='details'";
+      }
+      else {
+//XXX        $args['u'] = $this->mUserAgent->getId();   when moved to resultsPage
+        $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+        $uriTarget = '';
+      }
+      echo "<a href='{$uri}'{$uriTarget}>{$testCaseName}</a></td>";
+      echo "{$row}</tr>\n";
+
+/* XXX, need a trigger to dump URLs only 
+// XXX get base URL from testsuite
+      $sql  = "SELECT `uri` FROM `testcases` ";
+      $sql .= "WHERE `testcase` = '{$testCaseName}' AND `testsuite` = '{$this->mTestSuiteName}' ";
+      $sql .= "AND `active` = '1' ";
+      $r = $this->query($sql);
+      $uri = $r->fetchField(0, 'uri');
+      echo $indent . "  <tr class='{$class}'><td>http://test.csswg.org/suites/css2.1/20110111/{$uri}</td></tr>\n";
+*/      
     }
   }
 
@@ -224,6 +252,7 @@ class Results extends DBConnection
    * @param string $indent Indent before HTML output
    * @param SpiderTrap $spiderTrap Spider Trap to use for generating bait links
    */
+  // XXX this needs to be moved to ResultsPage
   function write($indent, $spiderTrap)
   {
     if ($this->mTestCases && $this->mResults) {
@@ -245,15 +274,15 @@ class Results extends DBConnection
       $this->mTestCaseTooManyFails = 0;
   
       foreach ($this->mTestCases as $testCaseData) {
-        $testCase   = $testCaseData['testcase'];
-        $flags      = $testCaseData['flags'];
+        $testCaseName = $testCaseData['testcase'];
+        $flags        = $testCaseData['flags'];
 
         $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
         
         unset($engineResults);
         $engineResults[''] = 0;
-        if (array_key_exists($testCase, $this->mResults)) {
-          foreach ($this->mResults[$testCase] as $engine => $engineData) {
+        if (array_key_exists($testCaseName, $this->mResults)) {
+          foreach ($this->mResults[$testCaseName] as $engine => $engineData) {
             $engineResults[$engine]['count'] = 0;
             foreach ($engineData as $result) {
               $engineResults[$engine]['count']++;
@@ -267,7 +296,7 @@ class Results extends DBConnection
           }
         }
 
-        $this->_generateRow($indent, $testCase, $engineResults, $optional, $spiderTrap);
+        $this->_generateRow($indent, $testCaseName, $engineResults, $optional, $spiderTrap);
       }
       
       echo $indent . "</table>\n";

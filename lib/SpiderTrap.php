@@ -41,18 +41,13 @@ class SpiderTrap
   {
     $largeNumber = mt_rand(1000000, 9999999999);
     if ($this->mPageQuery) {
-      parse_str($this->mPageQuery, $query);
-      $query = DynamicPage::ConditionInput($query);
-      $query['seq'] = ++$this->mSequence;
-      $query['uid'] = $largeNumber;
-      $queryStr = http_build_query($query, 'var_');
+      parse_str($this->mPageQuery, $args);
+      $args = DynamicPage::ConditionInput($args);
     }
-    else {
-      $queryStr  = 'seq=' . ++$this->mSequence;
-      $queryStr .= "&uid={$largeNumber}";
-    }
-    $queryStr = Page::Encode($queryStr);
-    $link = "<a href='" . SPIDER_TRAP_URL . "?{$queryStr}' class='report'>{$this->mSequence}-{$largeNumber}</a>";
+    $args['seq'] = ++$this->mSequence;
+    $args['uid'] = $largeNumber;
+    $uri = Page::EncodeURI(SPIDER_TRAP_URI, $args);
+    $link = "<a href='{$uri}' class='report'>{$this->mSequence}-{$largeNumber}</a>";
     return $link;
   }
 

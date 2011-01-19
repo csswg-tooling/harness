@@ -27,44 +27,41 @@ class ResultDetails extends DBConnection
   protected $mData;
 
 
-  function __construct($testSuiteName, $testCaseName, $testGroupName,
+  function __construct($testSuiteQuery, $testCaseName, $testGroupName,
                        $engine, $engineVersion, $platform, 
                        $grouping, $modified, $order)
   {
     parent::__construct();
     
-    $sql  = "SELECT Testcase, Result, ";
-    $sql .= "Engine, Engine_Version, ";
-    $sql .= "Browser, Browser_Version, ";
-    $sql .= "Platform, ";
-    $sql .= "results.modified AS Date, Source, Useragent ";
-    $sql .= "FROM testcases LEFT JOIN (results, useragents) ";
-    $sql .= "ON (testcases.id = results.testcase_id AND results.useragent_id = useragents.id) ";
-    $sql .= "WHERE testcases.testsuite LIKE '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
-    $sql .= "AND testcases.active = '1' ";
-    $sql .= "AND results.ignore = '0' ";
+    $sql  = "SELECT `testcase`, `testsuite`, `result`, ";
+    $sql .= "`results`.`modified` AS `date`, `source`, `results`.`useragent_id` ";
+    $sql .= "FROM `testcases` LEFT JOIN (`results`, `useragents`) ";
+    $sql .= "ON (`testcases`.`id` = `results`.`testcase_id` AND `results`.`useragent_id` = `useragents`.`id`) ";
+    $sql .= "WHERE `testcases`.`testsuite` LIKE '" . $this->encode($testSuiteQuery, TESTCASES_MAX_TESTSUITE) . "' ";
+    $sql .= "AND `testcases`.`active` = '1' ";
+    $sql .= "AND `results`.`ignore` = '0' ";
     
     if ($testCaseName) {
-      $sql .= "AND testcases.testcase LIKE '" . $this->encode($testCaseName, TESTCASES_MAX_TESTCASE) . "' ";
+      $sql .= "AND `testcases`.`testcase` = '" . $this->encode($testCaseName, TESTCASES_MAX_TESTCASE) . "' ";
     }
     elseif ($testGroupName) {
-      $sql .= "AND testcases.testgroup LIKE '" . $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP) . "' ";
+      $sql .= "AND `testcases`.`testgroup` = '" . $this->encode($testGroupName, TESTCASES_MAX_TESTGROUP) . "' ";
     }
     
     if ($modified) {
-      $sql .= "AND results.modified <= '" . $this->encode($modified) . "' ";
+      $sql .= "AND `results`.`modified` <= '" . $this->encode($modified) . "' ";
     }  
      
     if ($engine) {
-      $sql .= "AND Engine='" . $this->encode($engine, USERAGENTS_MAX_ENGINE) . "' ";
+      $sql .= "AND `engine` = '" . $this->encode($engine, USERAGENTS_MAX_ENGINE) . "' ";
       if ($engineVersion) {
-        $sql .= "AND Engine_Eersion = '" . $this->encode($engineVersion, USERAGENTS_MAX_ENGINE_VERSION) . "' ";
+        $sql .= "AND `engine_version` = '" . $this->encode($engineVersion, USERAGENTS_MAX_ENGINE_VERSION) . "' ";
       }
     }
     if ($platform) {
-      $sql .= "AND Platform = '" . $this->encode($platform, USERAGENTS_MAX_PLATFORM) . "' ";
+      $sql .= "AND `platform` = '" . $this->encode($platform, USERAGENTS_MAX_PLATFORM) . "' ";
     }
-    $sql .= "ORDER BY Testcase, Result, Engine, Engine_Version, Browser, Browser_Version, Date ";
+    $sql .= "ORDER BY `testcase`, `testsuite`, `result`, `engine`, `engine_version`, `browser`, `browser_version`, `date` ";
 
 //print $sql;
     $r = $this->query($sql);

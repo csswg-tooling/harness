@@ -104,9 +104,9 @@ class TestCasePage extends HarnessPage
     
     if ($this->mTestSuite) {
       $title = "Enter Data";
-      $query['s'] = $this->mTestSuite->getName();
-      $query['u'] = $this->mUserAgent->getId();
-      $uri = "testsuite?" . http_build_query($query, 'var_');
+      $args['s'] = $this->mTestSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+      $uri = Page::BuildURI(TESTSUITE_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Test Case";
@@ -245,10 +245,10 @@ class TestCasePage extends HarnessPage
           echo $indent . "    <li class='reftab active'><a>Test Case</a></li>\n";
         }
         else {
-          $query = $this->mGetData;
-          unset($query['ref']);
-          $queryStr = Page::Encode(http_build_query($query, 'var_'));
-          echo $indent . "    <li class='reftab'><a href='testcase?{$queryStr}'>Test Case</a></li>\n";
+          $args = $this->mGetData;
+          unset($args['ref']);
+          $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+          echo $indent . "    <li class='reftab'><a href='{$uri}'>Test Case</a></li>\n";
         }
         foreach ($refTests as $refTest) {
           $refId = $refTest['id'];
@@ -257,10 +257,10 @@ class TestCasePage extends HarnessPage
             echo $indent . "    <li class='reftab active'><a>{$refType} Reference Page</a></li>\n";
           }
           else {
-            $query = $this->mGetData;
-            $query['ref'] = $refId;
-            $queryStr = Page::Encode(http_build_query($query, 'var_'));
-            echo $indent . "    <li class='reftab'><a href='testcase?{$queryStr}'>";
+            $args = $this->mGetData;
+            $args['ref'] = $refId;
+            $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+            echo $indent . "    <li class='reftab'><a href='{$uri}'>";
             echo               "{$refType} Reference Page";
             echo               "</a></li>\n";
           }
@@ -308,7 +308,7 @@ class TestCasePage extends HarnessPage
   
   function writeSubmitForm($indent = '')
   {
-    echo $indent . "<form name='eval' action='submit' method='post'>\n";
+    echo $indent . "<form name='eval' action='" . SUBMIT_PAGE_URI . "' method='post'>\n";
     echo $indent . "  <p class='buttons'>\n";
     foreach($this->mSubmitData as $opt => $value) {
       $opt = Page::Encode($opt);

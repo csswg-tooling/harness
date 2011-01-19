@@ -45,15 +45,13 @@ class ResultsPage extends HarnessPage
   {
     parent::__construct();
 
-/* XXX temp until format support landed
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
       $this->triggerClientError($msg, E_USER_ERROR);
     }
 
     $testSuiteName = $this->mTestSuite->getName();
-*/    
-    $testSuiteName = $this->_getData('s');  // XXX temp until format support landed
+    $testSuiteQuery = $this->mTestSuite->getSequenceQuery();  // XXX temp until proper format support
     $testCaseName = $this->_getData('c');
     $testGroupName = $this->_getData('g');
 
@@ -85,7 +83,7 @@ class ResultsPage extends HarnessPage
     $platform = $this->_getData('p');
 
     $this->mResults = 
-      new Results($testSuiteName, $testCaseName, $testGroupName,
+      new Results($testSuiteName, $testSuiteQuery, $testCaseName, $testGroupName,
                   $engine, $engineVersion, $platform, 
                   $grouping, $modified, $filter);
 
@@ -103,10 +101,10 @@ class ResultsPage extends HarnessPage
   {
     $uris = parent::getNavURIs();
     
-{//XXX format support    if ($this->mTestSuite) {
+    if ($this->mTestSuite) {
       $title = "Review Results";
-      $query['s'] = $this->_getData('s');//XXX temp nutil format support - $this->mTestSuite->getName();
-      $uri = "review?" . http_build_query($query, 'var_');
+      $args['s'] = $this->mTestSuite->getName();
+      $uri = Page::BuildURI(REVIEW_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Results";

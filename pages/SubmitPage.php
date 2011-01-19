@@ -97,24 +97,24 @@ class SubmitPage extends HarnessPage
     $nextIndex = $this->_postData('next');
     
     if (0 < $nextIndex) {
-      $query['s'] = $this->mTestSuite->getName();
+      $args['s'] = $this->mTestSuite->getName();
       if ($testGroupName) {
-        $query['g'] = $testGroupName;
+        $args['g'] = $testGroupName;
       }
-      $query['r'] = $nextIndex;
+      $args['r'] = $nextIndex;
       if (0 < $order) {
-        $query['o'] = $order;
+        $args['o'] = $order;
       }
       if ($modified) {
-        $query['m'] = $modified;
+        $args['m'] = $modified;
       }
-      $query['u'] = $this->mUserAgent->getId();
-      $this->mNewURI = "testcase?" . http_build_query($query, 'var_');
+      $args['u'] = $this->mUserAgent->getId();
+      $this->mNewURI = Page::BuildURI(TESTCASE_PAGE_URI, $args);
     }
     else {
-      $query['s'] = $this->mTestSuite->getName();
-      $query['u'] = $this->mUserAgent->getId();
-      $this->mNewURI = "success?" . http_build_query($query, 'var_');
+      $args['s'] = $this->mTestSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+      $this->mNewURI = Page::BuildURI(SUCCESS_PAGE_URI, $args);
     }
   }
 

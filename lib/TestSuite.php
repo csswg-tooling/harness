@@ -109,6 +109,16 @@ class TestSuite extends DBConnection
     return $this->mInfo['spec_uri'];
   }
 
+  function getFormat()
+  {
+    return $this->mInfo['format'];
+  }
+
+  function getSequenceQuery()
+  {
+    return $this->mInfo['sequence_query'];
+  }
+
 }
 
 ?>

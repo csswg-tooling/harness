@@ -44,13 +44,13 @@ class WelcomePage extends HarnessPage
     $testSuites = $this->mTestSuites->getTestSuites();
     
     foreach($testSuites as $testSuite) {
-      $query['s'] = $testSuite->getName();
-      $reviewURI = Page::Encode("review?" . http_build_query($query, 'var_'));
+      $args['s'] = $testSuite->getName();
+      $reviewURI = Page::EncodeURI(REVIEW_PAGE_URI, $args);
       
       if ($this->_getData('u')) {
-        $query['u'] = $this->_getData('u');
+        $args['u'] = $this->_getData('u');
       }
-      $enterURI = Page::Encode("testsuite?" . http_build_query($query, 'var_'));
+      $enterURI = Page::EncodeURI(TESTSUITE_PAGE_URI, $args);
 
       $homeURI = Page::Encode($testSuite->getHomeURI());
       $title = Page::Encode($testSuite->getTitle());

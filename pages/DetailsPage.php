@@ -45,15 +45,13 @@ class DetailsPage extends HarnessPage
   function __construct() 
   {
     parent::__construct();
-/* XXX temp until format support landed
+
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
       $this->triggerClientError($msg, E_USER_ERROR);
     }
 
-    $testSuiteName = $this->mTestSuite->getName();
-*/    
-    $testSuiteName = $this->_getData('s');  // XXX temp until format support landed
+    $testSuiteQuery = $this->mTestSuite->getSequenceQuery();  // XXX temp until format support
     $testCaseName = $this->_getData('c');
     $testGroupName = $this->_getData('g');
 
@@ -68,7 +66,7 @@ class DetailsPage extends HarnessPage
     $platform = $this->_getData('p');
 
     $this->mResultsTable = 
-      new ResultDetails($testSuiteName, $testCaseName, $testGroupName, 
+      new ResultDetails($testSuiteQuery, $testCaseName, $testGroupName, 
                         $engine, $engineVersion, $platform,
                         $grouping, $modified, $order);
   }
@@ -87,8 +85,8 @@ class DetailsPage extends HarnessPage
     
     if ($this->mTestSuite) {
       $title = "Review Results";
-      $query['s'] = $this->mTestSuite->getName();
-      $uri = "review?" . http_build_query($query, 'var_');
+      $args['s'] = $this->mTestSuite->getName();
+      $uri = Page::BuildURI(REVIEW_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Details";
@@ -123,29 +121,44 @@ class DetailsPage extends HarnessPage
     else {
       echo $indent . "<table>\n";
       echo $indent . "  <tr>\n";
-      foreach($data[0] as $key => $value) {
-        echo $indent . "    <th>" . Page::Encode($key) . "</th>\n";
-      }
+      echo $indent . "    <th>Test Case</th>\n";
+      echo $indent . "    <th>Format</th>\n";
+      echo $indent . "    <th>Result</th>\n";
+      echo $indent . "    <th>User Agent</th>\n";
+      echo $indent . "    <th>Date</th>\n";
+      echo $indent . "    <th>Source</th>\n";
       echo $indent . "  </tr>\n";
 
-      foreach($data as $result) {
+      foreach($data as $resultData) {
 
-        echo $indent . "  <tr class='" . Page::Encode($result['Result']) . "'>\n";
-        foreach ($result as $key => $value) {
-          if ('Testcase' == $key) {
-            echo $indent . "    <td>";
-            echo $this->mSpiderTrap->getTrapLink();
-            $query['s'] = $this->_getData('s');//XXX temp until format support landed - $this->mTestSuite->getName();
-            $query['c'] = $value;
-            $query['u'] = $this->mUserAgent->getId();
-            $queryStr = Page::Encode(http_build_query($query, 'var_'));
-            echo "<a href='testcase?{$queryStr}'>" . Page::Encode($value) . "</a></td>\n";
+        echo $indent . "  <tr class='" . Page::Encode($resultData['result']) . "'>\n";
+        $testSuiteName  = $resultData['testsuite']; // XXX temp until format support landed - $this->mTestSuite->getName();
+        $testCaseName   = $resultData['testcase'];
+        $userAgentId    = $resultData['useragent_id'];
+        
+        $userAgent = new UserAgent(intval($userAgentId));
+        $testSuite = new TestSuite($testSuiteName);
 
-          }
-          else {
-            echo $indent . "    <td>" . Page::Encode($value) . "</td>\n";
-          }
-        }
+        $result         = Page::Encode($resultData['result']);
+        $date           = Page::Encode($resultData['date']);
+        $source         = Page::Encode($resultData['source']);
+        $uaString       = Page::Encode($userAgent->getUAString());
+        $uaDescription  = Page::Encode($userAgent->getDescription());
+        
+        echo $indent . "    <td>";
+        echo $this->mSpiderTrap->getTrapLink();
+        $args['s'] = $testSuiteName;
+        $args['c'] = $testCaseName;
+        $args['u'] = $this->mUserAgent->getId();
+        $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+        echo "<a href='{$uri}'>" . Page::Encode($testCaseName) . "</a></td>\n";
+
+        echo $indent . "    <td>" . Page::Encode($testSuite->getFormat()) . "</td>\n";
+        echo $indent . "    <td>{$result}</td>\n";
+        echo $indent . "    <td><abbr title='{$uaString}'>{$uaDescription}<abbr></td>\n";
+        echo $indent . "    <td>{$date}</td>\n";
+        echo $indent . "    <td>{$source}</td>\n";
+
         echo $indent . "  </tr>\n";
       }
       echo $indent . "</table>\n";

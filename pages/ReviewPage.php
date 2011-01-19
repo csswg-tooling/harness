@@ -137,7 +137,7 @@ class ReviewPage extends HarnessPage
     echo $indent . "  You can choose to review:\n";
     echo $indent . "</p>\n";
 
-    echo $indent . "<form action='results' method='get' name='result_form' onSubmit='return filterTypes();'>\n";
+    echo $indent . "<form action='" . RESULTS_PAGE_URI . "' method='get' name='result_form' onSubmit='return filterTypes();'>\n";
     echo $indent . "  <input type='hidden' name='s' value='" . Page::Encode($this->mTestSuite->getName()) . "' />\n";
     echo $indent . "  <p>\n";
     echo $indent . "    <input type='radio' name='t' value='0' checked />\n";

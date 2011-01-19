@@ -223,9 +223,9 @@ class DynamicPage extends Page
       }
       if ($this->mErrorContext) {
         echo $indent . "<p>Context: \n";
-        echo $indent . "  ";
+        echo $indent . "  <pre>";
         print_r($this->mErrorContext);
-        echo           "\n";
+        echo           "</pre>\n";
         echo $indent . "</p>\n";
       }
     }

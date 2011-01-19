@@ -70,6 +70,8 @@ class CmdLineWorker extends DBConnection
   {
     unset($this->mReferences);
   
+    $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
+  
     $sql  = "SELECT `references`.`id`, `references`.`testcase_id`, ";
     $sql .= "`references`.`reference`, `references`.`uri`, `references`.`type` ";
     $sql .= "FROM `references` INNER JOIN `testcases` ";
