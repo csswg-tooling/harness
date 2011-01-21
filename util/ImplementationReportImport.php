@@ -48,53 +48,73 @@ class ImplementationReportImport extends CmdLineWorker
     
     $data = file($reportFileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
+    $results = array();
+    $comments = array();
+    
     // verify data set before import
+    echo "Verifying data\n";
+    $count = 0;
     foreach ($data as $record) {
       $record = trim($record);
       if (0 !== strpos($record, '#')) { // comment
-        list ($testCasePath, $result) = explode("\t", $record . "\t");
+        if (0 == $count++) {
+          if ("testname\tresult" == substr($record, 0, 15)) {
+            continue;
+          }
+        }
+        
+        list ($testCasePath, $result, $comment) = explode("\t", $record . "\t\t");
         
         if ($testCasePath && $result) {
           $result = strtolower(trim($result));
+          if ('?' == $result) {
+            $result = 'uncertain';
+          }
+          if ('skip' == substr($result, 0, 4)) {
+            continue;
+          }
           
           if (! in_array($result, $validResults)) {
             die("Invalid result: '{$result}'\n");
           }
         
-          $testCaseName = trim(pathinfo($testCasePath, PATHINFO_BASENAME));
+          // XXX check for html/xhtml path - format support...
+          $testCaseName = trim($this->_getFileName($testCasePath));
           $testCaseId = $this->_getTestCaseId($testCaseName);
           
           if (! $testCaseId) {
             die("Unknown test case: '{$testCaseName}'.\n");
+          }
+          
+          $comment = trim($comment);
+          
+          $results[$testCaseId] = $result;
+          if (0 < strlen($comment)) {
+            $comments[$testCaseId] = $comment;
           }
         }
       }
     }
 
     // import results
-    foreach ($data as $record) {
-      $record = trim($record);
-      if (0 !== strpos($record, '#')) { // comment
-        list ($testCasePath, $result, $comment) = explode("\t", $record . "\t\t");
-        
-        if ($testCasePath && $result) {
-          $result = strtolower(trim($result));
-          $testCaseName = trim(pathinfo($testCasePath, PATHINFO_BASENAME));
-          $testCaseId = $this->_getTestCaseId($testCaseName);
+    echo "Importing results\n";
+    foreach ($results as $testCaseId => $result) {
           
-          // XXX store comment if present
-          $sql  = "INSERT INTO `results` ";
-          if ($modified) {
-            $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`, `modified`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}', '{$modified}')";  
-          }
-          else {
-            $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}')";  
-          }
-  
-          $this->query($sql);
-        }
+      // XXX store comment if present (use comment for actual UA?)
+      
+      $sql  = "INSERT INTO `results` ";
+      if ($modified) {
+        $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`, `modified`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}', '{$modified}')";  
+      }
+      else {
+        $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}')";  
+      }
+
+      $r = $this->query($sql);
+      if (! $r->succeeded()) {
+        die("failed to store result [{$sql}]\n");
       }
     }
   }
@@ -102,6 +122,6 @@ class ImplementationReportImport extends CmdLineWorker
 
 $worker = new ImplementationReportImport();
 
-$worker->import("prince.data", "CSS21_HTML_RC5", "Prince/7.1 (http://www.princexml.com; Linux i686)", "ms2ger@gmail.com", "2011-01-15 12:01:00");
+$worker->import("TallComponents.data", "CSS21_XHTML_RC5", "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0", "TallComponents", "2011-01-20 05:28:00");
 
 ?>

@@ -117,7 +117,7 @@ define('COMMAND_LINE', TRUE);
   {
     foreach (glob("{$inPath}/{$inPattern}") as $fileName) {
       $fileInfo = pathinfo($fileName);
-      $outFileName = "{$outPath}/{$fileInfo['filename']}.out";
+      $outFileName = "{$outPath}/{$fileInfo['filename']}.out";  // XXX make safe for PHP < 5.2
 
       echo "{$fileName} => {$outFileName}\n";
       

@@ -65,6 +65,46 @@ class SelectUserAgentPage extends HarnessPage
       echo $indent . "<input type='hidden' name='{$opt}' value='{$value}'>\n";
     }
   }
+  
+  protected function _splitByEngine($userAgents)
+  {
+    foreach ($userAgents as $userAgent) {
+      $engine = $userAgent->getEngine();
+      if (0 == strlen($engine)) {
+        $engine = "Other";
+      }
+      $engines[$engine][] = $userAgent;
+    }
+    ksort($engines);
+    return $engines;
+  }
+  
+  protected function _splitByBrowser($userAgents)
+  {
+    foreach ($userAgents as $userAgent) {
+      $browser = $userAgent->getBrowser();
+      $browserVersion = $userAgent->getBrowserVersion();
+      if (0 < strlen($browserVersion)) {
+        $browser .= ' ' . $browserVersion;
+      }
+      $browsers[$browser][] = $userAgent;
+    }
+    ksort($browsers);
+    return $browsers;
+  }
+  
+  protected function _splitByPlatform($userAgents)
+  {
+    foreach ($userAgents as $userAgent) {
+      $platform = $userAgent->getPlatform();
+      if (0 == strlen($platform)) {
+        $platform = "Unknown";
+      }
+      $platforms[$platform][] = $userAgent;
+    }
+    ksort($platforms);
+    return $platforms;
+  }
 
   function writeBodyContent($indent = '')
   {
@@ -89,6 +129,16 @@ class SelectUserAgentPage extends HarnessPage
     $userAgents = UserAgent::GetAllUserAgents();
 
     if (0 < count($userAgents)) {
+      $userAgents = $this->_splitByEngine($userAgents);
+      foreach ($userAgents as $engine => $agentsByEngine) {
+        $userAgents[$engine] = $this->_splitByBrowser($agentsByEngine);
+      }
+      foreach ($userAgents as $engine => $agentsByEngine) {
+        foreach ($agentsByEngine as $browser => $agentsByBrowser) {
+          $userAgents[$engine][$browser] = $this->_splitByPlatform($agentsByBrowser);
+        }
+      }
+    
       echo $indent . "<p>\n";
       echo $indent . "  You may select from one of the following known user agents, ";
       echo             "or enter a custom user agent string below:\n";
@@ -99,16 +149,27 @@ class SelectUserAgentPage extends HarnessPage
 
       echo $indent . "  <select name='u' size='10' style='width: 80%'>\n";
       $actualUAId = $this->mUserAgent->getActualUA()->getId();
-      foreach ($userAgents as $userAgent) {
-        $uaId = $userAgent->getId();
-        $uaString = Page::Encode($userAgent->getUAString());
-        if ($uaId == $actualUAId) {
-          $selected = 'selected ';
+      foreach ($userAgents as $engine => $agentsByEngine) {
+        $engine = Page::Encode($engine);
+        echo $indent . "    <optgroup label='{$engine}'>\n";
+        foreach ($agentsByEngine as $browser => $agentsByBrowser) {
+          $browser = Page::Encode($browser);
+          foreach ($agentsByBrowser as $platform => $agentsByPlatform) {
+            $platform = Page::Encode($platform);
+            foreach ($agentsByPlatform as $userAgent) {
+              $uaId = $userAgent->getId();
+              $uaString = Page::Encode($userAgent->getUAString());
+              if ($uaId == $actualUAId) {
+                $selected = 'selected ';
+              }
+              else {
+                $selected = '';
+              }
+              echo $indent . "      <option {$selected}value='{$uaId}'>{$browser} - {$platform} - {$uaString}</option>\n";
+            }
+          }
         }
-        else {
-          $selected = '';
-        }
-        echo $indent . "    <option {$selected}value='{$uaId}'>{$uaString}</option>\n";
+        echo $indent . "    </optgroup>\n";
       }
       echo $indent . "  </select>\n";
       

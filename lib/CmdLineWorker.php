@@ -110,6 +110,12 @@ class CmdLineWorker extends DBConnection
   }
   
 
+  /**
+   * Get only file name part of a path (without extension)
+   *
+   * @param string path
+   * @return string filename
+   */
   protected function _getFileName($path)
   {
     $pathInfo = pathinfo($path);

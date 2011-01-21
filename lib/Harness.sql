@@ -144,6 +144,9 @@ CREATE TABLE `testsuites` (
   `title` varchar(255) default NULL,
   `active` tinyint(1) NOT NULL default '1',
   `description` longtext,
+  `contact_name` varchar(64) default NULL,
+  `contact_uri` varchar(255) default NULL,
+  `format` varchar(16) default NULL,
   `sequence_query` varchar(32) default NULL,
   PRIMARY KEY  (`testsuite`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
