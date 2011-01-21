@@ -77,7 +77,7 @@ class SelectUserAgentPage extends HarnessPage
     echo $indent . "<p>\n";
     echo $indent . "  This capability is intended ONLY for entering results for user agents ";
     echo             "that are not capable of using the test harness, such as non-interactive ";
-    echo             "page converters. If the other user agent is capable of running the harness ";
+    echo             "page converters. If the other user agent is capable of running the harness, ";
     echo             "please use it instead.\n";
     echo $indent . "</p>\n";
     
@@ -121,16 +121,18 @@ class SelectUserAgentPage extends HarnessPage
       echo $indent . "</p>\n";
     }
     
-    echo $indent . "<form action='" . SET_UA_PAGE_URI . "' method='post'>\n";
-    $this->writeHiddenFormControls($indent . "  ");
-
-    echo $indent . "  <p>\n";
-    echo $indent . "    Custom User Agent String: \n";
+    echo $indent . "<p>\n";
+    echo $indent . "  <form action='" . SET_UA_PAGE_URI . "' method='post'>\n";
+    $this->writeHiddenFormControls($indent . "    ");
+    echo $indent . "    Custom User Agent String:\n";
     echo $indent . "    <input type='text' name='ua' size='80'>\n";
-    echo $indent . "    <input type='submit' value='Enter'>\n";
-    echo $indent . "  </p>\n";
-    
-    echo $indent . "</form>\n";
+    echo $indent . "    <input type='submit' name='action' value='Enter'>\n";
+    echo $indent . "  </form>\n";
+    echo $indent . "  <form action='" . TESTSUITE_PAGE_URI . "' method='get'>\n";
+    $this->writeHiddenFormControls($indent . "  ");
+    echo $indent . "    <input type='submit' value='Cancel'>\n";
+    echo $indent . "  </form>\n";
+    echo $indent . "</p>\n";
   }
 }
 

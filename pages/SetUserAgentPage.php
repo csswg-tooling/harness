@@ -32,10 +32,12 @@ class SetUserAgentPage extends HarnessPage
   {
     parent::__construct();
     
-    $uaString = $this->_postData('ua');
-    if ($uaString) {
-      $this->mUserAgent = new UserAgent($uaString);
-      $this->mUserAgent->update();
+    if ('Enter' == $this->_postData('action')) {
+      $uaString = $this->_postData('ua');
+      if ($uaString) {
+        $this->mUserAgent = new UserAgent($uaString);
+        $this->mUserAgent->update();
+      }
     }
     
     $this->mNewURI = './';

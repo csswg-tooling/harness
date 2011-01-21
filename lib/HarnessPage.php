@@ -63,10 +63,9 @@ class HarnessPage extends DynamicPage
   function writeHeadStyle($indent = '')
   {
     echo $indent . "<style type='text/css'>\n";
-    echo $indent . "  a.report { display: none; }\n";
-    echo $indent . "  p.nav { font-size: smaller; }\n";
+    echo $indent . "  a.report { display: none; }\n"; // ensure spider trap links are hidden
     echo $indent . "</style>\n";  
-    echo $indent . "<link rel='stylesheet' href='http://www.w3.org/StyleSheets/TR/base.css' type='text/css'>\n";
+    echo $indent . "<link rel='stylesheet' href='base.css' type='text/css'>\n";
   }
   
   
