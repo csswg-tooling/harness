@@ -16,15 +16,15 @@
  * 
  ******************************************************************************/
 
-require_once("pages/SelectUserAgentPage.php");
+require_once("pages/SetUserAgentPage.php");
 
 /**
- * This file provides a hook to override the Select User Agent Page
+ * This file provides a hook to override the Set User Agent Page
  * to alter any output as desired
  */
  
 
-$page = new SelectUserAgentPage();
+$page = new SetUserAgentPage();
 $page->write();
 
 ?>

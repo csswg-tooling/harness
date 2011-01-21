@@ -64,12 +64,12 @@ class SubmitPage extends HarnessPage
         break;
       default:
         $msg = 'Invalid response submitted.';
-        $this->triggerClientError($msg, E_USER_ERROR);
+        trigger_error($msg, E_USER_WARNING);
     }
     
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
-      $this->triggerClientError($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
 
     $this->mUserAgent->update();
@@ -87,11 +87,15 @@ class SubmitPage extends HarnessPage
         ($testCase->getTestCaseName() != $testCaseName) ||
         ($testCase->getTestSuiteName() != $this->mTestSuite->getName())) {
       $msg = 'Posted data is invalid.';
-      $this->triggerClientError($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
 
     if ($result) {
-      $testCase->submitResult($this->mUserAgent, Page::GetClientIP(), $result);
+      $source = Page::GetClientIP();
+      if (! $this->mUserAgent->isActualUA()) {
+        $source .= '*';
+      }
+      $testCase->submitResult($this->mUserAgent, $source, $result);
     }
      
     $nextIndex = $this->_postData('next');

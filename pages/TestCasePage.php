@@ -49,7 +49,7 @@ class TestCasePage extends HarnessPage
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
-      $this->triggerClientError($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
 
     $testCaseName = $this->_getData('c');
@@ -65,7 +65,7 @@ class TestCasePage extends HarnessPage
                            
     if (! $this->mTestCase->isValid()) {
       $msg = 'No test case identified.';
-      $this->triggerClientError($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
                    
     if ($testCaseName) {
@@ -329,12 +329,22 @@ class TestCasePage extends HarnessPage
     if ($this->mUserAgent) {
       $uaString = Page::Encode($this->mUserAgent->getUAString());
       $description = Page::Encode($this->mUserAgent->getDescription());
-    
+
       echo $indent . "<p class='ua'>\n";
-      echo $indent . "  Testing\n";
-      echo $indent . "  <abbr title='{$uaString}'>\n";
-      echo $indent . "    {$description}\n";
-      echo $indent . "  </abbr>\n";
+      
+      if ($this->mUserAgent->isActualUA()) {
+        echo $indent . "  Testing: \n";
+        echo $indent . "  <abbr title='{$uaString}'>{$description}</abbr>\n";
+      }
+      else {
+        echo $indent . "  Entering results for: \n";
+        echo $indent . "  <abbr class='other' title='{$uaString}'>{$description}</abbr>\n";
+
+        $args = $this->mGetData;
+        unset($args['u']);
+        $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+        echo $indent . " <a href='{$uri}'>(Reset)</a>\n";
+      }
       echo $indent . "</p>\n";
     }
   }

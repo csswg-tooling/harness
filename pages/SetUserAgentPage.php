@@ -21,9 +21,9 @@ require_once("lib/HarnessPage.php");
 require_once("lib/UserAgent.php");
 
 /**
- * A page to select a different user agent for entering test results
+ * A page to set a different user agent for entering test results
  */
-class UserAgentPage extends HarnessPage
+class SetUserAgentPage extends HarnessPage
 {  
   protected $mNewURI;
 
@@ -32,9 +32,13 @@ class UserAgentPage extends HarnessPage
   {
     parent::__construct();
     
-    $this->$mNewURI = './';
+    $uaString = $this->_postData('ua');
+    if ($uaString) {
+      $this->mUserAgent = new UserAgent($uaString);
+      $this->mUserAgent->update();
+    }
     
-    // XXX need to accept user agent string and initialize mUserAgent with it
+    $this->mNewURI = './';
     
     if ($this->mTestSuite) {
       $args['s'] = $this->mTestSuite->getName();
@@ -53,7 +57,7 @@ class UserAgentPage extends HarnessPage
    */
   function getRedirectURI()
   {
-    return $this->$mNewURI;
+    return $this->mNewURI;
   }
 
 
@@ -70,7 +74,7 @@ class UserAgentPage extends HarnessPage
 
     echo $indent . "<p>\n";
     echo $indent . "  We have processed your request and you should have been redirected \n";
-    echo $indent . "  <a href='{$this->$mNewURI}'>here</a>.\n";
+    echo $indent . "  <a href='{$this->mNewURI}'>here</a>.\n";
     echo $indent . "</p>\n";
 
   }

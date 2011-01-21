@@ -27,20 +27,47 @@ class UserAgent extends DBConnection
   protected $mActualUA;
 
 
-  function __construct($id = FALSE) 
+  /**
+   * Load array of all known user agents
+   */
+  static function GetAllUserAgents()
+  {
+    $userAgents = array();
+    
+    $sql  = "SELECT `id`, `useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform` ";
+    $sql .= "FROM `useragents` ";
+    $sql .= "ORDER BY `useragent` ";
+
+    $db = new DBConnection();
+    $r = $db->query($sql);
+
+    while ($data = $r->fetchRow()) {
+      $userAgents[] = new UserAgent($data);
+    }
+    return $userAgents;
+  }
+
+
+  /**
+   * @param int,string,array
+   */
+  function __construct($data = FALSE) 
   {
     parent::__construct();
     
-    if ($id) {
-      if (is_integer($id)) {
-        $this->mInfo = $this->_queryById($id);
+    if ($data) {
+      if (is_integer($data)) {
+        $this->mInfo = $this->_queryById($data);
       }
-      elseif (is_string($id)) {
-        $this->mInfo = $this->_queryByString($id);
+      elseif (is_string($data)) {
+        $this->mInfo = $this->_queryByString($data);
         
         if (! $this->mInfo) {
-          $this->mInfo = $this->_parseUAString($id);
+          $this->mInfo = $this->_parseUAString($data);
         }
+      }
+      elseif (is_array($data)) {
+        $this->mInfo = $data;
       }
     }
     
@@ -501,6 +528,11 @@ class UserAgent extends DBConnection
   function getPlatform()
   {
     return $this->mInfo['platform'];
+  }
+  
+  function isActualUA()
+  {
+    return (null == $this->mActualUA);
   }
   
   function getActualUA()

@@ -119,12 +119,12 @@ class TestCase extends DBConnection
     $sql .= "LIMIT 1";
     
     $r = $this->query($sql);
-
+    
     $count = $r->fetchField(0, 'count');
     
     if (FALSE === $count) {
       $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
 
     return $count;
@@ -182,13 +182,13 @@ class TestCase extends DBConnection
 
     $r = $this->query($sql);
 
-    $data = $r->fetchRow();
-    
-    if (FALSE === $data) {
-      $msg = 'Unable to access information about test case.';
+    if (! $r->succeeded()) {
+      $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
+    $data = $r->fetchRow();
+    
     return $data;
   }
 
@@ -271,13 +271,13 @@ class TestCase extends DBConnection
 
     $r = $this->query($sql);
 
-    $data = $r->fetchRow();
-    
-    if (FALSE === $data) {
-      $msg = 'Unable to access information about test case.';
+    if (! $r->succeeded()) {
+      $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
+    $data = $r->fetchRow();
+    
     return $data;
   }
 
@@ -302,13 +302,13 @@ class TestCase extends DBConnection
 
     $r = $this->query($sql);
 
-    $data = $r->fetchRow();
-    
-    if (FALSE === $data) {
-      $msg = 'Unable to access information about test case.';
+    if (! $r->succeeded()) {
+      $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
+    $data = $r->fetchRow();
+    
     return $data;
   }
 
@@ -331,13 +331,13 @@ class TestCase extends DBConnection
 
     $r = $this->query($sql);
 
-    $data = $r->fetchRow();
-    
-    if (FALSE === $data) {
-      $msg = 'Unable to access information about test case.';
+    if (! $r->succeeded()) {
+      $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
+    $data = $r->fetchRow();
+    
     return $data;
   }
 

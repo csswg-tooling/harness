@@ -63,7 +63,7 @@ class HarnessPage extends DynamicPage
   function writeHeadStyle($indent = '')
   {
     echo $indent . "<style type='text/css'>\n";
-    echo $indent . "  a.report { display:none; }\n";
+    echo $indent . "  a.report { display: none; }\n";
     echo $indent . "  p.nav { font-size: smaller; }\n";
     echo $indent . "</style>\n";  
     echo $indent . "<link rel='stylesheet' href='http://www.w3.org/StyleSheets/TR/base.css' type='text/css'>\n";
@@ -155,11 +155,20 @@ class HarnessPage extends DynamicPage
    */
   function writeBodyFooter($indent = '')
   {
+    $contactName = CONTACT_NAME;
+    $contactURI = CONTACT_URI;
+    if ($this->mTestSuite) {
+      $contactName = $this->mTestSuite->getContactName();
+      $contactURI = $this->mTestSuite->getContactURI();
+    }
+    $contactName = Page::Encode($contactName);
+    $contactURI = Page::Encode($contactURI);
+  
     echo $indent . "<hr />\n";
 
     echo $indent . "<address>\n";
     echo $indent . "  Please send comments, questions, and error reports to\n";
-    echo $indent . "  <a href='" . Page::Encode(CONTACT_URI) . "'>" . Page::Encode(CONTACT_NAME) . "</a>.\n";    
+    echo $indent . "  <a href='{$contactURI}'>{$contactName}</a>.\n";    
     echo $indent . "</address>\n";
     
     $this->mSpiderTrap->writeTrapLink($indent);

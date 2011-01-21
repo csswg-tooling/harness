@@ -1,0 +1,9 @@
+p.ua abbr.other {
+  font-weight: bolder;
+  color: white;
+  background: blue;
+  padding: 2pt;
+}
+p.ua a {
+  padding: 0 .5em;
+}

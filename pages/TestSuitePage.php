@@ -40,7 +40,7 @@ class TestSuitePage extends HarnessPage
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
-      $this->triggerClientError($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
 
     $this->mTestGroups = new Groups($this->mTestSuite->getName());
@@ -57,8 +57,6 @@ class TestSuitePage extends HarnessPage
   {
     $uris = parent::getNavURIs();
     
-    $uris = parent::getNavURIs();
-    
     if ($this->mTestSuite) {
       $title = "Enter Data";
       $uri = '';
@@ -68,6 +66,17 @@ class TestSuitePage extends HarnessPage
   }
   
   
+  /**
+   * Generate <style> element
+   */
+  function writeHeadStyle($indent = '')
+  {
+    parent::writeHeadStyle($indent);
+    
+    echo $indent . "<link rel='stylesheet' href='suite.css' type='text/css'>\n";
+  }
+
+
   function writeTestGroupSelect($indent = '')
   {
     $testGroups = $this->mTestGroups->getGroupData();
@@ -118,16 +127,29 @@ class TestSuitePage extends HarnessPage
   }
 
 	function writeBodyContent($indent = '') {
-    echo $indent . "<p>\n";
+    echo $indent . "<p class='ua'>\n";
     echo $indent . "  You are about the enter test result data for the following user agent:\n";
     
     $uaString = Page::Encode($this->mUserAgent->getUAString());
     $uaDescription = Page::Encode($this->mUserAgent->getDescription());
-    echo $indent . "  <abbr title='{$uaString}'>{$uaDescription}</abbr>\n";
+    
+    if ($this->mUserAgent->isActualUA()) {
+      echo $indent . "  <abbr title='{$uaString}'>{$uaDescription}</abbr>\n";
+
+      $args = $this->mGetData;
+      $uri = Page::EncodeURI(SELECT_UA_PAGE_URI, $args);
+      echo $indent . "  <a href='{$uri}'>(Other)</a>\n";
+    }
+    else {
+      echo $indent . "  <abbr class='other' title='{$uaString}'>{$uaDescription}</abbr>\n";
+      $args = $this->mGetData;
+      unset($args['u']);
+      $uri = Page::EncodeURI(TESTSUITE_PAGE_URI, $args);
+      echo $indent . "  <a href='{$uri}'>(Reset)</a>\n";
+    }
     echo $indent . "</p>\n";
-    
-    // XXX add UI to select other user agent
-    
+
+   
     $testSuiteTitle = Page::Encode($this->mTestSuite->getTitle());
     echo $indent . "<p>\n";
     echo $indent . "  The {$testSuiteTitle} test suite contains {$this->mTestCases->getCount()} test cases.\n";

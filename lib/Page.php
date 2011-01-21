@@ -32,29 +32,50 @@ class Page
   {
     return htmlentities($string, ENT_QUOTES, 'UTF-8');
   }
+
   
+  /**
+   * Static helper function to decode HTML entities to UTF-8
+   */ 
   static function Decode($string)
   {
     return html_entity_decode($string, ENT_QUOTES, 'UTF-8');
   }
+
   
   /**
    * Static helper function to build URI with query string
    * 
    * @param string base uri
    * @param array associative array of aurguments
+   * @param string fragment identifier
    * @return string URL encoded
    */
-  static function BuildURI($baseURI, $queryArgs)
+  static function BuildURI($baseURI, $queryArgs, $fragId = null)
   {
-    if (0 < count($queryArgs)) {
-      if ('?' != substr($baseURI, -1, 1)) {
-        $baseURI .= '?';
+    $hashIndex = strpos($baseURI, '#');
+    if (FALSE !== $hashIndex) { // remove existing fragId
+      if (null == $fragId) {
+        $fragId = substr($baseURI, $hashIndex + 1);
       }
-      return $baseURI . http_build_query($queryArgs, 'var_');
+      $baseURI = substr($baseURI, 0, $hashIndex);
     }
-    return $baseURI;
+    if ((0 < strlen($fragId)) && ('#' != substr($fragId, 0, 1))) {
+      $fragId = '#' . $fragId;
+    }
+    
+    if (0 < count($queryArgs)) {
+      $query = http_build_query($queryArgs, 'var_');
+      if ('?' != substr($baseURI, -1, 1)) {
+        $query = '?' . $query;
+      }
+    }
+    else {
+      $query = '';
+    }
+    return $baseURI . $query . $fragId;
   }
+  
   
   /**
    * Static helper function to build URI with query string
@@ -62,13 +83,18 @@ class Page
    * 
    * @param string base uri
    * @param array associative array of aurguments
-   * @return string URL encoded
+   * @param string fragment identifier
+   * @return string URL+HTML encoded
    */
-  static function EncodeURI($baseURI, $queryArgs)
+  static function EncodeURI($baseURI, $queryArgs, $fragId = null)
   {
-    return Page::Encode(Page::BuildURI($baseURI, $queryArgs));
+    return Page::Encode(Page::BuildURI($baseURI, $queryArgs, $fragId));
   }
   
+  
+  /**
+   * Get IP address of client
+   */
   static function GetClientIP()
   {
     if (! empty($_SERVER['REMOTE_ADDR'])) {
@@ -91,7 +117,6 @@ class Page
   }  
   
 
-  
   /**
    * Override to set title for page
    */
@@ -99,6 +124,7 @@ class Page
   {
     return null;
   }
+  
   
   /**
    * Override to set a different content title from the page title
@@ -121,7 +147,6 @@ class Page
     return array(compact('title', 'uri'));
   }
   
-
   
   /**
    * Override to set a base href for the page
@@ -132,6 +157,7 @@ class Page
   {
     return null;
   }
+  
   
   /**
    * Override to have this page redirect to another page
@@ -151,6 +177,7 @@ class Page
     $this->writeHTML();
   }
   
+  
   /**
    * Generate any needed HTTP headers.
    * Redirects and cache control are autoamtically handled.
@@ -168,6 +195,18 @@ class Page
     }
   }
 
+
+  /**
+   * Generate Doctype
+   *
+   * Defaults to HTML4.01 strict
+   */
+  function writeDoctype()
+  {
+    echo '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">' . "\n";
+  }
+  
+  
   /**
    * Generate HTML for the entire page.
    * Subclasses should generally overeide more specific methods
@@ -175,13 +214,14 @@ class Page
    */
   function writeHTML()
   {
-    echo '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">' . "\n";
+    $this->writeDoctype();
     
     echo "<html lang='en'>\n";
     $this->writeHTMLHead('  ');
     $this->writeHTMLBody('  ');
     echo "</html>";
   }
+  
 
   /**
    * Generate HTML <head>.
@@ -200,6 +240,7 @@ class Page
     echo $indent . "</head>\n";
   }
 
+
   /**
    * Generate <base> element if needed
    * Subclasses should override getBaseURI to provide a URI
@@ -212,6 +253,7 @@ class Page
       echo $indent . "<base href='{$baseURI}'>\n";
     }
   }
+
 
   /**
    * Generate <title> element if needed

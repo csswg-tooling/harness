@@ -38,7 +38,7 @@ class ReviewPage extends HarnessPage
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
-      $this->triggerClientError($msg, E_USER_ERROR);
+      trigger_error($msg, E_USER_WARNING);
     }
 
     $this->mTestGroups = new Groups($this->mTestSuite->getName());

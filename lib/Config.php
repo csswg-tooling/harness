@@ -40,6 +40,8 @@ define('CONTACT_NAME', 'public-css-testsuite@w3.org');
  */
 define('TESTSUITE_PAGE_URI', 'testsuite');
 define('TESTCASE_PAGE_URI', 'testcase');
+define('SELECT_UA_PAGE_URI', 'useragent');
+define('SET_UA_PAGE_URI', 'setuseragent');
 define('REVIEW_PAGE_URI', 'review');
 define('RESULTS_PAGE_URI', 'results');
 define('DETAILS_PAGE_URI', 'details');
@@ -111,6 +113,7 @@ define('USERAGENTS_MAX_PLATFORM', 32);
  */
 if ((defined('DEBUG_MODE') && DEBUG_MODE) || 
     (defined('COMMAND_LINE') && COMMAND_LINE)) {
+  error_reporting(E_ALL | E_STRICT);
   assert_options(ASSERT_ACTIVE,     1);
   assert_options(ASSERT_WARNING,    1);
   assert_options(ASSERT_BAIL,       1);

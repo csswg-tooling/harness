@@ -116,18 +116,25 @@ class DynamicPage extends Page
   
   /**
    * Callback function to capture PHP generated errors
+   *
+   * Use trigger_error to invoke an error condition, set errorType to:
+   *   E_USER_NOTICE - minor error due ot bad client input
+   *   E_UEER_WARNING - major error due to bad client input
+   *   E_USER_ERROR - problem at server (like failed sql query)
    */
-  function errorHandler($errorNumber, $errorString, $errorFile, $errorLine, $errorContext)
+  function errorHandler($errorType, $errorString, $errorFile, $errorLine, $errorContext)
   {
-    switch ($errorNumber) {
-      case E_WARNING:
-      case E_USER_WARNING:
-        $this->mErrorType = 'WARNING:';
-        break;
-      case E_NOTICE:
+    switch ($errorType) {
       case E_USER_NOTICE:
+        $this->mErrorIsClient = TRUE;
+      case E_NOTICE:
         $this->mErrorType = 'NOTICE:';
         break;
+      case E_WARNING:
+        $this->mErrorType = 'WARNING:';
+        break;
+      case E_USER_WARNING:
+        $this->mErrorIsClient = TRUE;
       default:
         $this->mErrorType = 'ERROR:';
     }
@@ -154,25 +161,6 @@ class DynamicPage extends Page
     $this->write();
     
     die();
-  }
-
-
-  /**
-   * Trigger error due to problem at server
-   */
-  function triggerServerError($errorMessage, $errorType = E_USER_ERROR)
-  {
-    trigger_error($errorMessage, $errorType);
-  }
-
-
-  /**
-   * Trigger error due to bad input from client
-   */
-  function triggerClientError($errorMessage, $errorType = E_USER_ERROR)
-  {
-    $this->mErrorIsClient = TRUE;
-    trigger_error($errorMessage, $errorType);
   }
 
 

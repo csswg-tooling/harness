@@ -30,28 +30,26 @@ class TestSuite extends DBConnection
   /**
    * Construct TestSuite object
    *
-   * @param string  $testSuite  Suite name
+   * @param string  $testSuiteName  Suite name
    */
-  function __construct($testSuite) 
+  function __construct($testSuiteName) 
   {
     parent::__construct();
     
-    if ($testSuite) {
-      $testSuiteName = $this->encode($testSuite, TESTSUITES_MAX_TESTSUITE);
+    if ($testSuiteName) {
+      $testSuiteQuery = $this->encode($testSuiteName, TESTSUITES_MAX_TESTSUITE);
       
       $sql  = "SELECT * FROM `testsuites` ";
-      $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+      $sql .= "WHERE `testsuite` = '{$testSuiteQuery}' ";
       $sql .= "LIMIT 1";
-      
+    
       $r = $this->query($sql);
 
       $this->mInfo = $r->fetchRow();
-/* XXX  temp until format support landed
       if (! ($this->mInfo)) {
-        $msg = "Unable to obtain information about test suite: '{$testSuite}'";
-        trigger_error($msg, E_USER_ERROR);
+        $msg = "Unable to obtain information about test suite: '{$testSuiteName}'";
+        trigger_error($msg, E_USER_WARNING);
       }
-*/
     }
   }
   
@@ -79,7 +77,7 @@ class TestSuite extends DBConnection
 
 
   /**
-   * Get title fo test suite
+   * Get title of test suite
    *
    * @return string
    */
@@ -107,6 +105,16 @@ class TestSuite extends DBConnection
   function getSpecURI()
   {
     return $this->mInfo['spec_uri'];
+  }
+  
+  function getContactName()
+  {
+    return $this->mInfo['contact_name'];
+  }
+
+  function getContactURI()
+  {
+    return $this->mInfo['contact_uri'];
   }
 
   function getFormat()
