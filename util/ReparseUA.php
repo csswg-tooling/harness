@@ -46,12 +46,15 @@ class ReparseUA extends DBConnection
       
       $ua = new UserAgent(intval($uaId));
       
-      echo "{$uaId}: {$ua->getUAString()}\n";
-      echo "  was: {$ua->getDescription()}\n";
-
+      $oldDescription = $ua->getDescription();
       $ua->reparse();
+      $newDescription = $ua->getDescription();
       
-      echo "  now: {$ua->getDescription()}\n";
+      if ($oldDescription != $newDescription) {
+        echo "{$uaId}: {$ua->getUAString()}\n";
+        echo "  was: {$oldDescription}\n";
+        echo "  now: {$newDescription}\n";
+      }
     }
   }
 }

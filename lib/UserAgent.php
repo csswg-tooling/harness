@@ -356,7 +356,8 @@ class UserAgent extends DBConnection
           (0 === stripos($product, 'KHTML')) ||
           (0 === stripos($product, 'Presto')) ||
           (0 === stripos($product, 'Prince')) ||
-          (0 === stripos($product, 'Trident'))) {
+          (0 === stripos($product, 'Trident')) ||
+          (0 === stripos($product, 'WebToPDF'))) {
         $engine = $product;
         $engineVersion = $version;
       }
@@ -365,6 +366,13 @@ class UserAgent extends DBConnection
             (0 === stripos($product, 'Chrome')) ||
             (0 === stripos($product, 'rekonq'))) {
           $browser = $product;
+          $browserVersion = $version;
+        }
+      }
+      if ('Internet Explorer' == $browser) {  // browsers that pretend to be IE
+        if (0 === stripos($product, 'TallComponents')) {
+          $engine = 'WebToPDF';
+          $browser = 'WebToPDF.NET';
           $browserVersion = $version;
         }
       }
@@ -405,6 +413,9 @@ class UserAgent extends DBConnection
         (0 === stripos($engine, 'KHTML')) ||        // Not enough difference between KHTML and WebKit, aggregate results
         (0 === stripos($engine, 'WebKitGTK'))) {
       $engine = 'WebKit';
+    }
+    if (0 === stripos($engine, 'WebToPDF')) {
+      $engine = 'WebToPDF';
     }
     
     $result['engine'] = $engine;
