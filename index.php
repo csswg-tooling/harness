@@ -64,7 +64,7 @@ class CSSWelcomePage extends WelcomePage
     echo             "<a href='http://www.w3.org/Style/CSS/Test/Fonts/Ahem/'>";
     echo             "Ahem font to be installed</a>.\n";
     echo $indent . "  Some of the font-related tests also require ";
-    echo             "<a href='http://www.w3.org/Style/CSS/Test/Fonts/'>special fonts</a>.\n";
+    echo             "<a href='http://www.w3.org/Style/CSS/Test/Fonts/Overview'>special fonts</a>.\n";
     echo $indent . "  Without the proper fonts installed, results are of no value.\n";
     echo $indent . "</p>\n";
     echo $indent . "<p>\n";

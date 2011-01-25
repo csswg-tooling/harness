@@ -122,6 +122,6 @@ class ImplementationReportImport extends CmdLineWorker
 
 $worker = new ImplementationReportImport();
 
-$worker->import("TallComponents.data", "CSS21_XHTML_RC5", "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0", "TallComponents", "2011-01-20 05:28:00");
+$worker->import("TallComponents.data", "CSS21_XHTML_RC5", "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/1.0.3.4_pre WebToPDF.NET/1.0.3.4_pre", "TallComponents", "2011-01-25 05:58:00");
 
 ?>
