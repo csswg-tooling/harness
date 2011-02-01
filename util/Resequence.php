@@ -90,6 +90,7 @@ class Resequence extends CmdLineWorker
     $sql .= "AND `testcases`.`active` = '1' ";
     $sql .= "AND `results`.`ignore` = '0' ";
     $sql .= "AND `results`.`result` != 'na' ";
+    $sql .= "AND `results`.`revision` = `testcases`.`revision` ";
 
     $r = $this->query($sql);
     while ($resultData = $r->fetchRow()) {

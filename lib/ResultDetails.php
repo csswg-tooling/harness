@@ -40,6 +40,7 @@ class ResultDetails extends DBConnection
     $sql .= "WHERE `testcases`.`testsuite` LIKE '" . $this->encode($testSuiteQuery, TESTCASES_MAX_TESTSUITE) . "' ";
     $sql .= "AND `testcases`.`active` = '1' ";
     $sql .= "AND `results`.`ignore` = '0' ";
+    $sql .= "AND `results`.`revision` = `testcases`.`revision` ";
     
     if ($testCaseName) {
       $sql .= "AND `testcases`.`testcase` = '" . $this->encode($testCaseName, TESTCASES_MAX_TESTCASE) . "' ";

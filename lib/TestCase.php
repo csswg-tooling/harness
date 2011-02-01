@@ -155,6 +155,7 @@ class TestCase extends DBConnection
     // Select case ordered by sequence table
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
@@ -242,6 +243,7 @@ class TestCase extends DBConnection
     // Select case ordered by sequence table
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
@@ -291,6 +293,7 @@ class TestCase extends DBConnection
     
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
@@ -319,6 +322,7 @@ class TestCase extends DBConnection
   {
     $sql  = "SELECT `testcases`.`id`, `testcases`.`uri`, `testcases`.`testsuite`, ";
     $sql .= "`testcases`.`testgroup`, `testcases`.`testcase`, ";
+    $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
@@ -349,9 +353,10 @@ class TestCase extends DBConnection
   {
     if ($this->isValid()) {
       $sql  = "INSERT INTO `results` ";
-      $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`) ";
+      $sql .= "(`testcase_id`, `revision`, `useragent_id`, `source`, `result`) ";
       $sql .= "VALUES (";
       $sql .= "'" . $this->getId() . "',";
+      $sql .= "'" . $this->getRevision() . "',";
       $sql .= "'" . $userAgent->getId() . "',";
       $sql .= "'" . $this->encode($source, RESULTS_MAX_SOURCE) . "',";
       $sql .= "'" . $this->encode($result) . "'";
@@ -413,6 +418,15 @@ class TestCase extends DBConnection
   {
     if ($this->isValid()) {
       return $this->mInfo['testsuite'];
+    }
+    return FALSE;
+  }
+  
+  
+  function getRevision()
+  {
+    if ($this->isValid()) {
+      return $this->mInfo['revision'];
     }
     return FALSE;
   }

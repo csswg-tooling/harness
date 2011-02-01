@@ -88,6 +88,7 @@ class Results extends DBConnection
     $sql .= "WHERE `testcases`.`testsuite` LIKE '{$testSuiteQuery}' ";
     $sql .= "AND `testcases`.`active` = '1' AND `results`.`ignore` = '0' ";
     $sql .= "AND `results`.`result` != 'na' ";
+    $sql .= "AND `results`.`revision` = `testcases`.`revision` ";
     if ($modified) {
       $modified = $this->encode($modified);
       $sql .= "AND `result`.`modified` <= '{$modified}' ";

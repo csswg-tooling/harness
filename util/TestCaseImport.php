@@ -47,12 +47,12 @@ class TestCaseImport extends CmdLineWorker
     $count = 0;
     foreach ($data as $record) {
       if (0 == $count++) {
-        if ("id\treferences\ttitle\tflags\tlinks\tcredits\tassertion" == $record) {
+        if ("id\treferences\ttitle\tflags\tlinks\trevision\tcredits\tassertion" == $record) {
           continue;
         }
         die("ERROR: unknown format\n");
       }
-      list ($testCase, $references, $title, $flagString, $links, $credits, $assertion) = explode("\t", $record);
+      list ($testCase, $references, $title, $flagString, $links, $revision, $credits, $assertion) = explode("\t", $record);
       
       $active = 1;
       $flagArray = $this->_explodeTrimAndFilter(',', $flagString);
@@ -64,7 +64,7 @@ class TestCaseImport extends CmdLineWorker
       }
       $flagString = implode(',', $flagArray);
       
-      $uri = $this->_combinePath($baseURI, testCase, $extension);
+      $uri = $this->_combinePath($baseURI, $testCase, $extension);
       
       $testCaseId = $this->mTestCaseIds[$testCase];
       
@@ -78,10 +78,12 @@ class TestCaseImport extends CmdLineWorker
       $credits    = $this->encode($credits, TESTCASES_MAX_CREDITS);
       $uri        = $this->encode($uri, TESTCASES_MAX_URI);
       $flagString = $this->encode($flagString);
+      $revision   = intval($revision);
 
       if (0 < $testCaseId) {
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `uri` = '{$uri}', ";
+        $sql .= "`revision` = '{$revision}', ";
         $sql .= "`title` = '{$title}', ";
         $sql .= "`flags` = '{$flagString}', ";
         $sql .= "`assertion` = '{$assertion}', ";
@@ -93,8 +95,9 @@ class TestCaseImport extends CmdLineWorker
         $this->query($sql);
       }
       else {
-        $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `title`, `flags`, `assertion`, `credits`, `active`, `modified`) ";
-        $sql .= "VALUES ('{$uri}', '{$testSuiteName}', '{$testCase}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}', '{$active}', '{$modified}');";
+    die("new test");
+        $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `revision`, `title`, `flags`, `assertion`, `credits`, `active`, `modified`) ";
+        $sql .= "VALUES ('{$uri}', '{$testSuiteName}', '{$testCase}', '{$revision}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}', '{$active}', '{$modified}');";
         
         $this->query($sql);
         
@@ -145,6 +148,7 @@ class TestCaseImport extends CmdLineWorker
     
     foreach ($this->mTestCaseIds as $testCaseId) {
       if (! isset($this->mTestCaseActive[$testCaseId])) {
+    die("missing test");
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `active` = '0', ";
         $sql .= "`modified` = `modified` ";
@@ -158,7 +162,7 @@ class TestCaseImport extends CmdLineWorker
 
 $worker = new TestCaseImport();
 
-$worker->import("testinfo.data", "CSS21_HTML_RC5", "html4/", "htm", "nonHTML", "2011-01-11 23:16:00");
-$worker->import("testinfo.data", "CSS21_XHTML_RC5", "xhtml1/", "xht", "HTMLonly", "2011-01-11 23:16:00");
+$worker->import("testinfo_rev_RC5.data", "CSS21_HTML_RC5", "html4/", "htm", "nonHTML", "2011-01-11 23:16:00");
+$worker->import("testinfo_rev_RC5.data", "CSS21_XHTML_RC5", "xhtml1/", "xht", "HTMLonly", "2011-01-11 23:16:00");
 
 ?>
