@@ -85,7 +85,7 @@ class TestCaseImport extends CmdLineWorker
         $sql .= "SET `uri` = '{$uri}', ";
         $sql .= "`revision` = '{$revision}', ";
         $sql .= "`title` = '{$title}', ";
-        $sql .= "`flags` = '{$flagString}', ";
+//        $sql .= "`flags` = '{$flagString}', ";
         $sql .= "`assertion` = '{$assertion}', ";
         $sql .= "`credits` = '{$credits}', ";
         $sql .= "`active` = '{$active}', ";
