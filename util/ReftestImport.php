@@ -108,6 +108,6 @@ class ReftestImport extends CmdLineWorker
 $worker = new ReftestImport();
 
 $worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/html4/reftest.list", "CSS21_HTML", "html4/");
-$worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/xhtml1/reftest_xhtml.list", "CSS21_XHTML", "xhtml1/");
+$worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/xhtml1/reftest.list", "CSS21_XHTML", "xhtml1/");
 
 ?>
