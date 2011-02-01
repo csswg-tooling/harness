@@ -47,63 +47,73 @@ class GrandfatherResults extends DBConnection
    */
   function copyResults($fromSuite, $toSuite)
   {
-    $sql = "SELECT `id`, `testcase` FROM `testcases` WHERE `testsuite` = '{$toSuite}' AND `grandfather` = '1' ";
+    $sql = "SELECT `id`, `testcase`, `revision` FROM `testcases` WHERE `testsuite` = '{$toSuite}' AND `active` = '1' ";
     $testCasesResult = $this->query($sql);
     
     while ($dbData = $testCasesResult->fetchRow()) {
       $newTestcaseId = $dbData['id'];
       $testCase = $dbData['testcase'];
+      $newTestCaseRevision = $dbData['revision'];
       
       echo "Copy results from {$testCase} ";
       
-      $sql  = "SELECT `id` FROM `testcases` ";
+      $sql  = "SELECT `id`, `revision` FROM `testcases` ";
       $sql .= "WHERE `testcase` = '{$testCase}' AND `testsuite` = '{$fromSuite}' ";
       $sql .= "LIMIT 1";
       $r = $this->query($sql);
-      
+
       if (! $r->succeeded()) {
         echo "not in new suite\n";
       }
       else {
-        $oldTestcaseId = $r->fetchField(0, 'id');
+        $dbData = $r->fetchRow();
+        $oldTestcaseId = $dbData['id'];
+        $oldTestCaseRevision = $dbData['revision'];
         
-        echo "{$oldTestcaseId} to {$newTestcaseId}\n";
-        
-        $sql  = "SELECT `id`, `useragent_id`, `source`, `result`, `modified` FROM `results` ";
-        $sql .= "WHERE `testcase_id` = '{$oldTestcaseId}' ";
-        $sql .= "AND `result` != 'na' ";
-        $sql .= "AND `ignore` = '0' ";
-        $r = $this->query($sql);
+        if ($newTestCaseRevision == $oldTestCaseRevision) {
+          echo "{$oldTestcaseId}:{$oldTestCaseRevision} to {$newTestcaseId}:{$newTestCaseRevision}\n";
+          
+          $sql  = "SELECT `id`, `revision`, `useragent_id`, `source`, `result`, `modified` FROM `results` ";
+          $sql .= "WHERE `testcase_id` = '{$oldTestcaseId}' ";
+          $sql .= "AND `result` != 'na' ";
+          $sql .= "AND `ignore` = '0' ";
+          $sql .= "AND `revision` = '{$newTestCaseRevision}' ";
+          $r = $this->query($sql);
 
-        if ($r->succeeded()) {
-          while ($resultData = $r->fetchRow()) {
-            $resultId     = $resultData['id'];
-            $useragentId  = $resultData['useragent_id'];
-            $source       = $resultData['source'];
-            $result       = $resultData['result'];
-            $modified     = $resultData['modified'];
-            
-            echo "  {$useragentId} {$source} {$result} {$modified}\n";
-            
-            $source = $this->encode($source, RESULTS_MAX_SOURCE);
-            
-            $sql  = "INSERT INTO results (testcase_id, useragent_id, source, original_id, result, modified) VALUES ";
-            $sql .= "('{$newTestcaseId}', '{$useragentId}', '{$source}', '{$resultId}', '{$result}', '{$modified}')";
+          if ($r->succeeded()) {
+            while ($resultData = $r->fetchRow()) {
+              $resultId     = $resultData['id'];
+              $useragentId  = $resultData['useragent_id'];
+              $source       = $resultData['source'];
+              $result       = $resultData['result'];
+              $modified     = $resultData['modified'];
+              $revision     = $resultData['revision'];
+              
+              echo "  {$useragentId} {$source} {$result} {$modified}\n";
+              
+              $source = $this->encode($source, RESULTS_MAX_SOURCE);
+              
+              $sql  = "INSERT INTO `results` (`testcase_id`, `revision`, `useragent_id`, `source`, `original_id`, `result`, `modified`) VALUES ";
+              $sql .= "('{$newTestcaseId}', '{$revision}', '{$useragentId}', '{$source}', '{$resultId}', '{$result}', '{$modified}')";
 
-            $this->query($sql);
+              $this->query($sql);
+            }
           }
+          
+          $sql  = "UPDATE `testcases` SET `grandfather` = '2' WHERE `id` = '{$newTestcaseId}'";
+          $this->query($sql);      
+        }
+        else {
+          echo "test changed\n";
         }
       }
-      
-      $sql  = "UPDATE testcases SET grandfather='2' WHERE id='{$newTestcaseId}'";
-      $this->query($sql);      
     }
   }
 }
 
 $worker = new GrandfatherResults();
 
-$worker->copyResults('CSS21_HTML_RC4', 'CSS21_HTML_RC5');
-$worker->copyResults('CSS21_XHTML_RC4', 'CSS21_XHTML_RC5');
+$worker->copyResults('CSS21_HTML_RC5', 'CSS21_HTML');
+$worker->copyResults('CSS21_XHTML_RC5', 'CSS21_XHTML');
 
 ?>

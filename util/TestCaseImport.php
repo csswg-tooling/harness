@@ -36,7 +36,7 @@ class TestCaseImport extends CmdLineWorker
   }
 
     
-  function import($manifest, $testSuiteName, $baseURI, $extension, $skipFlag, $modified)
+  function import($manifest, $testSuiteName, $baseURI, $extension, $skipFlag)
   {
     $this->_loadTestCases($testSuiteName);
     
@@ -66,7 +66,7 @@ class TestCaseImport extends CmdLineWorker
       
       $uri = $this->_combinePath($baseURI, $testCase, $extension);
       
-      $testCaseId = $this->mTestCaseIds[$testCase];
+      $testCaseId = $this->_getTestCaseId($testCase);
       
       $title      = Page::Decode($title);
       $assertion  = Page::Decode($assertion);
@@ -85,19 +85,17 @@ class TestCaseImport extends CmdLineWorker
         $sql .= "SET `uri` = '{$uri}', ";
         $sql .= "`revision` = '{$revision}', ";
         $sql .= "`title` = '{$title}', ";
-//        $sql .= "`flags` = '{$flagString}', ";
+        $sql .= "`flags` = '{$flagString}', ";
         $sql .= "`assertion` = '{$assertion}', ";
         $sql .= "`credits` = '{$credits}', ";
         $sql .= "`active` = '{$active}', ";
-        $sql .= "`modified` = '{$modified}' ";
         $sql .= "WHERE `id` = '{$testCaseId}' ";
         
         $this->query($sql);
       }
       else {
-    die("new test");
-        $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `revision`, `title`, `flags`, `assertion`, `credits`, `active`, `modified`) ";
-        $sql .= "VALUES ('{$uri}', '{$testSuiteName}', '{$testCase}', '{$revision}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}', '{$active}', '{$modified}');";
+        $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `revision`, `title`, `flags`, `assertion`, `credits`, `active`) ";
+        $sql .= "VALUES ('{$uri}', '{$testSuiteName}', '{$testCase}', '{$revision}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}', '{$active}');";
         
         $this->query($sql);
         
@@ -148,7 +146,6 @@ class TestCaseImport extends CmdLineWorker
     
     foreach ($this->mTestCaseIds as $testCaseId) {
       if (! isset($this->mTestCaseActive[$testCaseId])) {
-    die("missing test");
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `active` = '0', ";
         $sql .= "`modified` = `modified` ";
@@ -162,7 +159,7 @@ class TestCaseImport extends CmdLineWorker
 
 $worker = new TestCaseImport();
 
-$worker->import("testinfo_rev_RC5.data", "CSS21_HTML_RC5", "html4/", "htm", "nonHTML", "2011-01-11 23:16:00");
-$worker->import("testinfo_rev_RC5.data", "CSS21_XHTML_RC5", "xhtml1/", "xht", "HTMLonly", "2011-01-11 23:16:00");
+$worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/testinfo.data", "CSS21_HTML", "html4/", "htm", "nonHTML");
+$worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/testinfo.data", "CSS21_XHTML", "xhtml1/", "xht", "HTMLonly");
 
 ?>

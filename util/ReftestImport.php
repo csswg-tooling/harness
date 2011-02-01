@@ -95,7 +95,7 @@ class ReftestImport extends CmdLineWorker
     // clear reftest flags for tests that no longer have references
     foreach ($this->mTestCaseIds as $testCaseId) {
       if (! isset($testCaseHasReference[$testCaseId])) {
-        $sql  = "UPDATE `testacses` ";
+        $sql  = "UPDATE `testcases` ";
         $sql .= "SET `flags` = REPLACE(`flags`, 'reftest', ''), `modified` = `modified` ";
         $sql .= "WHERE `id` = {$testCaseId} ";
         
@@ -107,7 +107,7 @@ class ReftestImport extends CmdLineWorker
 
 $worker = new ReftestImport();
 
-$worker->import("reftest_html.list", "CSS21_HTML_RC5", "html4/");
-$worker->import("reftest_xhtml.list", "CSS21_XHTML_RC5", "xhtml1/");
+$worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/html4/reftest.list", "CSS21_HTML", "html4/");
+$worker->import("/sites/test.csswg.org/suites/css2.1/nightly-unstable/xhtml1/reftest_xhtml.list", "CSS21_XHTML", "xhtml1/");
 
 ?>
