@@ -185,7 +185,8 @@ class TestCasePage extends HarnessPage
     echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
     
     $testName = Page::Encode($this->mTestCase->getTestCaseName());
-    echo $indent . "  Test Case: <a href='{$this->mTestCase->getURI()}' target='test_case'>{$testName}</a>\n";
+    $testURI = Page::Encode($this->mTestCase->getURI());
+    echo $indent . "  Test Case: <a href='{$testURI}' target='test_case'>{$testName}</a>\n";
     
     if ($this->mTestCase->isReferenceTest()) {
       $refTests = $this->mTestCase->getReferences();
@@ -194,11 +195,17 @@ class TestCasePage extends HarnessPage
           $refId    = $refTest['id'];
           $refName  = Page::Encode($refTest['reference']);
           $refType  = Page::Encode($this->mTestCase->getReferenceType($refId));
-          $refURI   = $this->mTestCase->getReferenceURI($refId);
+          $refURI   = Page::Encode($this->mTestCase->getReferenceURI($refId));
           echo $indent . "  {$refType} <a href='{$refURI}' target='reference'>{$refName}</a>\n";
         }
       }
     }
+    
+    $args['s'] = $this->mTestSuite->getName();
+    $args['c'] = $this->mTestCase->getTestCaseName();
+    $args['u'] = $this->mUserAgent->getId();
+    $detailsURI = Page::EncodeURI(DETAILS_PAGE_URI, $args);
+    echo $indent . "  (<a href='{$detailsURI}' target='details'>Results</a>)\n";
     
     echo $indent . "</{$element}>\n";
   }
@@ -321,6 +328,7 @@ class TestCasePage extends HarnessPage
     echo $indent . "    <input type='submit' name='result' value='Skip [4]' accesskey='4'>\n";
     echo $indent . "  </p>\n";
     echo $indent . "</form>\n";
+    
   }
   
   

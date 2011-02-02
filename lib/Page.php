@@ -60,12 +60,22 @@ class Page
       }
       $baseURI = substr($baseURI, 0, $hashIndex);
     }
-    if ((0 < strlen($fragId)) && ('#' != substr($fragId, 0, 1))) {
-      $fragId = '#' . $fragId;
+    if (0 < strlen($fragId)) {
+      if ('#' != substr($fragId, 0, 1)) {
+        $fragId = '#' . rawurlencode($fragId);
+      }
+      else {
+        $fragId = '#' . rawurlencode(substr(1, $fragId));
+      }
     }
     
     if (0 < count($queryArgs)) {
-      $query = http_build_query($queryArgs, 'var_');
+      if (defined('PHP_QUERY_RFC3986')) {
+        $query = http_build_query($queryArgs, 'var_', '&', PHP_QUERY_RFC3986);
+      }
+      else {
+        $query = http_build_query($queryArgs, 'var_', '&');
+      }
       if ('?' != substr($baseURI, -1, 1)) {
         $query = '?' . $query;
       }

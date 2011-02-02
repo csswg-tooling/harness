@@ -86,6 +86,9 @@ class DetailsPage extends HarnessPage
     if ($this->mTestSuite) {
       $title = "Review Results";
       $args['s'] = $this->mTestSuite->getName();
+      if (! $this->mUserAgent->isActualUA()) {
+        $args['u'] = $this->mUserAgent->getId();
+      }
       $uri = Page::BuildURI(REVIEW_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
