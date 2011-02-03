@@ -38,12 +38,15 @@ class TestCaseImport extends CmdLineWorker
     
   function import($manifest, $testSuiteName, $baseURI, $extension, $skipFlag)
   {
+    echo "Loading testcases from: {$testSuiteName}\n";
     $this->_loadTestCases($testSuiteName);
     
     $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
     
+    echo "Reading source file: {$manifest}\n";
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
+    echo "Storing test data\n";
     $count = 0;
     foreach ($data as $record) {
       if (0 == $count++) {
@@ -88,18 +91,27 @@ class TestCaseImport extends CmdLineWorker
         $sql .= "`flags` = '{$flagString}', ";
         $sql .= "`assertion` = '{$assertion}', ";
         $sql .= "`credits` = '{$credits}', ";
-        $sql .= "`active` = '{$active}', ";
+        $sql .= "`active` = '{$active}' ";
         $sql .= "WHERE `id` = '{$testCaseId}' ";
         
-        $this->query($sql);
+        $r = $this->query($sql);
+        if (! $r->succeeded()) {
+          die("Update failed {$testCase}:{$testCaseId}\n");
+        }
       }
       else {
         $sql  = "INSERT INTO `testcases` (`uri`, `testsuite`, `testcase`, `revision`, `title`, `flags`, `assertion`, `credits`, `active`) ";
         $sql .= "VALUES ('{$uri}', '{$testSuiteName}', '{$testCase}', '{$revision}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}', '{$active}');";
         
-        $this->query($sql);
+        $r = $this->query($sql);
         
-        $testCaseId = $this->lastInsertId();
+        if ($r->succeeded()) {
+          $testCaseId = $this->lastInsertId();
+          echo "Inserted {$testCase}:{$testCaseId}\n";
+        }
+        else {
+          die("Insert failed: {$testCase}\n");
+        }
       }
 
       if (0 < $testCaseId) {
@@ -144,7 +156,7 @@ class TestCaseImport extends CmdLineWorker
       }
     }
     
-    foreach ($this->mTestCaseIds as $testCaseId) {
+    foreach ($this->mTestCaseIds as $testCase => $testCaseId) {
       if (! isset($this->mTestCaseActive[$testCaseId])) {
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `active` = '0', ";
@@ -152,6 +164,7 @@ class TestCaseImport extends CmdLineWorker
         $sql .= "WHERE `id` = '{$testCaseId}' ";
         
         $this->query($sql);
+        echo "Deactivated {$testCase}:{$testCaseId}\n";
       }
     }
   }
