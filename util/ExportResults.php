@@ -61,7 +61,7 @@ class ExportResults extends CmdLineWorker
       $outFile = fopen($outPath, "wb");
       
       if ($outFile) {
-        fwrite($outFile, "testcase, result, format, date, source, engine, useragent\n");
+        fwrite($outFile, "testcase,result,format,date,source,engine,useragent\n");
         
         $sql  = "SELECT `testsuite`, `format` ";
         $sql .= "FROM `testsuites` ";
@@ -97,7 +97,7 @@ class ExportResults extends CmdLineWorker
           $engine           = $this->_encode($data['engine']);
           $userAgentString  = $this->_encode($data['useragent']);
 
-          fwrite($outFile, "{$testCaseName}, {$result}, {$testFormat}, {$date}, {$source}, ${engine}, {$userAgentString}\n");
+          fwrite($outFile, "{$testCaseName},{$result},{$testFormat},{$date},{$source},${engine},{$userAgentString}\n");
           
         }
         
