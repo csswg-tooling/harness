@@ -38,7 +38,16 @@ class ExportResults extends CmdLineWorker
     echo "USAGE: php ExportResults.php testsuite outputfile\n";
   }
   
-    
+  
+  protected function _encode($string)
+  {
+    if ((FALSE !== strpos($string, ',')) || (FALSE !== strpos($string, '"'))) {
+      $string = '"' . str_replace('"', '""', $string) . '"';
+    }
+    return $string;
+  }
+  
+  
   /**
    * Dump test results into a csv file
    *
@@ -52,7 +61,7 @@ class ExportResults extends CmdLineWorker
       $outFile = fopen($outPath, "wb");
       
       if ($outFile) {
-        fwrite($outFile, '"testcase", "result", "format", "date", "source", "engine", "useragent"' . "\n");
+        fwrite($outFile, "testcase, result, format, date, source, engine, useragent\n");
         
         $sql  = "SELECT `testsuite`, `format` ";
         $sql .= "FROM `testsuites` ";
@@ -80,15 +89,15 @@ class ExportResults extends CmdLineWorker
         $r = $this->query($sql);
         
         while ($data = $r->fetchRow()) {
-          $testCaseName     = $data['testcase'];
-          $result           = $data['result'];
-          $testFormat       = $formats[$data['testsuite']];
-          $date             = $data['modified'];
-          $source           = $data['source'];
-          $engine           = $data['engine'];
-          $userAgentString  = str_replace('"', '""', $data['useragent']);
+          $testCaseName     = $this->_encode($data['testcase']);
+          $result           = $this->_encode($data['result']);
+          $testFormat       = $this->_encode($formats[$data['testsuite']]);
+          $date             = $this->_encode($data['modified']);
+          $source           = $this->_encode($data['source']);
+          $engine           = $this->_encode($data['engine']);
+          $userAgentString  = $this->_encode($data['useragent']);
 
-          fwrite($outFile, "\"{$testCaseName}\", \"{$result}\", \"{$testFormat}\", \"{$date}\", \"{$source}\", \"${engine}\", \"{$userAgentString}\"\n");
+          fwrite($outFile, "{$testCaseName}, {$result}, {$testFormat}, {$date}, {$source}, ${engine}, {$userAgentString}\n");
           
         }
         
