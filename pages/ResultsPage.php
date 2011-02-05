@@ -104,7 +104,9 @@ class ResultsPage extends HarnessPage
     if ($this->mTestSuite) {
       $title = "Review Results";
       $args['s'] = $this->mTestSuite->getName();
-      $uri = Page::BuildURI(REVIEW_PAGE_URI, $args);
+      $args['u'] = $this->mUserAgent->getId();
+
+      $uri = $this->buildURI(REVIEW_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Results";

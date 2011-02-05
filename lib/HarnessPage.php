@@ -48,6 +48,25 @@ class HarnessPage extends DynamicPage
     $this->mUserAgent = new UserAgent(intval($this->_requestData('u')));
   }  
   
+  
+  /**
+   * Helper function to build URI with query string
+   * 
+   * @param string base uri
+   * @param array associative array of aurguments
+   * @param string fragment identifier
+   * @return string URL encoded
+   */
+  function buildURI($baseURI, $queryArgs, $fragId = null)
+  {
+    // XXX if mod_rewrite, remove 's' arg and convert to path
+    if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
+      unset ($queryArgs['u']);
+    }
+    return parent::buildURI($baseURI, $queryArgs, $fragId);
+  }
+
+
   function getPageTitle()
   {
     if ($this->mTestSuite) {
@@ -57,6 +76,22 @@ class HarnessPage extends DynamicPage
   }
   
   
+  /**
+   * Override to provide titles and URIs for navigation links
+   *
+   * @return array of compact($title, $uri)
+   */
+  function getNavURIs()
+  {
+    $args['u'] = $this->mUserAgent->getId();
+    
+    $title = "Home";
+    $uri = $this->buildURI("./", $args);
+
+    return array(compact('title', 'uri'));
+  }
+
+
   /**
    * Generate <style> element
    */
@@ -96,8 +131,8 @@ class HarnessPage extends DynamicPage
       foreach ($navURIs as $navURI) {
         $index++;
         extract($navURI);
-        $uri = Page::Encode($uri);
-        $title = Page::Encode($title);
+        $uri = self::Encode($uri);
+        $title = self::Encode($title);
         if ($index < $last) {
           echo $indent . "  <a href='{$uri}'>{$title}</a> &raquo; \n";
         }
@@ -160,8 +195,8 @@ class HarnessPage extends DynamicPage
       $contactName = $this->mTestSuite->getContactName();
       $contactURI = $this->mTestSuite->getContactURI();
     }
-    $contactName = Page::Encode($contactName);
-    $contactURI = Page::Encode($contactURI);
+    $contactName = self::Encode($contactName);
+    $contactURI = self::Encode($contactURI);
   
     echo $indent . "<hr />\n";
 

@@ -103,8 +103,8 @@ class ReviewPage extends HarnessPage
     echo $indent . "<select name='g'>\n";
 
     foreach ($testGroups as $groupData) {
-      $groupName = Page::Encode($groupData['testgroup']);
-      $groupTitle = Page::Encode($groupData['title']);
+      $groupName = self::Encode($groupData['testgroup']);
+      $groupTitle = self::Encode($groupData['title']);
       echo $indent . "  <option value='{$groupName}'>{$groupTitle}</option>\n";
     }
     
@@ -119,9 +119,9 @@ class ReviewPage extends HarnessPage
     echo $indent . "<select name='c' style='width: 25em'>\n";
 
     foreach ($testCases as $testCaseData) {
-      $testCase = Page::Encode($testCaseData['testcase']);
-      $testCaseTitle = Page::Encode($testCaseData['title']);
-      echo $indent . "  <option value='{$testCase}'>{$testCaseTitle}</option>\n";
+      $testCase = self::Encode($testCaseData['testcase']);
+      $testCaseTitle = self::Encode($testCaseData['title']);
+      echo $indent . "  <option value='{$testCase}'>{$testCase}: {$testCaseTitle}</option>\n";
     }
     
     echo $indent . "</select>\n";
@@ -132,13 +132,17 @@ class ReviewPage extends HarnessPage
   {
 
     echo $indent . "<p>\n";
-    echo $indent . "  The " . Page::Encode($this->mTestSuite->getTitle()) . " test suite contains ";
+    echo $indent . "  The " . self::Encode($this->mTestSuite->getTitle()) . " test suite contains ";
     echo              $this->mTestCases->getCount() . " test cases. \n";
     echo $indent . "  You can choose to review:\n";
     echo $indent . "</p>\n";
 
     echo $indent . "<form action='" . RESULTS_PAGE_URI . "' method='get' name='result_form' onSubmit='return filterTypes();'>\n";
-    echo $indent . "  <input type='hidden' name='s' value='" . Page::Encode($this->mTestSuite->getName()) . "' />\n";
+    echo $indent . "  <input type='hidden' name='s' value='" . self::Encode($this->mTestSuite->getName()) . "' />\n";
+    if (! $this->mUserAgent->isActualUA()) {
+      echo $indent . "  <input type='hidden' name='u' value='" . self::Encode($this->mUserAgent->getId()) . "' />\n";
+    }
+    
     echo $indent . "  <p>\n";
     echo $indent . "    <input type='radio' name='t' value='0' checked />\n";
     echo $indent . "    The full test suite<br />\n";

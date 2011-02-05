@@ -51,7 +51,7 @@ class DynamicPage extends Page
       if (get_magic_quotes_gpc()) {
         foreach ($input as $key => $value) {
           if (is_array($value)) {
-            $output[strtolower($key)] = DynamicPage::ConditionInput($value);
+            $output[strtolower($key)] = self::ConditionInput($value);
           }
           else {
             $output[strtolower($key)] = stripslashes($value);
@@ -80,9 +80,9 @@ class DynamicPage extends Page
     $this->mErrorContext = null;
     set_error_handler(array(&$this, 'errorHandler'));
     
-    $this->mGetData = DynamicPage::ConditionInput($_GET);
-    $this->mPostData = DynamicPage::ConditionInput($_POST);
-    $this->mRequestData = DynamicPage::ConditionInput($_REQUEST);
+    $this->mGetData = self::ConditionInput($_GET);
+    $this->mPostData = self::ConditionInput($_POST);
+    $this->mRequestData = self::ConditionInput($_REQUEST);
 
   }  
 
@@ -193,21 +193,21 @@ class DynamicPage extends Page
       echo $indent . "<p>\n";
       echo $indent . "  <strong>{$this->mErrorType}</strong>\n";
       if ($this->mErrorMessage) {
-        echo $indent . "  " . Page::Encode($this->mErrorMessage) . "\n";
+        echo $indent . "  " . self::Encode($this->mErrorMessage) . "\n";
       }
       echo $indent . "</p>\n";
     } 
     else {
       if ($this->mErrorMessage) {
-        echo $indent . "<p>" . Page::Encode($this->mErrorMessage) . "</p>\n";
+        echo $indent . "<p>" . self::Encode($this->mErrorMessage) . "</p>\n";
       }
     }
     if (defined('DEBUG_MODE') && DEBUG_MODE) {
       if ($this->mErrorFile) {
-        echo $indent . "<p>File: " . Page::Encode($this->mErrorFile) . "</p>\n";
+        echo $indent . "<p>File: " . self::Encode($this->mErrorFile) . "</p>\n";
       }
       if ($this->mErrorLine) {
-        echo $indent . "<p>Line: " . Page::Encode($this->mErrorLine) . "</p>\n";
+        echo $indent . "<p>Line: " . self::Encode($this->mErrorLine) . "</p>\n";
       }
       if ($this->mErrorContext) {
         echo $indent . "<p>Context: \n";

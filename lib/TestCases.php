@@ -37,6 +37,7 @@ class TestCases extends DBConnection
     $sql .= "FROM `testcases` ";
     $sql .= "WHERE `testsuite` = '{$testSuite}' ";
     $sql .= "AND `active` = '1' ";
+    $sql .= "ORDER BY `testcase` ";
     
     $r = $this->query($sql);
 

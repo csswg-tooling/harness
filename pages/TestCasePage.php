@@ -106,7 +106,8 @@ class TestCasePage extends HarnessPage
       $title = "Enter Data";
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
-      $uri = Page::BuildURI(TESTSUITE_PAGE_URI, $args);
+
+      $uri = $this->buildURI(TESTSUITE_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Test Case";
@@ -146,24 +147,24 @@ class TestCasePage extends HarnessPage
         echo $indent . "  Test {$index} of {$this->mCount}" . ($title ? ":\n" : "\n");
       }
       if ($title) {
-        $title = Page::Encode($title);
+        $title = self::Encode($title);
         if ($assertion) {
-          $title = "<abbr title='" . Page::Encode($assertion) . "'>{$title}</abbr>";
+          $title = "<abbr title='" . self::Encode($assertion) . "'>{$title}</abbr>";
         }
         echo $indent . "  {$title}\n";
       }
       elseif ($assertion) {
-        $assertion = Page::Encode($assertion);
+        $assertion = self::Encode($assertion);
         echo $indent . "  Assertion: {$assertion}\n";
       }
       if ($specURIs && (0 < count($specURIs))) {
-        echo $indent . "  (";
+        echo $indent . "  <span class='speclink'>(";
         $index = -1;
         foreach ($specURIs as $specURI) {
           $index++;
           extract($specURI);
           if ($title) {
-            $title = "<abbr title='" . Page::Encode($title) . "'>Spec</abbr>";
+            $title = "<abbr title='" . self::Encode($title) . "'>Spec</abbr>";
           }
           else {
             $title = "Spec";
@@ -173,7 +174,7 @@ class TestCasePage extends HarnessPage
           }
           echo "<a href='{$uri}' target='spec'>{$title}</a>";
         }
-        echo ")\n";
+        echo ")</span>\n";
       }
       echo $indent . "</{$element}>\n";
     }
@@ -184,8 +185,8 @@ class TestCasePage extends HarnessPage
   {
     echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
     
-    $testName = Page::Encode($this->mTestCase->getTestCaseName());
-    $testURI = Page::Encode($this->mTestCase->getURI());
+    $testName = self::Encode($this->mTestCase->getTestCaseName());
+    $testURI = self::Encode($this->mTestCase->getURI());
     echo $indent . "  Test Case: <a href='{$testURI}' target='test_case'>{$testName}</a>\n";
     
     if ($this->mTestCase->isReferenceTest()) {
@@ -193,9 +194,9 @@ class TestCasePage extends HarnessPage
       if ($refTests) {
         foreach ($refTests as $refTest) {
           $refId    = $refTest['id'];
-          $refName  = Page::Encode($refTest['reference']);
-          $refType  = Page::Encode($this->mTestCase->getReferenceType($refId));
-          $refURI   = Page::Encode($this->mTestCase->getReferenceURI($refId));
+          $refName  = self::Encode($refTest['reference']);
+          $refType  = self::Encode($this->mTestCase->getReferenceType($refId));
+          $refURI   = self::Encode($this->mTestCase->getReferenceURI($refId));
           echo $indent . "  {$refType} <a href='{$refURI}' target='reference'>{$refName}</a>\n";
         }
       }
@@ -204,8 +205,9 @@ class TestCasePage extends HarnessPage
     $args['s'] = $this->mTestSuite->getName();
     $args['c'] = $this->mTestCase->getTestCaseName();
     $args['u'] = $this->mUserAgent->getId();
-    $detailsURI = Page::EncodeURI(DETAILS_PAGE_URI, $args);
-    echo $indent . "  (<a href='{$detailsURI}' target='details'>Results</a>)\n";
+
+    $detailsURI = $this->encodeURI(DETAILS_PAGE_URI, $args);
+    echo $indent . "  <span class='resultlink'>(<a href='{$detailsURI}' target='details'>Results</a>)<span>\n";
     
     echo $indent . "</{$element}>\n";
   }
@@ -254,19 +256,19 @@ class TestCasePage extends HarnessPage
         else {
           $args = $this->mGetData;
           unset($args['ref']);
-          $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+          $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
           echo $indent . "    <li class='reftab'><a href='{$uri}'>Test Case</a></li>\n";
         }
         foreach ($refTests as $refTest) {
           $refId = $refTest['id'];
-          $refType = Page::Encode($refTest['type']);
+          $refType = self::Encode($refTest['type']);
           if ($refId == $this->mRefId) {
             echo $indent . "    <li class='reftab active'><a>{$refType} Reference Page</a></li>\n";
           }
           else {
             $args = $this->mGetData;
             $args['ref'] = $refId;
-            $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+            $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
             echo $indent . "    <li class='reftab'><a href='{$uri}'>";
             echo               "{$refType} Reference Page";
             echo               "</a></li>\n";
@@ -318,8 +320,8 @@ class TestCasePage extends HarnessPage
     echo $indent . "<form name='eval' action='" . SUBMIT_PAGE_URI . "' method='post'>\n";
     echo $indent . "  <p class='buttons'>\n";
     foreach($this->mSubmitData as $opt => $value) {
-      $opt = Page::Encode($opt);
-      $value = Page::Encode($value);
+      $opt = self::Encode($opt);
+      $value = self::Encode($value);
       echo $indent . "    <input type='hidden' name='{$opt}' value='{$value}'>\n";
     }
     echo $indent . "    <input type='submit' name='result' value='Pass [1]' accesskey='1'>\n";
@@ -335,8 +337,8 @@ class TestCasePage extends HarnessPage
   function writeUserAgent($indent = '')
   {
     if ($this->mUserAgent) {
-      $uaString = Page::Encode($this->mUserAgent->getUAString());
-      $description = Page::Encode($this->mUserAgent->getDescription());
+      $uaString = self::Encode($this->mUserAgent->getUAString());
+      $description = self::Encode($this->mUserAgent->getDescription());
 
       echo $indent . "<p class='ua'>\n";
       
@@ -350,7 +352,7 @@ class TestCasePage extends HarnessPage
 
         $args = $this->mGetData;
         unset($args['u']);
-        $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+        $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
         echo $indent . " <a href='{$uri}'>(Reset)</a>\n";
       }
       echo $indent . "</p>\n";

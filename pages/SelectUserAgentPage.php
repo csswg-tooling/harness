@@ -46,7 +46,8 @@ class SelectUserAgentPage extends HarnessPage
       $title = "Enter Data";
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
-      $uri = Page::BuildURI(TESTSUITE_PAGE_URI, $args);
+
+      $uri = $this->buildURI(TESTSUITE_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Select User Agent";
@@ -60,8 +61,8 @@ class SelectUserAgentPage extends HarnessPage
   function writeHiddenFormControls($indent = '')
   {
     foreach($this->mSubmitData as $opt => $value) {
-      $opt = Page::Encode($opt);
-      $value = Page::Encode($value);
+      $opt = self::Encode($opt);
+      $value = self::Encode($value);
       echo $indent . "<input type='hidden' name='{$opt}' value='{$value}'>\n";
     }
   }
@@ -150,15 +151,15 @@ class SelectUserAgentPage extends HarnessPage
       echo $indent . "  <select name='u' size='10' style='width: 80%'>\n";
       $actualUAId = $this->mUserAgent->getActualUA()->getId();
       foreach ($userAgents as $engine => $agentsByEngine) {
-        $engine = Page::Encode($engine);
+        $engine = self::Encode($engine);
         echo $indent . "    <optgroup label='{$engine}'>\n";
         foreach ($agentsByEngine as $browser => $agentsByBrowser) {
-          $browser = Page::Encode($browser);
+          $browser = self::Encode($browser);
           foreach ($agentsByBrowser as $platform => $agentsByPlatform) {
-            $platform = Page::Encode($platform);
+            $platform = self::Encode($platform);
             foreach ($agentsByPlatform as $userAgent) {
               $uaId = $userAgent->getId();
-              $uaString = Page::Encode($userAgent->getUAString());
+              $uaString = self::Encode($userAgent->getUAString());
               if ($uaId == $actualUAId) {
                 $selected = 'selected ';
               }

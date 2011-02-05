@@ -46,7 +46,7 @@ class SpiderTrap
     }
     $args['seq'] = ++$this->mSequence;
     $args['uid'] = $largeNumber;
-    $uri = Page::EncodeURI(SPIDER_TRAP_URI, $args);
+    $uri = Page::_EncodeURI(SPIDER_TRAP_URI, $args);
     $link = "<a href='{$uri}' class='report'>{$this->mSequence}-{$largeNumber}</a>";
     return $link;
   }

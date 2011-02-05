@@ -38,6 +38,9 @@ h1, h2, h3, h4 {
   font-size: 1.0em;
   margin-bottom: 4pt;
 }
+.resultlink {
+  font-weight: normal;
+}
 .notes {
   font-size: smaller;
 }

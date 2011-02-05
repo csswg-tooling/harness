@@ -62,6 +62,7 @@ class Resequence extends CmdLineWorker
     $sql .= "FROM `testcases` ";
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
     $sql .= "AND `active` = '1' ";
+    $sql .= "ORDER BY `testcase` ";
     
     $r = $this->query($sql);
     while ($testCaseData = $r->fetchRow()) {
@@ -105,7 +106,7 @@ class Resequence extends CmdLineWorker
   }
 
 
-  protected function _processTestcase($testCaseId, $testCaseName, $engineResults, $optional)
+  protected function _processTestcase($testCaseId, $testCaseName, $engineResults, $optional, $index)
   {
     $passCount = 0;
     $testInvalid = FALSE;
@@ -155,7 +156,7 @@ class Resequence extends CmdLineWorker
         }
       }
     
-      $this->mCounts[$engine][$testCaseName] = ($count + 8) + ($testCaseId / 10000000);
+      $this->mCounts[$engine][$testCaseName] = ($count + 8) + ($index / 10000000);
     }
   }
   
@@ -196,7 +197,9 @@ class Resequence extends CmdLineWorker
 
       print "Processing results\n";
       
+      $index = 0;
       foreach ($this->mTestCaseIds as $testCaseName => $testCaseId) {
+        $index++;
         $optional = $this->mTestCaseOptional[$testCaseId];
         
         unset ($engineResults);
@@ -216,7 +219,7 @@ class Resequence extends CmdLineWorker
           }
         }
         
-        $this->_processTestCase($testCaseId, $testCaseName, $engineResults, $optional);
+        $this->_processTestCase($testCaseId, $testCaseName, $engineResults, $optional, $index);
       }
           
       foreach ($this->mEngines as $engine) {

@@ -44,17 +44,17 @@ class WelcomePage extends HarnessPage
     $testSuites = $this->mTestSuites->getTestSuites();
     
     foreach($testSuites as $testSuite) {
-      $args['s'] = $testSuite->getName();
-      $reviewURI = Page::EncodeURI(REVIEW_PAGE_URI, $args);
-      
-      if ($this->_getData('u')) {
-        $args['u'] = $this->_getData('u');
-      }
-      $enterURI = Page::EncodeURI(TESTSUITE_PAGE_URI, $args);
+      $homeURI = self::Encode($testSuite->getHomeURI());
 
-      $homeURI = Page::Encode($testSuite->getHomeURI());
-      $title = Page::Encode($testSuite->getTitle());
-      $description = Page::Encode($testSuite->getDescription());
+      unset($args);
+      $args['s'] = $testSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+
+      $reviewURI = $this->encodeURI(REVIEW_PAGE_URI, $args);
+      $enterURI = $this->encodeURI(TESTSUITE_PAGE_URI, $args);
+
+      $title = self::Encode($testSuite->getTitle());
+      $description = self::Encode($testSuite->getDescription());
       
       echo $indent . "  <dt>\n";
       echo $indent . "    <a href='{$homeURI}'>{$title}</a>\n";

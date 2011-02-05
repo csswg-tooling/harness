@@ -46,9 +46,10 @@ class SetUserAgentPage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       
       $this->mUserAgent->update();
+
       $args['u'] = $this->mUserAgent->getId();
 
-      $this->mNewURI = Page::BuildURI(TESTSUITE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
     }
 
   }  
@@ -69,8 +70,8 @@ class SetUserAgentPage extends HarnessPage
     echo $indent . "<p>\n";
     echo $indent . "  You have requested to provide results for the following user agent:\n";
     
-    $uaString = Page::Encode($this->mUserAgent->getUAString());
-    $uaDescription = Page::Encode($this->mUserAgent->getDescription());
+    $uaString = self::Encode($this->mUserAgent->getUAString());
+    $uaDescription = self::Encode($this->mUserAgent->getDescription());
     echo $indent . "  <abbr title='{$uaString}'>{$uaDescription}</abbr>\n";
     echo $indent . "</p>\n";
 

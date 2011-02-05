@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 require_once('lib/DBConnection.php');
+require_once('lib/Page.php');
 
 /**
  * Gather and report test results per engine, computing CR Exit Criteria
@@ -160,7 +161,8 @@ class Results extends DBConnection
         $args['s'] = $this->mTestSuiteName;
         $args['c'] = $testCaseName;
         $args['e'] = $engine;
-        $detailsURI = Page::EncodeURI(DETAILS_PAGE_URI, $args);
+//XXX   $args['u'] = $this->mUserAgent->getId();  // when moved to results page
+        $detailsURI = Page::_EncodeURI(DETAILS_PAGE_URI, $args);  // XXX $this->encodeURI
         $row .= "<a href='{$detailsURI}' target='details'>";
         $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
@@ -224,13 +226,13 @@ class Results extends DBConnection
       unset($args);
       $args['s'] = $this->mTestSuiteName;
       $args['c'] = $testCaseName;
+//XXX   $args['u'] = $this->mUserAgent->getId();  // when moved to results page
       if ($hasResults) {
-        $uri = Page::EncodeURI(DETAILS_PAGE_URI, $args);
+        $uri = Page::_EncodeURI(DETAILS_PAGE_URI, $args); // XXX $this->encodeURI
         $uriTarget = " target='details'";
       }
       else {
-//XXX        $args['u'] = $this->mUserAgent->getId();   when moved to resultsPage
-        $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
+        $uri = Page::_EncodeURI(TESTCASE_PAGE_URI, $args);  // XXX $this->encodeURI
         $uriTarget = '';
       }
       echo "<a href='{$uri}'{$uriTarget}>{$testCaseName}</a></td>";

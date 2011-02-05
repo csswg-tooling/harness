@@ -86,10 +86,9 @@ class DetailsPage extends HarnessPage
     if ($this->mTestSuite) {
       $title = "Review Results";
       $args['s'] = $this->mTestSuite->getName();
-      if (! $this->mUserAgent->isActualUA()) {
-        $args['u'] = $this->mUserAgent->getId();
-      }
-      $uri = Page::BuildURI(REVIEW_PAGE_URI, $args);
+      $args['u'] = $this->mUserAgent->getId();
+
+      $uri = $this->buildURI(REVIEW_PAGE_URI, $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Details";
@@ -134,7 +133,7 @@ class DetailsPage extends HarnessPage
 
       foreach($data as $resultData) {
 
-        echo $indent . "  <tr class='" . Page::Encode($resultData['result']) . "'>\n";
+        echo $indent . "  <tr class='" . self::Encode($resultData['result']) . "'>\n";
         $testSuiteName  = $resultData['testsuite']; // XXX temp until format support landed - $this->mTestSuite->getName();
         $testCaseName   = $resultData['testcase'];
         $userAgentId    = $resultData['useragent_id'];
@@ -142,21 +141,22 @@ class DetailsPage extends HarnessPage
         $userAgent = new UserAgent(intval($userAgentId));
         $testSuite = new TestSuite($testSuiteName);
 
-        $result         = Page::Encode($resultData['result']);
-        $date           = Page::Encode($resultData['date']);
-        $source         = Page::Encode($resultData['source']);
-        $uaString       = Page::Encode($userAgent->getUAString());
-        $uaDescription  = Page::Encode($userAgent->getDescription());
+        $result         = self::Encode($resultData['result']);
+        $date           = self::Encode($resultData['date']);
+        $source         = self::Encode($resultData['source']);
+        $uaString       = self::Encode($userAgent->getUAString());
+        $uaDescription  = self::Encode($userAgent->getDescription());
         
         echo $indent . "    <td>";
         echo $this->mSpiderTrap->getTrapLink();
         $args['s'] = $testSuiteName;
         $args['c'] = $testCaseName;
         $args['u'] = $this->mUserAgent->getId();
-        $uri = Page::EncodeURI(TESTCASE_PAGE_URI, $args);
-        echo "<a href='{$uri}'>" . Page::Encode($testCaseName) . "</a></td>\n";
 
-        echo $indent . "    <td>" . Page::Encode($testSuite->getFormat()) . "</td>\n";
+        $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
+        echo "<a href='{$uri}'>" . self::Encode($testCaseName) . "</a></td>\n";
+
+        echo $indent . "    <td>" . self::Encode($testSuite->getFormat()) . "</td>\n";
         echo $indent . "    <td>{$result}</td>\n";
         echo $indent . "    <td><abbr title='{$uaString}'>{$uaDescription}<abbr></td>\n";
         echo $indent . "    <td>{$date}</td>\n";

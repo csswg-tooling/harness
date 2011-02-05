@@ -91,7 +91,7 @@ class SubmitPage extends HarnessPage
     }
 
     if ($result) {
-      $source = Page::GetClientIP();
+      $source = self::GetClientIP();
       if (! $this->mUserAgent->isActualUA()) {
         $source .= '*';
       }
@@ -100,8 +100,9 @@ class SubmitPage extends HarnessPage
      
     $nextIndex = $this->_postData('next');
     
+    $args['s'] = $this->mTestSuite->getName();
+    $args['u'] = $this->mUserAgent->getId();
     if (0 < $nextIndex) {
-      $args['s'] = $this->mTestSuite->getName();
       if ($testGroupName) {
         $args['g'] = $testGroupName;
       }
@@ -112,13 +113,10 @@ class SubmitPage extends HarnessPage
       if ($modified) {
         $args['m'] = $modified;
       }
-      $args['u'] = $this->mUserAgent->getId();
-      $this->mNewURI = Page::BuildURI(TESTCASE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildURI(TESTCASE_PAGE_URI, $args);
     }
     else {
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
-      $this->mNewURI = Page::BuildURI(SUCCESS_PAGE_URI, $args);
+      $this->mNewURI = $this->buildURI(SUCCESS_PAGE_URI, $args);
     }
   }
 
@@ -136,7 +134,7 @@ class SubmitPage extends HarnessPage
     echo $indent . "</p>\n";
     echo $indent . "<p>\n";
     echo $indent . "  We have processed your submission and you should have been redirected \n";
-    echo $indent . "  <a href='" . Page::Encode($this->mNewURI) . "'>here</a>.\n";
+    echo $indent . "  <a href='" . self::Encode($this->mNewURI) . "'>here</a>.\n";
     echo $indent . "</p>\n";
   }
 }

@@ -46,6 +46,7 @@ class CmdLineWorker extends DBConnection
     $sql  = "SELECT `id`, `testcase` ";
     $sql .= "FROM `testcases` ";
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+    $sql .= "ORDER BY `testcase` ";
     
     $r = $this->query($sql);
     while ($testCaseData = $r->fetchRow()) {

@@ -45,13 +45,14 @@ class Page
   
   /**
    * Static helper function to build URI with query string
+   * Instances of this class should use $this-buildURI instead
    * 
    * @param string base uri
    * @param array associative array of aurguments
    * @param string fragment identifier
    * @return string URL encoded
    */
-  static function BuildURI($baseURI, $queryArgs, $fragId = null)
+  static function _BuildURI($baseURI, $queryArgs, $fragId = null)
   {
     $hashIndex = strpos($baseURI, '#');
     if (FALSE !== $hashIndex) { // remove existing fragId
@@ -90,15 +91,21 @@ class Page
   /**
    * Static helper function to build URI with query string
    * result is encoded ready for HTML output
+   * Instances of this class should use $this-encodeURI instead
+   * NOTE that in php < 5.3 overriding BuildURI static function does not work
+   * this method's notion of 'self' is Page. In PHP 5.3+ self is late bound to 
+   * the actual class and overriding would work.
+   * To avoid this issue, use the instance method where possible so overrides
+   * always work as expected
    * 
    * @param string base uri
    * @param array associative array of aurguments
    * @param string fragment identifier
    * @return string URL+HTML encoded
    */
-  static function EncodeURI($baseURI, $queryArgs, $fragId = null)
+  static function _EncodeURI($baseURI, $queryArgs, $fragId = null)
   {
-    return Page::Encode(Page::BuildURI($baseURI, $queryArgs, $fragId));
+    return self::Encode(self::_BuildURI($baseURI, $queryArgs, $fragId));
   }
   
   
@@ -127,6 +134,35 @@ class Page
   }  
   
 
+  /**
+   * Helper function to build URI with query string
+   * 
+   * @param string base uri
+   * @param array associative array of aurguments
+   * @param string fragment identifier
+   * @return string URL encoded
+   */
+  function buildURI($baseURI, $queryArgs, $fragId = null)
+  {
+    return self::_BuildURI($baseURI, $queryArgs, $fragId);
+  }
+  
+  
+  /**
+   * Helper function to build URI with query string
+   * result is encoded ready for HTML output
+   * 
+   * @param string base uri
+   * @param array associative array of aurguments
+   * @param string fragment identifier
+   * @return string URL+HTML encoded
+   */
+  function encodeURI($baseURI, $queryArgs, $fragId = null)
+  {
+    return self::Encode($this->buildURI($baseURI, $queryArgs, $fragId));
+  }
+  
+  
   /**
    * Override to set title for page
    */
@@ -259,7 +295,7 @@ class Page
   {
     $baseURI = $this->getBaseURI();
     if ($baseURI) {
-      $baseURI = Page::Encode($baseURI);
+      $baseURI = self::Encode($baseURI);
       echo $indent . "<base href='{$baseURI}'>\n";
     }
   }
@@ -273,7 +309,7 @@ class Page
   {
     $title = $this->getPageTitle();
     if ($title) {
-      $title = Page::Encode($title);
+      $title = self::Encode($title);
       echo $indent . "<title>{$title}</title>\n";
     }
   }

@@ -48,8 +48,9 @@ class TestSuitePage extends HarnessPage
     $this->mTestCases = new TestCases($this->mTestSuite->getName());
 
     $this->mSubmitData['s'] = $this->mTestSuite->getName();
-    $this->mSubmitData['u'] = $this->mUserAgent->getId();
-
+    if (! $this->mUserAgent->isActualUA()) {
+      $this->mSubmitData['u'] = $this->mUserAgent->getId();
+    }
   }  
   
   
@@ -84,8 +85,8 @@ class TestSuitePage extends HarnessPage
     echo $indent . "<select name='g'>\n";
 
     foreach ($testGroups as $groupData) {
-      $groupName = Page::Encode($groupData['testgroup']);
-      $groupTitle = Page::Encode($groupData['title']);
+      $groupName = self::Encode($groupData['testgroup']);
+      $groupTitle = self::Encode($groupData['title']);
       echo $indent . "  <option value='{$groupName}'>{$groupTitle}</option>\n";
     }
     
@@ -100,9 +101,9 @@ class TestSuitePage extends HarnessPage
     echo $indent . "<select name='c' style='width: 25em'>\n";
 
     foreach ($testCases as $testCaseData) {
-      $testCase = Page::Encode($testCaseData['testcase']);
-      $testCaseTitle = Page::Encode($testCaseData['title']);
-      echo $indent . "  <option value='{$testCase}'>{$testCaseTitle}</option>\n";
+      $testCase = self::Encode($testCaseData['testcase']);
+      $testCaseTitle = self::Encode($testCaseData['title']);
+      echo $indent . "  <option value='{$testCase}'>{$testCase}: {$testCaseTitle}</option>\n";
     }
     
     echo $indent . "</select>\n";
@@ -112,8 +113,8 @@ class TestSuitePage extends HarnessPage
   function writeHiddenFormData($indent = '')
   {
     foreach($this->mSubmitData as $opt => $value) {
-      $opt = Page::Encode($opt);
-      $value = Page::Encode($value);
+      $opt = self::Encode($opt);
+      $value = self::Encode($value);
       echo $indent . "<input type='hidden' name='{$opt}' value='{$value}'>\n";
     }
   }
@@ -130,27 +131,27 @@ class TestSuitePage extends HarnessPage
     echo $indent . "<p class='ua'>\n";
     echo $indent . "  You are about the enter test result data for the following user agent:\n";
     
-    $uaString = Page::Encode($this->mUserAgent->getUAString());
-    $uaDescription = Page::Encode($this->mUserAgent->getDescription());
+    $uaString = self::Encode($this->mUserAgent->getUAString());
+    $uaDescription = self::Encode($this->mUserAgent->getDescription());
     
     if ($this->mUserAgent->isActualUA()) {
       echo $indent . "  <abbr title='{$uaString}'>{$uaDescription}</abbr>\n";
 
       $args = $this->mGetData;
-      $uri = Page::EncodeURI(SELECT_UA_PAGE_URI, $args);
+      $uri = $this->encodeURI(SELECT_UA_PAGE_URI, $args);
       echo $indent . "  <a href='{$uri}'>(Other)</a>\n";
     }
     else {
       echo $indent . "  <abbr class='other' title='{$uaString}'>{$uaDescription}</abbr>\n";
       $args = $this->mGetData;
       unset($args['u']);
-      $uri = Page::EncodeURI(TESTSUITE_PAGE_URI, $args);
+      $uri = $this->encodeURI(TESTSUITE_PAGE_URI, $args);
       echo $indent . "  <a href='{$uri}'>(Reset)</a>\n";
     }
     echo $indent . "</p>\n";
 
    
-    $testSuiteTitle = Page::Encode($this->mTestSuite->getTitle());
+    $testSuiteTitle = self::Encode($this->mTestSuite->getTitle());
     echo $indent . "<p>\n";
     echo $indent . "  The {$testSuiteTitle} test suite contains {$this->mTestCases->getCount()} test cases.\n";
     echo $indent . "  You can stop running tests at any time without causing trouble.\n";
