@@ -26,15 +26,35 @@ require_once("lib/Page.php");
  */
 class TestCaseImport extends CmdLineWorker
 {  
-  protected $mTestCaseActive;
+  protected $mTestCaseWasActive;
+  protected $mTestCaseIsActive;
 
   function __construct() 
   {
     parent::__construct();
 
-    $this->mTestCaseActive = array();
+    $this->mTestCaseIsActive = array();
   }
 
+
+  protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)
+  {
+    parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
+
+    $active = intval($testCaseData['active']);
+    
+    $this->mTestCaseWasActive[$testCaseId] = (1 == $active);
+  }
+
+
+  protected function _loadTestCases($testSuiteName)
+  {
+    unset ($this->mTestCaseWasActive);
+    $this->mTestCaseWasActive = array();
+    
+    return parent::_loadTestCases($testSuiteName);
+  }
+  
     
   function import($manifest, $testSuiteName, $baseURI, $extension, $skipFlag)
   {
@@ -45,6 +65,10 @@ class TestCaseImport extends CmdLineWorker
     
     echo "Reading source file: {$manifest}\n";
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    
+    if ((! $data) || (count($data) < 2)) {
+      die("missing or empty manifest file\n");
+    }
     
     echo "Storing test data\n";
     $count = 0;
@@ -115,7 +139,7 @@ class TestCaseImport extends CmdLineWorker
       }
 
       if (0 < $testCaseId) {
-        $this->mTestCaseActive[$testCaseId] = TRUE;
+        $this->mTestCaseIsActive[$testCaseId] = (1 == $active);
         
         // verify flags
         $sql  = "SELECT `flags` ";
@@ -157,7 +181,9 @@ class TestCaseImport extends CmdLineWorker
     }
     
     foreach ($this->mTestCaseIds as $testCase => $testCaseId) {
-      if (! isset($this->mTestCaseActive[$testCaseId])) {
+      if (((! isset($this->mTestCaseIsActive[$testCaseId])) || 
+           (! $this->mTestCaseIsActive[$testCaseId])) && 
+          ($this->mTestCaseWasActive[$testCaseId])) {
         $sql  = "UPDATE `testcases` ";
         $sql .= "SET `active` = '0', ";
         $sql .= "`modified` = `modified` ";

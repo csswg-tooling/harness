@@ -51,30 +51,25 @@ class Resequence extends CmdLineWorker
     $this->mTestSuites = new TestSuites();
   }
   
+  
+  protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)
+  {
+    parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
+
+    $flags = $testCaseData['flags'];
+
+    $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
+    
+    $this->mTestCaseOptional[$testCaseId] = $optional;
+  }
+
+
   protected function _loadTestCases($testSuiteName)
   {
-    unset ($this->mTestCaseIds);
     unset ($this->mTestCaseOptional);
-
-    $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
+    $this->mTestCaseOptional = array();
     
-    $sql  = "SELECT `id`, `testcase`, `flags` ";
-    $sql .= "FROM `testcases` ";
-    $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `active` = '1' ";
-    $sql .= "ORDER BY `testcase` ";
-    
-    $r = $this->query($sql);
-    while ($testCaseData = $r->fetchRow()) {
-      $testCaseName = $testCaseData['testcase'];
-      $testCaseId   = $testCaseData['id'];
-      $flags        = $testCaseData['flags'];
-
-      $optional = (FALSE !== stripos($flags, 'may')) || (FALSE !== stripos($flags, 'should'));
-      
-      $this->mTestCaseIds[$testCaseName] = $testCaseId;
-      $this->mTestCaseOptional[$testCaseId] = $optional;
-    }
+    return parent::_loadTestCases($testSuiteName);
   }
   
   protected function _loadResults($testSuiteQuery)

@@ -36,6 +36,14 @@ class CmdLineWorker extends DBConnection
   }
 
 
+  /**
+   * Subclass hook to store additional test case data
+   */
+  protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)
+  {
+    $this->mTestCaseIds[$testCaseName] = $testCaseId;
+  }
+
   protected function _loadTestCases($testSuiteName)
   {
     unset ($this->mTestCaseIds);
@@ -43,7 +51,7 @@ class CmdLineWorker extends DBConnection
     
     $testSuiteName = $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE);
     
-    $sql  = "SELECT `id`, `testcase` ";
+    $sql  = "SELECT * ";
     $sql .= "FROM `testcases` ";
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
     $sql .= "ORDER BY `testcase` ";
@@ -53,7 +61,7 @@ class CmdLineWorker extends DBConnection
       $testCaseName = $testCaseData['testcase'];
       $testCaseId   = $testCaseData['id'];
       
-      $this->mTestCaseIds[$testCaseName] = $testCaseId;
+      $this->_addTestCase($testCaseName, $testCaseId, $testCaseData);
     }
   }
   
