@@ -207,7 +207,7 @@ class TestCasePage extends HarnessPage
     $args['u'] = $this->mUserAgent->getId();
 
     $detailsURI = $this->encodeURI(DETAILS_PAGE_URI, $args);
-    echo $indent . "  <span class='resultlink'>(<a href='{$detailsURI}' target='details'>Results</a>)<span>\n";
+    echo $indent . "  <span class='resultlink'>(<a href='{$detailsURI}' target='details'>Results</a>)</span>\n";
     
     echo $indent . "</{$element}>\n";
   }
