@@ -176,11 +176,15 @@ class HarnessPage extends DynamicPage
    */
   function writeBodyError($indent = '')
   {
-    $this->mSpiderTrap->writeTrapLink($indent);
+    if (isset($this->mSpiderTrap)) {
+      $this->mSpiderTrap->writeTrapLink($indent);
+    }
     
     parent::writeBodyError($indent);
     
-    $this->mSpiderTrap->writeTrapLink($indent);
+    if (isset($this->mSpiderTrap)) {
+      $this->mSpiderTrap->writeTrapLink($indent);
+    }
   }
   
 

@@ -33,8 +33,10 @@ class DynamicPage extends Page
   
   protected $mGetData;
   protected $mPostData;
-  protected $mRequestData;    // union of GET, POST and COOKIES
+  protected $mCookieData;
   
+  protected $mCookiesFunctional;
+    
   /**
    * Static function to condition get or post input
    *
@@ -82,8 +84,11 @@ class DynamicPage extends Page
     
     $this->mGetData = self::ConditionInput($_GET);
     $this->mPostData = self::ConditionInput($_POST);
-    $this->mRequestData = self::ConditionInput($_REQUEST);
+    $this->mCookieData = self::ConditionInput($_COOKIE);
 
+    $this->mCookiesFunctional = (null !== $this->_cookieData('crumbs'));
+    // set a test cookie to check if cookies work (can't tell till next load)
+//    $this->_setCookie('crumbs', 'test cookie'); 
   }  
 
 
@@ -105,12 +110,50 @@ class DynamicPage extends Page
   }
   
   
-  protected function _requestData($field)
+  protected function _cookieData($field)
   {
-    if (isset($this->mRequestData[$field])) {
-      return $this->mRequestData[$field];
+    if (isset($this->mCookieData[$field])) {
+      return $this->mCookieData[$field];
     }
     return null;
+  }
+  
+  
+  protected function _requestData($field)
+  {
+    if (isset($this->mGetData[$field])) {
+      return $this->mGetData[$field];
+    }
+    if (isset($this->mPostData[$field])) {
+      return $this->mPostData[$field];
+    }
+    if (isset($this->mCookieData[$field])) {
+      return $this->mCookieData[$field];
+    }
+    return null;
+  }
+  
+  
+  /**
+   * Set a cookie in the client's browser
+   *
+   * @param string $name cookie name
+   * @param $value cookie data
+   * @param int $duration cookie lifetime in seconds
+   */
+  protected function _setCookie($name, $value = null, $duration = 0)
+  {
+    if ($value) {
+      if (0 < $duration) {
+        setcookie($name, $value, time() + $duration);
+      }
+      else {  // set session cookie
+        setcookie($name, $value, 0);
+      }
+    }
+    else {  // clear cookie
+      setcookie($name, '', 0);
+    }
   }
   
   
@@ -213,6 +256,30 @@ class DynamicPage extends Page
         echo $indent . "<p>Context: \n";
         echo $indent . "  <pre>";
         print_r($this->mErrorContext);
+        echo           "</pre>\n";
+        echo $indent . "</p>\n";
+      }
+      
+      if (0 < count($this->mGetData)) {
+        echo $indent . "<p>Get: \n";
+        echo $indent . "  <pre>";
+        print_r($this->mGetData);
+        echo           "</pre>\n";
+        echo $indent . "</p>\n";
+      }
+      
+      if (0 < count($this->mPostData)) {
+        echo $indent . "<p>Post: ";
+        echo $indent . "  <pre>";
+        print_r($this->mPostData);
+        echo           "</pre>\n";
+        echo $indent . "</p>\n";
+      }
+
+      if (0 < count($this->mCookieData)) {
+        echo $indent . "<p>Cookie: ";
+        echo $indent . "  <pre>";
+        print_r($this->mCookieData);
         echo           "</pre>\n";
         echo $indent . "</p>\n";
       }
