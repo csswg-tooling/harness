@@ -24,13 +24,33 @@ require_once("lib/UserAgent.php");
  * Import results from implementation report files
  */
 class ImplementationReportImport extends CmdLineWorker
-{  
+{
+  protected $mTestCaseRevision;
 
 
   function __construct() 
   {
     parent::__construct();
     
+  }
+  
+  
+  protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)
+  {
+    parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
+
+    $revision = intval($testCaseData['revision']);
+    
+    $this->mTestCaseRevision[$testCaseId] = $revision;
+  }
+
+
+  protected function _loadTestCases($testSuiteName)
+  {
+    unset ($this->mTestCaseRevision);
+    $this->mTestCaseRevision = array();
+    
+    return parent::_loadTestCases($testSuiteName);
   }
 
 
@@ -101,15 +121,16 @@ class ImplementationReportImport extends CmdLineWorker
     foreach ($results as $testCaseId => $result) {
           
       // XXX store comment if present (use comment for actual UA?)
+      $revision = $this->mTestCaseRevision[$testCaseId];
       
       $sql  = "INSERT INTO `results` ";
       if ($modified) {
-        $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`, `modified`) ";
-        $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}', '{$modified}')";  
+        $sql .= "(`testcase_id`, `revision`, `useragent_id`, `source`, `result`, `modified`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$userAgentId}', '$source', '{$result}', '{$modified}')";  
       }
       else {
-        $sql .= "(`testcase_id`, `useragent_id`, `source`, `result`) ";
-        $sql .= "VALUES ('{$testCaseId}', '{$userAgentId}', '$source', '{$result}')";  
+        $sql .= "(`testcase_id`, `revision`, `useragent_id`, `source`, `result`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$userAgentId}', '$source', '{$result}')";  
       }
 
       $r = $this->query($sql);
@@ -122,6 +143,6 @@ class ImplementationReportImport extends CmdLineWorker
 
 $worker = new ImplementationReportImport();
 
-$worker->import("TallComponents.data", "CSS21_XHTML_RC5", "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/1.0.3.4_pre WebToPDF.NET/1.0.3.4_pre", "TallComponents", "2011-01-25 05:58:00");
+$worker->import("implementation-report-WebToPDF.NETv1.0.3.6pre.data", "CSS21_XHTML", "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/1.0.3.6_pre WebToPDF.NET/1.0.3.6_pre", "TallComponents", "2011-02-10 05:42:00");
 
 ?>
