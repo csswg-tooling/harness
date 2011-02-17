@@ -92,9 +92,6 @@ class SubmitPage extends HarnessPage
 
     if ($result) {
       $source = self::GetClientIP();
-      if (! $this->mUserAgent->isActualUA()) {
-        $source .= '*';
-      }
       $testCase->submitResult($this->mUserAgent, $source, $result);
     }
      

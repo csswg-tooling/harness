@@ -357,12 +357,13 @@ class TestCase extends DBConnection
   {
     if ($this->isValid() && (! $this->isLocked())) {
       $sql  = "INSERT INTO `results` ";
-      $sql .= "(`testcase_id`, `revision`, `useragent_id`, `source`, `result`) ";
+      $sql .= "(`testcase_id`, `revision`, `useragent_id`, `source`, `source_useragent_id`, `result`) ";
       $sql .= "VALUES (";
       $sql .= "'" . $this->getId() . "',";
       $sql .= "'" . $this->getRevision() . "',";
       $sql .= "'" . $userAgent->getId() . "',";
       $sql .= "'" . $this->encode($source, RESULTS_MAX_SOURCE) . "',";
+      $sql .= "'" . $userAgent->getActualUA()->getId() . "',";
       $sql .= "'" . $this->encode($result) . "'";
       $sql .= ")";
       
