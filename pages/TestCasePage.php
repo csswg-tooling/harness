@@ -324,9 +324,10 @@ class TestCasePage extends HarnessPage
       $value = self::Encode($value);
       echo $indent . "    <input type='hidden' name='{$opt}' value='{$value}'>\n";
     }
-    echo $indent . "    <input type='submit' name='result' value='Pass [1]' accesskey='1'>\n";
-    echo $indent . "    <input type='submit' name='result' value='Fail [2]' accesskey='2'>\n";
-    echo $indent . "    <input type='submit' name='result' value='Cannot tell [3]' accesskey='3'>\n";
+    $locked = (($this->mTestCase->isLocked()) ? " disabled" : '');
+    echo $indent . "    <input type='submit' name='result' value='Pass [1]' accesskey='1'{$locked}>\n";
+    echo $indent . "    <input type='submit' name='result' value='Fail [2]' accesskey='2'{$locked}>\n";
+    echo $indent . "    <input type='submit' name='result' value='Cannot tell [3]' accesskey='3'{$locked}>\n";
     echo $indent . "    <input type='submit' name='result' value='Skip [4]' accesskey='4'>\n";
     echo $indent . "  </p>\n";
     echo $indent . "</form>\n";

@@ -87,6 +87,12 @@ class TestSuite extends DBConnection
   }
   
   
+  function isLocked()
+  {
+    return (0 != intval($this->mInfo['locked']));
+  }
+  
+  
   function getDescription()
   {
     return $this->mInfo['description'];

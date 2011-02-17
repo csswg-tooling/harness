@@ -57,9 +57,11 @@ class WelcomePage extends HarnessPage
       $description = self::Encode($testSuite->getDescription());
       
       echo $indent . "  <dt>\n";
-      echo $indent . "    <a href='{$homeURI}'>{$title}</a>\n";
-      echo $indent . "    (<a href='{$enterURI}'>Enter Data</a>,\n";
-      echo $indent . "    <a href='{$reviewURI}'>Review Results</a>)\n";
+      echo $indent . "    <a href='{$homeURI}'>{$title}</a> (";
+      if (! $testSuite->isLocked()) {
+        echo "<a href='{$enterURI}'>Enter Data</a>, \n";
+      }
+      echo           "<a href='{$reviewURI}'>Review Results</a>)\n";
       echo $indent . "  </dt>\n";
       echo $indent . "  <dd>\n";
       echo $indent . "    {$description}\n";

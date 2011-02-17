@@ -158,7 +158,8 @@ class TestCase extends DBConnection
     $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri`, ";
+    $sql .= "`testsuites`.`locked` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
     if (1 == $order) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
@@ -246,7 +247,8 @@ class TestCase extends DBConnection
     $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri`, ";
+    $sql .= "`testsuites`.`locked` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
     $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite` ";
     if (1 == $order) {
@@ -296,7 +298,8 @@ class TestCase extends DBConnection
     $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri`, ";
+    $sql .= "`testsuites`.`locked` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
     $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite`) ";
     $sql .= "WHERE `testcases`.`id` = '{$testCaseId}' ";
@@ -325,7 +328,8 @@ class TestCase extends DBConnection
     $sql .= "`testcases`.`revision`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri` ";
+    $sql .= "`testsuites`.`base_uri`, `testsuites`.`spec_uri`, ";
+    $sql .= "`testsuites`.`locked` ";
     $sql .= "FROM (`testcases` LEFT JOIN `testsuites` ";
     $sql .= "ON `testcases`.`testsuite` = `testsuites`.`testsuite`) ";
     $sql .= "WHERE `testcases`.`testsuite` = '" . $this->encode($testSuiteName, TESTCASES_MAX_TESTSUITE) . "' ";
@@ -351,7 +355,7 @@ class TestCase extends DBConnection
    */
   function submitResult($userAgent, $source, $result)
   {
-    if ($this->isValid()) {
+    if ($this->isValid() && (! $this->isLocked())) {
       $sql  = "INSERT INTO `results` ";
       $sql .= "(`testcase_id`, `revision`, `useragent_id`, `source`, `result`) ";
       $sql .= "VALUES (";
@@ -385,6 +389,15 @@ class TestCase extends DBConnection
       return $this->mInfo['id'];
     }
     return FALSE;
+  }
+  
+  
+  function isLocked()
+  {
+    if ($this->isValid()) {
+      return (0 != intval($this->mInfo['locked']));
+    }
+    return TRUE;
   }
 
 
