@@ -54,15 +54,50 @@ class ImplementationReportImport extends CmdLineWorker
   }
 
 
-  function import($reportFileName, $testSuiteName, $userAgentString, $source, $modified)
+  function initFor($testSuiteName)
+  {
+    $this->_loadTestCases($testSuiteName);
+  }
+
+
+  function loadRevisionInfo($manifest)
+  {
+    echo "Reading source file: {$manifest}\n";
+    $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    
+    if ((! $data) || (count($data) < 2)) {
+      die("missing or empty manifest file\n");
+    }
+    
+    $count = 0;
+    foreach ($data as $record) {
+      if (0 == $count++) {
+        if ("id\treferences\ttitle\tflags\tlinks\trevision\tcredits\tassertion" == $record) {
+          continue;
+        }
+        die("ERROR: unknown format\n");
+      }
+      list ($testCaseName, $references, $title, $flagString, $links, $revision, $credits, $assertion) = explode("\t", $record);
+      
+      $testCaseId = $this->_getTestCaseId($testCaseName);
+      
+      if ($testCaseId) {
+        $this->mTestCaseRevision[$testCaseId] = $revision;
+      }
+      else {
+        die("Unknown testcase: {$testCaseName}\n");
+      }
+    }
+  }
+  
+  
+  function import($reportFileName, $userAgentString, $source, $modified)
   {
     $userAgent = new UserAgent($userAgentString);
     $userAgent->update(); // force UA string into database and load Id
     $userAgentId = $userAgent->getId();
-    
-    $this->_loadTestCases($testSuiteName);
-    $source = $this->encode($source, RESULTS_MAX_SOURCE);
 
+    $source = $this->encode($source, RESULTS_MAX_SOURCE);
 
     $validResults = array("pass", "fail", "uncertain", "na", "invalid");
     
@@ -143,6 +178,13 @@ class ImplementationReportImport extends CmdLineWorker
 
 $worker = new ImplementationReportImport();
 
-$worker->import("implementation-report-WebToPDF.NETv1.0.3.6pre.data", "CSS21_XHTML", "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/1.0.3.6_pre WebToPDF.NET/1.0.3.6_pre", "TallComponents", "2011-02-10 05:42:00");
+$worker->initFor("CSS21_XHTML");
+
+$worker->loadRevisionInfo("testinfo.data");
+
+$worker->import("implementation-report-WebToPDF.NETv1.0.3.6.data", 
+                "Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/1.0.3.6 WebToPDF.NET/1.0.3.6", 
+                "TallComponents", 
+                "2011-02-21 04:23:00");
 
 ?>

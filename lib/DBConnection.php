@@ -35,10 +35,16 @@ class DBConnection
    * Connections will be reused so it is safe to create multiple 
    * connection instances
    */
-  function __construct()
+  function __construct($dbName = '')
   {  
     $this->mDatabaseLink = mysql_connect(DB_HOST, DB_USER, DB_PASSWORD);
-    mysql_query('use '.DB_NAME.';', $this->mDatabaseLink);
+    
+    if (0 == strlen($dbName)) {
+      $dbName = DB_NAME;
+    }
+    if ($this->isConnected()) {
+      mysql_query("use `{$dbName}`;", $this->mDatabaseLink);
+    }
   }
 
   /**
