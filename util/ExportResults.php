@@ -84,7 +84,7 @@ class ExportResults extends CmdLineWorker
         $sql .= "AND `results`.`ignore` = '0' ";
         $sql .= "AND `results`.`result` != 'na' ";
         $sql .= "AND `results`.`revision` = `testcases`.`revision` ";
-        $sql .= "ORDER BY `results`.`modified` ";
+        $sql .= "ORDER BY `results`.`modified`, `testcases`.`testcase`, `results`.`result`, `testcases`.`testsuite`, `useragents`.`useragent` ";
 
         $r = $this->query($sql);
         
