@@ -40,14 +40,7 @@ class HarnessPage extends DynamicPage
     
     $this->mSpiderTrap = new SpiderTrap();
     
-    if ($testSuiteName = $this->_requestData('s')) {
-      $this->mTestSuite = new TestSuite($testSuiteName);
-
-      if (! $this->mTestSuite->isValid()) {
-        $this->mTestSuite = null;
-      }
-    }
-    
+    $this->mTestSuite = $this->_requestData('s', 'TestSuite');
     $this->mUserAgent = new UserAgent(intval($this->_requestData('u')));
     $this->mUser = new User();
   }  

@@ -123,8 +123,8 @@ class ExportResults extends CmdLineWorker
 
 $worker = new ExportResults();
 
-$testSuiteName  = $argv[1];
-$outPath        = $argv[2];
+$testSuiteName  = $worker->_getArg(1);
+$outPath        = $worker->_getArg(2);
 
 if ($testSuiteName && $outPath) {
   $worker->export($testSuiteName, $outPath);

@@ -129,6 +129,8 @@ class TestCaseImport extends CmdLineWorker
       die("missing or empty manifest file\n");
     }
     
+    $now = $this->getNow(); // set all new revision dates to time import started
+    
     echo "Storing test data\n";
     $count = 0;
     foreach ($data as $record) {
@@ -175,8 +177,8 @@ class TestCaseImport extends CmdLineWorker
         
         if ($this->mTestCaseRevisions[$testCaseId] != $revision) {
           $sql  = "INSERT INTO `revisions` ";
-          $sql .= "(`testcase_id`, `revision`) ";
-          $sql .= "VALUES ('{$testCaseId}', '{$revision}') ";
+          $sql .= "(`testcase_id`, `revision`, `date`) ";
+          $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$now}') ";
 
           $this->query($sql);
         }
@@ -196,8 +198,8 @@ class TestCaseImport extends CmdLineWorker
         }
         
         $sql  = "INSERT INTO `revisions` ";
-        $sql .= "(`testcase_id`, `revision`) ";
-        $sql .= "VALUES ('{$testCaseId}', '{$revision}') ";
+        $sql .= "(`testcase_id`, `revision`, `date`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$now}') ";
 
         $this->query($sql);
       }
@@ -359,8 +361,8 @@ class TestCaseImport extends CmdLineWorker
 
 $worker = new TestCaseImport();
 
-$manifestPath   = $argv[1];
-$testSuiteName  = $argv[2];
+$manifestPath   = $worker->_getArg(1);
+$testSuiteName  = $worker->_getArg(2);
 
 if ($manifestPath && $testSuiteName) {
   $worker->import($manifestPath, $testSuiteName);

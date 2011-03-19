@@ -226,19 +226,19 @@ CREATE TABLE `specifications` (
 -- Table structure for table `testsuites`
 --
 
-CREATE TABLE `testsuites` (
-  `testsuite` varchar(31) NOT NULL default '',
-  `base_uri` varchar(255) default NULL,
-  `home_uri` varchar(63) default NULL,
-  `spec` varchar(31) default NULL,
-  `title` varchar(255) default NULL,
-  `formats` set('html4','xhtml1') NOT NULL default 'html4,xhtml1',
-  `active` tinyint(1) unsigned NOT NULL default '1',
-  `locked` tinyint(1) unsigned NOT NULL default '0',
+CREATE TABLE IF NOT EXISTS `testsuites` (
+  `testsuite` varchar(31) NOT NULL DEFAULT '',
+  `base_uri` varchar(255) DEFAULT NULL,
+  `home_uri` varchar(63) DEFAULT NULL,
+  `spec` varchar(31) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `formats` set('html4','xhtml1') NOT NULL DEFAULT 'html4,xhtml1',
+  `active` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `locked` timestamp NULL DEFAULT NULL,
   `description` longtext,
-  `contact_name` varchar(63) default NULL,
-  `contact_uri` varchar(255) default NULL,
-  PRIMARY KEY  (`testsuite`)
+  `contact_name` varchar(63) DEFAULT NULL,
+  `contact_uri` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`testsuite`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

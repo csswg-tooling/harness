@@ -25,8 +25,6 @@ require_once("lib/UserAgent.php");
  */
 class SelectUserAgentPage extends HarnessPage
 {  
-  protected $mSubmitData;
-
 
   function __construct() 
   {
@@ -57,15 +55,6 @@ class SelectUserAgentPage extends HarnessPage
     return $uris;
   }
 
-  
-  function writeHiddenFormControls($indent = '')
-  {
-    foreach($this->mSubmitData as $opt => $value) {
-      $opt = self::Encode($opt);
-      $value = self::Encode($value);
-      echo $indent . "<input type='hidden' name='{$opt}' value='{$value}'>\n";
-    }
-  }
   
   protected function _splitByEngine($userAgents)
   {

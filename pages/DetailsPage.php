@@ -68,7 +68,7 @@ class DetailsPage extends HarnessPage
     }
 
     $order = intval($this->_getData('o'));
-    $modified = $this->_getData('m');
+    $modified = $this->_getData('m', 'DateTime');
     
     $engine = $this->_getData('e');
     $engineVersion = $this->_getData('v');

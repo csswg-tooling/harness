@@ -29,6 +29,12 @@ define('DB_NAME', 'testharness2');
 
 
 /**
+ * Server info
+ */
+define('SERVER_TIME_ZONE' , 'America/Los_Angeles');
+
+
+/**
  * Contact info
  */
 define('CONTACT_URI', 'http://lists.w3.org/Archives/Public/public-css-testsuite');

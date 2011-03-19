@@ -31,7 +31,6 @@ class TestSuitePage extends HarnessPage
 {  
   protected $mSections;
   protected $mTestCases;
-  protected $mSubmitData;
 
 
   function __construct() 
@@ -111,15 +110,6 @@ class TestSuitePage extends HarnessPage
   }
 
 
-  function writeHiddenFormData($indent = '')
-  {
-    foreach($this->mSubmitData as $opt => $value) {
-      $opt = self::Encode($opt);
-      $value = self::Encode($value);
-      echo $indent . "<input type='hidden' name='{$opt}' value='{$value}'>\n";
-    }
-  }
-  
   function writeOrderSelect($indent = '')
   {
     echo $indent . "<select name=o>\n";
@@ -163,7 +153,7 @@ class TestSuitePage extends HarnessPage
     
     echo $indent . "  <li>\n";
     echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
-    $this->writeHiddenFormData($indent . '      ');
+    $this->writeHiddenFormControls($indent . '      ');
     echo $indent . "      <strong>The full test suite:</strong>\n";
     $this->writeOrderSelect($indent . '      ');
 		echo $indent . "      <input type='submit' value='Start'>\n";
@@ -173,7 +163,7 @@ class TestSuitePage extends HarnessPage
     if (0 < $this->mSections->getCount()) {
       echo $indent . "  <li>\n";
       echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
-      $this->writeHiddenFormData($indent . '      ');
+      $this->writeHiddenFormControls($indent . '      ');
       echo $indent . "      A section of the specification:\n";
       $this->writeSectionSelect($indent . '      ');
       $this->writeOrderSelect($indent . '      ');
@@ -184,7 +174,7 @@ class TestSuitePage extends HarnessPage
 
     echo $indent . "  <li>\n";
     echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
-    $this->writeHiddenFormData($indent . '      ');
+    $this->writeHiddenFormControls($indent . '      ');
     echo $indent . "      A single test case:\n";
     echo $this->writeTestCaseSelect($indent . '      ');
 		echo $indent . "      <input type='submit' value='Start'>\n";

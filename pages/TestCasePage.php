@@ -29,7 +29,6 @@ require_once("lib/Format.php");
 class TestCasePage extends HarnessPage
 {  
   protected $mTestCase;
-  protected $mSubmitData;
   protected $mIndex;
   protected $mCount;
   protected $mFormat;
@@ -243,9 +242,12 @@ class TestCasePage extends HarnessPage
     $args['s'] = $this->mTestSuite->getName();
     $args['c'] = $this->mTestCase->getTestCaseName();
     $args['u'] = $this->mUserAgent->getId();
+    if ($this->mTestSuite->isLocked()) {
+      $args['m'] = $this->mTestSuite->getLockDateTime();
+    }
 
     $detailsURI = $this->encodeURI(DETAILS_PAGE_URI, $args);
-    echo $indent . "  <span class='resultlink'>(<a href='{$detailsURI}' target='details'>Results</a>)</span>\n";
+    echo $indent . "  <span class='resultlink'>(<a href='{$detailsURI}'>Results</a>)</span>\n";
     
     echo $indent . "</{$element}>\n";
   }
@@ -415,11 +417,7 @@ class TestCasePage extends HarnessPage
   {
     echo $indent . "<form name='eval' action='" . SUBMIT_PAGE_URI . "' method='post'>\n";
     echo $indent . "  <p class='buttons'>\n";
-    foreach($this->mSubmitData as $opt => $value) {
-      $opt = self::Encode($opt);
-      $value = self::Encode($value);
-      echo $indent . "    <input type='hidden' name='{$opt}' value='{$value}'>\n";
-    }
+    $this->writeHiddenFormControls($indent . '    ');
     $locked = (($this->mTestSuite->isLocked()) ? " disabled" : '');
     echo $indent . "    <input type='submit' name='result' value='Pass [1]' accesskey='1'{$locked}>\n";
     echo $indent . "    <input type='submit' name='result' value='Fail [2]' accesskey='2'{$locked}>\n";

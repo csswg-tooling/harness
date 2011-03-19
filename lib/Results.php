@@ -31,9 +31,9 @@ class Results extends DBConnection
   protected $mResultCount;
 
 
-  function __construct($testSuite, $testCaseName = null, $specLinkId = null,
+  function __construct(TestSuite $testSuite, $testCaseName = null, $specLinkId = null,
                        $engine = null, $engineVersion = null, $platform = null, 
-                       $modified = null)
+                       DateTime $modified = null)
   {
     parent::__construct();
     
@@ -120,8 +120,8 @@ class Results extends DBConnection
       $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
     }
     if ($modified) {
-      $this->mModified = $modified;
-      $modified = $this->encode($modified);
+      $modified->setTimeZone(new DateTimeZone(SERVER_TIME_ZONE));
+      $modified = $this->encode($modified->format('Y-m-d H:i:s'));
       $sql .= "AND `results`.`modified` <= '{$modified}' ";
     }  
     if ($engine) {
@@ -240,6 +240,35 @@ class Results extends DBConnection
     }
     return FALSE;
   }
+  
+  
+  /**
+   * Get child tests for combo test
+   * 
+   * @param int test case id
+   * @return array|FALSE array of child test ids
+   */
+  function getChildTestsFor($testCaseId)
+  {
+    if (array_key_exists($testCaseId, $this->mTestCases)) {
+      $testCaseData = $this->mTestCases[$testCaseId];
+      
+      $flags = new Flags($testCaseData['flags']);
+      if ($flags->hasFlag('combo')) {
+        $childIds = array();
+        
+//        XXX find children
+//  possible to set array internal counter to key? if so, can iterate array while test name matches, else... capture at load?
+        
+        if (0 < count($childIds)) {
+          return $childIds;
+        }
+      }
+    }
+    return FALSE;
+  }
+  
+
 }
 
 ?>

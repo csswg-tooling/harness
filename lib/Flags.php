@@ -23,32 +23,35 @@ require_once("lib/DBConnection.php");
  */
 class Flags extends DBConnection
 {
+  protected $mFlags;
   protected $mDescriptions;
   protected $mTests;
 
 
-  function __construct($flagsStr) 
+  function __construct($flagsStr, $loadData = FALSE) 
   {
     parent::__construct();
     
-    $flags = array_flip(explode(',', $flagsStr));
+    $this->mFlags = array_flip(explode(',', $flagsStr));
+    
+    if ($loadData) {
+      $sql  = "SELECT `flag`, `description`, ";
+      $sql .= "`set_test`, `unset_test` ";
+      $sql .= "FROM `flags` ";
 
-    $sql  = "SELECT `flag`, `description`, ";
-    $sql .= "`set_test`, `unset_test` ";
-    $sql .= "FROM `flags` ";
-
-    $r = $this->query($sql);
-    while ($flagData = $r->fetchRow()) {
-      $flag = $flagData['flag'];
-      if (array_key_exists($flag, $flags)) {
-        $this->mDescriptions[$flag] = $flagData['description'];
-        $test = $flagData['set_test'];
-      }
-      else {
-        $test = $flagData['unset_test'];
-      }
-      if ($test) {
-        $this->mTests[$flag] = $test;
+      $r = $this->query($sql);
+      while ($flagData = $r->fetchRow()) {
+        $flag = $flagData['flag'];
+        if (array_key_exists($flag, $this->mFlags)) {
+          $this->mDescriptions[$flag] = $flagData['description'];
+          $test = $flagData['set_test'];
+        }
+        else {
+          $test = $flagData['unset_test'];
+        }
+        if ($test) {
+          $this->mTests[$flag] = $test;
+        }
       }
     }
   }
@@ -59,8 +62,8 @@ class Flags extends DBConnection
    */
   function hasFlag($flag)
   {
-    if (is_array($this->mDescriptions)) {
-      return array_key_exists($flag, $this->mDescriptions);
+    if (is_array($this->mFlags)) {
+      return array_key_exists($flag, $this->mFlags);
     }
     return FALSE;
   }

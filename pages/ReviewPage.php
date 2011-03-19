@@ -44,6 +44,15 @@ class ReviewPage extends HarnessPage
     $this->mSections = new Sections($this->mTestSuite);
 
     $this->mTestCases = new TestCases($this->mTestSuite);
+    
+    $this->mSubmitData['s'] = $this->mTestSuite->getName();
+    if ($this->mTestSuite->isLocked()) {
+      $this->mSubmitData['m'] = $this->mTestSuite->getLockDateTime();
+    }
+    if (! $this->mUserAgent->isActualUA()) {
+      $this->mSubmitData['u'] = $this->mUserAgent->getId();
+    }
+    
   }  
   
   function getPageTitle()
@@ -139,10 +148,7 @@ class ReviewPage extends HarnessPage
     echo $indent . "</p>\n";
 
     echo $indent . "<form action='" . RESULTS_PAGE_URI . "' method='get' name='result_form' onSubmit='return filterTypes();'>\n";
-    echo $indent . "  <input type='hidden' name='s' value='" . self::Encode($this->mTestSuite->getName()) . "' />\n";
-    if (! $this->mUserAgent->isActualUA()) {
-      echo $indent . "  <input type='hidden' name='u' value='" . self::Encode($this->mUserAgent->getId()) . "' />\n";
-    }
+    $this->writeHiddenFormControls($indent . '  ', TRUE);
     
     echo $indent . "  <p>\n";
     echo $indent . "    <input type='radio' name='t' value='0' checked />\n";

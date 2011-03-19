@@ -86,7 +86,7 @@ class ResultsPage extends HarnessPage
       $this->mDisplayFilter = intval($filter);
     }
 
-    $this->mModified = $this->_getData('m');
+    $this->mModified = $this->_getData('m', 'DateTime');
     $grouping = $this->_getData('x');
     $engine = $this->_getData('e');
     $engineVersion = $this->_getData('v');
@@ -189,7 +189,7 @@ class ResultsPage extends HarnessPage
           $args['m'] = $this->mModified;
         }
         $detailsURI = $this->encodeURI(DETAILS_PAGE_URI, $args);
-        $row .= "<a href='{$detailsURI}' target='details'>";
+        $row .= "<a href='{$detailsURI}'>";
         $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
         $row .= ((0 < $uncertain) ? $uncertain : '.');
@@ -258,13 +258,11 @@ class ResultsPage extends HarnessPage
           $args['m'] = $this->mModified;
         }
         $uri = $this->encodeURI(DETAILS_PAGE_URI, $args);
-        $uriTarget = " target='details'";
       }
       else {
         $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
-        $uriTarget = '';
       }
-      echo "<a href='{$uri}'{$uriTarget}>{$testCaseName}</a></td>";
+      echo "<a href='{$uri}'>{$testCaseName}</a></td>";
       echo "{$row}</tr>\n";
     }
   }

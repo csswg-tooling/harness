@@ -89,7 +89,15 @@ class TestSuite extends DBConnection
   
   function isLocked()
   {
-    return (0 != intval($this->mInfo['locked']));
+    return ('' != $this->mInfo['locked']);
+  }
+  
+  function getLockDateTime()
+  {
+    if ($this->isLocked()) {
+      return new DateTime($this->mInfo['locked'], new DateTimeZone(SERVER_TIME_ZONE));
+    }
+    return FALSE;
   }
   
   

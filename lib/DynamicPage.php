@@ -34,6 +34,7 @@ class DynamicPage extends Page
   protected $mGetData;
   protected $mPostData;
   protected $mCookieData;
+  protected $mSubmitData;
   
   protected $mCookiesFunctional;
     
@@ -85,6 +86,8 @@ class DynamicPage extends Page
     $this->mGetData = self::ConditionInput($_GET);
     $this->mPostData = self::ConditionInput($_POST);
     $this->mCookieData = self::ConditionInput($_COOKIE);
+    
+    $this->mSubmitData = array();
 
     $this->mCookiesFunctional = (null !== $this->_cookieData('crumbs'));
     // set a test cookie to check if cookies work (can't tell till next load)
@@ -92,43 +95,54 @@ class DynamicPage extends Page
   }  
 
 
-  protected function _getData($field)
+  protected function _instantiateData($class, $arg)
+  {
+    if ($class) {
+      if ('DateTime' == $class) {
+        return new DateTime($arg, new DateTimeZone('UTC'));
+      }
+      return new $class($arg);
+    }
+    return $arg;
+  }
+  
+  protected function _getData($field, $class = null)
   {
     if (isset($this->mGetData[$field])) {
-      return $this->mGetData[$field];
+      return $this->_instantiateData($class, $this->mGetData[$field]);
     }
     return null;
   }
   
   
-  protected function _postData($field)
+  protected function _postData($field, $class = null)
   {
     if (isset($this->mPostData[$field])) {
-      return $this->mPostData[$field];
+      return $this->_instantiateData($class, $this->mPostData[$field]);
     }
     return null;
   }
   
   
-  protected function _cookieData($field)
+  protected function _cookieData($field, $class = null)
   {
     if (isset($this->mCookieData[$field])) {
-      return $this->mCookieData[$field];
+      return $this->_instantiateData($class, $this->mCookieData[$field]);
     }
     return null;
   }
   
   
-  protected function _requestData($field)
+  protected function _requestData($field, $class = null)
   {
     if (isset($this->mGetData[$field])) {
-      return $this->mGetData[$field];
+      return $this->_instantiateData($class, $this->mGetData[$field]);
     }
     if (isset($this->mPostData[$field])) {
-      return $this->mPostData[$field];
+      return $this->_instantiateData($class, $this->mPostData[$field]);
     }
     if (isset($this->mCookieData[$field])) {
-      return $this->mCookieData[$field];
+      return $this->_instantiateData($class, $this->mCookieData[$field]);
     }
     return null;
   }
@@ -156,7 +170,7 @@ class DynamicPage extends Page
     }
   }
   
-  
+
   /**
    * Callback function to capture PHP generated errors
    *

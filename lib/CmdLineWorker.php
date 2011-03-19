@@ -37,6 +37,24 @@ class CmdLineWorker extends DBConnection
 
 
   /**
+   * Get command line argument
+   *
+   * @param int index
+   * @return string|FALSE
+   */
+  function _getArg($index)
+  {
+    global $argv;
+
+    $index = intval($index);
+    if (array_key_exists($index, $argv)) {
+      return $argv[$index];
+    }
+    return FALSE;
+  }
+  
+  
+  /**
    * Subclass hook to store additional test case data
    */
   protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)

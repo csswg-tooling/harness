@@ -66,7 +66,7 @@ class TestCase extends DBConnection
     }
 
     if ($this->isValid()) {
-      $this->mFlags = new Flags($this->mInfo['flags']);
+      $this->mFlags = new Flags($this->mInfo['flags'], TRUE);
     }
   }
   
@@ -92,7 +92,7 @@ class TestCase extends DBConnection
     }
 
     if ($this->isValid()) {
-      $this->mFlags = new Flags($this->mInfo['flags']);
+      $this->mFlags = new Flags($this->mInfo['flags'], TRUE);
     }
   }
   

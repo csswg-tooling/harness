@@ -42,6 +42,61 @@ class Page
     return html_entity_decode($string, ENT_QUOTES, 'UTF-8');
   }
 
+
+  /**
+   * Static helper function to convert arg values to string
+   * 
+   * @param array
+   * @return array
+   */
+  static function _ConvertArgs($args, $shortDate = FALSE)
+  {
+    $stringArgs = array();
+    
+    foreach ($args as $key => $value) {
+      if (is_array($value)) {
+        $value = self::_ConvertArgs($value, $shortDate);
+      }
+      elseif (is_object($value)) {
+        if (is_a($value, 'DateTime')) {
+          $value->setTimeZone(new DateTimeZone('UTC'));
+          $value = $value->format(DateTime::W3C);
+          if ($shortDate) {
+            if ('+00:00' == substr($value, -6)) {
+              $value = substr($value, 0, -6);
+              if ('T00:00:00' == substr($value, -9)) {
+                $value = substr($value, -9);
+              }
+            }
+          }
+        }
+        else {
+          $value = strval($value);
+        }
+      }
+      $stringArgs[$key] = $value;
+    }
+    return $stringArgs;
+  }
+
+  /**
+   * Static helper function to convert args to string and encode as a url query
+   * 
+   * @param array
+   * @return array
+   */
+  static function _BuildQuery($queryArgs)
+  {
+    $args = self::_ConvertArgs($queryArgs, TRUE);
+
+    if (defined('PHP_QUERY_RFC3986')) {
+      $query = http_build_query($args, 'var_', '&', PHP_QUERY_RFC3986);
+    }
+    else {
+      $query = http_build_query($args, 'var_', '&');
+    }
+    return $query;
+  }
   
   /**
    * Static helper function to build URI with query string
@@ -71,12 +126,7 @@ class Page
     }
     
     if (0 < count($queryArgs)) {
-      if (defined('PHP_QUERY_RFC3986')) {
-        $query = http_build_query($queryArgs, 'var_', '&', PHP_QUERY_RFC3986);
-      }
-      else {
-        $query = http_build_query($queryArgs, 'var_', '&');
-      }
+      $query = self::_BuildQuery($queryArgs);
       if ('?' != substr($baseURI, -1, 1)) {
         $query = '?' . $query;
       }
@@ -162,6 +212,31 @@ class Page
     return self::Encode($this->buildURI($baseURI, $queryArgs, $fragId));
   }
   
+  
+  /**
+   * Write hidden form controls for mSubmitData
+   */
+  function writeHiddenFormControls($indent = '', $shortDate = FALSE, $arrayName = NULL, $args = NULL)
+  {
+    if (! $args) {
+      $args = self::_ConvertArgs($this->mSubmitData, $shortDate);
+    }
+    
+    foreach($args as $key => $value) {
+      if ($arrayName) {
+        $key = "{$arrayName}[{$key}]";
+      }
+      if (is_array($value)) {
+        $this->writeHiddenFormControls($indent, $key, $value);
+      }
+      else {
+        $key = self::Encode($key);
+        $value = self::Encode($value);
+        echo $indent . "<input type='hidden' name='{$key}' value='{$value}'>\n";
+      }
+    }
+  }
+
   
   /**
    * Override to set title for page

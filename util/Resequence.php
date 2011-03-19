@@ -117,6 +117,10 @@ class Resequence extends CmdLineWorker
   function rebuild()
   {
     foreach ($this->mTestSuites->getTestSuites() as $testSuite) {
+      if ($testSuite->isLocked()) {
+        continue;
+      }
+    
       $testSuiteName = $testSuite->getName();
        
       unset ($this->mCounts);
