@@ -98,7 +98,10 @@ class TestSuitePage extends HarnessPage
     $this->openSelectElement('c', array('style' => 'width: 25em'));
 
     foreach ($testCases as $testCaseData) {
-      $this->addOptionElement($testCaseData['testcase'], null, $testCaseData['title']);
+      $testCaseName = $testCaseData['testcase'];
+      
+      $this->addOptionElement($testCaseName, null,
+                              "{$testCaseName}: {$testCaseData['title']}");
     }
 
     $this->closeElement('select');

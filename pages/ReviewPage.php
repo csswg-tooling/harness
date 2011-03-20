@@ -126,10 +126,10 @@ class ReviewPage extends HarnessPage
                                         'onchange' => 'document.result_form.t[2].checked = true'));
 
     foreach ($testCases as $testCaseData) {
-      $testCase = $testCaseData['testcase'];
+      $testCaseName = $testCaseData['testcase'];
       
-      $this->addOptionElement($testCase, null,
-                              "{$testCase}: {$testCaseData['title']}");
+      $this->addOptionElement($testCaseName, null,
+                              "{$testCaseName}: {$testCaseData['title']}");
     }
 
     $this->closeElement('select');
