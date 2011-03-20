@@ -27,7 +27,7 @@ class Sections extends DBConnection
   protected $mSections;
 
 
-  function __construct($testSuite, $parentId = 0)
+  function __construct(TestSuite $testSuite, $parentId = 0)
   {
     parent::__construct();
 

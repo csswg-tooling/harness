@@ -23,6 +23,9 @@
 class Page
 {
   protected $mShouldCache;
+  private   $mElementStack;
+  private   $mFormatStack;
+  private   $mFormatCount;
   
 
   /**
@@ -46,10 +49,11 @@ class Page
   /**
    * Static helper function to convert arg values to string
    * 
-   * @param array
+   * @param array argument array
+   * @param bool shorten date values
    * @return array
    */
-  static function _ConvertArgs($args, $shortDate = FALSE)
+  static function _ConvertArgs(Array $args, $shortDate = FALSE)
   {
     $stringArgs = array();
     
@@ -74,10 +78,19 @@ class Page
           $value = strval($value);
         }
       }
+      elseif (is_bool($value)) {
+        if ($value) {
+          $value = null;
+        }
+        else {
+          continue;
+        }
+      }
       $stringArgs[$key] = $value;
     }
     return $stringArgs;
   }
+
 
   /**
    * Static helper function to convert args to string and encode as a url query
@@ -85,7 +98,7 @@ class Page
    * @param array
    * @return array
    */
-  static function _BuildQuery($queryArgs)
+  static function _BuildQuery(Array $queryArgs)
   {
     $args = self::_ConvertArgs($queryArgs, TRUE);
 
@@ -98,6 +111,7 @@ class Page
     return $query;
   }
   
+  
   /**
    * Static helper function to build URI with query string
    * Instances of this class should use $this-buildURI instead
@@ -107,7 +121,7 @@ class Page
    * @param string fragment identifier
    * @return string URL encoded
    */
-  static function _BuildURI($baseURI, $queryArgs, $fragId = null)
+  static function _BuildURI($baseURI, Array $queryArgs, $fragId = null)
   {
     $hashIndex = strpos($baseURI, '#');
     if (FALSE !== $hashIndex) { // remove existing fragId
@@ -139,27 +153,6 @@ class Page
   
   
   /**
-   * Static helper function to build URI with query string
-   * result is encoded ready for HTML output
-   * Instances of this class should use $this-encodeURI instead
-   * NOTE that in php < 5.3 overriding BuildURI static function does not work
-   * this method's notion of 'self' is Page. In PHP 5.3+ self is late bound to 
-   * the actual class and overriding would work.
-   * To avoid this issue, use the instance method where possible so overrides
-   * always work as expected
-   * 
-   * @param string base uri
-   * @param array associative array of aurguments
-   * @param string fragment identifier
-   * @return string URL+HTML encoded
-   */
-  static function _EncodeURI($baseURI, $queryArgs, $fragId = null)
-  {
-    return self::Encode(self::_BuildURI($baseURI, $queryArgs, $fragId));
-  }
-  
-  
-  /**
    * Get IP address of client
    */
   static function GetClientIP()
@@ -181,6 +174,9 @@ class Page
   function __construct() 
   {
     $this->mShouldCache = TRUE;
+    $this->mElementStack = array();
+    $this->mFormatStack = array();
+    $this->mFormatCount = 0;
   }  
   
 
@@ -192,31 +188,372 @@ class Page
    * @param string fragment identifier
    * @return string URL encoded
    */
-  function buildURI($baseURI, $queryArgs, $fragId = null)
+  function buildURI($baseURI, Array $queryArgs, $fragId = null)
   {
     return self::_BuildURI($baseURI, $queryArgs, $fragId);
   }
   
+
+  /**
+   * Output page data with optional formatting
+   */
+  protected function _writeLine($output, $indent, $break)
+  {
+    if ($indent) {
+      $indent = str_repeat('  ', count($this->mElementStack));
+    }
+    else {
+      $indent = '';
+    }
+    if ($break) {
+      $break = "\n";
+    }
+    else {
+      $break = '';
+    }
+    echo $indent . $output . $break;
+  }
+  
   
   /**
-   * Helper function to build URI with query string
-   * result is encoded ready for HTML output
-   * 
-   * @param string base uri
-   * @param array associative array of aurguments
-   * @param string fragment identifier
-   * @return string URL+HTML encoded
+   * Build element tag contents
+   *
+   * @param string elementName
+   * @param array attribute key/value pairs
+   * @return string
    */
-  function encodeURI($baseURI, $queryArgs, $fragId = null)
+  protected function _buildElement($elementName, Array $attrs = null)
   {
-    return self::Encode($this->buildURI($baseURI, $queryArgs, $fragId));
+    $elementName = self::Encode($elementName);
+    
+    if ($attrs) {
+      $attrs = self::_ConvertArgs($attrs);
+      $output = $elementName;
+      foreach ($attrs as $name => $value) {
+        $name = self::Encode($name);
+        if (is_null($value)) {
+          $output .= ' ' . $name;
+        }
+        else {
+          $value = self::Encode($value);
+          $output .= " {$name}='{$value}'";
+        }
+      }
+    }
+    else {
+      $output = $elementName;
+    }
+    return $output;
+  }
+  
+  
+  /**
+   * Determing if page source formatting is on in the current context
+   */
+  protected function _formattingOn()
+  {
+    return ((0 == $this->mFormatCount) && defined('DEBUG_MODE') && DEBUG_MODE);
+  }
+  
+  
+  /**
+   * Push element and formatting state onto stack
+   */
+  protected function _pushState($elementName, $format)
+  {
+    array_push($this->mElementStack, $elementName);
+    array_push($this->mFormatStack, $format);
+    if (! $format) {
+      $this->mFormatCount++;
+    }
+  }
+  
+  
+  /**
+   * Pop element and formatting form stack
+   */
+  protected function _popState($elementName)
+  {
+    $lastElementName = array_pop($this->mElementStack);
+    if (! $lastElementName) {
+      trigger_error('missing open element', E_USER_WARNING);
+    }
+    if ($elementName && ($elementName != $lastElementName)) {
+      trigger_error('mismatched close element', E_USER_WARNING);
+    }
+    
+    $format = array_pop($this->mFormatStack);
+    if (! $format) {
+      $this->mFormatCount--;
+    }
+    return $lastElementName;
+  }
+  
+  
+  /**
+   * Add element to page
+   *
+   * @param string element name
+   * @param array attribute array
+   * @param string element content
+   * @param bool encode content
+   * @param bool format source within element
+   */
+  function addElement($elementName, Array $attrs = null, $content = null, $encode = TRUE, $mayFormat = TRUE)
+  {
+    if (strlen($content) < 80) {
+      $mayFormat = FALSE;
+    }
+
+    $outerFormat = $this->_formattingOn();
+    $innerFormat = ($outerFormat && $mayFormat);
+    
+    $element = $this->_buildElement($elementName, $attrs);
+    if (isset($content)) {
+      $this->_writeLine("<{$element}>", $outerFormat, $innerFormat);
+      $this->_pushState($elementName, $mayFormat);
+
+      if ($encode) {
+        $this->_writeLine(self::Encode($content), $innerFormat, $innerFormat);
+      }
+      else {
+        $this->_writeLine($content, $innerFormat, $innerFormat);
+      }
+      $this->_popState($elementName);
+
+      $elementName = self::Encode($elementName);
+      $this->_writeLine("</{$elementName}>", $innerFormat, $outerFormat);
+    }
+    else {
+      $this->_writeLine("<{$element}>", $outerFormat, $outerFormat);
+    }
+  }
+  
+  
+  /**
+   * Open element
+   *
+   * @param string element name
+   * @param array attribute array
+   * @param bool format source within element
+   */
+  function openElement($elementName, Array $attrs = null, $mayFormat = TRUE)
+  {
+    $element = $this->_buildElement($elementName, $attrs);
+    
+    $outerFormat = $this->_formattingOn();
+    $innerFormat = ($outerFormat && $mayFormat);
+    
+    $this->_writeLine("<{$element}>", $outerFormat, $innerFormat);
+    $this->_pushState($elementName, $mayFormat);
+  }
+  
+  /**
+   * Add text content
+   *
+   * @param string content
+   * @param bool encode content
+   * @param bool format source within element
+   */
+  function addTextContent($content, $encode = TRUE, $mayFormat = TRUE)
+  {
+    $format = ($this->_formattingOn() && $mayFormat);
+    
+    if ($encode) {
+      $this->_writeLine(self::Encode($content), $format, $format);
+    }
+    else {
+      $this->_writeLine($content, $format, $format);
+    }
+  }
+  
+  
+  /**
+   * Add comment
+   *
+   * @param string comment text
+   * @param bool format source within comment
+   */
+  function addComment($comment, $mayFormat = TRUE)
+  {
+    $outerFormat = $this->_formattingOn();
+    $innerFormat = ($outerFormat && $mayFormat);
+    
+    $this->_writeLine('<!-- ', $outerFormat, $innerFormat);
+    $this->_writeLine($comment, $innerFormat, $innerFormat);
+    $this->_writeLine(' -->', $innerFormat, $outerFormat);
+  }
+  
+  
+  /**
+   * Close element
+   *
+   * @param string optional element name (for debugging)
+   */
+  function closeElement($elementName = null)
+  {
+    $innerFormat = $this->_formattingOn();
+    $openElement = $this->_popState($elementName);
+    $outerFormat = $this->_formattingOn();
+
+    $elementName = self::Encode($openElement);
+    $this->_writeLine("</{$openElement}>", $innerFormat, $outerFormat);
+  }
+
+
+  /**
+   * Shortcut to add style element
+   *
+   * @param string stylesheet data
+   * @param string type
+   * @param array attribute array
+   */
+  function addStyleElement($styleSheet, $type = 'text/css', Array $attrs = null)
+  {
+    $attrs['type'] = $type;
+    $this->openElement('style', $attrs, FALSE);
+    $this->addComment($styleSheet);
+    $this->closeElement('style');
+  }
+  
+  
+  /**
+   * Shortcut to add style sheet link
+   *
+   * @param string uri
+   * @param array attribute array
+   */
+  function addStyleSheetLink($uri, Array $attrs = null)
+  {
+    $attrs['rel'] = 'stylesheet';
+    $attrs['href'] = $uri;
+    $attrs['type'] = 'text/css';
+    $this->addElement('link', $attrs);
+  }
+  
+  
+  /**
+   * Shortcut to add script element
+   *
+   * @param string script content
+   * @param string type
+   * @param array attribute array
+   */
+  function addScriptElement($script, $type = 'text/javascript', Array $attrs = null)
+  {
+    $outerFormat = $this->_formattingOn();
+
+    $attrs['type'] = $type;
+    $this->openElement('script', $attrs);
+    $this->_writeLine("<!--\n", FALSE, FALSE);
+    $this->_writeLine($script, FALSE, FALSE);
+    $this->_writeLine("\n// -->", FALSE, $outerFormat);
+    $this->closeElement('script');
+  }
+  
+  
+  /**
+   * Shortcut to add hyperlink
+   *
+   * @param string uri
+   * @param array attribute array
+   * @param string content string
+   * @param bool encode content
+   */
+  function addHyperLink($uri, Array $attrs = null, $content = null, $encode = TRUE)
+  {
+    $attrs['href'] = $uri;
+    $this->addElement('a', $attrs, $content, $encode);
+  }
+  
+  
+  /**
+   * Shortcut to open form element
+   *
+   * @param string uri
+   * @param string method
+   * @param string name
+   * @param array attribute array
+   */
+  function openFormElement($uri, $method = 'get', $name = null, Array $attrs = null)
+  {
+    $attrs['action'] = $uri;
+    $attrs['method'] = $method;
+    if ($name) {
+      $attrs['name'] = $name;
+    }
+    $this->openElement('form', $attrs);
+  }
+  
+  
+  /**
+   * Shortcut to add input element
+   *
+   * @param string type
+   * @param string name
+   * @param string|int|bool value
+   * @param array attribute array
+   */
+  function addInputElement($type, $name = null, $value = null, Array $attrs = null)
+  {
+    $attrs['type'] = $type;
+    if (! is_null($name)) {
+      $attrs['name'] = $name;
+    }
+    if (! is_null($value)) {
+      $attrs['value'] = $value;
+    }
+    $this->addElement('input', $attrs);
+  }
+  
+  
+  /**
+   * Shortcut to open select element
+   *
+   * @param string name
+   * @param array attribute array
+   */
+  function openSelectElement($name, Array $attrs = null)
+  {
+    $attrs['name'] = $name;
+    $this->openElement('select', $attrs);
+  }
+  
+  
+  /**
+   * Shortcut to add option element
+   *
+   * @param string|int|bool value
+   * @param array attribute array
+   * @param string content
+   * @param bool encode content
+   */
+  function addOptionElement($value, Array $attrs = null, $content = null, $encode = TRUE)
+  {
+    $attrs['value'] = $value;
+    $this->addElement('option', $attrs, $content, $encode);
+  }
+  
+  
+  /**
+   * Shortcut to add abbr element
+   *
+   * @param string title
+   * @param array attribute array
+   * @param string content
+   * @param bool encode content
+   */
+  function addAbbrElement($title, Array $attrs = null, $content = null, $encode = TRUE)
+  {
+    $attrs['title'] = $title;
+    $this->addElement('abbr', $attrs, $content, $encode);
   }
   
   
   /**
    * Write hidden form controls for mSubmitData
    */
-  function writeHiddenFormControls($indent = '', $shortDate = FALSE, $arrayName = NULL, $args = NULL)
+  function writeHiddenFormControls($shortDate = FALSE, $arrayName = NULL, $args = NULL)
   {
     if (! $args) {
       $args = self::_ConvertArgs($this->mSubmitData, $shortDate);
@@ -227,12 +564,10 @@ class Page
         $key = "{$arrayName}[{$key}]";
       }
       if (is_array($value)) {
-        $this->writeHiddenFormControls($indent, $key, $value);
+        $this->writeHiddenFormControls($shortDate, $key, $value);
       }
       else {
-        $key = self::Encode($key);
-        $value = self::Encode($value);
-        echo $indent . "<input type='hidden' name='{$key}' value='{$value}'>\n";
+        $this->addInputElement('hidden', $key, $value);
       }
     }
   }
@@ -324,7 +659,7 @@ class Page
    */
   function writeDoctype()
   {
-    echo '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">' . "\n";
+    $this->_writeLine('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">', FALSE, $this->_formattingOn());
   }
   
   
@@ -337,10 +672,10 @@ class Page
   {
     $this->writeDoctype();
     
-    echo "<html lang='en'>\n";
-    $this->writeHTMLHead('  ');
-    $this->writeHTMLBody('  ');
-    echo "</html>";
+    $this->openElement('html', array('lang' => 'en'));
+    $this->writeHTMLHead();
+    $this->writeHTMLBody();
+    $this->closeElement('html');
   }
   
 
@@ -349,16 +684,16 @@ class Page
    * Subclasses should override specific methods, but may override
    * to replace entire head.
    */
-  function writeHTMLHead($indent = '')
+  function writeHTMLHead()
   {
-    echo $indent . "<head>\n";
-    $this->writeHeadBase($indent . '  ');
-    $this->writeHeadMetas($indent . '  ');
-    $this->writeHeadTitle($indent . '  ');
-    $this->writeHeadStyle($indent . '  ');
-    $this->writeHeadLinks($indent . '  ');
-    $this->writeHeadScript($indent . '  ');
-    echo $indent . "</head>\n";
+    $this->openElement('head');
+    $this->writeHeadBase();
+    $this->writeHeadMetas();
+    $this->writeHeadTitle();
+    $this->writeHeadStyle();
+    $this->writeHeadLinks();
+    $this->writeHeadScript();
+    $this->closeElement('head');
   }
 
 
@@ -366,12 +701,11 @@ class Page
    * Generate <base> element if needed
    * Subclasses should override getBaseURI to provide a URI
    */
-  function writeHeadBase($indent = '')
+  function writeHeadBase()
   {
     $baseURI = $this->getBaseURI();
     if ($baseURI) {
-      $baseURI = self::Encode($baseURI);
-      echo $indent . "<base href='{$baseURI}'>\n";
+      $this->addElement('base', array('href' => $baseURI));
     }
   }
 
@@ -380,27 +714,30 @@ class Page
    * Generate <title> element if needed
    * Subclasses should override getPageTitle to provide a title
    */
-  function writeHeadTitle($indent = '')
+  function writeHeadTitle()
   {
     $title = $this->getPageTitle();
     if ($title) {
-      $title = self::Encode($title);
-      echo $indent . "<title>{$title}</title>\n";
+      $this->addElement('title', null, $title);
     }
   }
+
 
   /**
    * Generate <meta> elements(s)
    */
-  function writeHeadMetas($indent = '')
+  function writeHeadMetas()
   {
-    echo $indent . "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\n";
+    $args['http-equiv'] = 'Content-Type';
+    $args['content'] = 'text/html; charset=utf-8';
+    $this->addElement('meta', $args);
   }
+
 
   /**
    * Generate <style> element(s)
    */
-  function writeHeadStyle($indent = '')
+  function writeHeadStyle()
   {  
   }
   
@@ -408,14 +745,14 @@ class Page
   /**
    * Generate <link> element(s)
    */
-  function writeHeadLinks($indent = '')
+  function writeHeadLinks()
   {
   }
   
   /**
    * Generate <script> element(s)
    */
-  function writeHeadScript($indent = '')
+  function writeHeadScript()
   {
   }
 
@@ -425,33 +762,36 @@ class Page
    *
    * Subclasses should override Header, Content or Footer methods
    */
-  function writeHTMLBody($indent = '')
+  function writeHTMLBody()
   {
-    echo $indent . "<body>\n";
-    $this->writeBodyHeader($indent . '  ');
-    $this->writeBodyContent($indent . '  ');
-    $this->writeBodyFooter($indent . '  ');
-    echo $indent . "</body>\n";
+    $this->openElement('body');
+    $this->writeBodyHeader();
+    $this->writeBodyContent();
+    $this->writeBodyFooter();
+    $this->closeElement('body');
   }
+
 
   /**
    * Generate header section of html <body>
    */
-  function writeBodyHeader($indent = '')
+  function writeBodyHeader()
   {
   }
+
 
   /**
    * Generate main content section of html <body>
    */
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
   }
+
 
   /**
    * Generate footer section of html <body>
    */
-  function writeBodyFooter($indent = '')
+  function writeBodyFooter()
   {
   }
 }

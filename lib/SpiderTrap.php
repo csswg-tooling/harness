@@ -37,7 +37,12 @@ class SpiderTrap
   }
   
 
-  function getTrapLink()
+  /**
+   * Add spider trap link to page
+   *
+   * @param Page web page
+   */
+  function addTrapLinkTo(Page $page)
   {
     $largeNumber = mt_rand(1000000, 9999999999);
     if ($this->mPageQuery) {
@@ -46,19 +51,10 @@ class SpiderTrap
     }
     $args['seq'] = ++$this->mSequence;
     $args['uid'] = $largeNumber;
-    $uri = Page::_EncodeURI(SPIDER_TRAP_URI, $args);
-    $link = "<a href='{$uri}' class='report'>{$this->mSequence}-{$largeNumber}</a>";
-    return $link;
-  }
-
-
-  /**
-   * Write HTML for a link to the spider trap
-   */
-  function writeTrapLink($indent = '')
-  {
-    $link = $this->getTrapLink();
-    echo $indent . $link . "\n";
+    $uri = $page->_buildURI(SPIDER_TRAP_URI, $args);
+    
+    $content = "{$this->mSequence}-{$largeNumber}";
+    $page->addHyperLink($uri, array('class' => 'report'), $content);
   }
 
 

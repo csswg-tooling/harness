@@ -133,21 +133,22 @@ class ResultsPage extends HarnessPage
   /**
    * Generate <style> element
    */
-  function writeHeadStyle($indent = '')
+  function writeHeadStyle()
   {  
-    parent::writeHeadStyle($indent);
+    parent::writeHeadStyle();
 
-    echo $indent . "<link rel='stylesheet' href='report.css' type='text/css'>\n";
+    $this->addStyleSheetLink('report.css');
   }
 
 
-  function _generateRow($indent, $testCaseName, $engineResults, $optional)
+  function _generateRow($testCaseName, $engineResults, $optional)
   {
     $hasResults   = FALSE;
     $testInvalid  = FALSE;
     $passCount    = 0;
     $failCount    = 0;
-    $row = '';
+    
+    $cells = array();
     foreach ($this->mResults->getEngines() as $engine) {
       $engineMissing[$engine] = TRUE;
       if ($engineResults && array_key_exists($engine, $engineResults)) {
@@ -180,7 +181,7 @@ class ResultsPage extends HarnessPage
         if (0 < $na) {
           $class .= 'na ';
         }
-        $row .= "<td class='{$class}'>";
+        
         $args['s'] = $this->mTestSuite->getName();
         $args['c'] = $testCaseName;
         $args['e'] = $engine;
@@ -188,18 +189,19 @@ class ResultsPage extends HarnessPage
         if ($this->mModified) {
           $args['m'] = $this->mModified;
         }
-        $detailsURI = $this->encodeURI(DETAILS_PAGE_URI, $args);
-        $row .= "<a href='{$detailsURI}'>";
-        $row .= ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
-        $row .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
-        $row .= ((0 < $uncertain) ? $uncertain : '.');
-        $row .= "</a>";
-        $row .= "</td>";
+        $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
+        
+        $content  = ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
+        $content .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
+        $content .= ((0 < $uncertain) ? $uncertain : '.');
+        
+        $cells[] = array($class, $uri, $content); 
       }
       else {
-        $row .= "<td>&nbsp;</td>";
+        $cells[] = '&nbsp;';
       }
     }
+    
     $display = TRUE;
     $class = '';
     if ($testInvalid) {
@@ -247,8 +249,10 @@ class ResultsPage extends HarnessPage
       }
     }
     if ($display) {
-      echo $indent . "  <tr class='{$class}'>";
-      echo "<td>{$this->mSpiderTrap->getTrapLink()}";
+      $this->openElement('tr', array('class' => $class));
+      $this->openElement('td');
+
+      $this->mSpiderTrap->addTrapLinkTo($this);
       unset($args);
       $args['s'] = $this->mTestSuite->getName();
       $args['c'] = $testCaseName;
@@ -257,13 +261,27 @@ class ResultsPage extends HarnessPage
         if ($this->mModified) {
           $args['m'] = $this->mModified;
         }
-        $uri = $this->encodeURI(DETAILS_PAGE_URI, $args);
+        $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
       }
       else {
-        $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
+        $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
       }
-      echo "<a href='{$uri}'>{$testCaseName}</a></td>";
-      echo "{$row}</tr>\n";
+      
+      $this->addHyperLink($uri, null, $testCaseName);
+      $this->closeElement('td');
+      
+      foreach ($cells as $cell) {
+        if (is_array($cell)) {
+          list($class, $uri, $content) = $cell;
+          $this->openElement('td', array('class' => $class));
+          $this->addHyperLink($uri, null, $content, FALSE);
+          $this->closeElement('td');
+        }
+        else {
+          $this->addElement('td', null, $cell, FALSE);
+        }
+      }
+      $this->closeElement('tr');
     }
   }
 
@@ -271,18 +289,17 @@ class ResultsPage extends HarnessPage
   /**
    * Write HTML for a table displaying result data
    */
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
     if ($this->mResults->getResultCount()) {
     
-      echo $indent . "<table>\n";
-      echo $indent . "  <tr>\n";
-      echo $indent . "    <th>Testcase</th>\n";
+      $this->openElement('table');
+      $this->openElement('tr');
+      $this->addElement('th', null, 'Testcase');
       foreach ($this->mResults->getEngines() as $engine) {
-        $engine = self::Encode($engine);
-        echo $indent . "    <th>{$engine}</th>\n";
+        $this->addElement('th', null, $engine);
       }
-      echo $indent . "  </tr>\n";
+      $this->closeElement('tr');
       
       $this->mTestCaseRequiredCount = 0;
       $this->mTestCaseRequiredPassCount = 0;
@@ -303,62 +320,107 @@ class ResultsPage extends HarnessPage
         
         $engineResults = $this->mResults->getResultCountsFor($testCaseId);
 
-        $this->_generateRow($indent, $testCaseName, $engineResults, $optional);
+        $this->_generateRow($testCaseName, $engineResults, $optional);
       }
       
-      echo $indent . "</table>\n";
-      echo $indent . "<p>{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet exit criteria.</p>\n";
-      echo $indent . "<p>{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet exit criteria.</p>\n";
-      echo $indent . "<p>{$this->mTestCaseInvalidCount} tests reported as invalid.</p>\n";
-      echo $indent . "<p>{$this->mTestCaseNeededCount} required tests are considered valid and do not meet exit criteria.</p>\n";
+      $this->closeElement('table');
+      $this->addElement('p', null, "{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet exit criteria.");
+      $this->addElement('p', null, "{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet exit criteria.");
+      $this->addElement('p', null, "{$this->mTestCaseInvalidCount} tests reported as invalid.");
+      $this->addElement('p', null, "{$this->mTestCaseNeededCount} required tests are considered valid and do not meet exit criteria.");
       if (0 < $this->mTestCaseNeededCount) {
-        echo $indent . "<p>{$this->mTestCaseTooManyFails} required tests have blocking failures.</p>\n";
-        echo $indent . "<p>{$this->mTestCaseNeedMoreResults} required tests might pass but lack data.</p>\n";
+        $this->addElement('p', null, "{$this->mTestCaseTooManyFails} required tests have blocking failures.");
+        $this->addElement('p', null, "{$this->mTestCaseNeedMoreResults} required tests might pass but lack data.");
         if (0 < $this->mTestCaseNeedMoreResults) {
-          echo $indent . "<p>Additional results needed from:</p>\n";
-          echo $indent . "<ul>\n";
+          $this->addElement('p', null, "Additional results needed from:");
+          $this->openElement('ul');
           foreach ($this->mTestCaseNeededCountPerEngine as $engine => $count) {
             if (0 < $count) {
-              echo $indent . "  <li>{$engine}: $count</li>\n";
+              $this->addElement('li', null, "{$engine}: $count");
             }
           }
-          echo $indent . "</ul>\n";
+          $this->closeElement('ul');
         }
       }
       else {
-        echo $indent . "<p>Exit criteria have been met.</p>\n";
+        $this->addElement('p', null, "Exit criteria have been met.");
       }
     }
     else {
-      echo $indent . "<p>No results entered matching this query.</p>\n";
+      $this->addElement('p', null, "No results entered matching this query.");
     }
   }
 
   
-  function writeBodyFooter($indent = '')
+  function writeBodyFooter()
   {
-    echo $indent . "<h2>Legend</h2>\n";
-    echo $indent . "<table class='legend'>\n";
-    echo $indent . "  <tr><th>Row color codes</tr>\n";
-    echo $indent . "  <tr class='pass'><td>two or more passes</tr>\n";
-    echo $indent . "  <tr class='fail'><td>blocking failures</tr>\n";
-    echo $indent . "  <tr class='uncertain'><td>not enough results</tr>\n";
-    echo $indent . "  <tr class='invalid'><td>reported as invalid</tr>\n";
-    echo $indent . "  <tr class='optional'><td>not passing, but optional</tr>\n";
-    echo $indent . "</table>\n";
+    $this->addElement('h2', null, 'Legend');
+    
+    $this->openElement('table', array('class' => 'legend'));
 
-    echo $indent . "<table class='legend'>\n";
-    echo $indent . "  <tr><th>Result color codes</tr>\n";
-    echo $indent . "  <tr><td class='pass'>all results pass</tr>\n";
-    echo $indent . "  <tr><td class='pass fail'>pass reported, but also other results</tr>\n";
-    echo $indent . "  <tr><td class='fail'>all results fail</tr>\n";
-    echo $indent . "  <tr><td class='fail uncertain'>fail reported, but also other results</tr>\n";
-    echo $indent . "  <tr><td class='uncertain'>all results uncertain</tr>\n";
-    echo $indent . "  <tr><td class='invalid'>reported as invalid</tr>\n";
-    echo $indent . "  <tr><td># pass / # fail / # uncertian</tr>\n";
-    echo $indent . "</table>\n";
+    $this->openElement('tr');
+    $this->addElement('th', null, 'Row color codes');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'pass'));
+    $this->addElement('td', null, 'two or more passes');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'fail'));
+    $this->addElement('td', null, 'blocking failures');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'uncertain'));
+    $this->addElement('td', null, 'not enough results');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'invalid'));
+    $this->addElement('td', null, 'reported as invalid');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'optional'));
+    $this->addElement('td', null, 'not passing, but optional');
+    $this->closeElement('tr');
 
-    parent::writeBodyFooter($indent);
+    $this->closeElement('table');
+
+    $this->openElement('table', array('class' => 'legend'));
+
+    $this->openElement('tr');
+    $this->addElement('th', null, 'Result color codes');
+    $this->closeElement('tr');
+
+    $this->openElement('tr');
+    $this->addElement('td', array('class' => 'pass'), 'all results pass');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('td', array('class' => 'pass fail'), 'pass reported, but also other results');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('td', array('class' => 'fail'), 'all results fail');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('td', array('class' => 'fail uncertain'), 'fail reported, but also other results');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('td', array('class' => 'uncertain'), 'all results uncertain');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('td', array('class' => 'invalid'), 'reported as invalid');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('td', null, '# pass / # fail / # uncertian');
+    $this->closeElement('tr');
+
+    $this->closeElement('table');
+    
+    parent::writeBodyFooter();
   }
 }
 

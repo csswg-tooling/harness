@@ -147,50 +147,59 @@ class TestCasePage extends HarnessPage
   /**
    * Generate <style> element
    */
-  function writeHeadStyle($indent = '')
+  function writeHeadStyle()
   {
-    parent::writeHeadStyle($indent);
+    parent::writeHeadStyle();
     
-    echo $indent . "<link rel='stylesheet' href='test.css' type='text/css'>\n";
+    $this->addStyleSheetLink('test.css');
 
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
       $actualEngine = strtolower($actualUA->getEngine());
       
-      echo $indent . "<link rel='stylesheet' href='test_{$actualEngine}.css' type='text/css'>\n";
+      $this->addStyleSheetLink("test_{$actualEngine}.css");
     }
   }
 
 
-  function writeTestTitle($indent = '', $element = "h2", $attrs = "class='title'")
+  function writeTestTitle($elementName = 'h2', $class = 'title', $attrs = null)
   {
     $title = $this->mTestCase->getTitle();
     $assertion = $this->mTestCase->getAssertion();
     $specURIs = $this->mTestCase->getSpecURIs();
     
     if ((1 < $this->mCount) || $title || $assertion || $specURIs) {
-      echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
+      $attrs['class'] = $class;
+      $this->openElement($elementName, $attrs);
+      
       if (1 < $this->mCount) {
         $index = $this->mIndex + 1;
-        echo $indent . "  Test {$index} of {$this->mCount}" . ($title ? ":\n" : "\n");
+        $this->addTextContent("Test {$index} of {$this->mCount}" . ($title ? ':' : ''));
       }
       if ($title) {
-        $title = self::Encode($title);
         if ($assertion) {
-          $title = "<abbr title='" . self::Encode($assertion) . "'>{$title}</abbr>";
+          $this->addAbbrElement($assertion, null, $title);
         }
-        echo $indent . "  {$title}\n";
+        else {
+          $this->addTextContent($title);
+        }
       }
       elseif ($assertion) {
-        $assertion = self::Encode($assertion);
-        echo $indent . "  Assertion: {$assertion}\n";
+        $this->addTextContent("Assertion: {$assertion}");
       }
       if ($specURIs && (0 < count($specURIs))) {
-        echo $indent . "  <span class='speclink'>(";
+        $this->openElement('span', array('class' => 'speclink'), FALSE);
+        $this->addTextContent(' (');
         $index = -1;
         foreach ($specURIs as $specURI) {
           $index++;
-          extract($specURI);
+          extract($specURI);  // $specTitle, $section, $title, $uri
+
+          if (0 < $index) {  
+            $this->addTextContent(', ');
+          }
+          $this->openElement('a', array('href' => $uri, 'target' => 'spec'));
+          
           if (! $specTitle) {
             $specTitle = "Spec";
           }
@@ -201,40 +210,39 @@ class TestCasePage extends HarnessPage
             $section = self::Encode($specTitle);
           }
           if ($title) {
-            $title = "<abbr title='" . self::Encode($title) . "'>{$section}</abbr>";
+            $this->addAbbrElement($title, null, $section, FALSE);
           }
           else {
-            $title = $section;
+            $this->addTextContent($section);
           }
-          if (0 < $index) {
-            echo ",\n{$indent}  ";
-          }
-          echo "<a href='" . self::Encode($uri) . "' target='spec'>{$title}</a>";
+          $this->closeElement('a');
         }
-        echo ")</span>\n";
+        $this->addTextContent(')');
+        $this->closeElement('span');
       }
-      echo $indent . "</{$element}>\n";
+      $this->closeElement($elementName);
     }
   }
   
   
-  function writeTestLinks($indent = '', $element = "h3", $attrs = "class='testname'")
+  function writeTestLinks($elementName = 'h3', $class = 'testname', $attrs = null)
   {
-    echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
+    $attrs['class'] = $class;
+    $this->openElement($elementName, $attrs);
     
-    $testName = self::Encode($this->mTestCase->getTestCaseName());
-    $testURI = self::Encode($this->mTestCase->getURI($this->mFormat));
-    echo $indent . "  Test Case: <a href='{$testURI}' target='test_case'>{$testName}</a>\n";
+    $this->addTextContent("Test Case: ");
+    $this->addHyperLink($this->mTestCase->getURI($this->mFormat), 
+                        array('target' => 'test_case'), 
+                        $this->mTestCase->getTestCaseName());
     
     if ($this->mTestCase->isReferenceTest()) {
       $refTests = $this->mTestCase->getReferences($this->mFormat);
       if ($refTests) {
         foreach ($refTests as $refTest) {
-          $refName  = self::Encode($refTest['reference']);
-          $refType  = self::Encode($refTest['type']);
-          $refURI   = self::Encode($this->mTestCase->getReferenceURI($refTest['reference'], $this->mFormat));
-
-          echo $indent . "  {$refType} <a href='{$refURI}' target='reference'>{$refName}</a>\n";
+          $this->addTextContent(" {$refTest['type']} ");
+          $this->addHyperLink($this->mTestCase->getReferenceURI($refTest['reference'], $this->mFormat), 
+                              array('target' => 'reference'), 
+                              $refTest['reference']);
         }
       }
     }
@@ -245,44 +253,51 @@ class TestCasePage extends HarnessPage
     if ($this->mTestSuite->isLocked()) {
       $args['m'] = $this->mTestSuite->getLockDateTime();
     }
+    $detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args);
 
-    $detailsURI = $this->encodeURI(DETAILS_PAGE_URI, $args);
-    echo $indent . "  <span class='resultlink'>(<a href='{$detailsURI}'>Results</a>)</span>\n";
+    $this->openElement('span', null, FALSE);
+    $this->addTextContent(' (');
+    $this->addHyperLink($detailsURI, null, 'Results');
+    $this->addTextContent(')');
+    $this->closeElement('span');
     
-    echo $indent . "</{$element}>\n";
+    $this->closeElement($elementName);
   }
   
-  function writeTestFlags($indent = '', $element = "p", $attrs = "class='notes'")
+  
+  function writeTestFlags($elementName = 'p', $class = 'notes', $attrs = null)
   {
     $flagDescriptions = $this->mTestCase->getFlags()->getDescriptions();
     if ($flagDescriptions && (0 < count($flagDescriptions))) {
-      echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
+      $attrs['class'] = $class;
+      $this->openElement($elementName, $attrs);
       foreach ($flagDescriptions as $flag => $description) {
-        echo $indent . "  <span>{$description}</span>\n";
+        $this->addElement('span', null, $description, FALSE);
       }
-      echo $indent . "</{$element}>\n";
+      $this->closeElement($elementName);
     }
   }
   
   
-  function writeFlagTests($indent = '', $element = "div", $attrs = "class='prerequisites'")
+  function writeFlagTests($elementName = 'div', $class = 'prerequisites', $attrs = null)
   {
     $flags = $this->mTestCase->getFlags();
     
     if ($flags) {
       $tests = $flags->getTests();
       if ($tests && (0 < count($tests))) {
-        echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
+        $attrs['class'] = $class;
+        $this->openElement($elementName, $attrs);
         foreach ($tests as $flag => $test) {
-          echo $indent . "  {$test}\n";
+          $this->addTextContent($test, FALSE);
         }
-        echo $indent . "</{$element}>\n";
+        $this->closeElement($elementName);
       }
     }
   }
   
   
-  function writeReferenceAndFormatTabs($indent = '')
+  function writeReferenceAndFormatTabs()
   {
     $suiteFormats = Format::GetFormatsFor($this->mTestSuite);
 
@@ -295,67 +310,79 @@ class TestCasePage extends HarnessPage
     
     if (isset($refTests) || (1 < count($suiteFormats))) {
       if (isset($refTests)) {
-        echo $indent . "<div class='tabbar ref'>\n";
+        $attrs['class'] = 'tabbar ref';
       }
       else {
-        echo $indent . "<div class='tabbar'>\n";
+        $attrs['class'] = 'tabbar';
       }
+      $this->openElement('div', $attrs);
       
       if (isset($refTests)) {
-        echo $indent . "  <span class='tabgroup references'>\n";
+        $this->openElement('span', array('class' => 'tabgroup references'));
         if (! $this->mRefName) {
-          echo $indent . "    <span class='tab active'><a>Test Case</a></span>\n";
+          $this->openElement('span', array('class' => 'tab active'));
+          $this->addElement('a', null, 'Test Case');
+          $this->closeElement('span');
         }
         else {
           $args = $this->mGetData;
           unset($args['ref']);
-          $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
-          echo $indent . "    <span class='tab'><a href='{$uri}'>Test Case</a></span>\n";
+          $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+          
+          $this->openElement('span', array('class' => 'tab'));
+          $this->addHyperLink($uri, null, 'Test Case');
+          $this->closeElement('span');
         }
         foreach ($refTests as $refTest) {
           $refName = $refTest['reference'];
-          $refType = self::Encode($refTest['type']);
+          $refType = $refTest['type'];
           if ($refName == $this->mRefName) {
-            echo $indent . "    <span class='tab active'><a>{$refType} Reference Page</a></span>\n";
+            $this->openElement('span', array('class' => 'tab active'));
+            $this->addElement('a', null, "{$refType} Reference Page");
+            $this->closeElement('span');
           }
           else {
             $args = $this->mGetData;
             $args['ref'] = $refName;
-            $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
-            echo $indent . "    <span class='tab'><a href='{$uri}'>";
-            echo               "{$refType} Reference Page";
-            echo               "</a></span>\n";
+            $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+            
+            $this->openElement('span', array('class' => 'tab'));
+            $this->addHyperLink($uri, null, "{$refType} Reference Page");
+            $this->closeElement('span');
           }
         }
-        echo $indent . "  </span>\n";
+        $this->closeElement('span');
       }
       
       if (isset($refTests)) {
         if (! $this->mRefName) {
           $plural = ((1 < count($refTests)) ? 's' : '');
-          echo $indent . "  <p class='instruct'>This page must be compared to the Reference Page{$plural}\n";
+          $this->openElement('p', array('class' => 'instruct'));
+          $this->addTextContent("This page must be compared to the Reference Page{$plural}");
         }
         else {
           $not = (('!=' == $this->mTestCase->getReferenceType($this->mRefName, $this->mFormat)) ? 'NOT ' : '');
-          echo $indent . "  <p class='instruct'>This page must {$not}match the Test Case\n";
+          $this->openElement('p', array('class' => 'instruct'));
+          $this->addTextContent("This page must {$not}match the Test Case");
         }
-        $indent .= '  ';
       }
 
       if (1 < count($suiteFormats)) {
-        echo $indent . "  <span class='tabgroup format'>\n";
+        $this->openElement('span', array('class' => 'tabgroup format'));
 
         $testFormats = $this->mTestCase->getFormats();
 
         foreach ($suiteFormats as $formatName => $format) {
-          $formatTitle = self::Encode($format->getTitle());
+          $formatTitle = $format->getTitle();
           
           if ($formatName == $this->mFormat) {
             $class = 'tab active';
             if ($this->mDesiredFormat && ($formatName != $this->mDesiredFormat)) {
               $class .= ' other';
             }
-            echo $indent . "    <span class='{$class}'><a>{$formatTitle}</a></span>\n";
+            $this->openElement('span', array('class' => $class));
+            $this->addElement('a', null, $formatTitle);
+            $this->closeElement('span');
           }
           else {
             if (in_array($formatName, $testFormats)) {
@@ -364,140 +391,142 @@ class TestCasePage extends HarnessPage
               if ($this->mRefName) {
                 $args['ref'] = $this->mRefName; 
               }
-              $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
+              $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
 
-              echo $indent . "    <span class='tab'><a href='{$uri}'>";
-              echo               "{$formatTitle}";
-              echo               "</a></span>\n";
+              $this->openElement('span', array('class' => 'tab'));
+              $this->addHyperLink($uri, null, $formatTitle);
+              $this->closeElement('span');
             }
             else {
-              echo $indent . "    <span class='tab disabled'><a>{$formatTitle}</a></span>";
+              $this->openElement('span', array('class' => 'tab disabled'));
+              $this->addElement('a', null, $formatTitle);
+              $this->closeElement('span');
             }
           }
         }
-        echo $indent . "  </span>\n";
+        $this->closeElement('span');
       }
       
       if (isset($refTests)) {
-        $indent = substr($indent, 0, -2);
-        echo $indent . "  </p>\n";
+        $this->closeElement('p');
       }
 
-      echo $indent . "</div>\n";
+      $this->closeElement('div');
     }
   }
   
 
-  function writeTest($indent = '')
+  function writeTest()
   {
-    echo $indent . "<div class='test'>\n";
-    echo $indent . "  <p>\n";
+    $this->openElement('div', array('class' => 'test'));
+    $this->openElement('p');
     $refURI = $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormat);
     if ($refURI) {
-      echo $indent . "    <object data='{$refURI}' type='text/html'>\n";
-      echo $indent . "      <a href='{$refURI}' target='reference'>\n";
-      echo $indent . "        Show reference\n";
-      echo $indent . "      </a>\n";
-      echo $indent . "    </object>\n";
+      $this->openElement('object', array('data' => $refURI, 'type' => 'text/html'));
+      $this->addHyperLink($refURI, array('target' => 'reference'), "Show reference");
+      $this->closeElement('object');
     }
     else {
       $uri = $this->mTestCase->getURI($this->mFormat);
-      echo $indent . "    <object data='{$uri}' type='text/html'>\n";
-      echo $indent . "      <a href='{$uri}' target='test_case'>\n";
-      echo $indent . "        Run test\n";
-      echo $indent . "      </a>\n";
-      echo $indent . "    </object>\n";
+      $this->openElement('object', array('data' => $uri, 'type' => 'text/html'));
+      $this->addHyperLink($uri, array('target' => 'test_case'), "Run test");
+      $this->closeElement('object');
     }
-    echo $indent . "  </p>\n";
-    echo $indent . "</div>\n";
+    $this->closeElement('p');
+    $this->closeElement('div');
   }
   
   
-  function writeSubmitForm($indent = '')
+  function writeSubmitForm()
   {
-    echo $indent . "<form name='eval' action='" . SUBMIT_PAGE_URI . "' method='post'>\n";
-    echo $indent . "  <p class='buttons'>\n";
-    $this->writeHiddenFormControls($indent . '    ');
-    $locked = (($this->mTestSuite->isLocked()) ? " disabled" : '');
-    echo $indent . "    <input type='submit' name='result' value='Pass [1]' accesskey='1'{$locked}>\n";
-    echo $indent . "    <input type='submit' name='result' value='Fail [2]' accesskey='2'{$locked}>\n";
-    echo $indent . "    <input type='submit' name='result' value='Cannot tell [3]' accesskey='3'{$locked}>\n";
-    echo $indent . "    <input type='submit' name='result' value='Skip [4]' accesskey='4'>\n";
-    echo $indent . "  </p>\n";
-    echo $indent . "</form>\n";
+    $this->openFormElement(SUBMIT_PAGE_URI, 'post', 'eval');
+    $this->openElement('p', array('class' => 'buttons'));
+    $this->writeHiddenFormControls();
     
+    $locked = $this->mTestSuite->isLocked();
+    $this->addInputElement('submit', 'result', 'Pass [1]', array('accesskey' => '1', 'disabled' => $locked));
+    $this->addInputElement('submit', 'result', 'Fail [2]', array('accesskey' => '2', 'disabled' => $locked));
+    $this->addInputElement('submit', 'result', 'Cannot tell [3]', array('accesskey' => '3', 'disabled' => $locked));
+    $this->addInputElement('submit', 'result', 'Skip [4]', array('accesskey' => '4'));
+    
+    $this->closeElement('p');
+    $this->closeElement('form');
   }
   
   
-  function writeUserAgent($indent = '')
+  function writeUserAgent()
   {
     if ($this->mUserAgent) {
-      $uaString = self::Encode($this->mUserAgent->getUAString());
-      $description = self::Encode($this->mUserAgent->getDescription());
+      $uaString = $this->mUserAgent->getUAString();
+      $description = $this->mUserAgent->getDescription();
 
-      echo $indent . "<p class='ua'>\n";
+      $this->openElement('p', array('class' => 'ua'));
       
       if ($this->mUserAgent->isActualUA()) {
-        echo $indent . "  Testing: \n";
-        echo $indent . "  <abbr title='{$uaString}'>{$description}</abbr>\n";
+        $this->addTextContent("Testing: ");
+        $this->addAbbrElement($uaString, null, $description);
       }
       else {
-        echo $indent . "  Entering results for: \n";
-        echo $indent . "  <abbr class='other' title='{$uaString}'>{$description}</abbr>\n";
+        $this->addTextContent("Entering results for: ");
+        $this->addAbbrElement($uaString, array('class' => 'other'), $description);
 
         $args = $this->mGetData;
         unset($args['u']);
-        $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
-        echo $indent . " <a href='{$uri}'>(Reset)</a>\n";
+        $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+        $this->openElement('span', null, FALSE);
+        $this->addTextContent('(');
+        $this->addHyperLink($uri, null, "Reset");
+        $this->addTextContent(')');
+        $this->closeElement('span');
       }
-      echo $indent . "</p>\n";
+      $this->closeElement('p');
     }
   }
   
 
-  function writeBodyHeader($indent = '')
+  function writeBodyHeader()
   {
-    echo $indent . "<div class='header'>\n";
+    $this->openElement('div', array('class' => 'header'));
     
-    $this->mSpiderTrap->writeTrapLink($indent . '  ');
+    $this->mSpiderTrap->addTrapLinkTo($this);
 
-    $this->writeSmallW3CLogo($indent . '  ');
+    $this->writeSmallW3CLogo();
     
-    $this->writeNavLinks($indent . '  ');
+    $this->writeNavLinks();
     
-    $this->writeContentTitle($indent . '  ', "h1", "class='suite'");
+    $this->writeContentTitle('h1', array('class' => 'suite'));
 
-    $this->writeTestTitle($indent . '  ');
+    $this->writeTestTitle();
 
-    $this->writeTestLinks($indent . '  ');
+    $this->writeTestLinks();
 
-    $this->writeTestFlags($indent . '  ');
+    $this->writeTestFlags();
     
-    $this->writeFlagTests($indent . '  ');
+    $this->writeFlagTests();
 
-    echo $indent . "</div>\n";
+    $this->closeElement('div');
   }
 
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
-    $this->writeReferenceAndFormatTabs($indent);
+    $this->writeReferenceAndFormatTabs();
 
-    $this->writeTest($indent);
+    $this->writeTest();
   }
 
 
-  function writeBodyFooter($indent = '')
+  function writeBodyFooter()
   {
-    echo $indent . "<div class='footer'>\n";
+    $this->openElement('div', array('class' => 'footer'));
 
-    $this->writeSubmitForm($indent . '  ');
+    $this->writeSubmitForm();
     
-    $this->writeUserAgent($indent . '  ');
+    $this->writeUserAgent();
 
-    $this->mSpiderTrap->writeTrapLink($indent . '  ');
+    $this->mSpiderTrap->addTrapLinkTo($this);
 
-    echo $indent . "</div>\n";
+    $this->closeElement('div');
   }
 }
 

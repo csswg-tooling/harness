@@ -27,7 +27,7 @@ class TestCases extends DBConnection
   protected $mTestCases;
 
 
-  function __construct($testSuite) 
+  function __construct(TestSuite $testSuite) 
   {
     parent::__construct();
     

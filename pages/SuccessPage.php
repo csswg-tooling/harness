@@ -58,27 +58,27 @@ class SuccessPage extends HarnessPage
   }
 
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
-    echo $indent . "<p>\n";
-    echo $indent . "  Thank you for providing test result data for the\n";
-    echo $indent . "  " . self::Encode($this->mTestSuite->getTitle()) . "\n";
-    echo $indent . "</p>\n";
+    $this->addElement('p', null, "Thank you for providing test result data for the " .
+                                 $this->mTestSuite->getTitle());
 
     $args['u'] = $this->mUserAgent->getId();
-    $homeURI = $this->encodeURI('./', $args);
+    $homeURI = $this->buildURI('./', $args);
 
     $args['s'] = $this->mTestSuite->getName();
-    $reviewURI = $this->encodeURI(REVIEW_PAGE_URI, $args);
-    $enterURI = $this->encodeURI(TESTSUITE_PAGE_URI, $args);
+    $reviewURI = $this->buildURI(REVIEW_PAGE_URI, $args);
+    $enterURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
 
-    echo $indent . "<p>\n";
-    echo $indent . "  You can <a href='{$enterURI}'>enter additional data</a>, \n";
-    echo $indent . "  <a href='{$reviewURI}'>review results</a>, or \n";
-    echo $indent . "  access other test suites from the\n";
-    echo $indent . "  <a href='{$homeURI}'>harness welcome page</a>.\n";
-    echo $indent . "</p>\n";
-
+    $this->openElement('p', null, FALSE);
+    $this->addTextContent("You can ");
+    $this->addHyperLink($enterURI, null, "enter additional data");
+    $this->addTextContent(", ");
+    $this->addHyperLink($reviewURI, null, "review results");
+    $this->addTextContent(", or access other test suites from the ");
+    $this->addHyperLink($homeURI, null, "harness welcome page");
+    $this->addTextContent(".");
+    $this->closeElement('p');
   }
 }
 

@@ -34,16 +34,13 @@ class SpiderTrapPage extends HarnessPage
   }
   
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
-    echo $indent . "<p>\n";
-    echo $indent . "  Downloading content from this web site via automated ";
-    echo             "means is expressly forbidden. Your visit has been logged.\n";
-    echo $indent . "</p>\n";
-    echo $indent . "<p>\n";
-    echo $indent . "  Subsequent visits by automated agents will result in ";
-    echo             "all visitors from your IP address being banned from this site.\n";
-    echo $indent . "</p>\n";
+    $this->addElement('p', null, "Downloading content from this web site via automated means is expressly forbidden. " .
+                                 "Your visit has been logged.");
+
+    $this->addElement('p', null, "Subsequent visits by automated agents will result in " .
+                                 "all visitors from your IP address being banned from this site.");
   }
 }
 

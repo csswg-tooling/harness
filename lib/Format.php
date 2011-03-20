@@ -29,7 +29,7 @@ class Format extends DBConnection
   /**
    * Load array of all known users
    */
-  static function GetFormatsFor($testSuite)
+  static function GetFormatsFor(TestSuite $testSuite)
   {
     $formats = array();
     

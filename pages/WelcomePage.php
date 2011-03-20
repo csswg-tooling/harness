@@ -37,72 +37,72 @@ class WelcomePage extends HarnessPage
   }
   
   
-  function writeTestSuites($indent = '')
+  function writeTestSuites()
   {
     $testSuites = $this->mTestSuites->getTestSuites();
     
     if ($testSuites) {
-      echo $indent . "<dl>\n";
+      $this->openElement('dl');
 
       foreach($testSuites as $testSuite) {
-        $homeURI = self::Encode($testSuite->getHomeURI());
 
         unset($args);
         $args['s'] = $testSuite->getName();
         $args['u'] = $this->mUserAgent->getId();
 
-        $reviewURI = $this->encodeURI(REVIEW_PAGE_URI, $args);
-        $enterURI = $this->encodeURI(TESTSUITE_PAGE_URI, $args);
+        $reviewURI = $this->buildURI(REVIEW_PAGE_URI, $args);
+        $enterURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
 
-        $title = self::Encode($testSuite->getTitle());
-        $description = self::Encode($testSuite->getDescription());
-        
-        echo $indent . "  <dt>\n";
-        echo $indent . "    <a href='{$homeURI}'>{$title}</a> (";
+        $this->openElement('dt', null, FALSE);
+        $this->addHyperLink($testSuite->getHomeURI(), null, $testSuite->getTitle());
+        $this->addTextContent(' (');
         if (! $testSuite->isLocked()) {
-          echo "<a href='{$enterURI}'>Enter Data</a>, \n";
+          $this->addHyperLink($enterURI, null, "Enter Data");
+          $this->addTextContent(', ');
         }
-        echo           "<a href='{$reviewURI}'>Review Results</a>)\n";
-        echo $indent . "  </dt>\n";
-        echo $indent . "  <dd>\n";
-        echo $indent . "    {$description}\n";
-        echo $indent . "  </dd>\n";
+        $this->addHyperLink($reviewURI, null, "Review Results");
+        $this->addTextContent(')');
+        $this->closeElement('dt');
+
+        $this->addElement('dd', null, $testSuite->getDescription());
       }
-      echo $indent . "</dl>\n";
+      $this->closeElement('dl');
     }
     else {
-      echo $indent . "<p>** No Test Suites Defined. **</p>\n";
+      $this->addElement('p', null, "** No Test Suites Defined. **");
     }
   }
   
 
-  function writeBodyContent($indent = '')
-  {  
-    echo $indent . "<p>\n";
-    echo $indent . "  Currently, you can provide test data or review ";
-    echo             "the testing results for the following test suites:\n";
-    echo $indent . "</p>\n";
+  function writeBodyContent()
+  {
+    $this->addElement('p', null, "Currently, you can provide test data or review " .
+                                 "the testing results for the following test suites:");
 
-    $this->writeTestSuites($indent);
+    $this->writeTestSuites();
 
   }
   
   
-  function writeBodyFooter($indent = '')
+  function writeBodyFooter()
   {
-    echo $indent . "<p><small>\n";
-    echo $indent . "  This W3C Conformance Test Harness was adapted from the\n";
-    echo $indent . "  <a href='http://www.w3.org/2007/03/mth/harness'>Mobile Test Harness</a>\n";
-    echo $indent . "  by the <a href='http://www.w3.org/Style/CSS/'>CSS WG (Cascading Style Sheets Working Group)</a>\n";
-    echo $indent . "  to provide navigation and result recording controls for efficiently assessing\n";
-    echo $indent . "  browser-based test cases, allowing anyone to easily submit pass/fail\n";
-    echo $indent . "  data in conformance testing.\n";
-    echo $indent . "  It was developed by <a href='/People/Dom/'>Dominique Hazael-Massieux</a> (dom&nbsp;@w3.org),\n";
-    echo $indent . "  David M. Berfanger (david.berfanger&nbsp;@hp.com) and\n";
-    echo $indent . "  Peter Linss (peter.linss&nbsp;@hp.com)\n";
-    echo $indent . "</small></p>\n";
+    $this->openElement('p');
+    $this->openElement('small');
+    $this->addTextContent("This W3C Conformance Test Harness was adapted from the ");
+    $this->addHyperLink('http://www.w3.org/2007/03/mth/harness', null, "Mobile Test Harness");
+    $this->addTextContent(" by the ");
+    $this->addHyperLink('http://www.w3.org/Style/CSS/', null, "CSS WG (Cascading Style Sheets Working Group)");
+    $this->addTextContent(" to provide navigation and result recording controls for efficiently assessing " .
+                          "browser-based test cases, allowing anyone to easily submit pass/fail " .
+                          "data in conformance testing.");
+    $this->addTextContent("It was developed by ");
+    $this->addHyperLink('http://www.w3.org/People/Dom/', null, "Dominique Hazael-Massieux");
+    $this->addTextContent(" (dom&nbsp;@w3.org), David M. Berfanger (david.berfanger&nbsp;@hp.com) and ".
+                          "Peter Linss (peter.linss&nbsp;@hp.com)", FALSE);
+    $this->closeElement('small');
+    $this->closeElement('p');
 
-    parent::writeBodyFooter($indent);
+    parent::writeBodyFooter();
   }
 }
 

@@ -64,21 +64,18 @@ class SetUserAgentPage extends HarnessPage
   }
 
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
+    $this->openElement('p');
+    $this->addTextContent("You have requested to provide results for the following user agent: ");
+    $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
+    $this->closeElement('p');
 
-    echo $indent . "<p>\n";
-    echo $indent . "  You have requested to provide results for the following user agent:\n";
-    
-    $uaString = self::Encode($this->mUserAgent->getUAString());
-    $uaDescription = self::Encode($this->mUserAgent->getDescription());
-    echo $indent . "  <abbr title='{$uaString}'>{$uaDescription}</abbr>\n";
-    echo $indent . "</p>\n";
-
-    echo $indent . "<p>\n";
-    echo $indent . "  We have processed your request and you should have been redirected \n";
-    echo $indent . "  <a href='{$this->mNewURI}'>here</a>.\n";
-    echo $indent . "</p>\n";
+    $this->openElement('p', null, FALSE);
+    $this->addTextContent("We have processed your request and you should have been redirected ");
+    $this->addHyperLink($this->mNewURI, null, "here");
+    $this->addTextContent(".");
+    $this->closeElement('p');
 
   }
 }

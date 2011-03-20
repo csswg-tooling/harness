@@ -30,46 +30,45 @@ class CSSWelcomePage extends WelcomePage
   }  
   
   
-  function writeBodyHeader($indent = '')
+  function writeBodyHeader()
   {
-    parent::writeBodyHeader($indent);
+    parent::writeBodyHeader();
 
-    echo $indent . "<p>\n";
-    echo $indent . "  This is a development version of a test harness for conducting CSS conformance\n";
-    echo $indent . "  testing using the CSS 2.1 Conformance Test Suite.\n";
-    echo $indent . "</p>\n";
-    
-    echo $indent . "<p>\n";
-    echo $indent . "  More information about the CSS 2.1 Conformance Test Suite can be found on the\n";
-    echo $indent . "  <a href='http://wiki.csswg.org/test'>\n";
-    echo $indent . "    CSS Working Group Wiki\n";
-    echo $indent . "  </a>.\n";
-    echo $indent . "</p>\n";
-    echo $indent . "<hr>\n";
+    $this->addElement('p', null, "This is a development version of a test harness for conducting CSS conformance " .
+                                 "testing using the CSS 2.1 Conformance Test Suite.");
+
+    $this->openElement('p', null, FALSE);
+    $this->addTextContent("More information about the CSS 2.1 Conformance Test Suite can be found on the ");
+    $this->addHyperLink('http://wiki.csswg.org/test', null, "CSS Working Group Wiki");
+    $this->addTextContent('.');
+    $this->closeElement('p');
+
+    $this->addElement('hr');
   }
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
-    parent::writeBodyContent($indent);
+    parent::writeBodyContent();
 
-    echo $indent . "<p>Please make sure your client is configured to:</p>\n";
-    echo $indent . "<ul>\n";
-    echo $indent . "  <li>Default black text on a white background.\n";
-    echo $indent . "  <li>No minimum font size.\n";
-    echo $indent . "  <li>Print background colors and images.\n";
-    echo $indent . "</ul>\n";
+    $this->addElement('p', null, "Please make sure your client is configured to:");
+    $this->openElement('ul');
+    $this->addElement('li', null, "Default black text on a white background.");
+    $this->addElement('li', null, "No minimum font size.");
+    $this->addElement('li', null, "Print background colors and images.");
+    $this->closeElement('ul');
 
-    echo $indent . "<p>\n";
-    echo $indent . "  <strong>Note</strong> that <em>many</em> of the tests require the ";
-    echo             "<a href='http://www.w3.org/Style/CSS/Test/Fonts/Ahem/'>";
-    echo             "Ahem font to be installed</a>.\n";
-    echo $indent . "  Some of the font-related tests also require ";
-    echo             "<a href='http://www.w3.org/Style/CSS/Test/Fonts/Overview'>special fonts</a>.\n";
-    echo $indent . "  Without the proper fonts installed, results are of no value.\n";
-    echo $indent . "</p>\n";
-    echo $indent . "<p>\n";
-    echo $indent . "  Some tests have additional requirements, which will be noted by the harness interface.\n";
-    echo $indent . "</p>\n";
+    $this->openElement('p', null, FALSE);
+    $this->addElement('strong', null, "Note");
+    $this->addTextContent(" that ");
+    $this->addElement('em', null, "many");
+    $this->addTextContent(" of the tests require the ");
+    $this->addHyperLink('http://www.w3.org/Style/CSS/Test/Fonts/Ahem/', null, "Ahem font to be installed");
+    $this->addTextContent(". Some of the font-related tests also require ");
+    $this->addHyperLink('http://www.w3.org/Style/CSS/Test/Fonts/Overview', null, "special fonts");
+    $this->addTextContent(". Without the proper fonts installed, results are of no value.");
+    $this->closeElement('p');
+
+    $this->addElement('p', null, "Some tests have additional requirements, which will be noted by the harness interface.");
   }
 }
 

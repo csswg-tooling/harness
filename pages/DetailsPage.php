@@ -111,32 +111,32 @@ class DetailsPage extends HarnessPage
   /**
    * Generate <style> element
    */
-  function writeHeadStyle($indent = '')
+  function writeHeadStyle()
   {
-    parent::writeHeadStyle($indent);
+    parent::writeHeadStyle();
     
-    echo $indent . "<link rel='stylesheet' href='report.css' type='text/css'>\n";
+    $this->addStyleSheetLink('report.css');
   }
 
 
   /**
    * Output details table
    */
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
     if (0 == $this->mResults->getResultCount()) {
-      echo $indent . "<p>No results entered matching this query.</p>\n";
+      $this->addElement('p', null, 'No results entered matching this query.');
     } 
     else {
-      echo $indent . "<table>\n";
-      echo $indent . "  <tr>\n";
-      echo $indent . "    <th>Test Case</th>\n";
-      echo $indent . "    <th>Format</th>\n";
-      echo $indent . "    <th>Result</th>\n";
-      echo $indent . "    <th>User Agent</th>\n";
-      echo $indent . "    <th>Date</th>\n";
-      echo $indent . "    <th>Source</th>\n";
-      echo $indent . "  </tr>\n";
+      $this->openElement('table');
+      $this->openElement('tr');
+      $this->addElement('th', null, 'Test Case');
+      $this->addElement('th', null, 'Format');
+      $this->addElement('th', null, 'Result');
+      $this->addElement('th', null, 'User Agent');
+      $this->addElement('th', null, 'Date');
+      $this->addElement('th', null, 'Source');
+      $this->closeElement('tr');
 
       $testSuiteName  = $this->mTestSuite->getName();
       
@@ -156,9 +156,7 @@ class DetailsPage extends HarnessPage
             asort($engineResultData);
             
             foreach ($engineResultData as  $resultId => $resultValue) {
-              $resultValue = self::Encode($resultValue);
-            
-              echo $indent . "  <tr class='{$resultValue}'>\n";
+              $this->openElement('tr', array('class' => $resultValue));
 
               $result = new Result($resultId);
               
@@ -166,39 +164,39 @@ class DetailsPage extends HarnessPage
               $sourceId = $result->getSourceId();
               if ($sourceId) {
                 $user = new User($sourceId);
-                $source = self::Encode($user->getName());
+                $source = $user->getName();
               }
               else {
                 $source = '';
               }
 
-              $format         = self::Encode($formats[$result->getFormatName()]->getTitle());
-              $date           = self::Encode($result->getDate());
-              $uaString       = self::Encode($userAgent->getUAString());
-              $uaDescription  = self::Encode($userAgent->getDescription());
+              $this->openElement('td');
               
-              echo $indent . "    <td>";
-              echo $this->mSpiderTrap->getTrapLink();
+              $this->mSpiderTrap->addTrapLinkTo($this);
+              
               $args['s'] = $testSuiteName;
               $args['c'] = $testCaseName;
               $args['f'] = $result->getFormatName();
               $args['u'] = $this->mUserAgent->getId();
+              $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+              
+              $this->addHyperLink($uri, null, $testCaseName);
+              $this->closeElement('td');
 
-              $uri = $this->encodeURI(TESTCASE_PAGE_URI, $args);
-              echo "<a href='{$uri}'>" . self::Encode($testCaseName) . "</a></td>\n";
+              $this->addElement('td', null, $formats[$result->getFormatName()]->getTitle());
+              $this->addElement('td', null, $resultValue);
+              $this->openElement('td');
+              $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
+              $this->closeElement('td');
+              $this->addElement('td', null, $result->getDate());
+              $this->addElement('td', null, $source);
 
-              echo $indent . "    <td>{$format}</td>\n";
-              echo $indent . "    <td>{$resultValue}</td>\n";
-              echo $indent . "    <td><abbr title='{$uaString}'>{$uaDescription}</abbr></td>\n";
-              echo $indent . "    <td>{$date}</td>\n";
-              echo $indent . "    <td>{$source}</td>\n";
-
-              echo $indent . "  </tr>\n";
+              $this->closeElement('tr');
             }
           }
         }
       }
-      echo $indent . "</table>\n";
+      $this->closeElement('table');
     }
   }
 }

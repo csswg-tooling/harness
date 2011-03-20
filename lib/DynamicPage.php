@@ -47,7 +47,7 @@ class DynamicPage extends Page
    * @param array
    * @return array
    */
-  static function ConditionInput($input)
+  static function ConditionInput(Array $input)
   {
     $output = array();
     if (is_array($input) && (0 < count($input))) {
@@ -226,76 +226,80 @@ class DynamicPage extends Page
    *
    * Overridden to insert error text if present
    */
-  function writeHTMLBody($indent = '')
+  function writeHTMLBody()
   {
-    echo $indent . "<body>\n";
+    $this->openElement('body');
     if (null == $this->mErrorType) {
-      $this->writeBodyHeader($indent . '  ');
-      $this->writeBodyContent($indent . '  ');
-      $this->writeBodyFooter($indent . '  ');
+      $this->writeBodyHeader();
+      $this->writeBodyContent();
+      $this->writeBodyFooter();
     }
     else {
-      $this->writeBodyError($indent . '  ');
+      $this->writeBodyError();
     }
-    echo $indent . "</body>\n";
+    $this->closeElement('body');
   }
 
 
   /**
    * Generate error text
    */
-  function writeBodyError($indent = '')
+  function writeBodyError()
   {
     if ($this->mErrorType) {
-      echo $indent . "<p>\n";
-      echo $indent . "  <strong>{$this->mErrorType}</strong>\n";
+      $this->openElement('p');
+      $this->addElement('strong', null, $this->mErrorType);
       if ($this->mErrorMessage) {
-        echo $indent . "  " . self::Encode($this->mErrorMessage) . "\n";
+        $this->addTextContent($this->mErrorMessage);
       }
-      echo $indent . "</p>\n";
+      $this->closeElement('p');
     } 
     else {
       if ($this->mErrorMessage) {
-        echo $indent . "<p>" . self::Encode($this->mErrorMessage) . "</p>\n";
+        $this->addElement('p', null, $this->mErrorMessage);
       }
     }
     if (defined('DEBUG_MODE') && DEBUG_MODE) {
       if ($this->mErrorFile) {
-        echo $indent . "<p>File: " . self::Encode($this->mErrorFile) . "</p>\n";
+        $this->addElement('p', null, "File: {$this->mErrorFile}");
       }
       if ($this->mErrorLine) {
-        echo $indent . "<p>Line: " . self::Encode($this->mErrorLine) . "</p>\n";
+        $this->addElement('p', null, "Line: {$this->mErrorLine}");
       }
       if ($this->mErrorContext) {
-        echo $indent . "<p>Context: \n";
-        echo $indent . "  <pre>";
+        $this->openElement('p');
+        $this->addTextContent('Context: ');
+        $this->openElement('pre');
         print_r($this->mErrorContext);
-        echo           "</pre>\n";
-        echo $indent . "</p>\n";
+        $this->closeElement('pre');
+        $this->closeElement('p');
       }
       
       if (0 < count($this->mGetData)) {
-        echo $indent . "<p>Get: \n";
-        echo $indent . "  <pre>";
+        $this->openElement('p');
+        $this->addTextContent('Get: ');
+        $this->openElement('pre');
         print_r($this->mGetData);
-        echo           "</pre>\n";
-        echo $indent . "</p>\n";
+        $this->closeElement('pre');
+        $this->closeElement('p');
       }
       
       if (0 < count($this->mPostData)) {
-        echo $indent . "<p>Post: ";
-        echo $indent . "  <pre>";
+        $this->openElement('p');
+        $this->addTextContent('Post: ');
+        $this->openElement('pre');
         print_r($this->mPostData);
-        echo           "</pre>\n";
-        echo $indent . "</p>\n";
+        $this->closeElement('pre');
+        $this->closeElement('p');
       }
 
       if (0 < count($this->mCookieData)) {
-        echo $indent . "<p>Cookie: ";
-        echo $indent . "  <pre>";
+        $this->openElement('p');
+        $this->addTextContent('Cookie: ');
+        $this->openElement('pre');
         print_r($this->mCookieData);
-        echo           "</pre>\n";
-        echo $indent . "</p>\n";
+        $this->closeElement('pre');
+        $this->closeElement('p');
       }
     }
   }

@@ -54,7 +54,7 @@ class HarnessPage extends DynamicPage
    * @param string fragment identifier
    * @return string URL encoded
    */
-  function buildURI($baseURI, $queryArgs, $fragId = null)
+  function buildURI($baseURI, Array $queryArgs, $fragId = null)
   {
     // XXX if mod_rewrite, remove 's' arg and convert to path
     if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
@@ -92,95 +92,114 @@ class HarnessPage extends DynamicPage
   /**
    * Generate <style> element
    */
-  function writeHeadStyle($indent = '')
+  function writeHeadStyle()
   {
-    echo $indent . "<style type='text/css'>\n";
-    echo $indent . "  a.report { display: none; }\n"; // ensure spider trap links are hidden
-    echo $indent . "</style>\n";  
-    echo $indent . "<link rel='stylesheet' href='base.css' type='text/css'>\n";
+    $this->addStyleElement('a.report { display: none; }'); // ensure spider trap links are hidden
+
+    $this->addStyleSheetLink('base.css');
   }
   
   
-  function writeLargeW3CLogo($indent = '')
+  function writeLargeW3CLogo()
   {
-    echo $indent . "<a class='logo' href='http://www.w3.org/' rel='home'>\n";
-    echo $indent . "  <img alt='W3C' height='48' width='315' src='http://www.w3.org/Icons/w3c_main'>\n";
-    echo $indent . "</a>\n";
+    $attrs['class'] = 'logo';
+    $attrs['href'] = 'http://www.w3.org/';
+    $attrs['rel'] = 'home';
+    $this->openElement('a', $attrs);
+
+    unset($attrs);
+    $attrs['alt'] = 'W3C';
+    $attrs['height'] = 48;
+    $attrs['width'] = 315;
+    $attrs['src'] = 'http://www.w3.org/Icons/w3c_main';
+    $this->addElement('img', $attrs);
+
+    $this->closeElement('a');
   }
   
   
-  function writeSmallW3CLogo($indent = '')
+  function writeSmallW3CLogo()
   {
-    echo $indent . "<a class='logo' href='http://www.w3.org/' rel='home'>\n";
-    echo $indent . "  <img alt='W3C' height='48' width='72' src='http://www.w3.org/Icons/w3c_home'>\n";
-    echo $indent . "</a>\n";
+    $attrs['class'] = 'logo';
+    $attrs['href'] = 'http://www.w3.org/';
+    $attrs['rel'] = 'home';
+    $this->openElement('a', $attrs);
+
+    unset($attrs);
+    $attrs['alt'] = 'W3C';
+    $attrs['height'] = 48;
+    $attrs['width'] = 72;
+    $attrs['src'] = 'http://www.w3.org/Icons/w3c_home';
+    $this->addElement('img', $attrs);
+
+    $this->closeElement('a');
   }
   
   
-  function writeNavLinks($indent = '', $element = "p", $attrs = "class='nav'")
+  function writeNavLinks($elementName = 'p', $class = 'nav', Array $attrs = null)
   {
     $navURIs = $this->getNavURIs();
     if ($navURIs && (1 < count($navURIs))) {
-      echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
+      if ($class) {
+        $attrs['class'] = $class;
+      }
+      $this->openElement($elementName, $attrs);
     
       $index = -1;
       $last = (count($navURIs) - 1);
       foreach ($navURIs as $navURI) {
         $index++;
-        extract($navURI);
-        $uri = self::Encode($uri);
-        $title = self::Encode($title);
+        extract($navURI); // uri, title
         if ($index < $last) {
-          echo $indent . "  <a href='{$uri}'>{$title}</a> &raquo; \n";
+          $this->addHyperLink($uri, null, $title);
+          $this->addTextContent(' &raquo; ', FALSE);
         }
         else {
-          echo $indent . "  $title\n";
+          $this->addTextContent($title);
         }
       }
-      echo $indent . "</{$element}>\n";
+      $this->closeElement($elementName);
     }
   }
   
-  function writeContentTitle($indent = '', $element = "h1", $attrs = "")
+  function writeContentTitle($elementName = 'h1', Array $attrs = null)
   {
     $title = $this->getContentTitle();
     
     if ($title) {
-      echo $indent . "<{$element}" . ($attrs ? " {$attrs}>\n" : ">\n");
-      echo $indent . "  {$this->getContentTitle()}\n";
-      echo $indent . "</{$element}>\n";
+      $this->addElement($elementName, $attrs, $title);
     }
   }
 
   /**
    * Generate header section of <body>
    */
-  function writeBodyHeader($indent = '')
+  function writeBodyHeader()
   {
-    echo $indent . "<div class='header'>\n";
+    $this->openElement('div', array('class' => 'header'));
     
-    $this->mSpiderTrap->writeTrapLink($indent . '  ');
-    $this->writeLargeW3CLogo($indent . '  ');
+    $this->mSpiderTrap->addTrapLinkTo($this);
+    $this->writeLargeW3CLogo();
 
-    $this->writeNavLinks($indent . '  ');
-    $this->writeContentTitle($indent . '  ');
+    $this->writeNavLinks();
+    $this->writeContentTitle();
     
-    echo $indent . "</div>\n";
+    $this->closeElement('div');
   }
 
   /**
    * Generate error version of page
    */
-  function writeBodyError($indent = '')
+  function writeBodyError()
   {
     if (isset($this->mSpiderTrap)) {
-      $this->mSpiderTrap->writeTrapLink($indent);
+      $this->mSpiderTrap->addTrapLinkTo($this);
     }
     
-    parent::writeBodyError($indent);
+    parent::writeBodyError();
     
     if (isset($this->mSpiderTrap)) {
-      $this->mSpiderTrap->writeTrapLink($indent);
+      $this->mSpiderTrap->addTrapLinkTo($this);
     }
   }
   
@@ -188,7 +207,7 @@ class HarnessPage extends DynamicPage
   /**
    * Generate footer section of <body>
    */
-  function writeBodyFooter($indent = '')
+  function writeBodyFooter()
   {
     $contactName = CONTACT_NAME;
     $contactURI = CONTACT_URI;
@@ -196,17 +215,15 @@ class HarnessPage extends DynamicPage
       $contactName = $this->mTestSuite->getContactName();
       $contactURI = $this->mTestSuite->getContactURI();
     }
-    $contactName = self::Encode($contactName);
-    $contactURI = self::Encode($contactURI);
   
-    echo $indent . "<hr />\n";
+    $this->addElement('hr');
 
-    echo $indent . "<address>\n";
-    echo $indent . "  Please send comments, questions, and error reports to\n";
-    echo $indent . "  <a href='{$contactURI}'>{$contactName}</a>.\n";    
-    echo $indent . "</address>\n";
+    $this->openElement('address');
+    $this->addTextContent('Please send comments, questions, and error reports to ');
+    $this->addHyperLink($contactURI, null, $contactName);
+    $this->closeElement('address');
     
-    $this->mSpiderTrap->writeTrapLink($indent);
+    $this->mSpiderTrap->addTrapLinkTo($this);
   }
 }
 

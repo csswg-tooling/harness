@@ -96,25 +96,21 @@ class SelectUserAgentPage extends HarnessPage
     return $platforms;
   }
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
+    $this->addElement('p', null, 
+                      "This page allows you to enter test results for a user agent " . 
+                      "other than the one you are currently using.");
 
-    echo $indent . "<p>\n";
-    echo $indent . "  This page allows you to enter test results for a user agent ";
-    echo             "other than the one you are currently using.\n";
-    echo $indent . "</p>\n";
-    
-    echo $indent . "<p>\n";
-    echo $indent . "  This capability is intended ONLY for entering results for user agents ";
-    echo             "that are not capable of using the test harness, such as non-interactive ";
-    echo             "page converters. If the other user agent is capable of running the harness, ";
-    echo             "please use it instead.\n";
-    echo $indent . "</p>\n";
-    
-    echo $indent . "<p>\n";
-    echo $indent . "  When doing this, you must NOT rely on the rendering of test or reference ";
-    echo             "pages in the harness, but only on results as observed in the other user agent.\n";
-    echo $indent . "</p>\n";
+    $this->addElement('p', null, 
+                      "This capability is intended ONLY for entering results for user agents " .
+                      "that are not capable of using the test harness, such as non-interactive " .
+                      "page converters. If the other user agent is capable of running the harness, " .
+                      "please use it instead.");
+
+    $this->addElement('p', null, 
+                      "When doing this, you must NOT rely on the rendering of test or reference " .
+                      "pages in the harness, but only on results as observed in the other user agent.");
     
     $userAgents = UserAgent::GetAllUserAgents();
 
@@ -129,61 +125,53 @@ class SelectUserAgentPage extends HarnessPage
         }
       }
     
-      echo $indent . "<p>\n";
-      echo $indent . "  You may select from one of the following known user agents, ";
-      echo             "or enter a custom user agent string below:\n";
-      echo $indent . "</p>\n";
+      $this->addElement('p', null, 
+                        "You may select from one of the following known user agents, " .
+                        "or enter a custom user agent string below:");
 
-      echo $indent . "<form action='" . TESTSUITE_PAGE_URI . "' method='get'>\n";
-      $this->writeHiddenFormControls($indent . "  ");
+      $this->openFormElement(TESTSUITE_PAGE_URI);
+      $this->writeHiddenFormControls();
 
-      echo $indent . "  <select name='u' size='10' style='width: 80%'>\n";
-      $actualUAId = $this->mUserAgent->getActualUA()->getId();
+      $attrs['size'] = 10;
+      $attrs['style'] = 'width: 80%';
+      $this->openSelectElement('u', $attrs);
+      
       foreach ($userAgents as $engine => $agentsByEngine) {
-        $engine = self::Encode($engine);
-        echo $indent . "    <optgroup label='{$engine}'>\n";
+        $this->openElement('optgroup', array('label' => $engine));
         foreach ($agentsByEngine as $browser => $agentsByBrowser) {
-          $browser = self::Encode($browser);
           foreach ($agentsByBrowser as $platform => $agentsByPlatform) {
-            $platform = self::Encode($platform);
             foreach ($agentsByPlatform as $userAgent) {
-              $uaId = $userAgent->getId();
-              $uaString = self::Encode($userAgent->getUAString());
-              if ($uaId == $actualUAId) {
-                $selected = 'selected ';
-              }
-              else {
-                $selected = '';
-              }
-              echo $indent . "      <option {$selected}value='{$uaId}'>{$browser} - {$platform} - {$uaString}</option>\n";
+              $this->addOptionElement($userAgent->getId(), 
+                                      array('selected' => $userAgent->isActualUA()),
+                                      "{$browser} - {$platform} - {$userAgent->getUAString()}");
             }
           }
         }
-        echo $indent . "    </optgroup>\n";
+        $this->closeElement('optgroup');
       }
-      echo $indent . "  </select>\n";
+      $this->closeElement('select');
+
+      $this->addInputElement('submit', null, 'Select');
       
-      echo $indent . "  <input type='submit' value='Select'>\n";
-      echo $indent . "</form>\n";
+      $this->closeElement('form');
     }
     else {
-      echo $indent . "<p>\n";
-      echo $indent . "  You may enter a custom user agent string below:\n";
-      echo $indent . "</p>\n";
+      $this->addElement('p', null, "You may enter a custom user agent string below:");
     }
-    
-    echo $indent . "<p>\n";
-    echo $indent . "  <form action='" . SET_UA_PAGE_URI . "' method='post'>\n";
-    $this->writeHiddenFormControls($indent . "    ");
-    echo $indent . "    Custom User Agent String:\n";
-    echo $indent . "    <input type='text' name='ua' size='80'>\n";
-    echo $indent . "    <input type='submit' name='action' value='Enter'>\n";
-    echo $indent . "  </form>\n";
-    echo $indent . "  <form action='" . TESTSUITE_PAGE_URI . "' method='get'>\n";
-    $this->writeHiddenFormControls($indent . "  ");
-    echo $indent . "    <input type='submit' value='Cancel'>\n";
-    echo $indent . "  </form>\n";
-    echo $indent . "</p>\n";
+
+    $this->openElement('p');
+    $this->openFormElement(SET_UA_PAGE_URI, 'post');
+    $this->writeHiddenFormControls();
+    $this->addTextContent("Custom User Agent String: ");
+    $this->addInputElement('text', 'ua', null, array('size' => 80));
+    $this->addInputElement('submit', 'action', 'Enter');
+    $this->closeElement('form');
+
+    $this->openFormElement(TESTSUITE_PAGE_URI);
+    $this->writeHiddenFormControls();
+    $this->addInputElement('submit', null, 'Cancel');
+    $this->closeElement('form');
+    $this->closeElement('p');
   }
 }
 

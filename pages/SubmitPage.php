@@ -125,15 +125,15 @@ class SubmitPage extends HarnessPage
   }
 
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
-    echo $indent . "<p>\n";
-    echo $indent . "  You have submitted results data for a particular test case.\n";
-    echo $indent . "</p>\n";
-    echo $indent . "<p>\n";
-    echo $indent . "  We have processed your submission and you should have been redirected \n";
-    echo $indent . "  <a href='" . self::Encode($this->mNewURI) . "'>here</a>.\n";
-    echo $indent . "</p>\n";
+    $this->addElement('p', null, "You have submitted result data for a particular test case.");
+
+    $this->openElement('p', null, FALSE);
+    $this->addTextContent("We have processed your submission and you should have been redirected ");
+    $this->addHyperLink($this->mNewURI, null, "here");
+    $this->addTextContent(".");
+    $this->closeElement('p');
   }
 }
 

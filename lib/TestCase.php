@@ -56,7 +56,7 @@ class TestCase extends DBConnection
   }
   
   
-  function __construct($testSuite = null, $testCaseId = 0)
+  function __construct(TestSuite $testSuite = null, $testCaseId = 0)
   {
     parent::__construct();
     
@@ -70,8 +70,8 @@ class TestCase extends DBConnection
     }
   }
   
-  function load($testSuite, $testCaseName, $specLinkId,
-                $userAgent, $order, $index)
+  function load(TestSuite $testSuite, $testCaseName, $specLinkId,
+                UserAgent $userAgent, $order, $index)
   {
     if ($index < 0) {
       $index = 0;
@@ -83,8 +83,7 @@ class TestCase extends DBConnection
       $this->mInfo = $this->_selectCaseByName($testCaseName);
     }
     elseif ($specLinkId) { // load test from spec section
-      $this->mInfo = $this->_selectCaseFromSection($specLinkId,
-                                                   $userAgent, $order, $index);
+      $this->mInfo = $this->_selectCaseFromSection($specLinkId, $userAgent, $order, $index);
       
     }
     else { // load test from suite
@@ -206,7 +205,7 @@ class TestCase extends DBConnection
   /**
    * Load data about a test case based on index within suite
    */
-  protected function _selectCaseFromSuite($userAgent, $order, $index)
+  protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
     $engine = $this->encode($userAgent->getEngine(), TESTSEQUENCE_MAX_ENGINE);
@@ -295,7 +294,7 @@ class TestCase extends DBConnection
    * Load data about test case from section by index
    */
   protected function _selectCaseFromSection($specLinkId,
-                                            $userAgent, $order, $index)
+                                            UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
     $engine = $this->encode($userAgent->getEngine(), TESTSEQUENCE_MAX_ENGINE);
@@ -424,7 +423,7 @@ class TestCase extends DBConnection
   /**
    * Store test result
    */
-  function submitResult($userAgent, $user, $format, $result)
+  function submitResult(UserAgent $userAgent, User $user, $format, $result)
   {
     if ($this->isValid()) {
       $sql  = "INSERT INTO `results` ";

@@ -77,113 +77,132 @@ class ReviewPage extends HarnessPage
   /**
    * Generate <script> element
    */
-  function writeHeadScript($indent = '')
+  function writeHeadScript()
   {
-    echo $indent . "<script type='text/javascript'>\n";
-    
-    echo $indent . "  onunload=function() {\n";
-    echo $indent . "    document.result_form.g.disabled = false;\n";
-    echo $indent . "    document.result_form.c.disabled = false;\n";
-    echo $indent . "  }\n";
-    echo $indent . "  function filterTypes() {\n";
-    echo $indent . "    if (document.result_form.t[0].checked) {\n";
-    echo $indent . "      document.result_form.g.disabled = true;\n";
-    echo $indent . "      document.result_form.c.disabled = true;\n";
-    echo $indent . "    }\n";
-    echo $indent . "    if (document.result_form.t[1].checked) {\n";
-    echo $indent . "      document.result_form.g.disabled = false;\n";
-    echo $indent . "      document.result_form.c.disabled = true;\n";
-    echo $indent . "    }\n";
-    echo $indent . "    if (document.result_form.t[2].checked) {\n";
-    echo $indent . "      document.result_form.g.disabled = true;\n";
-    echo $indent . "      document.result_form.c.disabled = false;\n";
-    echo $indent . "    }\n";
-    echo $indent . "    return true;\n";
-    echo $indent . "  }\n";
-    
-    echo $indent . "</script>\n";;  
+    $script  = "onunload=function() {\n";
+    $script .= "  document.result_form.g.disabled = false;\n";
+    $script .= "  document.result_form.c.disabled = false;\n";
+    $script .= "}\n";
+    $script .= "function filterTypes() {\n";
+    $script .= "  if (document.result_form.t[0].checked) {\n";
+    $script .= "    document.result_form.g.disabled = true;\n";
+    $script .= "    document.result_form.c.disabled = true;\n";
+    $script .= "  }\n";
+    $script .= "  if (document.result_form.t[1].checked) {\n";
+    $script .= "    document.result_form.g.disabled = false;\n";
+    $script .= "    document.result_form.c.disabled = true;\n";
+    $script .= "  }\n";
+    $script .= "  if (document.result_form.t[2].checked) {\n";
+    $script .= "    document.result_form.g.disabled = true;\n";
+    $script .= "    document.result_form.c.disabled = false;\n";
+    $script .= "  }\n";
+    $script .= "  return true;\n";
+    $script .= "}\n";
+
+    $this->addScriptElement($script);
   }
   
   
-  function writeSectionSelect($indent = '')
+  function writeSectionSelect()
   {
     $sections = $this->mSections->getSectionData();
     
-    echo $indent . "<select name='g'>\n";
+    $this->openSelectElement('g', array('onchange' => 'document.result_form.t[1].checked = true'));
 
     foreach ($sections as $sectionData) {
-      $id       = intval($sectionData['id']);
-      $section  = self::Encode($sectionData['section']);
-      $title    = self::Encode($sectionData['title']);
-      echo $indent . "  <option value='{$id}'>{$section}: {$title}</option>\n";
+      $this->addOptionElement($sectionData['id'], null,  
+                              "{$sectionData['section']}: {$sectionData['title']}");
     }
-    
-    echo $indent . "</select>\n";
+
+    $this->closeElement('select');
   }
   
   
-  function writeTestCaseSelect($indent = '')
+  function writeTestCaseSelect()
   {
     $testCases = $this->mTestCases->getTestCaseData();
     
-    echo $indent . "<select name='c' style='width: 25em'>\n";
+    $this->openSelectElement('c', array('style' => 'width: 25em',
+                                        'onchange' => 'document.result_form.t[2].checked = true'));
 
     foreach ($testCases as $testCaseData) {
-      $testCase = self::Encode($testCaseData['testcase']);
-      $testCaseTitle = self::Encode($testCaseData['title']);
-      echo $indent . "  <option value='{$testCase}'>{$testCase}: {$testCaseTitle}</option>\n";
+      $testCase = $testCaseData['testcase'];
+      
+      $this->addOptionElement($testCase, null,
+                              "{$testCase}: {$testCaseData['title']}");
     }
-    
-    echo $indent . "</select>\n";
+
+    $this->closeElement('select');
   }
   
 
-  function writeBodyContent($indent = '')
+  function writeBodyContent()
   {
-
-    echo $indent . "<p>\n";
-    echo $indent . "  The " . self::Encode($this->mTestSuite->getTitle()) . " test suite contains ";
-    echo              $this->mTestCases->getCount() . " test cases. \n";
-    echo $indent . "  You can choose to review:\n";
-    echo $indent . "</p>\n";
-
-    echo $indent . "<form action='" . RESULTS_PAGE_URI . "' method='get' name='result_form' onSubmit='return filterTypes();'>\n";
-    $this->writeHiddenFormControls($indent . '  ', TRUE);
+    $this->openElement('p');
+    $this->addTextContent("The {$this->mTestSuite->getTitle()} test suite contains ");
+    $this->addTextContent($this->mTestCases->getCount() . " test cases.");
+    $this->addTextContent("You can choose to review:");
+    $this->closeElement('p');
     
-    echo $indent . "  <p>\n";
-    echo $indent . "    <input type='radio' name='t' value='0' checked />\n";
-    echo $indent . "    The full test suite<br />\n";
+    $this->openFormElement(RESULTS_PAGE_URI, 'get', 'result_form', array('onSubmit' => 'return filterTypes();'));
+
+    $this->writeHiddenFormControls(TRUE);
+    
+    $this->openElement('p');
+    
+    $this->addInputElement('radio', 't', 0, array('checked' => TRUE));
+    $this->addTextContent(' The full test suite');
+    $this->addElement('br');
     
     if (0 < $this->mSections->getCount()) {
-      echo $indent . "    <input type='radio' name='t' value='1' />\n";
-      echo $indent . "    A section of the specification: \n";
-      $this->writeSectionSelect($indent . '    ');
-      echo $indent . "    <br />\n";
+      $this->addInputElement('radio', 't', 1);
+      $this->addTextContent(' A section of the specification: ');
+      $this->writeSectionSelect();
+      $this->addElement('br');
     }
     else {  // write dummy controls so script still works
-      echo $indent . "    <span style='display: none'>\n";
-      echo $indent . "      <input type='radio' name='t' value='1' />\n";
-      echo $indent . "      <input type='hidden' name='g' value='' />\n";
-      echo $indent . "    </span>\n";
+      $this->openElement('span', array('style' => 'display: none'));
+      $this->addInputElement('radio', 't', 1);
+      $this->addInputElement('hidden', 'g', '');
+      $this->closeElement('span');
     }
     
-    echo $indent . "    <input type='radio' name='t' value='2' />\n";
-    echo $indent . "    A single test case:\n";
-    $this->writeTestCaseSelect($indent . '    ');
-    echo $indent . "    <br />\n";
-    echo $indent . "  </p>\n";
+    $this->addInputElement('radio', 't', 2);
+    $this->addTextContent(' A single test case: ');
+    $this->writeTestCaseSelect();
+    $this->addElement('br');
+    
+    $this->closeElement('p');
 
-    echo $indent . "  <p>\n";
-    echo $indent . "    Do not display tests that:<br />\n";
-    echo $indent . "    <input type='checkbox' name='f[]' value='1'> Meet exit criteria<br />\n";
-    echo $indent . "    <input type='checkbox' name='f[]' value='2'> Have blocking failures<br />\n";
-    echo $indent . "    <input type='checkbox' name='f[]' value='4'> Lack sufficient data<br />\n";
-    echo $indent . "    <input type='checkbox' name='f[]' value='8'> Have been reported as invalid<br />\n";
-    echo $indent . "    <input type='checkbox' name='f[]' value='16'> Are not required<br />\n";
-    echo $indent . "  </p>\n";
+    $this->openElement('p');
+    $this->addTextContent('Do not display tests that:');
+    $this->addElement('br');
 
-    echo $indent . "  <input type='submit' value='Go' />\n";
-    echo $indent . "</form>\n";
+    $this->addInputElement('checkbox', 'f[]', 1);
+    $this->addTextContent(' Meet exit criteria');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'f[]', 2);
+    $this->addTextContent(' Have blocking failures');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'f[]', 4);
+    $this->addTextContent(' Lack sufficient data');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'f[]', 8);
+    $this->addTextContent(' Have been reported as invalid');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'f[]', 16);
+    $this->addTextContent(' Are not required');
+    $this->addElement('br');
+        
+    $this->closeElement('p');
+
+    $this->addInputElement('submit', null, 'Go');
+
+    $this->closeElement('form');
 
   }
 }

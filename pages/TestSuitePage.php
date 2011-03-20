@@ -69,135 +69,137 @@ class TestSuitePage extends HarnessPage
   /**
    * Generate <style> element
    */
-  function writeHeadStyle($indent = '')
+  function writeHeadStyle()
   {
-    parent::writeHeadStyle($indent);
+    parent::writeHeadStyle();
     
-    echo $indent . "<link rel='stylesheet' href='suite.css' type='text/css'>\n";
+    $this->addStyleSheetLink('suite.css');
   }
 
 
-  function writeSectionSelect($indent = '')
+  function writeSectionSelect()
   {
     $sections = $this->mSections->getSectionData();
-    
-    echo $indent . "<select name='g'>\n";
+
+    $this->openSelectElement('g');
 
     foreach ($sections as $sectionData) {
-      $id       = intval($sectionData['id']);
-      $section  = self::Encode($sectionData['section']);
-      $title    = self::Encode($sectionData['title']);
-      echo $indent . "  <option value='{$id}'>{$section}: {$title}</option>\n";
+      $this->addOptionElement(intval($sectionData['id']), null, "{$sectionData['section']}: {$sectionData['title']}");
     }
-    
-    echo $indent . "</select>\n";
+
+    $this->closeElement('select');
   }
   
   
-  function writeTestCaseSelect($indent = '')
+  function writeTestCaseSelect()
   {
     $testCases = $this->mTestCases->getTestCaseData();
     
-    echo $indent . "<select name='c' style='width: 25em'>\n";
+    $this->openSelectElement('c', array('style' => 'width: 25em'));
 
     foreach ($testCases as $testCaseData) {
-      $testCase = self::Encode($testCaseData['testcase']);
-      $testCaseTitle = self::Encode($testCaseData['title']);
-      echo $indent . "  <option value='{$testCase}'>{$testCase}: {$testCaseTitle}</option>\n";
+      $this->addOptionElement($testCaseData['testcase'], null, $testCaseData['title']);
     }
-    
-    echo $indent . "</select>\n";
+
+    $this->closeElement('select');
   }
 
 
-  function writeOrderSelect($indent = '')
+  function writeOrderSelect()
   {
-    echo $indent . "<select name=o>\n";
-    echo $indent . "  <option selected value='1'>with least tested cases first</option>\n";
-		echo $indent . "  <option value='0'>in order</option>\n";
-		echo $indent . "</select>\n";
+    $this->openSelectElement('o');
+
+    $this->addOptionElement(1, array('selected' => TRUE), 'in most needed order');
+    $this->addOptionElement(0, null, 'in alphabetical order');
+    
+    $this->closeElement('select');
   }
 
-	function writeBodyContent($indent = '') {
-    echo $indent . "<p class='ua'>\n";
-    echo $indent . "  You are about the enter test result data for the following user agent:\n";
-    
-    $uaString = self::Encode($this->mUserAgent->getUAString());
-    $uaDescription = self::Encode($this->mUserAgent->getDescription());
+	function writeBodyContent() {
+    $this->openElement('p', array('class' => 'ua'));
+    $this->addTextContent("You are about the enter test result data for the following user agent:");
     
     if ($this->mUserAgent->isActualUA()) {
-      echo $indent . "  <abbr title='{$uaString}'>{$uaDescription}</abbr>\n";
+      $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
 
       $args = $this->mGetData;
-      $uri = $this->encodeURI(SELECT_UA_PAGE_URI, $args);
-      echo $indent . "  <a href='{$uri}'>(Other)</a>\n";
+      $uri = $this->buildURI(SELECT_UA_PAGE_URI, $args);
+      
+      $this->openElement('span', null, FALSE);
+      $this->addTextContent('(');
+      $this->addHyperLink($uri, null, 'Other');
+      $this->addTextContent(')');
+      $this->closeElement('span');
     }
     else {
-      echo $indent . "  <abbr class='other' title='{$uaString}'>{$uaDescription}</abbr>\n";
+      $this->addAbbrElement($this->mUserAgent->getUAString(),
+                            array('class' => 'other'), 
+                            $this->mUserAgent->getDescription());
+
       $args = $this->mGetData;
       unset($args['u']);
-      $uri = $this->encodeURI(TESTSUITE_PAGE_URI, $args);
-      echo $indent . "  <a href='{$uri}'>(Reset)</a>\n";
+      $uri = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+      $this->openElement('span', null, FALSE);
+      $this->addTextContent('(');
+      $this->addHyperLink($uri, null, 'Reset');
+      $this->addTextContent(')');
+      $this->closeElement('span');
     }
-    echo $indent . "</p>\n";
+    $this->closeElement('p');
 
-   
-    $testSuiteTitle = self::Encode($this->mTestSuite->getTitle());
-    echo $indent . "<p>\n";
-    echo $indent . "  The {$testSuiteTitle} test suite contains {$this->mTestCases->getCount()} test cases.\n";
-    echo $indent . "  You can stop running tests at any time without causing trouble.\n";
-    echo $indent . "</p>\n";
+    $this->addElement('p', null, 
+                      "The {$this->mTestSuite->getTitle()} test suite contains {$this->mTestCases->getCount()} test cases. " .
+                      "You can stop running tests at any time without causing trouble.");
+
+    $this->addElement('p', null, "You can test:");
+    $this->openElement('ul');
     
-    echo $indent . "<p>You can test:</p>\n";
-    echo $indent . "<ul>\n";
-    
-    echo $indent . "  <li>\n";
-    echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
-    $this->writeHiddenFormControls($indent . '      ');
-    echo $indent . "      <strong>The full test suite:</strong>\n";
-    $this->writeOrderSelect($indent . '      ');
-		echo $indent . "      <input type='submit' value='Start'>\n";
-    echo $indent . "    </form>\n";
-    echo $indent . "  </li>\n";
+    $this->openElement('li');
+    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->writeHiddenFormControls();
+    $this->addElement('strong', null, "The full test suite: ");
+    $this->writeOrderSelect();
+    $this->addInputElement('submit', null, 'Start');
+    $this->closeElement('form');
+    $this->closeElement('li');
     
     if (0 < $this->mSections->getCount()) {
-      echo $indent . "  <li>\n";
-      echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
-      $this->writeHiddenFormControls($indent . '      ');
-      echo $indent . "      A section of the specification:\n";
-      $this->writeSectionSelect($indent . '      ');
-      $this->writeOrderSelect($indent . '      ');
-      echo $indent . "      <input type='submit' value='Start'>\n";
-      echo $indent . "    </form>\n";
-      echo $indent . "  </li>\n";
+      $this->openElement('li');
+      $this->openFormElement(TESTCASE_PAGE_URI);
+      $this->writeHiddenFormControls();
+      $this->addTextContent("A section of the specification: ");
+      $this->writeSectionSelect();
+      $this->writeOrderSelect();
+      $this->addInputElement('submit', null, 'Start');
+      $this->closeElement('form');
+      $this->closeElement('li');
     }
 
-    echo $indent . "  <li>\n";
-    echo $indent . "    <form action='" . TESTCASE_PAGE_URI . "' method='get'>\n";
-    $this->writeHiddenFormControls($indent . '      ');
-    echo $indent . "      A single test case:\n";
-    echo $this->writeTestCaseSelect($indent . '      ');
-		echo $indent . "      <input type='submit' value='Start'>\n";
-    echo $indent . "    </form>\n";
-    echo $indent . "  </li>\n";
+    $this->openElement('li');
+    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->writeHiddenFormControls();
+    $this->addTextContent("A single test case: ");
+    $this->writeTestCaseSelect();
+    $this->addInputElement('submit', null, 'Start');
+    $this->closeElement('form');
+    $this->closeElement('li');
 
-    echo $indent . "</ul>\n";
+    $this->closeElement('ul');
     
-    echo $indent . "<p>\n";
-    echo $indent . "  <strong>Note:</strong> The harness presents each test case embedded within a page\n";
-    echo $indent . "  that contains information about the test and a form to submit results.\n";
-    echo $indent . "  This page is not a part of the original test case and any influence it may have\n";
-    echo $indent . "  on the test should be ignored. Links are provided to see the test case and any\n";
-    echo $indent . "  reference pages in a separate window if desired.\n";
-    echo $indent . "</p>\n";
-    echo $indent . "<p>\n";
-    echo $indent . "  If there is any doubt about the result of a test, please press the\n";
-    echo $indent . "  &quot;Cannot Tell&quot; button.\n";
-    echo $indent . "</p>\n";
-    echo $indent . "<p>\n";
-    echo $indent . "  If listed requirements for a test cannot be met, please press the\n";
-    echo $indent . "  &quot;Skip&quot; button.\n";
-    echo $indent . "</p>\n";
+    $this->openElement('p');
+    $this->addElement('strong', null, "Note: ");
+    $this->addTextContent("The harness presents each test case embedded within a page " .
+                          "that contains information about the test and a form to submit results. " .
+                          "This page is not a part of the original test case and any influence it may have " .
+                          "on the test should be ignored. Links are provided to see the test case and any " .
+                          "reference pages in a separate window if desired.");
+    $this->closeElement('p');
+
+    $this->addElement('p', null,
+                      'If there is any doubt about the result of a test, please press the "Cannot Tell" button.');
+
+    $this->addElement('p', null,
+                      'If listed requirements for a test cannot be met, please press the "Skip" button.');
 	}
 }
 
