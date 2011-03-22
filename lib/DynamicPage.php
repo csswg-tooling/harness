@@ -250,13 +250,13 @@ class DynamicPage extends Page
       $this->openElement('p');
       $this->addElement('strong', null, $this->mErrorType);
       if ($this->mErrorMessage) {
-        $this->addTextContent($this->mErrorMessage);
+        $this->addTextContent($this->mErrorMessage, FALSE);
       }
       $this->closeElement('p');
     } 
     else {
       if ($this->mErrorMessage) {
-        $this->addElement('p', null, $this->mErrorMessage);
+        $this->addElement('p', null, $this->mErrorMessage, FALSE);
       }
     }
     if (defined('DEBUG_MODE') && DEBUG_MODE) {

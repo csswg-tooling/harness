@@ -141,8 +141,11 @@ class ResultsPage extends HarnessPage
   }
 
 
-  function _generateRow($testCaseName, $engineResults, $optional)
+  function _generateRow($testCaseName, $testCaseId, $optional)
   {
+    $engineResults = $this->mResults->getResultCountsFor($testCaseId);
+    $componentTestIds = $this->mResults->getComponentTestsFor($testCaseId);
+  
     $hasResults   = FALSE;
     $testInvalid  = FALSE;
     $passCount    = 0;
@@ -151,13 +154,13 @@ class ResultsPage extends HarnessPage
     $cells = array();
     foreach ($this->mResults->getEngines() as $engine) {
       $engineMissing[$engine] = TRUE;
-      if ($engineResults && array_key_exists($engine, $engineResults)) {
+      if ($engineResults && (0 < $engineResults[$engine]['count'])) {
         $hasResults = TRUE;
-        $pass      = ((array_key_exists('pass', $engineResults[$engine])) ? $engineResults[$engine]['pass'] : 0);
-        $fail      = ((array_key_exists('fail', $engineResults[$engine])) ? $engineResults[$engine]['fail'] : 0);
-        $uncertain = ((array_key_exists('uncertain', $engineResults[$engine])) ? $engineResults[$engine]['uncertain'] : 0);
-        $invalid   = ((array_key_exists('invalid', $engineResults[$engine])) ? $engineResults[$engine]['invalid'] : 0);
-        $na        = ((array_key_exists('na', $engineResults[$engine])) ? $engineResults[$engine]['na'] : 0);
+        $pass      = $engineResults[$engine]['pass'];
+        $fail      = $engineResults[$engine]['fail'];
+        $uncertain = $engineResults[$engine]['uncertain'];
+        $invalid   = $engineResults[$engine]['invalid'];
+        $na        = $engineResults[$engine]['na'];
         $class = '';
         if (0 < $pass) {
           $passCount++;
@@ -218,8 +221,35 @@ class ResultsPage extends HarnessPage
       else {
         $this->mTestCaseRequiredCount++;
       }
-      if (1 < $passCount) {
+      $allComponentsPass = FALSE;
+      if (($passCount < 2) && $componentTestIds) {
+        // look for all components passed
+        $componentTestPassCount = 0;
+        foreach ($componentTestIds as $componentTestId) {
+          $componentResults = $this->mResults->getResultCountsFor($componentTestId);
+          $componentPassCount = 0;
+          foreach ($componentResults as $componentEngine => $componentEngineResults) {
+            if ((0 == $componentEngineResults['invalid']) && 
+                (0 < $componentEngineResults['pass'])) {
+              $componentPassCount++;
+            }
+          }
+          if (1 < $componentPassCount) {
+            $componentTestPassCount++;
+          }
+          else {
+            break;
+          }
+        }
+        if ($componentTestPassCount == count($componentTestIds)) {
+          $allComponentsPass = TRUE;
+        }
+      }
+      if ((1 < $passCount) || ($allComponentsPass)) { // passed
         $class .= 'pass';
+        if ($passCount < 2) {
+          $class .= ' bycomponents';
+        }
         $display = $display & (($this->mDisplayFilter & 0x01) == 0);
         if ($optional) {
           $this->mTestCaseOptionalPassCount++;
@@ -228,7 +258,7 @@ class ResultsPage extends HarnessPage
         }
       }
       else {
-        if ((! $testInvalid) && (! $optional)) {
+        if (! $optional) {
           $this->mTestCaseNeededCount++;
           if ($failCount < ($this->mResults->getEngineCount() - 1)) {
             $class .= 'uncertain';
@@ -312,15 +342,13 @@ class ResultsPage extends HarnessPage
   
       $testCases = $this->mResults->getTestCases();
       foreach ($testCases as $testCaseData) {
-        $testCaseId   = $testCaseData['id'];
+        $testCaseId   = intval($testCaseData['id']);
         $testCaseName = $testCaseData['testcase'];
 
         $flags = new Flags($testCaseData['flags']);
         $optional = $flags->isOptional();
         
-        $engineResults = $this->mResults->getResultCountsFor($testCaseId);
-
-        $this->_generateRow($testCaseName, $engineResults, $optional);
+        $this->_generateRow($testCaseName, $testCaseId, $optional);
       }
       
       $this->closeElement('table');
@@ -364,6 +392,10 @@ class ResultsPage extends HarnessPage
     
     $this->openElement('tr', array('class' => 'pass'));
     $this->addElement('td', null, 'two or more passes');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'pass bycomponents'));
+    $this->addElement('td', null, 'combo test passed by component tests');
     $this->closeElement('tr');
     
     $this->openElement('tr', array('class' => 'fail'));

@@ -27,6 +27,7 @@ class Results extends DBConnection
 {
   protected $mEngines;
   protected $mTestCases;
+  protected $mComponentTestIds;
   protected $mResults;
   protected $mResultCount;
 
@@ -44,6 +45,8 @@ class Results extends DBConnection
     $sql .= "ORDER BY `engine`";
     
     $r = $this->query($sql);
+    
+    $this->mEngines = array();
     while ($dbEngine = $r->fetchRow()) {
       $this->mEngines[] = $dbEngine['engine'];
     }
@@ -55,6 +58,7 @@ class Results extends DBConnection
     $sql .= "ORDER BY `date` ";
     
     $r = $this->query($sql);
+    $testCaseEqualRevisions = array();
     while ($revisionData = $r->fetchRow()) {
       $testCaseId     = intval($revisionData['testcase_id']);
       $revision       = intval($revisionData['revision']);
@@ -83,6 +87,10 @@ class Results extends DBConnection
     $sql .= "ORDER BY `testcase` ";
 
     $r = $this->query($sql);
+    
+    $currentComboId = 0;
+    $this->mTestCases = array();
+    $this->mComponentTestIds = array();
     while ($testCaseData = $r->fetchRow()) {
       $testCaseId = intval($testCaseData['id']);
       $revision   = intval($testCaseData['revision']);
@@ -96,6 +104,25 @@ class Results extends DBConnection
         while (array_key_exists($revision, $equalRevisions)) {
           $revision = $equalRevisions[$revision];
           $testCaseRevisions[$testCaseId][$revision] = TRUE;
+        }
+      }
+      
+      // look for combo/component relationship
+      $flags = new Flags($testCaseData['flags']);
+      if ($flags->hasFlag('combo')) {
+        $currentComboId = $testCaseId;
+        $currentComboName = $testCaseData['testcase'];
+      }
+      else {
+        if ($currentComboId) {
+          $testCaseName = $testCaseData['testcase'];
+          if (substr($testCaseName, 0, strlen($currentComboName)) == $currentComboName) {
+            $this->mComponentTestIds[$currentComboId][] = $testCaseId;
+          }
+          else {
+            $currentComboId = 0;
+            $currentComboName = null;
+          }
         }
       }
     
@@ -138,9 +165,10 @@ class Results extends DBConnection
     }
     $sql .= "ORDER BY `results`.`testcase_id` ";
 
-    $this->mResultCount = 0;
     $r = $this->query($sql);
 
+    $this->mResultCount = 0;
+    $this->mResults = array();
     while ($resultData = $r->fetchRow()) {
       $testCaseId = intval($resultData['testcase_id']);
       $revision   = intval($resultData['revision']);
@@ -218,21 +246,26 @@ class Results extends DBConnection
    * Count data contains keys: count, pass, fail, uncertain, invalid
    *
    * @param int $testCaseId
-   * @return array of result data keyed by engine
+   * @return array of result counts keyed by engine,result
    */
   function getResultCountsFor($testCaseId)
   {
     if (array_key_exists($testCaseId, $this->mResults)) {
       $engineResults = array();
-      foreach ($this->mResults[$testCaseId] as $engine => $engineData) {
+      foreach ($this->mEngines as $engine) {
         $engineResults[$engine]['count'] = 0;
-        foreach ($engineData as $result) {
-          $engineResults[$engine]['count']++;
-          if (array_key_exists($result, $engineResults[$engine])) {
+        $engineResults[$engine]['pass'] = 0;
+        $engineResults[$engine]['fail'] = 0;
+        $engineResults[$engine]['uncertain'] = 0;
+        $engineResults[$engine]['invalid'] = 0;
+        $engineResults[$engine]['na'] = 0;
+        
+        if (array_key_exists($engine, $this->mResults[$testCaseId])) {
+          $engineData = $this->mResults[$testCaseId][$engine];
+
+          foreach ($engineData as $result) {
+            $engineResults[$engine]['count']++;
             $engineResults[$engine][$result]++;
-          }
-          else {
-            $engineResults[$engine][$result] = 1;
           }
         }
       }
@@ -243,27 +276,15 @@ class Results extends DBConnection
   
   
   /**
-   * Get child tests for combo test
+   * Get component tests for combo test
    * 
    * @param int test case id
-   * @return array|FALSE array of child test ids
+   * @return array|FALSE array of component test ids
    */
-  function getChildTestsFor($testCaseId)
+  function getComponentTestsFor($testCaseId)
   {
-    if (array_key_exists($testCaseId, $this->mTestCases)) {
-      $testCaseData = $this->mTestCases[$testCaseId];
-      
-      $flags = new Flags($testCaseData['flags']);
-      if ($flags->hasFlag('combo')) {
-        $childIds = array();
-        
-//        XXX find children
-//  possible to set array internal counter to key? if so, can iterate array while test name matches, else... capture at load?
-        
-        if (0 < count($childIds)) {
-          return $childIds;
-        }
-      }
+    if (array_key_exists($testCaseId, $this->mComponentTestIds)) {
+      return $this->mComponentTestIds[$testCaseId];
     }
     return FALSE;
   }

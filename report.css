@@ -124,9 +124,13 @@ tr.pass,
 td.pass {
   background-color: #8F8;
 }
+tr.pass.bycomponents,
 td.pass.fail,
 td.pass.uncertain {
   background-color: #BFB;
+}
+tr.pass.bycomponents td:first-child a::after {
+  content: " *";
 }
 tr.invalid,
 td.invalid,

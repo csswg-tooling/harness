@@ -49,9 +49,9 @@ class Resequence extends CmdLineWorker
     $testInvalid = FALSE;
     
     foreach ($this->mEngines as $engine) {
-      if ($engineResults && array_key_exists($engine, $engineResults)) {
-        $pass      = ((array_key_exists('pass', $engineResults[$engine])) ? $engineResults[$engine]['pass'] : 0);
-        $invalid   = ((array_key_exists('invalid', $engineResults[$engine])) ? $engineResults[$engine]['invalid'] : 0);
+      if ($engineResults) {
+        $pass      = $engineResults[$engine]['pass'];
+        $invalid   = $engineResults[$engine]['invalid'];
         if (0 < $pass) {
           $passCount++;
         }
