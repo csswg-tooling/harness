@@ -46,9 +46,6 @@ class ReviewPage extends HarnessPage
     $this->mTestCases = new TestCases($this->mTestSuite);
     
     $this->mSubmitData['s'] = $this->mTestSuite->getName();
-    if ($this->mTestSuite->isLocked()) {
-      $this->mSubmitData['m'] = $this->mTestSuite->getLockDateTime();
-    }
     if (! $this->mUserAgent->isActualUA()) {
       $this->mSubmitData['u'] = $this->mUserAgent->getId();
     }

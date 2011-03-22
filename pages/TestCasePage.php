@@ -250,9 +250,6 @@ class TestCasePage extends HarnessPage
     $args['s'] = $this->mTestSuite->getName();
     $args['c'] = $this->mTestCase->getTestCaseName();
     $args['u'] = $this->mUserAgent->getId();
-    if ($this->mTestSuite->isLocked()) {
-      $args['m'] = $this->mTestSuite->getLockDateTime();
-    }
     $detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args);
 
     $this->openElement('span', null, FALSE);

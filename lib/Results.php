@@ -38,6 +38,10 @@ class Results extends DBConnection
   {
     parent::__construct();
     
+    if ((! $modified) && $testSuite->isLocked()) {
+      $modified = $testSuite->getLockDateTime();
+    }
+    
     // load engine list
     $sql  = "SELECT DISTINCT `engine` ";
     $sql .= "FROM `useragents` ";
