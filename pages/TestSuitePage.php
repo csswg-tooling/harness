@@ -77,20 +77,53 @@ class TestSuitePage extends HarnessPage
   }
 
 
+  function writeTestSuiteForm()
+  {
+    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->writeHiddenFormControls();
+    $this->addElement('strong', null, "The full test suite: ");
+    $this->writeOrderSelect();
+    $this->addInputElement('submit', null, 'Start');
+    $this->closeElement('form');
+  }
+  
+  
+  function writeSectionOptions($parentId = 0)
+  {
+    $data = $this->mSections->getSectionData($parentId);
+    foreach ($data as $sectionData) {
+      $id = $sectionData['id'];
+      $subSectionCount = $this->mSections->getCount($id);
+      if (1 != $subSectionCount) {
+        $this->addOptionElement($id, null, "{$sectionData['section']}: {$sectionData['title']}");
+      }
+      if (0 < $subSectionCount) {
+        $this->writeSectionOptions($id);
+      }
+    }
+  }
+
+
   function writeSectionSelect()
   {
-    $sections = $this->mSections->getSectionData();
-
-    $this->openSelectElement('g');
-
-    foreach ($sections as $sectionData) {
-      $this->addOptionElement(intval($sectionData['id']), null, "{$sectionData['section']}: {$sectionData['title']}");
-    }
-
+    $this->openSelectElement('g', array('style' => 'width: 25em'));
+    $this->writeSectionOptions();
     $this->closeElement('select');
   }
   
   
+  function writeSectionForm($title)
+  {
+    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->writeHiddenFormControls();
+    $this->addTextContent($title);
+    $this->writeSectionSelect();
+    $this->writeOrderSelect();
+    $this->addInputElement('submit', null, 'Start');
+    $this->closeElement('form');
+  }
+  
+
   function writeTestCaseSelect()
   {
     $testCases = $this->mTestCases->getTestCaseData();
@@ -105,6 +138,17 @@ class TestSuitePage extends HarnessPage
     }
 
     $this->closeElement('select');
+  }
+  
+  
+  function writeTestCaseForm($title)
+  {
+    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->writeHiddenFormControls();
+    $this->addTextContent($title);
+    $this->writeTestCaseSelect();
+    $this->addInputElement('submit', null, 'Start');
+    $this->closeElement('form');
   }
 
 
@@ -158,33 +202,17 @@ class TestSuitePage extends HarnessPage
     $this->openElement('ul');
     
     $this->openElement('li');
-    $this->openFormElement(TESTCASE_PAGE_URI);
-    $this->writeHiddenFormControls();
-    $this->addElement('strong', null, "The full test suite: ");
-    $this->writeOrderSelect();
-    $this->addInputElement('submit', null, 'Start');
-    $this->closeElement('form');
+    $this->writeTestSuiteForm();
     $this->closeElement('li');
     
     if (0 < $this->mSections->getCount()) {
       $this->openElement('li');
-      $this->openFormElement(TESTCASE_PAGE_URI);
-      $this->writeHiddenFormControls();
-      $this->addTextContent("A section of the specification: ");
-      $this->writeSectionSelect();
-      $this->writeOrderSelect();
-      $this->addInputElement('submit', null, 'Start');
-      $this->closeElement('form');
+      $this->writeSectionForm("A section of the specification: ");
       $this->closeElement('li');
     }
 
     $this->openElement('li');
-    $this->openFormElement(TESTCASE_PAGE_URI);
-    $this->writeHiddenFormControls();
-    $this->addTextContent("A single test case: ");
-    $this->writeTestCaseSelect();
-    $this->addInputElement('submit', null, 'Start');
-    $this->closeElement('form');
+    $this->writeTestCaseForm("A single test case: ");
     $this->closeElement('li');
 
     $this->closeElement('ul');

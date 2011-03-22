@@ -27,23 +27,23 @@ class Sections extends DBConnection
   protected $mSections;
 
 
-  function __construct(TestSuite $testSuite, $parentId = 0)
+  function __construct(TestSuite $testSuite)
   {
     parent::__construct();
 
     $testSuiteName = $this->encode($testSuite->getName(), SUITETESTS_MAX_TESTSUITE);
     $specName = $this->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
     
-    $sql  = "SELECT DISTINCT `speclinks`.`id`, ";
+    $sql  = "SELECT `speclinks`.`id`, `speclinks`.`parent_id`, ";
     $sql .= "`speclinks`.`section`, `speclinks`.`title`, ";
-    $sql .= "`speclinks`.`uri` ";
+    $sql .= "`speclinks`.`uri`, COUNT(*) as `test_count` ";
     $sql .= "FROM `speclinks` ";
     $sql .= "LEFT JOIN (`testlinks`, `suitetests`) ";
     $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
     $sql .= "AND `testlinks`.`testcase_id` = `suitetests`.`testcase_id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
     $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
-    $sql .= "AND `speclinks`.`parent_id` = '{$parentId}' ";
+    $sql .= "GROUP BY `speclinks`.`id` ";
     $sql .= "ORDER BY `speclinks`.`id` ";
     
     $r = $this->query($sql);
@@ -53,22 +53,28 @@ class Sections extends DBConnection
       trigger_error($msg, E_USER_ERROR);
     }
     
-    $this->mSections = $r->fetchTable();
+    while ($sectionData = $r->fetchRow()) {
+      $sectionData['id'] = intval($sectionData['id']);
+      $sectionData['parent_id'] = intval($sectionData['parent_id']);
+      $sectionData['test_count'] = intval($sectionData['test_count']);
+
+      $this->mSections[$sectionData['parent_id']][] = $sectionData;
+    }
   }
 
-  function getCount()
+  function getCount($parentId = 0)
   {
-    if ($this->mSections) {
-      return count($this->mSections);
+    if ($this->mSections && array_key_exists($parentId, $this->mSections)) {
+      return count($this->mSections[$parentId]);
     }
     return 0;
   }
   
   
-  function getSectionData()
+  function getSectionData($parentId = 0)
   {
-    if ($this->mSections) {
-      return $this->mSections;
+    if ($this->mSections && array_key_exists($parentId, $this->mSections)) {
+      return $this->mSections[$parentId];
     }
     return FALSE;
   }
