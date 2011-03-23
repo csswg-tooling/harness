@@ -36,7 +36,7 @@ class Sections extends DBConnection
     
     $sql  = "SELECT `speclinks`.`id`, `speclinks`.`parent_id`, ";
     $sql .= "`speclinks`.`section`, `speclinks`.`title`, ";
-    $sql .= "`speclinks`.`uri`, COUNT(*) as `test_count` ";
+    $sql .= "`speclinks`.`uri`, COUNT(*) as `group_count` ";
     $sql .= "FROM `speclinks` ";
     $sql .= "LEFT JOIN (`testlinks`, `suitetests`) ";
     $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
@@ -54,13 +54,46 @@ class Sections extends DBConnection
     }
     
     while ($sectionData = $r->fetchRow()) {
-      $sectionData['id'] = intval($sectionData['id']);
-      $sectionData['parent_id'] = intval($sectionData['parent_id']);
-      $sectionData['test_count'] = intval($sectionData['test_count']);
+      $id = intval($sectionData['id']);
+      $parentId = intval($sectionData['parent_id']);
+    
+      $sectionData['id'] = $id;
+      $sectionData['parent_id'] = $parentId;
+      $sectionData['group_count'] = intval($sectionData['group_count']);
+      $sectionData['test_count'] = 0;
 
-      $this->mSections[$sectionData['parent_id']][] = $sectionData;
+      $this->mSections[$parentId][$id] = $sectionData;
+    }
+
+    // get test counts of sections that have direct test links (not group)
+    $sql  = "SELECT `speclinks`.`id`, `speclinks`.`parent_id`, ";
+    $sql .= "COUNT(*) as `test_count` ";
+    $sql .= "FROM `speclinks` ";
+    $sql .= "LEFT JOIN (`testlinks`, `suitetests`) ";
+    $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
+    $sql .= "AND `testlinks`.`testcase_id` = `suitetests`.`testcase_id` ";
+    $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
+    $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
+    $sql .= "AND `testlinks`.`group` = 0 ";
+    $sql .= "GROUP BY `speclinks`.`id` ";
+    $sql .= "ORDER BY `speclinks`.`id` ";
+    
+    $r = $this->query($sql);
+    
+    if (! $r->succeeded()) {
+      $msg = 'Unable to obtain list of sections.';
+      trigger_error($msg, E_USER_ERROR);
+    }
+    
+    while ($sectionData = $r->fetchRow()) {
+      $id = intval($sectionData['id']);
+      $parentId = intval($sectionData['parent_id']);
+      $testCount = intval($sectionData['test_count']);
+
+      $this->mSections[$parentId][$id]['test_count'] = $testCount;
     }
   }
+
 
   function getCount($parentId = 0)
   {

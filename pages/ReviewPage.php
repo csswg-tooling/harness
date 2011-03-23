@@ -105,8 +105,9 @@ class ReviewPage extends HarnessPage
     $data = $this->mSections->getSectionData($parentId);
     foreach ($data as $sectionData) {
       $id = $sectionData['id'];
+      $testCount = $sectionData['test_count'];
       $subSectionCount = $this->mSections->getCount($id);
-      if (1 != $subSectionCount) {
+      if ((1 != $subSectionCount) || (0 < $testCount)) {
         $this->addOptionElement($id, null, "{$sectionData['section']}: {$sectionData['title']}");
       }
       if (0 < $subSectionCount) {
