@@ -112,8 +112,8 @@ class TestCaseImport extends CmdLineWorker
   
   function import($manifest, $testSuiteName)
   {
-    echo "Loading testcases from: {$testSuiteName}\n";
-    $this->_loadTestCases($testSuiteName);
+    echo "Loading testcases\n";
+    $this->_loadTestCases();
     
     $testSuite = new TestSuite($testSuiteName);
     $formats = Format::GetFormatsFor($testSuite);
@@ -346,6 +346,9 @@ class TestCaseImport extends CmdLineWorker
     }
     
     // delete old tests
+    echo "Loading testcases from: {$testSuiteName}\n";
+    $this->_loadTestCases($testSuiteName);
+
     foreach ($this->mTestCaseIds as $testCaseName => $testCaseId) {
       if (! isset($this->mTestCaseIsActive[$testCaseId])) {
         $sql  = "DELETE FROM `suitetests` ";
