@@ -346,7 +346,7 @@ class ResultsPage extends HarnessPage
         $testCaseName = $testCaseData['testcase'];
 
         $flags = new Flags($testCaseData['flags']);
-        $optional = $flags->isOptional();
+        $optional = $this->mTestSuite->testIsOptional($flags);
         
         $this->_generateRow($testCaseName, $testCaseId, $optional);
       }

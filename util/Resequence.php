@@ -139,7 +139,7 @@ class Resequence extends CmdLineWorker
         $index++;
 
         $flags = new Flags($testCaseData['flags']);
-        $optional = $flags->isOptional();
+        $optional = $testSuite->testIsOptional($flags);
 
         $engineResults = $results->getResultCountsFor($testCaseId);
         

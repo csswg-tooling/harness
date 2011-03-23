@@ -70,14 +70,6 @@ class Flags extends DBConnection
   
   
   /**
-   * Check if flagged for optional behavior
-   */
-  function isOptional()
-  {
-    return ($this->hasFlag('may') || $this->hasFlag('should'));
-  }
-  
-  /**
    * Get array of flag descriptions
    *
    * @return array|null descriptions of all set flags, keyed by flag

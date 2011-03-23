@@ -135,6 +135,18 @@ class TestSuite extends DBConnection
   {
     return $this->mInfo['contact_uri'];
   }
+  
+  function testIsOptional(Flags $flags)
+  {
+    $optionalFlags = explode(',', $this->mInfo['optional_flags']);
+    
+    foreach ($optionalFlags as $flag) {
+      if ($flags->hasFlag($flag)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
 
 }
 
