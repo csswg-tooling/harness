@@ -352,13 +352,37 @@ class ResultsPage extends HarnessPage
       }
       
       $this->closeElement('table');
-      $this->addElement('p', null, "{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet exit criteria.");
-      $this->addElement('p', null, "{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet exit criteria.");
-      $this->addElement('p', null, "{$this->mTestCaseInvalidCount} tests reported as invalid.");
-      $this->addElement('p', null, "{$this->mTestCaseNeededCount} required tests are considered valid and do not meet exit criteria.");
+      $this->addElement('p', null, "{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet CR exit criteria.");
+      if (0 < $this->mTestCaseOptionalCount) {
+        $this->addElement('p', null, "{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet CR exit criteria.");
+      }
+      if (0 < $this->mTestCaseInvalidCount) {
+        if (1 == $this->mTestCaseInvalidCount) {
+          $this->addElement('p', null, "1 test reported as invalid.");
+        }
+        else {
+          $this->addElement('p', null, "{$this->mTestCaseInvalidCount} tests reported as invalid.");
+        }
+      }
       if (0 < $this->mTestCaseNeededCount) {
-        $this->addElement('p', null, "{$this->mTestCaseTooManyFails} required tests have blocking failures.");
-        $this->addElement('p', null, "{$this->mTestCaseNeedMoreResults} required tests might pass but lack data.");
+        if (1 == $this->mTestCaseNeededCount) {
+          $this->addElement('p', null, "1 required test is considered valid and does not meet CR exit criteria.");
+        }
+        else {
+          $this->addElement('p', null, "{$this->mTestCaseNeededCount} required tests are considered valid and do not meet CR exit criteria.");
+        }
+        if (1 == $this->mTestCaseTooManyFails) {
+          $this->addElement('p', null, "1 required test has blocking failures.");
+        }
+        else {
+          $this->addElement('p', null, "{$this->mTestCaseTooManyFails} required tests have blocking failures.");
+        }
+        if (1 == $this->mTestCaseNeedMoreResults) {
+          $this->addElement('p', null, "1 required test might pass but lacks data.");
+        }
+        else {
+          $this->addElement('p', null, "{$this->mTestCaseNeedMoreResults} required tests might pass but lack data.");
+        }
         if (0 < $this->mTestCaseNeedMoreResults) {
           $this->addElement('p', null, "Additional results needed from:");
           $this->openElement('ul');
@@ -371,7 +395,7 @@ class ResultsPage extends HarnessPage
         }
       }
       else {
-        $this->addElement('p', null, "Exit criteria have been met.");
+        $this->addElement('p', null, "CR exit criteria have been met.");
       }
     }
     else {
