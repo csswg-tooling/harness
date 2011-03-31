@@ -26,9 +26,9 @@ require_once("lib/UserAgent.php");
 class SelectUserAgentPage extends HarnessPage
 {  
 
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
     
     $this->mSubmitData = $this->mGetData;
     unset($this->mSubmitData['u']);

@@ -34,9 +34,9 @@ class HarnessPage extends DynamicPage
   protected $mUser;
 
 
-  function __construct() 
+  function __construct(Array $args = null)
   {
-    parent::__construct();
+    parent::__construct($args);
     
     $this->mSpiderTrap = new SpiderTrap();
     

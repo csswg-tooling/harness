@@ -33,9 +33,9 @@ class TestSuitePage extends HarnessPage
   protected $mTestCases;
 
 
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -163,7 +163,7 @@ class TestSuitePage extends HarnessPage
     $this->closeElement('select');
   }
 
-	function writeBodyContent() {
+  function writeBodyContent() {
     $this->openElement('p', array('class' => 'ua'));
     $this->addTextContent("You are about the enter test result data for the following user agent:");
     
@@ -232,7 +232,7 @@ class TestSuitePage extends HarnessPage
 
     $this->addElement('p', null,
                       'If listed requirements for a test cannot be met, please press the "Skip" button.');
-	}
+  }
 }
 
 ?>

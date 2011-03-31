@@ -47,9 +47,9 @@ class TestCasePage extends HarnessPage
    * 'ref' Name of reference
    * 'm' Modified date (only results before date)
    */
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';

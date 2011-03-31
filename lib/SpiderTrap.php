@@ -32,8 +32,12 @@ class SpiderTrap
   function __construct()
   {
     $this->mSequence = 0;
-    $this->mPageQuery = $_SERVER['QUERY_STRING'];
-    $this->mPageURI = $_SERVER['REQUEST_URI'];
+    if (array_key_exists('QUERY_STRING', $_SERVER)) {
+      $this->mPageQuery = $_SERVER['QUERY_STRING'];
+    }
+    if (array_key_exists('REQUEST_URI', $_SERVER)) {
+      $this->mPageURI = $_SERVER['REQUEST_URI'];
+    }
   }
   
 

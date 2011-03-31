@@ -17,21 +17,19 @@
  ******************************************************************************/
 
 
-require_once("lib/HarnessPage.php");
-require_once("lib/Results.php");
+require_once("lib/ResultsBasedPage.php");
 require_once("lib/Result.php");
 require_once("lib/Format.php");
-require_once("lib/UserAgent.php");
-require_once("lib/User.php");
 
 
 /**
  * Class for generating the page for inspecting results for
  * individual tests
  */
-class DetailsPage extends HarnessPage
+class DetailsPage extends ResultsBasedPage
 {  
-  protected $mResults;
+  protected $mDisplayLinks;
+  protected $mEngine;
 
 
   /**
@@ -46,38 +44,20 @@ class DetailsPage extends HarnessPage
    * 'v' Engine Version
    * 'p' Platform
    */
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
       trigger_error($msg, E_USER_WARNING);
     }
-
-    $testCaseName = $this->_getData('c');
-    $specLinkId = intval($this->_getData('g'));
-
-    if ($this->_getData('t')) {
-      $type = intval($this->_getData('t'));
-      switch ($type) {
-        case 0: $specLinkId = 0;        // whole suite
-        case 1: $testCaseName = null;   // test group
-        case 2: break;                  // individual test case
-      }
-    }
-
-    $order = intval($this->_getData('o'));
-    $modified = $this->_getData('m', 'DateTime');
     
-    $engine = $this->_getData('e');
-    $engineVersion = $this->_getData('v');
+    $this->mDisplayLinks = TRUE;
 
-    $platform = $this->_getData('p');
-
-    $this->mResults = 
-      new Results($this->mTestSuite, $testCaseName, $specLinkId,
-                  $engine, $engineVersion, $platform, $modified);
+    $this->mEngine = $this->_getData('e');
+    
+    $order = intval($this->_getData('o'));
   }
   
   
@@ -124,6 +104,8 @@ class DetailsPage extends HarnessPage
    */
   function writeBodyContent()
   {
+    $this->loadResults();
+    
     if (0 == $this->mResults->getResultCount()) {
       $this->addElement('p', null, 'No results entered matching this query.');
     } 
@@ -153,45 +135,52 @@ class DetailsPage extends HarnessPage
           $testCaseName   = $testCaseData['testcase'];
           
           foreach ($engineResults as $engine => $engineResultData) {
-            asort($engineResultData);
-            
-            foreach ($engineResultData as  $resultId => $resultValue) {
-              $this->openElement('tr', array('class' => $resultValue));
-
-              $result = new Result($resultId);
+            if ((! $this->mEngine) || ($engine == $this->mEngine)) {
+              asort($engineResultData);
               
-              $userAgent = $userAgents[$result->getUserAgentId()];
-              $sourceId = $result->getSourceId();
-              if ($sourceId) {
-                $user = new User($sourceId);
-                $source = $user->getName();
+              foreach ($engineResultData as  $resultId => $resultValue) {
+                $this->openElement('tr', array('class' => $resultValue));
+
+                $result = new Result($resultId);
+                
+                $userAgent = $userAgents[$result->getUserAgentId()];
+                $sourceId = $result->getSourceId();
+                if ($sourceId) {
+                  $user = new User($sourceId);
+                  $source = $user->getName();
+                }
+                else {
+                  $source = '';
+                }
+
+                $this->openElement('td');
+                
+                if ($this->mDisplayLinks) {
+                  $this->mSpiderTrap->addTrapLinkTo($this);
+                
+                  $args['s'] = $testSuiteName;
+                  $args['c'] = $testCaseName;
+                  $args['f'] = $result->getFormatName();
+                  $args['u'] = $this->mUserAgent->getId();
+                  $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+                  
+                  $this->addHyperLink($uri, array('name' => $testCaseName), $testCaseName);
+                }
+                else {
+                  $this->addElement('a', array('name' => $testCaseName), $testCaseName);
+                }
+                $this->closeElement('td');
+
+                $this->addElement('td', null, $formats[$result->getFormatName()]->getTitle());
+                $this->addElement('td', null, $resultValue);
+                $this->openElement('td');
+                $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
+                $this->closeElement('td');
+                $this->addElement('td', null, $result->getDate());
+                $this->addElement('td', null, $source);
+
+                $this->closeElement('tr');
               }
-              else {
-                $source = '';
-              }
-
-              $this->openElement('td');
-              
-              $this->mSpiderTrap->addTrapLinkTo($this);
-              
-              $args['s'] = $testSuiteName;
-              $args['c'] = $testCaseName;
-              $args['f'] = $result->getFormatName();
-              $args['u'] = $this->mUserAgent->getId();
-              $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
-              
-              $this->addHyperLink($uri, null, $testCaseName);
-              $this->closeElement('td');
-
-              $this->addElement('td', null, $formats[$result->getFormatName()]->getTitle());
-              $this->addElement('td', null, $resultValue);
-              $this->openElement('td');
-              $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
-              $this->closeElement('td');
-              $this->addElement('td', null, $result->getDate());
-              $this->addElement('td', null, $source);
-
-              $this->closeElement('tr');
             }
           }
         }
@@ -199,6 +188,43 @@ class DetailsPage extends HarnessPage
       $this->closeElement('table');
     }
   }
+  
+  function writeLedgend()
+  {
+    $this->addElement('h2', null, 'Legend');
+    
+    $this->openElement('table', array('class' => 'legend'));
+    
+    $this->openElement('tr');
+    $this->addElement('th', null, 'Row color codes');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'pass'));
+    $this->addElement('td', null, 'test passed');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'fail'));
+    $this->addElement('td', null, 'test failed');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'uncertain'));
+    $this->addElement('td', null, 'result uncertain');
+    $this->closeElement('tr');
+    
+    $this->openElement('tr', array('class' => 'invalid'));
+    $this->addElement('td', null, 'reported as invalid');
+    $this->closeElement('tr');
+    
+    $this->closeElement('table');
+  }
+  
+  
+  function writeBodyFooter()
+  {
+    $this->writeLedgend();
+    
+    parent::writeBodyFooter();
+  }  
 }
 
 ?>

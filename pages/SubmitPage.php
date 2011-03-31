@@ -45,9 +45,9 @@ class SubmitPage extends HarnessPage
    * 'o'    Order of tests is sequence
    * 'u'    User Agent Id
    */
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
     
     $result = $this->_postData('result');
     switch (strtolower(substr($result, 0, 4))) {

@@ -17,17 +17,15 @@
  ******************************************************************************/
 
 
-require_once("lib/HarnessPage.php");
-require_once("lib/Results.php");
+require_once("lib/ResultsBasedPage.php");
 
 
 /**
  * Class for generating the page of result data
  */
-class ResultsPage extends HarnessPage
+class ResultsPage extends ResultsBasedPage
 {  
-  protected $mResults;
-
+  protected $mDisplayLinks;
   protected $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   protected $mModified;                       // modified date for results
   
@@ -53,26 +51,16 @@ class ResultsPage extends HarnessPage
    * 'v' Engine Version (optional)
    * 'p' Platform
    */
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
       trigger_error($msg, E_USER_WARNING);
     }
-
-    $testCaseName = $this->_getData('c');
-    $specLinkId = intval($this->_getData('g'));
-
-    if ($this->_getData('t')) {
-      $type = intval($this->_getData('t'));
-      switch ($type) {
-        case 0: $specLinkId = 0;        // whole suite
-        case 1: $testCaseName = null;   // test group
-        case 2: break;                  // individual test case
-      }
-    }
+    
+    $this->mDisplayLinks = TRUE;
 
     $filter = $this->_getData('f');
     if (is_array($filter)) {
@@ -87,21 +75,18 @@ class ResultsPage extends HarnessPage
     }
 
     $this->mModified = $this->_getData('m', 'DateTime');
-    $grouping = $this->_getData('x');
-    $engine = $this->_getData('e');
-    $engineVersion = $this->_getData('v');
-    $platform = $this->_getData('p');
-
-    $this->mResults = 
-      new Results($this->mTestSuite, $testCaseName, $specLinkId,
-                  $engine, $engineVersion, $platform, 
-                  $this->mModified);
-
+  }
+  
+  
+  function loadResults()
+  {
+    parent::loadResults();
+    
     foreach ($this->mResults->getEngines() as $engine) {
       $this->mTestCaseNeededCountPerEngine[$engine] = 0;
     }
   }
-  
+
   
   function getPageTitle()
   {
@@ -280,10 +265,30 @@ class ResultsPage extends HarnessPage
     }
     if ($display) {
       $this->openElement('tr', array('class' => $class));
-      $this->openElement('td');
-
+      
+      $this->_generateTestCaseCell($testCaseName, $hasResults);
+      
+      foreach ($cells as $cell) {
+        if (is_array($cell)) {
+          list($class, $uri, $content) = $cell;
+          $this->_generateResultCell($class, $uri, $content);
+        }
+        else {
+          $this->addElement('td', null, $cell, FALSE);
+        }
+      }
+      $this->closeElement('tr');
+    }
+  }
+  
+  
+  function _generateTestCaseCell($testCaseName, $hasResults)
+  {
+    $this->openElement('td');
+    
+    if ($this->mDisplayLinks) {
       $this->mSpiderTrap->addTrapLinkTo($this);
-      unset($args);
+
       $args['s'] = $this->mTestSuite->getName();
       $args['c'] = $testCaseName;
       $args['u'] = $this->mUserAgent->getId();
@@ -297,106 +302,129 @@ class ResultsPage extends HarnessPage
         $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
       }
       
-      $this->addHyperLink($uri, null, $testCaseName);
-      $this->closeElement('td');
-      
-      foreach ($cells as $cell) {
-        if (is_array($cell)) {
-          list($class, $uri, $content) = $cell;
-          $this->openElement('td', array('class' => $class));
-          $this->addHyperLink($uri, null, $content, FALSE);
-          $this->closeElement('td');
-        }
-        else {
-          $this->addElement('td', null, $cell, FALSE);
-        }
-      }
-      $this->closeElement('tr');
+      $this->addHyperLink($uri, array('name' => $testCaseName), $testCaseName);
     }
+    else {
+      $this->addElement('a', array('name' => $testCaseName), $testCaseName);
+    }
+    $this->closeElement('td');
+  }
+  
+  
+  function _generateResultCell($class, $uri, $content)
+  {
+    $this->openElement('td', array('class' => $class));
+    if ($this->mDisplayLinks) {
+      $this->addHyperLink($uri, null, $content, FALSE);
+    }
+    else {
+      $this->addTextContent($content, FALSE);
+    }
+    $this->closeElement('td');
   }
 
-
+  
+  function writeResultTable()
+  {
+    $this->openElement('table');
+    $this->openElement('tr');
+    $this->addElement('th', null, 'Testcase');
+    foreach ($this->mResults->getEngines() as $engine) {
+      $this->addElement('th', null, $engine);
+    }
+    $this->closeElement('tr');
+    
+    $testCases = $this->mResults->getTestCases();
+    foreach ($testCases as $testCaseData) {
+      $testCaseId   = intval($testCaseData['id']);
+      $testCaseName = $testCaseData['testcase'];
+      
+      $flags = new Flags($testCaseData['flags']);
+      $optional = $this->mTestSuite->testIsOptional($flags);
+      
+      $this->_generateRow($testCaseName, $testCaseId, $optional);
+    }
+    
+    $this->closeElement('table');
+  }
+  
+  
+  function resetStats()
+  {
+    $this->mTestCaseRequiredCount = 0;
+    $this->mTestCaseRequiredPassCount = 0;
+    $this->mTestCaseOptionalCount = 0;
+    $this->mTestCaseOptionalPassCount = 0;
+    $this->mTestCaseInvalidCount = 0;
+    $this->mTestCaseNeededCount = 0;
+    $this->mTestCaseNeedMoreResults = 0;
+    $this->mTestCaseTooManyFails = 0;
+  }
+  
+  
+  function writeSummary()
+  {
+    $this->addElement('p', null, "{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet CR exit criteria.");
+    if (0 < $this->mTestCaseOptionalCount) {
+      $this->addElement('p', null, "{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet CR exit criteria.");
+    }
+    if (0 < $this->mTestCaseInvalidCount) {
+      if (1 == $this->mTestCaseInvalidCount) {
+        $this->addElement('p', null, "1 test reported as invalid.");
+      }
+      else {
+        $this->addElement('p', null, "{$this->mTestCaseInvalidCount} tests reported as invalid.");
+      }
+    }
+    if (0 < $this->mTestCaseNeededCount) {
+      if (1 == $this->mTestCaseNeededCount) {
+        $this->addElement('p', null, "1 required test is considered valid and does not meet CR exit criteria.");
+      }
+      else {
+        $this->addElement('p', null, "{$this->mTestCaseNeededCount} required tests are considered valid and do not meet CR exit criteria.");
+      }
+      if (1 == $this->mTestCaseTooManyFails) {
+        $this->addElement('p', null, "1 required test has blocking failures.");
+      }
+      else {
+        $this->addElement('p', null, "{$this->mTestCaseTooManyFails} required tests have blocking failures.");
+      }
+      if (1 == $this->mTestCaseNeedMoreResults) {
+        $this->addElement('p', null, "1 required test might pass but lacks data.");
+      }
+      else {
+        $this->addElement('p', null, "{$this->mTestCaseNeedMoreResults} required tests might pass but lack data.");
+      }
+      if (0 < $this->mTestCaseNeedMoreResults) {
+        $this->addElement('p', null, "Additional results needed from:");
+        $this->openElement('ul');
+        foreach ($this->mTestCaseNeededCountPerEngine as $engine => $count) {
+          if (0 < $count) {
+            $this->addElement('li', null, "{$engine}: $count");
+          }
+        }
+        $this->closeElement('ul');
+      }
+    }
+    else {
+      $this->addElement('p', null, "CR exit criteria have been met.");
+    }
+  }
+  
+  
   /**
    * Write HTML for a table displaying result data
    */
   function writeBodyContent()
   {
-    if ($this->mResults->getResultCount()) {
+    $this->loadResults();
     
-      $this->openElement('table');
-      $this->openElement('tr');
-      $this->addElement('th', null, 'Testcase');
-      foreach ($this->mResults->getEngines() as $engine) {
-        $this->addElement('th', null, $engine);
-      }
-      $this->closeElement('tr');
+    if ($this->mResults->getResultCount()) {
+      $this->resetStats();    
       
-      $this->mTestCaseRequiredCount = 0;
-      $this->mTestCaseRequiredPassCount = 0;
-      $this->mTestCaseOptionalCount = 0;
-      $this->mTestCaseOptionalPassCount = 0;
-      $this->mTestCaseInvalidCount = 0;
-      $this->mTestCaseNeededCount = 0;
-      $this->mTestCaseNeedMoreResults = 0;
-      $this->mTestCaseTooManyFails = 0;
-  
-      $testCases = $this->mResults->getTestCases();
-      foreach ($testCases as $testCaseData) {
-        $testCaseId   = intval($testCaseData['id']);
-        $testCaseName = $testCaseData['testcase'];
-
-        $flags = new Flags($testCaseData['flags']);
-        $optional = $this->mTestSuite->testIsOptional($flags);
-        
-        $this->_generateRow($testCaseName, $testCaseId, $optional);
-      }
+      $this->writeResultTable();
       
-      $this->closeElement('table');
-      $this->addElement('p', null, "{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet CR exit criteria.");
-      if (0 < $this->mTestCaseOptionalCount) {
-        $this->addElement('p', null, "{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet CR exit criteria.");
-      }
-      if (0 < $this->mTestCaseInvalidCount) {
-        if (1 == $this->mTestCaseInvalidCount) {
-          $this->addElement('p', null, "1 test reported as invalid.");
-        }
-        else {
-          $this->addElement('p', null, "{$this->mTestCaseInvalidCount} tests reported as invalid.");
-        }
-      }
-      if (0 < $this->mTestCaseNeededCount) {
-        if (1 == $this->mTestCaseNeededCount) {
-          $this->addElement('p', null, "1 required test is considered valid and does not meet CR exit criteria.");
-        }
-        else {
-          $this->addElement('p', null, "{$this->mTestCaseNeededCount} required tests are considered valid and do not meet CR exit criteria.");
-        }
-        if (1 == $this->mTestCaseTooManyFails) {
-          $this->addElement('p', null, "1 required test has blocking failures.");
-        }
-        else {
-          $this->addElement('p', null, "{$this->mTestCaseTooManyFails} required tests have blocking failures.");
-        }
-        if (1 == $this->mTestCaseNeedMoreResults) {
-          $this->addElement('p', null, "1 required test might pass but lacks data.");
-        }
-        else {
-          $this->addElement('p', null, "{$this->mTestCaseNeedMoreResults} required tests might pass but lack data.");
-        }
-        if (0 < $this->mTestCaseNeedMoreResults) {
-          $this->addElement('p', null, "Additional results needed from:");
-          $this->openElement('ul');
-          foreach ($this->mTestCaseNeededCountPerEngine as $engine => $count) {
-            if (0 < $count) {
-              $this->addElement('li', null, "{$engine}: $count");
-            }
-          }
-          $this->closeElement('ul');
-        }
-      }
-      else {
-        $this->addElement('p', null, "CR exit criteria have been met.");
-      }
+      $this->writeSummary();
     }
     else {
       $this->addElement('p', null, "No results entered matching this query.");
@@ -404,12 +432,12 @@ class ResultsPage extends HarnessPage
   }
 
   
-  function writeBodyFooter()
+  function writeLedgend()
   {
     $this->addElement('h2', null, 'Legend');
     
     $this->openElement('table', array('class' => 'legend'));
-
+    
     $this->openElement('tr');
     $this->addElement('th', null, 'Row color codes');
     $this->closeElement('tr');
@@ -419,7 +447,7 @@ class ResultsPage extends HarnessPage
     $this->closeElement('tr');
     
     $this->openElement('tr', array('class' => 'pass bycomponents'));
-    $this->addElement('td', null, 'combo test passed by component tests');
+    $this->addElement('td', null, '* combo test passed by component tests');
     $this->closeElement('tr');
     
     $this->openElement('tr', array('class' => 'fail'));
@@ -437,15 +465,15 @@ class ResultsPage extends HarnessPage
     $this->openElement('tr', array('class' => 'optional'));
     $this->addElement('td', null, 'not passing, but optional');
     $this->closeElement('tr');
-
+    
     $this->closeElement('table');
-
+    
     $this->openElement('table', array('class' => 'legend'));
-
+    
     $this->openElement('tr');
     $this->addElement('th', null, 'Result color codes');
     $this->closeElement('tr');
-
+    
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'pass'), 'all results pass');
     $this->closeElement('tr');
@@ -471,10 +499,16 @@ class ResultsPage extends HarnessPage
     $this->closeElement('tr');
     
     $this->openElement('tr');
-    $this->addElement('td', null, '# pass / # fail / # uncertian');
+    $this->addElement('td', null, '# pass / # fail / # uncertain');
     $this->closeElement('tr');
-
+    
     $this->closeElement('table');
+  }
+  
+  
+  function writeBodyFooter()
+  {
+    $this->writeLedgend();
     
     parent::writeBodyFooter();
   }

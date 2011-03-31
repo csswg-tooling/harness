@@ -28,9 +28,9 @@ class SetUserAgentPage extends HarnessPage
   protected $mNewURI;
 
 
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
     
     if ('Enter' == $this->_postData('action')) {
       $uaString = $this->_postData('ua');

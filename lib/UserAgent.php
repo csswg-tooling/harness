@@ -81,11 +81,13 @@ class UserAgent extends DBConnection
       }
     }
     else {  // determine UA from server
-      $uaString = $_SERVER['HTTP_USER_AGENT'];
-      $this->mInfo = $this->_queryByString($uaString);
-      
-      if (! isset($this->mInfo)) {
-        $this->mInfo = $this->_parseUAString($uaString);
+      if (array_key_exists('HTTP_USER_AGENT', $_SERVER)) {
+        $uaString = $_SERVER['HTTP_USER_AGENT'];
+        $this->mInfo = $this->_queryByString($uaString);
+        
+        if (! isset($this->mInfo)) {
+          $this->mInfo = $this->_parseUAString($uaString);
+        }
       }
     }
   }

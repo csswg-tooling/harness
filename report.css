@@ -80,8 +80,10 @@ th a,
 td a {
   text-decoration: none;
 }
-th a:hover,
-td a:hover,
+th a:link:hover,
+th a:visited:hover,
+td a:link:hover,
+td a:visited:hover,
 th a:focus,
 td a:focus {
   text-decoration: underline;

@@ -27,9 +27,9 @@ require_once("lib/TestSuites.php");
 class SuccessPage extends HarnessPage
 {
 
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';

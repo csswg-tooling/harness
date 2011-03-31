@@ -29,9 +29,9 @@ class WelcomePage extends HarnessPage
   protected $mTestSuites;
 
 
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     $this->mTestSuites = new TestSuites();
   }

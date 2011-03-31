@@ -31,6 +31,7 @@ class DynamicPage extends Page
   protected $mErrorLine;
   protected $mErrorContext;
   
+  protected $mArgData;
   protected $mGetData;
   protected $mPostData;
   protected $mCookieData;
@@ -47,7 +48,7 @@ class DynamicPage extends Page
    * @param array
    * @return array
    */
-  static function ConditionInput(Array $input)
+  static function ConditionInput(Array $input = null)
   {
     $output = array();
     if (is_array($input) && (0 < count($input))) {
@@ -69,7 +70,7 @@ class DynamicPage extends Page
   }
   
   
-  function __construct() 
+  function __construct(Array $args = null)
   {
     parent::__construct();
     
@@ -83,6 +84,7 @@ class DynamicPage extends Page
     $this->mErrorContext = null;
     set_error_handler(array(&$this, 'errorHandler'));
     
+    $this->mArgData = self::ConditionInput($args);
     $this->mGetData = self::ConditionInput($_GET);
     $this->mPostData = self::ConditionInput($_POST);
     $this->mCookieData = self::ConditionInput($_COOKIE);
@@ -110,6 +112,9 @@ class DynamicPage extends Page
   {
     if (isset($this->mGetData[$field])) {
       return $this->_instantiateData($class, $this->mGetData[$field]);
+    }
+    if (isset($this->mArgData[$field])) {
+      return $this->_instantiateData($class, $this->mArgData[$field]);
     }
     return null;
   }
@@ -143,6 +148,9 @@ class DynamicPage extends Page
     }
     if (isset($this->mCookieData[$field])) {
       return $this->_instantiateData($class, $this->mCookieData[$field]);
+    }
+    if (isset($this->mArgData[$field])) {
+      return $this->_instantiateData($class, $this->mArgData[$field]);
     }
     return null;
   }

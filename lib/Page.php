@@ -27,6 +27,7 @@ class Page
   private   $mFormatStack;
   private   $mFormatCount;
   
+  private   $mOutputFile;
 
   /**
    * Static helper function to encode data safely for HTML output
@@ -163,8 +164,11 @@ class Page
     elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
       $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
     }
-    else {
+    elseif (! empty($_SERVER['HTTP_CLIENT_IP'])) {
       $ip = $_SERVER['HTTP_CLIENT_IP'];
+    }
+    else {
+      $ip = FALSE;
     }
     return $ip;
   }
@@ -211,7 +215,12 @@ class Page
     else {
       $break = '';
     }
-    echo $indent . $output . $break;
+    if ($this->mOutputFile) {
+      fwrite($this->mOutputFile, $indent . $output . $break);
+    }
+    else {
+      echo $indent . $output . $break;
+    }
   }
   
   
@@ -627,10 +636,21 @@ class Page
   /**
    * Generate HTTP headers and write HTML output for this page
    */
-  function write()
+  function write($filePath = null)
   {
-    $this->writeHTTPHeaders();
+    if ($filePath) {
+      $this->mOutputFile = fopen($filePath, "wb");
+    }
+    else {
+      $this->writeHTTPHeaders();
+    }
+    
     $this->writeHTML();
+    
+    if ($this->mOutputFile) {
+      fclose($this->mOutputFile);
+      $this->mOutputFile = null;
+    }
   }
   
   

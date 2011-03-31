@@ -32,9 +32,9 @@ class ReviewPage extends HarnessPage
   protected $mTestCases;
 
 
-  function __construct() 
+  function __construct(Array $args = null) 
   {
-    parent::__construct();
+    parent::__construct($args);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
