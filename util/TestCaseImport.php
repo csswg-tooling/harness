@@ -359,6 +359,12 @@ class TestCaseImport extends CmdLineWorker
         echo "Deactivated {$testCaseName}:{$testCaseId}\n";
       }
     }
+    
+    // update test suite date
+    $sql  = "UPDATE `testsuites` ";
+    $sql .= "SET `date` = '{$now}' ";
+    $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+    $this->query($sql);
   }
 }
 

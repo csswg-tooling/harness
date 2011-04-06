@@ -22,22 +22,22 @@
  */
 class Page
 {
-  protected $mShouldCache;
+  protected $mShouldCache;  // reset in subclass as needed
+  protected $mWriteXML;     // reset in subclass as needed
+  
+  protected $mErrorIsClient;
+  protected $mErrorType;
+  protected $mErrorMessage;
+  protected $mErrorFile;
+  protected $mErrorLine;
+  protected $mErrorContext;
+  
   private   $mElementStack;
   private   $mFormatStack;
   private   $mFormatCount;
   
   private   $mOutputFile;
 
-  /**
-   * Static helper function to encode data safely for HTML output
-   */ 
-  static function Encode($string)
-  {
-    return htmlentities($string, ENT_QUOTES, 'UTF-8');
-  }
-
-  
   /**
    * Static helper function to decode HTML entities to UTF-8
    */ 
@@ -79,15 +79,7 @@ class Page
           $value = strval($value);
         }
       }
-      elseif (is_bool($value)) {
-        if ($value) {
-          $value = null;
-        }
-        else {
-          continue;
-        }
-      }
-      $stringArgs[$key] = $value;
+      $stringArgs[strtolower($key)] = $value;
     }
     return $stringArgs;
   }
@@ -178,12 +170,35 @@ class Page
   function __construct() 
   {
     $this->mShouldCache = TRUE;
+    $this->mWriteXML = FALSE;
+    
     $this->mElementStack = array();
     $this->mFormatStack = array();
     $this->mFormatCount = 0;
-  }  
+    
+    $this->mErrorIsClient = FALSE;
+    $this->mErrorType = null;
+    $this->mErrorMessage = null;
+    $this->mErrorFile = null;
+    $this->mErrorLine = null;
+    $this->mErrorContext = null;
+    set_error_handler(array(&$this, 'errorHandler'));
+  }
   
 
+  /**
+   * Helper function to encode data safely for XML/HTML output
+   */ 
+  function encode($string)
+  {
+    if ($this->mWriteXML) {
+      // XXX should convert other chars to numeric entiries or leave as utf-8?
+      return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+    }
+    return htmlentities($string, ENT_QUOTES, 'UTF-8');
+  }
+
+  
   /**
    * Helper function to build URI with query string
    * 
@@ -224,6 +239,63 @@ class Page
   }
   
   
+  protected function _buildAttrs($arrayName, Array $attrs)
+  {
+    $output = '';
+    
+    foreach ($attrs as $name => $value) {
+      if ($arrayName) {
+        $name = $arrayName . '[' . $this->encode($name) . ']';
+      }
+      else {
+        $name = $this->encode($name);
+      }
+      if (is_null($value)) {
+        if ($this->mWriteXML) {
+          if ($arrayName) {
+            $baseName = strstr($name, '[', TRUE);
+            $output .= " {$name}='{$baseName}'";
+          }
+          else {
+            $output .= " {$name}='{$name}'";
+          }
+        }
+        else {
+          $output .= ' ' . $name;
+        }
+      }
+      elseif (is_array($value)) {
+        $output .= $this->_buildAttrs($name, $value);
+      }
+      elseif (is_bool($value)) {
+        if ($value) {
+          if ($this->mWriteXML) {
+            if ($arrayName) {
+              $baseName = strstr($name, '[', TRUE);
+              $output .= " {$name}='{$baseName}'";
+            }
+            else {
+              $output .= " {$name}='{$name}'";
+            }
+          }
+          else {
+            $output .= ' ' . $name;
+          }
+        }
+      }
+      else {
+        $value = $this->encode($value);
+        $output .= " {$name}='{$value}'";
+        
+        if ($this->mWriteXML && ('lang' == $name)) {
+          $output .= " xml:lang='{$value}'";
+        }
+      }
+    }
+    
+    return $output;
+  }
+  
   /**
    * Build element tag contents
    *
@@ -233,21 +305,11 @@ class Page
    */
   protected function _buildElement($elementName, Array $attrs = null)
   {
-    $elementName = self::Encode($elementName);
+    $elementName = $this->encode($elementName);
     
     if ($attrs) {
       $attrs = self::_ConvertArgs($attrs);
-      $output = $elementName;
-      foreach ($attrs as $name => $value) {
-        $name = self::Encode($name);
-        if (is_null($value)) {
-          $output .= ' ' . $name;
-        }
-        else {
-          $value = self::Encode($value);
-          $output .= " {$name}='{$value}'";
-        }
-      }
+      $output = $elementName . $this->_buildAttrs(null, $attrs);
     }
     else {
       $output = $elementName;
@@ -323,18 +385,23 @@ class Page
       $this->_pushState($elementName, $mayFormat);
 
       if ($encode) {
-        $this->_writeLine(self::Encode($content), $innerFormat, $innerFormat);
+        $this->_writeLine($this->encode($content), $innerFormat, $innerFormat);
       }
       else {
         $this->_writeLine($content, $innerFormat, $innerFormat);
       }
       $this->_popState($elementName);
 
-      $elementName = self::Encode($elementName);
+      $elementName = $this->encode($elementName);
       $this->_writeLine("</{$elementName}>", $innerFormat, $outerFormat);
     }
     else {
-      $this->_writeLine("<{$element}>", $outerFormat, $outerFormat);
+      if ($this->mWriteXML) {
+        $this->_writeLine("<{$element} />", $outerFormat, $outerFormat);
+      }
+      else {
+        $this->_writeLine("<{$element}>", $outerFormat, $outerFormat);
+      }
     }
   }
   
@@ -369,7 +436,7 @@ class Page
     $format = ($this->_formattingOn() && $mayFormat);
     
     if ($encode) {
-      $this->_writeLine(self::Encode($content), $format, $format);
+      $this->_writeLine($this->encode($content), $format, $format);
     }
     else {
       $this->_writeLine($content, $format, $format);
@@ -395,6 +462,23 @@ class Page
   
   
   /**
+   * Add CDATA
+   *
+   * @param string cdata content
+   * @param bool format source within cdata
+   */
+  function addCDATA($content, $mayFormat = TRUE)
+  {
+    $outerFormat = $this->_formattingOn();
+    $innerFormat = ($outerFormat && $mayFormat);
+    
+    $this->_writeLine('<![CDATA[', $outerFormat, $innerFormat);
+    $this->_writeLine($content, $innerFormat, $innerFormat);
+    $this->_writeLine(']]>', $innerFormat, $outerFormat);
+  }
+
+   
+  /**
    * Close element
    *
    * @param string optional element name (for debugging)
@@ -405,7 +489,7 @@ class Page
     $openElement = $this->_popState($elementName);
     $outerFormat = $this->_formattingOn();
 
-    $elementName = self::Encode($openElement);
+    $elementName = $this->encode($openElement);
     $this->_writeLine("</{$openElement}>", $innerFormat, $outerFormat);
   }
 
@@ -421,7 +505,12 @@ class Page
   {
     $attrs['type'] = $type;
     $this->openElement('style', $attrs, FALSE);
-    $this->addComment($styleSheet);
+    if ($this->mWriteXML) {
+      $this->addCDATA($styleSheet);
+    }
+    else {
+      $this->addComment($styleSheet);
+    }
     $this->closeElement('style');
   }
   
@@ -454,9 +543,16 @@ class Page
 
     $attrs['type'] = $type;
     $this->openElement('script', $attrs);
-    $this->_writeLine("<!--\n", FALSE, FALSE);
-    $this->_writeLine($script, FALSE, FALSE);
-    $this->_writeLine("\n// -->", FALSE, $outerFormat);
+    if ($this->mWriteXML) {
+      $this->_writeLine("//<![CDATA[\n", FALSE, FALSE);
+      $this->_writeLine($script, FALSE, FALSE);
+      $this->_writeLine("\n//]]>", FALSE, $outerFormat);
+    }
+    else {
+      $this->_writeLine("<!--\n", FALSE, FALSE);
+      $this->_writeLine($script, FALSE, FALSE);
+      $this->_writeLine("\n// -->", FALSE, $outerFormat);
+    }
     $this->closeElement('script');
   }
   
@@ -632,6 +728,20 @@ class Page
     return null;
   }
   
+  
+  /**
+   * Send an HTTP header if it is safe to do so
+   */
+  function sendHTTPHeader($header, $value = null)
+  {
+    if ((! headers_sent()) && (! $this->mOutputFile)) {
+      if ($value) {
+        $header = "{$header}: {$value}";
+      }
+      header($header);
+    }
+  }
+  
 
   /**
    * Generate HTTP headers and write HTML output for this page
@@ -663,11 +773,10 @@ class Page
   {
     $redirectURI = $this->getRedirectURI();
     if ($redirectURI) {
-      $redirect = "Location: {$redirectURI}";
-      header($redirect);
+      $this->sendHTTPHeader('Location', $redirectURI);
     }
     if (! $this->mShouldCache) {
-      header("Cache-Control: max-age=0");
+      $this->sendHTTPHeader('Cache-Control', 'max-age=0');
     }
   }
 
@@ -679,7 +788,12 @@ class Page
    */
   function writeDoctype()
   {
-    $this->_writeLine('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">', FALSE, $this->_formattingOn());
+    if ($this->mWriteXML) {
+      $this->_writeLine('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">', FALSE, $this->_formattingOn());
+    }
+    else {
+      $this->_writeLine('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">', FALSE, $this->_formattingOn());
+    }
   }
   
   
@@ -692,7 +806,11 @@ class Page
   {
     $this->writeDoctype();
     
-    $this->openElement('html', array('lang' => 'en'));
+    if ($this->mWriteXML) {
+      $attrs['xmlns'] = 'http://www.w3.org/1999/xhtml';
+    }
+    $attrs['lang'] = 'en';
+    $this->openElement('html', $attrs);
     $this->writeHTMLHead();
     $this->writeHTMLBody();
     $this->closeElement('html');
@@ -814,6 +932,140 @@ class Page
   function writeBodyFooter()
   {
   }
+  
+
+  /**
+   * Callback function to capture PHP generated errors
+   *
+   * Use trigger_error to invoke an error condition, set errorType to:
+   *   E_USER_NOTICE - minor error due ot bad client input
+   *   E_USER_WARNING - major error due to bad client input
+   *   E_USER_ERROR - problem at server (like failed sql query)
+   */
+  function errorHandler($errorType, $errorString, $errorFile, $errorLine, $errorContext)
+  {
+    switch ($errorType) {
+      case E_USER_NOTICE:
+        $this->mErrorIsClient = TRUE;
+      case E_NOTICE:
+        $this->mErrorType = 'NOTICE:';
+        break;
+      case E_WARNING:
+        $this->mErrorType = 'WARNING:';
+        break;
+      case E_USER_WARNING:
+        $this->mErrorIsClient = TRUE;
+      default:
+        $this->mErrorType = 'ERROR:';
+    }
+    
+    if (! $errorString) {
+      $errorString = 'Unknown Error';
+    }
+    
+    $this->mErrorMessage = $errorString;
+    
+    $this->mErrorFile = $errorFile;
+    $this->mErrorLine = $errorLine;
+    $this->mErrorContext = $errorContext;
+
+    if (! headers_sent()) {
+      if ($this->mErrorIsClient) {
+        $this->sendHTTPHeader('HTTP/1.1 400 Bad Request');
+      } 
+      else {
+        $this->sendHTTPHeader('HTTP/1.1 500 Internal Server Error');
+      }
+    }
+
+    if (! in_array('html', $this->mElementStack)) {
+      while (0 < count($this->mElementStack)) {
+        $this->closeElement();
+      }
+      $this->openElement('html');
+    }
+    if (! in_array('body', $this->mElementStack)) {
+      while (1 < count($this->mElementStack)) {
+        $this->closeElement();
+      }
+      $this->openElement('body');
+    }
+    while (2 < count($this->mElementStack)) {
+      $this->closeElement();
+    }
+    
+    $this->writeError();
+    
+    while (0 < count($this->mElementStack)) {
+      $this->closeElement();
+    }
+    
+    die();
+  }
+
+
+  /**
+   * Generate error text
+   */
+  function writeError()
+  {
+    if ($this->mErrorType) {
+      $this->openElement('p');
+      $this->addElement('strong', null, $this->mErrorType);
+      if ($this->mErrorMessage) {
+        $this->addTextContent($this->mErrorMessage, FALSE);
+      }
+      $this->closeElement('p');
+    } 
+    else {
+      if ($this->mErrorMessage) {
+        $this->addElement('p', null, $this->mErrorMessage, FALSE);
+      }
+    }
+    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+      if ($this->mErrorFile) {
+        $this->addElement('p', null, "File: {$this->mErrorFile}");
+      }
+      if ($this->mErrorLine) {
+        $this->addElement('p', null, "Line: {$this->mErrorLine}");
+      }
+      if ($this->mErrorContext) {
+        $this->openElement('p');
+        $this->addTextContent('Context: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mErrorContext, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+      
+      if (0 < count($this->mGetData)) {
+        $this->openElement('p');
+        $this->addTextContent('Get: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mGetData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+      
+      if (0 < count($this->mPostData)) {
+        $this->openElement('p');
+        $this->addTextContent('Post: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mPostData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+
+      if (0 < count($this->mCookieData)) {
+        $this->openElement('p');
+        $this->addTextContent('Cookie: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mCookieData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+    }
+  }  
 }
 
 ?>

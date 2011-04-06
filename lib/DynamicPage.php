@@ -24,13 +24,6 @@ require_once("lib/Page.php");
  */
 class DynamicPage extends Page
 {
-  protected $mErrorIsClient;
-  protected $mErrorType;
-  protected $mErrorMessage;
-  protected $mErrorFile;
-  protected $mErrorLine;
-  protected $mErrorContext;
-  
   protected $mArgData;
   protected $mGetData;
   protected $mPostData;
@@ -75,14 +68,6 @@ class DynamicPage extends Page
     parent::__construct();
     
     $this->mShouldCache = FALSE;
-    
-    $this->mErrorIsClient = FALSE;
-    $this->mErrorType = null;
-    $this->mErrorMessage = null;
-    $this->mErrorFile = null;
-    $this->mErrorLine = null;
-    $this->mErrorContext = null;
-    set_error_handler(array(&$this, 'errorHandler'));
     
     $this->mArgData = self::ConditionInput($args);
     $this->mGetData = self::ConditionInput($_GET);
@@ -178,139 +163,6 @@ class DynamicPage extends Page
     }
   }
   
-
-  /**
-   * Callback function to capture PHP generated errors
-   *
-   * Use trigger_error to invoke an error condition, set errorType to:
-   *   E_USER_NOTICE - minor error due ot bad client input
-   *   E_USER_WARNING - major error due to bad client input
-   *   E_USER_ERROR - problem at server (like failed sql query)
-   */
-  function errorHandler($errorType, $errorString, $errorFile, $errorLine, $errorContext)
-  {
-    switch ($errorType) {
-      case E_USER_NOTICE:
-        $this->mErrorIsClient = TRUE;
-      case E_NOTICE:
-        $this->mErrorType = 'NOTICE:';
-        break;
-      case E_WARNING:
-        $this->mErrorType = 'WARNING:';
-        break;
-      case E_USER_WARNING:
-        $this->mErrorIsClient = TRUE;
-      default:
-        $this->mErrorType = 'ERROR:';
-    }
-    
-    if (! $errorString) {
-      $errorString = 'Unknown Error';
-    }
-    
-    $this->mErrorMessage = $errorString;
-    
-    $this->mErrorFile = $errorFile;
-    $this->mErrorLine = $errorLine;
-    $this->mErrorContext = $errorContext;
-
-    if (! headers_sent()) {
-      if ($this->mErrorIsClient) {
-        header('HTTP/1.1 400 Bad Request');
-      } 
-      else {
-        header('HTTP/1.1 500 Internal Server Error');
-      }
-    }
-
-    $this->write();
-    
-    die();
-  }
-
-
-  /**
-   * Generate html <body>
-   *
-   * Overridden to insert error text if present
-   */
-  function writeHTMLBody()
-  {
-    $this->openElement('body');
-    if (null == $this->mErrorType) {
-      $this->writeBodyHeader();
-      $this->writeBodyContent();
-      $this->writeBodyFooter();
-    }
-    else {
-      $this->writeBodyError();
-    }
-    $this->closeElement('body');
-  }
-
-
-  /**
-   * Generate error text
-   */
-  function writeBodyError()
-  {
-    if ($this->mErrorType) {
-      $this->openElement('p');
-      $this->addElement('strong', null, $this->mErrorType);
-      if ($this->mErrorMessage) {
-        $this->addTextContent($this->mErrorMessage, FALSE);
-      }
-      $this->closeElement('p');
-    } 
-    else {
-      if ($this->mErrorMessage) {
-        $this->addElement('p', null, $this->mErrorMessage, FALSE);
-      }
-    }
-    if (defined('DEBUG_MODE') && DEBUG_MODE) {
-      if ($this->mErrorFile) {
-        $this->addElement('p', null, "File: {$this->mErrorFile}");
-      }
-      if ($this->mErrorLine) {
-        $this->addElement('p', null, "Line: {$this->mErrorLine}");
-      }
-      if ($this->mErrorContext) {
-        $this->openElement('p');
-        $this->addTextContent('Context: ');
-        $this->openElement('pre');
-        print_r($this->mErrorContext);
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
-      
-      if (0 < count($this->mGetData)) {
-        $this->openElement('p');
-        $this->addTextContent('Get: ');
-        $this->openElement('pre');
-        print_r($this->mGetData);
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
-      
-      if (0 < count($this->mPostData)) {
-        $this->openElement('p');
-        $this->addTextContent('Post: ');
-        $this->openElement('pre');
-        print_r($this->mPostData);
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
-
-      if (0 < count($this->mCookieData)) {
-        $this->openElement('p');
-        $this->addTextContent('Cookie: ');
-        $this->openElement('pre');
-        print_r($this->mCookieData);
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
-    }
-  }
 }
 
 ?>

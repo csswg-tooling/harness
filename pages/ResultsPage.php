@@ -313,14 +313,14 @@ class ResultsPage extends ResultsBasedPage
   
   function _generateResultCell($class, $uri, $content)
   {
-    $this->openElement('td', array('class' => $class));
     if ($this->mDisplayLinks) {
+      $this->openElement('td', array('class' => $class));
       $this->addHyperLink($uri, null, $content, FALSE);
+      $this->closeElement('td');
     }
     else {
-      $this->addTextContent($content, FALSE);
+      $this->addElement('td', array('class' => $class), $content, FALSE);
     }
-    $this->closeElement('td');
   }
 
   

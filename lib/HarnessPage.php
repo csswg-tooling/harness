@@ -162,6 +162,7 @@ class HarnessPage extends DynamicPage
     }
   }
   
+
   function writeContentTitle($elementName = 'h1', Array $attrs = null)
   {
     $title = $this->getContentTitle();
@@ -170,6 +171,7 @@ class HarnessPage extends DynamicPage
       $this->addElement($elementName, $attrs, $title);
     }
   }
+
 
   /**
    * Generate header section of <body>
@@ -187,22 +189,6 @@ class HarnessPage extends DynamicPage
     $this->closeElement('div');
   }
 
-  /**
-   * Generate error version of page
-   */
-  function writeBodyError()
-  {
-    if (isset($this->mSpiderTrap)) {
-      $this->mSpiderTrap->addTrapLinkTo($this);
-    }
-    
-    parent::writeBodyError();
-    
-    if (isset($this->mSpiderTrap)) {
-      $this->mSpiderTrap->addTrapLinkTo($this);
-    }
-  }
-  
 
   /**
    * Generate footer section of <body>

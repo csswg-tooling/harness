@@ -83,15 +83,15 @@ class Translate
   protected function _importSpec($spec, $specURI, $specTitle, $specDescription)
   {
     $spec = $this->mNewDB->encode($spec, SPECIFICATIONS_MAX_SPEC);
-    $specURI = $this->mNewDB->encode($specURI, SPECIFICATIONS_MAX_URI);
+    $specURI = $this->mNewDB->encode($specURI, SPECIFICATIONS_MAX_BASE_URI);
     $specTitle = $this->mNewDB->encode($specTitle, SPECIFICATIONS_MAX_TITLE);
     $specDescription = $this->mNewDB->encode($specDescription, SPECIFICATIONS_MAX_DESCRIPTION);
     
     $sql  = "INSERT INTO `specifications` ";
-    $sql .= "(`spec`, `title`, `description`, `uri`) ";
+    $sql .= "(`spec`, `title`, `description`, `base_uri`) ";
     $sql .= "VALUES ('{$spec}', '{$specTitle}', '{$specDescription}', '{$specURI}') ";
     $sql .= "ON DUPLICATE KEY UPDATE `title` = '{$specTitle}', ";
-    $sql .= "`uri` = '{$specURI}', `description` = '{$specDescription}' ";
+    $sql .= "`base_uri` = '{$specURI}', `description` = '{$specDescription}' ";
 
     $this->mNewDB->query($sql);
   }
@@ -101,7 +101,7 @@ class Translate
   {
     $spec = $this->mNewDB->encode($spec, SPECIFICATIONS_MAX_SPEC);
     
-    $sql  = "SELECT `uri` ";
+    $sql  = "SELECT `base_uri` ";
     $sql .= "FROM `specifications` ";
     $sql .= "WHERE `spec` = '{$spec}' ";
 

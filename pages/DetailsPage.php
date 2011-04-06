@@ -30,6 +30,7 @@ class DetailsPage extends ResultsBasedPage
 {  
   protected $mDisplayLinks;
   protected $mEngine;
+  protected $mUserAgents;
 
 
   /**
@@ -98,7 +99,17 @@ class DetailsPage extends ResultsBasedPage
     $this->addStyleSheetLink('report.css');
   }
 
-
+  function _compareResults(Result $a, Result $b)
+  {
+    $resultOrder = array('pass' => '0', 'fail' => '1', 'uncertain' => '2', 'invalid' => '3', 'na' => '4');
+  
+    $userAgentA = $this->mUserAgents[$a->getUserAgentId()];
+    $userAgentB = $this->mUserAgents[$b->getUserAgentId()];
+    
+    return strnatcasecmp($resultOrder[$a->getResult()] . $userAgentA->getDescription() . $a->getDate(), 
+                         $resultOrder[$b->getResult()] . $userAgentB->getDescription() . $b->getDate());
+  }
+  
   /**
    * Output details table
    */
@@ -123,7 +134,7 @@ class DetailsPage extends ResultsBasedPage
       $testSuiteName  = $this->mTestSuite->getName();
       
       $formats = Format::GetFormatsFor($this->mTestSuite);
-      $userAgents = UserAgent::GetAllUserAgents();
+      $this->mUserAgents = UserAgent::GetAllUserAgents();
       
       $testCases = $this->mResults->getTestCases();
       foreach ($testCases as $testCaseId => $testCaseData) {
@@ -136,14 +147,18 @@ class DetailsPage extends ResultsBasedPage
           
           foreach ($engineResults as $engine => $engineResultData) {
             if ((! $this->mEngine) || ($engine == $this->mEngine)) {
-              asort($engineResultData);
+              $results = array();
+              foreach ($engineResultData as $resultId => $resultValue) {
+                $results[] = new Result($resultId);
+              }
+              uasort($results, array($this, '_compareResults'));
               
-              foreach ($engineResultData as  $resultId => $resultValue) {
+              foreach ($results as $result) {
+                $resultValue = $result->getResult();
+
                 $this->openElement('tr', array('class' => $resultValue));
 
-                $result = new Result($resultId);
-                
-                $userAgent = $userAgents[$result->getUserAgentId()];
+                $userAgent = $this->mUserAgents[$result->getUserAgentId()];
                 $sourceId = $result->getSourceId();
                 if ($sourceId) {
                   $user = new User($sourceId);

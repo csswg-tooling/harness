@@ -18,6 +18,7 @@
 
 require_once('lib/CmdLineWorker.php');
 require_once('lib/TestSuite.php');
+require_once('lib/Specification.php');
 require_once('lib/Results.php');
 require_once('pages/ResultsPage.php');
 require_once('pages/DetailsPage.php');
@@ -37,6 +38,15 @@ class IR_ResultsPage extends ResultsPage
   }
   
   
+  function getStats()
+  {
+    return array('testCount' => $this->mTestCaseRequiredCount, 
+                 'passCount' => $this->mTestCaseRequiredPassCount,
+                 'optionalCount' => $this->mTestCaseOptionalCount,
+                 'optionalPassCount' => $this->mTestCaseOptionalPassCount);
+  }
+  
+  
   function writeBodyHeader()
   {
     $this->openElement('div', array('class' => 'header'));
@@ -47,6 +57,7 @@ class IR_ResultsPage extends ResultsPage
     
     $this->closeElement('div');
   }
+  
   
   function writeBodyFooter()
   {
@@ -101,10 +112,18 @@ class IR_DetailsPage extends DetailsPage
 
   
 class IR_UserAgentPage extends ResultsBasedPage
-{  
+{
+  protected $mUserAgents;
+  
   function __construct(Array $args = null)
   {
     parent::__construct($args);
+  }
+  
+  
+  function setUserAgents($userAgents)
+  {
+    $this->mUserAgents = $userAgents;
   }
   
   
@@ -136,40 +155,20 @@ class IR_UserAgentPage extends ResultsBasedPage
       $this->addElement('p', null, 'No results entered matching this query.');
     } 
     else {
-      
-      $userAgentIds = array();
-      $testCases = $this->mResults->getTestCases();
-      foreach ($testCases as $testCaseId => $testCaseData) {
-        $engineResults = $this->mResults->getResultsFor($testCaseId);
-        
-        if ($engineResults) {
-          foreach ($engineResults as $engine => $engineResultData) {
-            foreach ($engineResultData as  $resultId => $resultValue) {
-              $result = new Result($resultId);
-              $userAgentIds[$engine][$result->getUserAgentId()] = TRUE;
-            }
-          }
-        }
-      }
-      
-      $userAgents = UserAgent::GetAllUserAgents();
-      
       $this->openElement('ul');
       foreach ($this->mResults->getEngines() as $engine) {
-        if (array_key_exists($engine, $userAgentIds)) {
+        if (array_key_exists($engine, $this->mUserAgents)) {
           $this->addElement('li', null, $engine);
           $this->openElement('ul');
-          $engineUserAgentIds = $userAgentIds[$engine];
-          /// XXX sort ?
-          foreach ($engineUserAgentIds as $userAgentId => $bool) {
-            $userAgent = $userAgents[$userAgentId];
+          $engineUserAgents = $this->mUserAgents[$engine];
+          uasort($engineUserAgents, array('UserAgent', 'CompareDescription'));
+          foreach ($engineUserAgents as $userAgent) {
             $this->openElement('li');
             $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
             $this->closeElement('li');
           }
           $this->closeElement('ul');
         }
-        
       }
       $this->closeElement('ul');
     }
@@ -180,12 +179,270 @@ class IR_UserAgentPage extends ResultsBasedPage
   {
   }  
 }
+
+
+class IR_IndexPage extends HarnessPage
+{
+  protected $mSpec;
+  protected $mUserAgents;
+  protected $mStats;
+  protected $mEngines;
   
+  function __construct(Array $args = null)
+  {
+    parent::__construct($args);
+    
+    $this->mSpec = new Specification($this->mTestSuite->getSpecName());
+  }
+  
+  
+  function setUserAgents($userAgents)
+  {
+    $this->mUserAgents = $userAgents;
+  }
+  
+  function setStats(Array $stats)
+  {
+    $this->mStats = $stats;
+  }
+  
+  function setEngines(Array $engines)
+  {
+    $this->mEngines = $engines;
+  }
+  
+  function getPageTitle()
+  {
+    $title = $this->mSpec->getTitle();
+    $desc = $this->mSpec->getDescription();
+    return "{$desc} ({$title}) Implementation Report";
+  }
+  
+  
+  function writeHeadStyle()
+  {
+    parent::writeHeadStyle();
+    
+    $this->addStyleSheetLink('http://www.w3.org/StyleSheets/activity.css');
+    $this->addStyleElement('li:hover { background: #FFC; }');
+  }
+
+
+  function writeHTMLBody()
+  {
+    $this->openElement('body');
+    $this->openElement('div', array('id' => 'Contents'));
+    $this->writeBodyHeader();
+    $this->writeBodyContent();
+    $this->closeElement('div');
+    $this->writeBodyFooter();
+    $this->closeElement('body');
+  }
+
+  function writeBodyHeader()
+  {
+    $this->openElement('h1');
+    $this->writeLargeW3CLogo();
+    $this->addElement('br');
+    $this->addTextContent($this->getPageTitle());
+    $this->closeElement('h1');
+  }
+  
+  
+  function numberToText($number)
+  {
+    $numbers = array('zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+                     'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen');
+    $tens = array('', 'ten', 'twenty', 'thirty', 'fourty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety');
+    $zillions = array(1000000000 => 'billion', 1000000 => 'million', 1000 => 'thousand');
+    
+    $text = '';
+    if ($number < 0) {
+      $text = 'negative ';
+      $number = abs($number);
+    }
+    
+    foreach ($zillions as $value => $name) {
+      if ($value <= $number) {
+        $text .= $this->numberToText(intval($number / $value)) . ' ' . $name . ' ';
+        $number = $number % $value;
+      }
+    }
+    if (99 < $number) {
+      $text .= $numbers[intval($number / 100)] . ' hundred ';
+      $number = $number % 100;
+    }
+    if (19 < $number) {
+      $text .= $tens[intval($number / 10)] . ' ';
+      $number = $number % 10;
+    }
+    if ((0 < $number) || ($text = '')) {
+      $text .= $numbers[$number];
+    }
+    
+    return rtrim($text);
+  }
+  
+  
+  function countBrowsers()
+  {
+    $browsers = array();
+    
+    foreach ($this->mEngines as $engine) {
+      if (array_key_exists($engine, $this->mUserAgents)) {
+        $engineUserAgents = $this->mUserAgents[$engine];
+        foreach ($engineUserAgents as $userAgent) {
+          $browsers[$userAgent->getBrowser()] = TRUE;
+        }
+      }
+    }
+
+    return count($browsers);
+  }
+  
+  
+  function countPlatforms()
+  {
+    $platforms = array();
+    
+    foreach ($this->mEngines as $engine) {
+      if (array_key_exists($engine, $this->mUserAgents)) {
+        $engineUserAgents = $this->mUserAgents[$engine];
+        foreach ($engineUserAgents as $userAgent) {
+          $platform = $userAgent->getPlatform();
+          if ($platform) {
+            $platforms[$platform] = TRUE;
+          }
+        }
+      }
+    }
+
+    return count($platforms);
+  }
+  
+  
+  /**
+   * Output user agent list
+   */
+  function writeBodyContent()
+  {
+    extract($this->mStats);
+    
+    $totalCount = $testCount + $optionalCount;
+    $formats = Format::GetFormatsFor($this->mTestSuite);
+
+    $this->addElement('h2', array('id' => 'intro'), 'Introduction');
+    
+    $this->openElement('p');
+    $this->addTextContent('This report was prepared to document the passing of the Candidate Recommendation exit criteria for the ');
+    $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
+    $this->addTextContent(" ({$this->mSpec->getTitle()}) specification.");
+    $this->closeElement('p');
+
+    $this->addElement('h2', array('id' => 'impls'), 'Implementations');
+    
+    $browserCountText = $this->numberToText($this->countBrowsers());
+    $engineCountText = $this->numberToText(count($this->mEngines));
+    $osCount = $this->countPlatforms();
+    
+    $this->openElement('p');
+    $osText = ((1 < $osCount) ? " across " . $this->numberToText($osCount) . " operating systems" : '');
+    $this->addTextContent(ucfirst("{$browserCountText} user agents, built from {$engineCountText} rendering implementations, were tested{$osText}."));
+    $this->closeElement('p');
+    $this->openElement('ul');
+    $this->openElement('li');
+    $this->addHyperlink('useragents.html', null, 'Complete list of user agents tested');
+    $this->closeElement('li');
+    $this->closeElement('ul');
+
+    $this->addElement('h2', array('id' => 'tests'), 'Tests');
+    
+    $this->openElement('p', null, FALSE);
+    $this->addTextContent('The ');
+    $this->addHyperlink($this->mTestSuite->getHomeURI(), null, $this->mTestSuite->getDateTime()->format('j F Y'));
+    $optionalText = ((0 < $optionalCount) ? ", {$optionalCount} of which test for optional behavior" : '');
+    $this->addTextContent(" revision of the {$this->mSpec->getTitle()} test suite was used. The test suite consists of {$totalCount} tests{$optionalText}.");
+    $this->closeElement('p');
+
+    if (1 < count($formats)) {
+      $this->addElement('p', null, 'These tests are available in several host language variants:');
+      $this->openElement('ul');
+      foreach ($formats as $format) {
+        $this->openElement('li');
+        $this->addHyperlink($this->mTestSuite->getBaseURI() . $format->getHomeURI(), null, $format->getDescription());
+        $this->closeElement('li');
+      }
+      $this->closeElement('ul');
+      $this->addElement('p', null, "Some tests only apply to certain language variants; the results for each tested implementation are reported for each tested language variant. Also, not all tests are applicable to each implementation; for example, a browser which implements HTML but not XHTML is not tested for XHTML.");
+    }
+
+    $this->addElement('h2', array('id' => 'results'), 'Results');
+   
+    $testCountText = (($passCount == $testCount) ? "all {$testCount}" : "{$passCount} of {$testCount}");
+    if (0 < $optionalCount) {
+      $requiredText = ' for required behavior';
+      if (0 < $optionalPassCount) {
+        if (1 == $optionalCount) {
+          $optionalText = " In addition, the 1 test for optional behavior was passed by at least two of the tested implementations.";
+        }
+        else {
+          if ($optionalPassCount == $optionalCount) {
+            if (2 == $optionalCount) {
+              $optionalCountText = 'both';
+            }
+            else {
+              $optionalCountText = "all {$optionalCount}";
+            }
+          }
+          else {
+            $optionalCountText = "{$optionalPassCount} of {$optionalCount}";
+          }
+          $optionalText = " In addition, {$optionalCountText} tests for optional behavior were passed by at least two of the tested implementations.";
+        }
+      }
+      else {
+        $optionalText = " No tests for optional behavior were passed by at least two of the tested implementations.";
+      }
+    }
+    else {
+      $requiredText = '';
+      $optionalText = '';
+    }
+    $this->addElement('p', null, "In summary, the results show that {$testCountText} tests{$requiredText} were passed by at least two of the tested implementations.{$optionalText}");
+    
+    $this->openElement('p', null, FALSE);
+    $this->addTextContent('Results were gathered from implementation reports submitted by user agent vendors as well as the general public via the ');
+    $this->addHyperlink('http://test.csswg.org/harness/', null, 'W3C Conformance Test Harness');
+    $this->addTextContent('.');
+    $this->closeElement('p');
+    
+    $this->openElement('ul');
+    $this->openElement('li');
+    $this->addHyperlink('results.html', null, 'Summary table of test result counts per rendering implementation');
+    $this->closeElement('li');
+    $this->addElement('li', null, 'Detailed results for each rendering implementation');
+    $this->openElement('ul');
+    foreach ($this->mEngines as $engine) {
+      $this->openElement('li');
+      $this->addHyperlink(strtolower("details_{$engine}.html"), null, $engine);
+      $this->closeElement('li');
+    }
+    $this->closeElement('ul');
+    $this->closeElement('ul');
+  }
+  
+  
+  function writeBodyFooter()
+  {
+    $this->addElement('hr');
+    $this->addElement('address', null, '$Id$');
+  }  
+}
+
 
 /**
- * This class exports the results database into a csv file
+ * This class generates a formal implementation report for the test suite
  *
- * This is meant to be run from by a periodic cron job or on the command line
  */
 class GenerateImplementationReport extends CmdLineWorker
 {
@@ -202,6 +459,41 @@ class GenerateImplementationReport extends CmdLineWorker
   }
   
   
+  function findUserAgents(Results $results)
+  {
+    $userAgents = array();
+    $userAgentIds = array();
+    
+    $testCases = $results->getTestCases();
+    foreach ($testCases as $testCaseId => $testCaseData) {
+      $engineResults = $results->getResultsFor($testCaseId);
+      
+      if ($engineResults) {
+        foreach ($engineResults as $engine => $engineResultData) {
+          foreach ($engineResultData as  $resultId => $resultValue) {
+            $result = new Result($resultId);
+            $userAgentIds[$engine][$result->getUserAgentId()] = TRUE;
+          }
+        }
+      }
+    }
+    
+    $allUserAgents = UserAgent::GetAllUserAgents();
+    
+    foreach ($results->getEngines() as $engine) {
+      if (array_key_exists($engine, $userAgentIds)) {
+        $engineUserAgentIds = $userAgentIds[$engine];
+        foreach ($engineUserAgentIds as $userAgentId => $bool) {
+          $userAgent = $allUserAgents[$userAgentId];
+          $userAgents[$engine][] = $userAgent;
+        }
+      }
+    }
+    
+    return $userAgents;
+  }
+  
+  
   /**
    * Generate implementation report pages
    *
@@ -210,7 +502,9 @@ class GenerateImplementationReport extends CmdLineWorker
   {
     $testSuite = new TestSuite($testSuiteName);
     if ($outputPath) {
-      mkdir($outputPath, 0777, TRUE);
+      if (! file_exists($outputPath)) {
+        mkdir($outputPath, 0777, TRUE);
+      }
     }
     else {
       $outputPath = '';
@@ -230,14 +524,25 @@ class GenerateImplementationReport extends CmdLineWorker
       $resultsPage->setResults($results);
       $resultsPage->write($this->_combinePath($outputPath, 'results.html'));
       
+      echo "Finding User Agents\n";
+
+      $userAgents = $this->findUserAgents($results);
       
-      echo "Generating User Agent Page\n";
+      echo "Generating index page\n";
+      
+      $indexPage = new IR_IndexPage($args);
+      $indexPage->setStats($resultsPage->getStats());
+      $indexPage->setEngines($results->getEngines());
+      $indexPage->setUserAgents($userAgents);
+      $indexPage->write($this->_combinePath($outputPath, 'index.html'));
+
+      echo "Generating User Agent page\n";
       
       $uaPage = new IR_UserAgentPage($args);
       $uaPage->setResults($results);
+      $uaPage->setUserAgents($userAgents);
       $uaPage->write($this->_combinePath($outputPath, 'useragents.html'));
 
-      
       $engines = $results->getEngines();
       foreach ($engines as $engine) {
         echo "Generating details page for {$engine}\n";
@@ -248,8 +553,11 @@ class GenerateImplementationReport extends CmdLineWorker
         $detailsPage->write($this->_combinePath($outputPath, strtolower("details_{$engine}.html")));
       }
       
-      // XXX copy stylesheets
-      // XXX generate index page
+      // copy stylesheets
+      if ($outputPath) {
+        copy('base.css', $this->_combinePath($outputPath, 'base.css'));
+        copy('report.css', $this->_combinePath($outputPath, 'report.css'));
+      }
     }
   }
 }

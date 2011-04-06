@@ -153,7 +153,7 @@ class TestCase extends DBConnection
       $specName = $this->encode($this->mTestSuite->getSpecName(), SPECLINKS_MAX_SPEC);
 
       $sql  = "SELECT `speclinks`.`spec`, `speclinks`.`title`, `speclinks`.`section`, `speclinks`.`uri`, ";
-      $sql .= "`specifications`.`uri` AS `spec_uri`, ";
+      $sql .= "`specifications`.`base_uri` AS `spec_uri`, ";
       $sql .= "`specifications`.`title` AS `spec_title` ";
       $sql .= "FROM `speclinks` ";
       $sql .= "LEFT JOIN (`testlinks`, `specifications`) ";

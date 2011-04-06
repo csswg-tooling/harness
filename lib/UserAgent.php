@@ -47,6 +47,30 @@ class UserAgent extends DBConnection
     }
     return $userAgents;
   }
+  
+  
+  /**
+   * Sorting callback functions
+   */
+  static function CompareUAString(UserAgent $a, UserAgent $b)
+  {
+    return strnatcasecmp($a->getUAString(), $b->getUAString());
+  }
+
+  static function CompareEngine(UserAgent $a, UserAgent $b)
+  {
+    return strnatcasecmp($a->getEngine() . $a->getEngineVersion(), $b->getEngine() . $b->getEngineVersion());
+  }
+
+  static function CompareBrowser(UserAgent $a, UserAgent $b)
+  {
+    return strnatcasecmp($a->getBrowser() . $a->getBrowserVersion(), $b->getBrowser() . $b->getBrowserVersion());
+  }
+
+  static function CompareDescription(UserAgent $a, UserAgent $b)
+  {
+    return strnatcasecmp($a->getDescription(), $b->getDescription());
+  }
 
 
   /**
@@ -243,6 +267,46 @@ class UserAgent extends DBConnection
     return $result;
   }
   
+  protected function _parsePlatform($platformString, &$platform, &$platformVersion)
+  {
+    if ((0 === stripos($platformString, 'Linux')) || 
+        (0 === stripos($platformString, 'Unix')) ||
+        (0 === stripos($platformString, 'Android')) ||
+        (0 === stripos($platformString, 'Windows')) ||
+        (0 === stripos($platformString, 'Macintosh')) ||
+        (0 === stripos($platformString, 'Chromium')) ||
+        (0 === stripos($platformString, 'OpenBSD')) ||
+        (0 === stripos($platformString, 'FreeBSD')) ||
+        (0 === stripos($platformString, 'WebOS'))) {
+      $spaceIndex = strpos($platformString, ' ');
+      if (FALSE === $spaceIndex) {
+        $platform = $platformString;
+      }
+      else {
+        $platform = substr($platformString, 0, $spaceIndex);
+        $platformVersion = substr($platformString, $spaceIndex + 1);
+      }
+    }
+    if ((FALSE !== stripos($platformString, 'Mac OS X')) && ('iOS' != $platform)) {
+      $platform = 'Mac OS X';
+      $spaceIndex = strpos($platformString, ' ');
+      $platformVersion = substr($platformString, 0, $spaceIndex) . substr($platformString, $spaceIndex + 9);
+      $platformVersion = str_replace('_', '.', $platformVersion);
+    }
+    if ((0 === stripos($platformString, 'iPad')) ||
+        (0 === stripos($platformString, 'iPhone')) ||
+        (0 === stripos($platformString, 'iPod'))) {
+      $platform = 'iOS';
+    }
+    if (FALSE !== stripos($platformString, ' like Mac OS X')) {
+      $osIndex = stripos($platformString, 'OS ');
+      if (FALSE !== $osIndex) {
+        $platformVersion = substr($platformString, $osIndex + 3, -14);
+        $platformVersion = str_replace('_', '.', $platformVersion);
+      }
+    }
+  }
+  
   /**
    * Determine Browser, Browser Version, Engine, Engine Version and Platform
    * from User Agent string
@@ -312,27 +376,12 @@ class UserAgent extends DBConnection
     
     // find platform in initial comment
     if (is_array($comment)) {
-      foreach($comment as $commentChunk) {
-        if ((0 === stripos($commentChunk, 'Linux')) || 
-            (0 === stripos($commentChunk, 'Unix')) ||
-            (0 === stripos($commentChunk, 'Android')) ||
-            (0 === stripos($commentChunk, 'Windows')) ||
-            (0 === stripos($commentChunk, 'Macintosh')) ||
-            (0 === stripos($commentChunk, 'Chromium')) ||
-            (0 === stripos($commentChunk, 'OpenBSD')) ||
-            (0 === stripos($commentChunk, 'FreeBSD')) ||
-            (0 === stripos($commentChunk, 'WebOS'))) {
-          $platform = $commentChunk;
-        }
-        if ((0 === stripos($commentChunk, 'iPad')) ||
-            (0 === stripos($commentChunk, 'iPhone')) ||
-            (0 === stripos($commentChunk, 'iPod'))) {
-          $platform = "iOS";
-        }
+      foreach ($comment as $commentChunk) {
+        $this->_parsePlatform($commentChunk, $platform, $platformVersion);
       }
     }
     else {
-      $platform = $comment;
+      $this->_parsePlatform($comment, $platform, $platformVersion);
     }
     
     // find engine and possibly browser
@@ -377,13 +426,15 @@ class UserAgent extends DBConnection
           $engine = 'WebToPDF';
           $browser = 'WebToPDF.NET';
           $browserVersion = $version;
+          $platform = 'Windows';
         }
       }
       if (0 === stripos($product, 'Version')) {
         $browserVersion = $version;
       }
       if ((0 === stripos($product, 'Midori')) ||
-          (0 === stripos($product, 'Iceweasel'))) {
+          (0 === stripos($product, 'Iceweasel')) ||
+          (0 === stripos($product, 'WebToPDF.NET'))) {
         $browser = $product;
         $browserVersion = $version;
       }
@@ -420,12 +471,21 @@ class UserAgent extends DBConnection
     if (0 === stripos($engine, 'WebToPDF')) {
       $engine = 'WebToPDF';
     }
+    if (0 === stripos($browser, 'Firefox')) {
+      $browser = 'Firefox';
+    }
+
+    if (! $engine) {
+      $engine = $browser;
+      $engineVersion = $browserVersion;
+    }
     
     $result['engine'] = $engine;
     $result['engine_version'] = $engineVersion;
     $result['browser'] = $browser;
     $result['browser_version'] = $browserVersion;
     $result['platform'] = $platform;
+    $result['platform_version'] = $platformVersion;
     return $result;
   }
 
@@ -436,7 +496,7 @@ class UserAgent extends DBConnection
   {
     if ((! isset($this->mInfo['id'])) && (isset($this->mInfo['useragent']))) {
       $sql  = "INSERT INTO `useragents` ";
-      $sql .= "(`useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform`) ";
+      $sql .= "(`useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform`, `platform_version`) ";
       $sql .= "VALUES (";
       $sql .= "'" . $this->encode($this->mInfo['useragent'], USERAGENTS_MAX_USERAGENT) . "',";
       $sql .= "'" . $this->encode($this->mInfo['engine'], USERAGENTS_MAX_ENGINE) . "',";
@@ -444,6 +504,7 @@ class UserAgent extends DBConnection
       $sql .= "'" . $this->encode($this->mInfo['browser'], USERAGENTS_MAX_BROWSER) . "',";
       $sql .= "'" . $this->encode($this->mInfo['browser_version'], USERAGENTS_MAX_BROWSER_VERSION) . "',";
       $sql .= "'" . $this->encode($this->mInfo['platform'], USERAGENTS_MAX_PLATFORM) . "'";
+      $sql .= "'" . $this->encode($this->mInfo['platform_version'], USERAGENTS_MAX_PLATFORM_VERSION) . "'";
       $sql .= ")";
       $r = $this->query($sql);
       $this->mInfo['id'] = $this->lastInsertId();
@@ -468,7 +529,8 @@ class UserAgent extends DBConnection
       $sql .= "`engine_version` = '" . $this->encode($ua['engine_version'], USERAGENTS_MAX_ENGINE_VERSION) . "', ";
       $sql .= "`browser` = '" . $this->encode($ua['browser'], USERAGENTS_MAX_BROWSER) . "', ";
       $sql .= "`browser_version` = '" . $this->encode($ua['browser_version'], USERAGENTS_MAX_BROWSER_VERSION) . "', ";
-      $sql .= "`platform` = '" . $this->encode($ua['platform'], USERAGENTS_MAX_PLATFORM) . "' ";
+      $sql .= "`platform` = '" . $this->encode($ua['platform'], USERAGENTS_MAX_PLATFORM) . "', ";
+      $sql .= "`platform_version` = '" . $this->encode($ua['platform_version'], USERAGENTS_MAX_PLATFORM_VERSION) . "' ";
       $sql .= "WHERE `id` = '{$id}' ";
       $r = $this->query($sql);
 
@@ -489,7 +551,7 @@ class UserAgent extends DBConnection
         $description .= ' ' . $this->getBrowserVersion();
       }
       
-      if ($this->getEngine()) {
+      if ($this->getEngine() && ($this->getEngine() != $this->getBrowser())) {
         $version = '';
         if ($this->getEngineVersion()) {
           $version .= ' ' . $this->getEngineVersion();
@@ -499,6 +561,9 @@ class UserAgent extends DBConnection
 
       if ($this->getPlatform()) {
         $description .= ' on ' . $this->getPlatform();
+        if ($this->getPlatformVersion()) {
+          $description .= ' ' . $this->getPlatformVersion();
+        }
       }
     }
     else {
@@ -542,6 +607,11 @@ class UserAgent extends DBConnection
   function getPlatform()
   {
     return $this->mInfo['platform'];
+  }
+  
+  function getPlatformVersion()
+  {
+    return $this->mInfo['platform_version'];
   }
   
   function isActualUA()

@@ -145,6 +145,14 @@ class Result extends DBConnection
     return FALSE;
   }
   
+  function getDateTime()
+  {
+    if ($this->isValid()) {
+      return new DateTime($this->mInfo['modified'], new DateTimeZone(SERVER_TIME_ZONE));
+    }
+    return FALSE;
+  }
+  
 }
 
 ?>

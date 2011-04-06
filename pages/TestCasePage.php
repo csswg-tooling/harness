@@ -204,10 +204,10 @@ class TestCasePage extends HarnessPage
             $specTitle = "Spec";
           }
           if ($section) {
-            $section = self::Encode($specTitle) . ' &sect; ' . self::Encode($section);
+            $section = $this->encode($specTitle) . ' &sect; ' . $this->encode($section);
           }
           else {
-            $section = self::Encode($specTitle);
+            $section = $this->encode($specTitle);
           }
           if ($title) {
             $this->addAbbrElement($title, null, $section, FALSE);

@@ -50,9 +50,9 @@ class Results extends DBConnection
     
     $r = $this->query($sql);
     
-    $this->mEngines = array();
+    $engines = array();
     while ($dbEngine = $r->fetchRow()) {
-      $this->mEngines[] = $dbEngine['engine'];
+      $engines[] = $dbEngine['engine'];
     }
 
     // load revision equivalencies
@@ -171,6 +171,7 @@ class Results extends DBConnection
 
     $r = $this->query($sql);
 
+    $engineResults = array();
     $this->mResultCount = 0;
     $this->mResults = array();
     while ($resultData = $r->fetchRow()) {
@@ -178,13 +179,21 @@ class Results extends DBConnection
       $revision   = intval($resultData['revision']);
       
       if (array_key_exists($revision, $testCaseRevisions[$testCaseId])) {
-        $engine   = $resultData['engine'];
+        $engine = $resultData['engine'];
         if ('' != $engine) {
+          $engineResults[$engine] = TRUE;
           $resultId = intval($resultData['id']);
           $result   = $resultData['result'];
           $this->mResults[$testCaseId][$engine][$resultId] = $result;
           $this->mResultCount++;
         }
+      }
+    }
+    
+    $this->mEngines = array();
+    foreach ($engines as $engine) {
+      if (array_key_exists($engine, $engineResults)) {
+        $this->mEngines[] = $engine;
       }
     }
   }

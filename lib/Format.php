@@ -104,6 +104,34 @@ class Format extends DBConnection
 
 
   /**
+   * Get desciption for format
+   *
+   * @return string|null description of format
+   */
+  function getDescription()
+  {
+    if ($this->_isValid()) {
+      return $this->mInfo['description'];
+    }
+    return null;
+  }
+
+
+  /**
+   * Get home uri for format
+   *
+   * @return string|null home uri of format
+   */
+  function getHomeURI()
+  {
+    if ($this->_isValid()) {
+      return $this->mInfo['home_uri'];
+    }
+    return null;
+  }
+
+
+  /**
    * Get extension for format
    *
    * @return string|null extension of format

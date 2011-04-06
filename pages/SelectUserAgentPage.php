@@ -65,7 +65,7 @@ class SelectUserAgentPage extends HarnessPage
       }
       $engines[$engine][] = $userAgent;
     }
-    ksort($engines);
+    uksort($engines, 'strnatcasecmp');
     return $engines;
   }
   
@@ -79,7 +79,7 @@ class SelectUserAgentPage extends HarnessPage
       }
       $browsers[$browser][] = $userAgent;
     }
-    ksort($browsers);
+    uksort($browsers, 'strnatcasecmp');
     return $browsers;
   }
   
@@ -92,7 +92,7 @@ class SelectUserAgentPage extends HarnessPage
       }
       $platforms[$platform][] = $userAgent;
     }
-    ksort($platforms);
+    uksort($platforms, 'strnatcasecmp');
     return $platforms;
   }
 
@@ -113,6 +113,7 @@ class SelectUserAgentPage extends HarnessPage
                       "pages in the harness, but only on results as observed in the other user agent.");
     
     $userAgents = UserAgent::GetAllUserAgents();
+    uasort($userAgents, array('UserAgent', 'CompareUAString'));
 
     if (0 < count($userAgents)) {
       $userAgents = $this->_splitByEngine($userAgents);
