@@ -22,6 +22,8 @@ require_once("lib/CmdLineWorker.php");
 class GrandfatherImport extends CmdLineWorker
 {  
   protected $mDiffs;
+  protected $mOldTestCaseRevision;
+  protected $mNewTestCaseRevision;
   
   function __construct() 
   {
@@ -29,6 +31,31 @@ class GrandfatherImport extends CmdLineWorker
     
   }
   
+
+  protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)
+  {
+    parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
+
+    $revision = intval($testCaseData['revision']);
+    
+    $this->$mNewTestCaseRevision[$testCaseId] = $revision;
+  }
+
+
+  protected function _loadTestCases($testSuiteName)
+  {
+    unset ($this->$mNewTestCaseRevision);
+    $this->$mNewTestCaseRevision = array();
+    
+    return parent::_loadTestCases($testSuiteName);
+  }
+
+
+  function initFor($testSuiteName)
+  {
+    $this->_loadTestCases($testSuiteName);
+  }
+
 
   function loadDiffs($diffFile)
   {
@@ -56,13 +83,43 @@ class GrandfatherImport extends CmdLineWorker
       }
     }
   }
-  
-  
+
+
+  function loadOldRevisionInfo($manifest)
+  {
+    echo "Reading source file: {$manifest}\n";
+    $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    
+    if ((! $data) || (count($data) < 2)) {
+      die("missing or empty manifest file\n");
+    }
+    
+    $count = 0;
+    foreach ($data as $record) {
+      if (0 == $count++) {
+        if ("id\treferences\ttitle\tflags\tlinks\trevision\tcredits\tassertion" == $record) {
+          continue;
+        }
+        die("ERROR: unknown format\n");
+      }
+      list ($testCaseName, $references, $title, $flagString, $links, $revision, $credits, $assertion) = explode("\t", $record);
+      
+      $testCaseId = $this->_getTestCaseId($testCaseName);
+      
+      if ($testCaseId) {
+        $this->mOldTestCaseRevision[$testCaseId] = $revision;
+      }
+      else {
+        die("Unknown testcase: {$testCaseName}\n");
+      }
+    }
+  }
+
+
   // XXX does not handle changes in support files
-  function grandfather($testSuiteName)
+  function grandfather()
   {
     // check test cases for changes
-    $this->_loadTestCases($testSuiteName);
     
     foreach ($this->mTestCaseIds as $testCaseName => $testCaseId) {
       if (isset($this->mDiffs[$testCaseName])) {
@@ -75,16 +132,17 @@ class GrandfatherImport extends CmdLineWorker
       
       if (0 != $testCaseId) {
         if ($identical) {
-          $sql  = "UPDATE `testcases` ";
-          $sql .= "SET `grandfather` = '1', `modified` = `modified` ";
-          $sql .= "WHERE `id` = '{$testCaseId}'";
+          XXX check for all references identical
+        
+          $oldRevision = XXX;
+          $newRevision = XXX;
+        
+          $sql  = "UPDATE `revisions` ";
+          $sql .= "SET `equal_revision` = '{$oldRevision}' ";
+          $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+          $sql .= "AND `revision` = '{$newRevision}' ";
+          $this->query($sql);
         }
-        else {
-          $sql  = "UPDATE `testcases` ";
-          $sql .= "SET `grandfather` = '0', `testgroup` = 'changed', `modified` = `modified` ";
-          $sql .= "WHERE `id` = '{$testCaseId}'";
-        }
-        $this->query($sql);
       }
       else {
         exit("ERROR: unknown testcase '{$testCaseName}'\n");
@@ -108,26 +166,6 @@ class GrandfatherImport extends CmdLineWorker
       // XXX this handles added references, but does not detect removed references
       
       if (0 != $testCaseId) {
-        if (! $identical) {
-          echo "reference '{$reference}' changed\n";
-          $sql  = "UPDATE `testcases` ";
-          $sql .= "SET `grandfather` = '0', `testgroup` = 'changed', `modified` = `modified` ";
-          $sql .= "WHERE `id` = '{$testCaseId}'";
-          
-          $this->query($sql);
-          
-          // remove previously grandfathered results
-          // normally not needed, but was once used to fixup a grandfather process where reference diffs were omitted
-          $sql  = "UPDATE `results` ";
-          $sql .= "SET `ignore` = '1', `modified` = `modified` ";
-          $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
-          $sql .= "AND `original_id` != '0' ";
-          $this->query($sql);
-          $count = $this->affectedRowCount();
-          if (0 < $count) {
-            echo "{$count} results removed\n";
-          }
-        }
       }
       else {
         exit("ERROR: unknown reference '{$reference}'\n");
@@ -138,8 +176,11 @@ class GrandfatherImport extends CmdLineWorker
 
 $worker = new GrandfatherImport();
 
+$worker->initFor("CSS21_DEV");
+
 $worker->loadDiffs("out.diff");
-$worker->grandfather("CSS21_HTML_RC5");
-$worker->grandfather("CSS21_XHTML_RC5");
+$worker->loadOldRevisionInfo("testinfo.data");
+
+$worker->grandfather();
   
 ?>

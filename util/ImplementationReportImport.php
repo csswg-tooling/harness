@@ -156,7 +156,7 @@ class ImplementationReportImport extends CmdLineWorker
           $results[$testCaseId] = $result;
           $formats[$testCaseId] = $format;
           if (0 < strlen($comment)) {
-            $comments[$testCaseId] = $comment;
+            $comments[$testCaseId] = $this->encode($comment, RESULTS_MAX_COMMENT);  // encode now to test length
           }
         }
       }
