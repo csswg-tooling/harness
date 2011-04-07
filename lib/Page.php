@@ -22,8 +22,9 @@
  */
 class Page
 {
-  protected $mShouldCache;  // reset in subclass as needed
-  protected $mWriteXML;     // reset in subclass as needed
+  protected $mShouldCache;  // reset in subclass as needed before write
+  protected $mWriteXML;     // reset in subclass as needed before write
+  protected $mEncoding;     // reset in subclass as needed before write
   
   protected $mErrorIsClient;
   protected $mErrorType;
@@ -38,12 +39,13 @@ class Page
   
   private   $mOutputFile;
 
+
   /**
-   * Static helper function to decode HTML entities to UTF-8
+   * Static helper function to decode HTML entities
    */ 
-  static function Decode($string)
+  static function Decode($string, $encoding = 'utf-8')
   {
-    return html_entity_decode($string, ENT_QUOTES, 'UTF-8');
+    return html_entity_decode($string, ENT_QUOTES, $encoding);
   }
 
 
@@ -171,6 +173,7 @@ class Page
   {
     $this->mShouldCache = TRUE;
     $this->mWriteXML = FALSE;
+    $this->mEncoding = 'utf-8';
     
     $this->mElementStack = array();
     $this->mFormatStack = array();
@@ -185,17 +188,17 @@ class Page
     set_error_handler(array(&$this, 'errorHandler'));
   }
   
-
+  
   /**
    * Helper function to encode data safely for XML/HTML output
    */ 
   function encode($string)
   {
     if ($this->mWriteXML) {
-      // XXX should convert other chars to numeric entiries or leave as utf-8?
-      return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+      // XXX should convert other chars to numeric entiries or leave as is
+      return htmlspecialchars($string, ENT_QUOTES, $this->mEncoding);
     }
-    return htmlentities($string, ENT_QUOTES, 'UTF-8');
+    return htmlentities($string, ENT_QUOTES, $this->mEncoding);
   }
 
   
@@ -744,6 +747,36 @@ class Page
   
 
   /**
+   * Determine output format from client accept headers
+   */
+  protected function _determineFormatFromClient()
+  {
+    if (array_key_exists('HTTP_ACCEPT', $_SERVER)) {
+      $accept = $_SERVER['HTTP_ACCEPT'];
+      
+      if (FALSE !== stripos($accept, 'application/xhtml+xml')) {
+        $this->mWriteXML = TRUE;
+        if (preg_match('/application\/xhtml\+xml;q=0(\.[1-9]+)/i', $accept, $matches)) {
+          $xhtmlQ = $matches[1];
+          if (preg_match('/text\/html;q=0(\.[1-9]+)/i', $accept, $matches)) {
+            $htmlQ = $matches[1];
+            $this->mWriteXML = ($htmlQ <= $xhtmlQ);
+          }
+        }
+      }
+      else {
+        $this->mWriteXML = FALSE;
+      }
+    }
+  }
+  
+  protected function _determineFormatFromFileName($filePath)
+  {
+    $pathInfo = pathinfo($filePath);
+    $this->mWriteXML = (('html' == $pathInfo['extension']) || ('htm' == $pathInfo['extension']));
+  }
+
+  /**
    * Generate HTTP headers and write HTML output for this page
    */
   function write($filePath = null)
@@ -751,10 +784,16 @@ class Page
     if ($filePath) {
       $this->mOutputFile = fopen($filePath, "wb");
     }
+    
+    if ($this->mOutputFile) {
+      $this->_determineFormatFromFileName($fileName);
+    }
     else {
+      $this->_determineFormatFromClient();
       $this->writeHTTPHeaders();
     }
     
+    $this->writeDoctype();
     $this->writeHTML();
     
     if ($this->mOutputFile) {
@@ -766,7 +805,7 @@ class Page
   
   /**
    * Generate any needed HTTP headers.
-   * Redirects and cache control are autoamtically handled.
+   * Redirects, cache control and content-type are autoamtically handled.
    * Subclasses may override to provide additional headers.
    */
   function writeHTTPHeaders()
@@ -775,9 +814,18 @@ class Page
     if ($redirectURI) {
       $this->sendHTTPHeader('Location', $redirectURI);
     }
+    
     if (! $this->mShouldCache) {
       $this->sendHTTPHeader('Cache-Control', 'max-age=0');
     }
+    
+    if ($this->mWriteXML) {
+      $this->sendHTTPHeader('Content-Type', "application/xhtml+xml; charset={$this->mEncoding}");
+    }
+    else {
+      $this->sendHTTPHeader('Content-Type', "text/html; charset={$this->mEncoding}");
+    }
+    $this->sendHTTPHeader('Vary', 'Accept');
   }
 
 
@@ -789,6 +837,7 @@ class Page
   function writeDoctype()
   {
     if ($this->mWriteXML) {
+      $this->_writeLine("<?xml version='1.0' encoding='{$this->mEncoding}' ?>", FALSE, $this->_formattingOn());
       $this->_writeLine('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">', FALSE, $this->_formattingOn());
     }
     else {
@@ -804,8 +853,6 @@ class Page
    */
   function writeHTML()
   {
-    $this->writeDoctype();
-    
     if ($this->mWriteXML) {
       $attrs['xmlns'] = 'http://www.w3.org/1999/xhtml';
     }
@@ -867,7 +914,12 @@ class Page
   function writeHeadMetas()
   {
     $args['http-equiv'] = 'Content-Type';
-    $args['content'] = 'text/html; charset=utf-8';
+    if ($this->mWriteXML) {
+      $args['content'] = "application/xhtml+xml; charset={$this->mEncoding}";
+    }
+    else {
+      $args['content'] = "text/html; charset={$this->mEncoding}";
+    }
     $this->addElement('meta', $args);
   }
 
