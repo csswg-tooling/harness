@@ -815,6 +815,7 @@ class Page
         $this->mWriteXML = FALSE;
       }
     }
+    $this->mWriteXML = FALSE; // XXX disable for now (wierd FF bug with optgroups...)
   }
   
   protected function _determineFormatFromFileName($filePath)
