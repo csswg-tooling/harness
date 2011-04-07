@@ -365,6 +365,25 @@ class Page
   
   
   /**
+   * Add processing instruction to page
+   *
+   * @param string pi name
+   * @param array attribute array
+   */
+  function addPI($piName, Array $attrs = null)
+  {
+    assert('$this->mWriteXML');
+    
+    if ($this->mWriteXML) {
+      $outerFormat = $this->_formattingOn();
+      
+      $pi = $this->_buildElement($piName, $attrs);
+      $this->_writeLine('<?' . $pi . ' ?'.'>', $outerFormat, $outerFormat);
+    }
+  }
+  
+
+  /**
    * Add element to page
    *
    * @param string element name
@@ -407,8 +426,8 @@ class Page
       }
     }
   }
-  
-  
+
+
   /**
    * Open element
    *
@@ -526,10 +545,15 @@ class Page
    */
   function addStyleSheetLink($uri, Array $attrs = null)
   {
-    $attrs['rel'] = 'stylesheet';
     $attrs['href'] = $uri;
     $attrs['type'] = 'text/css';
-    $this->addElement('link', $attrs);
+    if ($this->mWriteXML) {
+      $this->addPI('xml-stylesheet', $attrs);
+    }
+    else {
+      $attrs['rel'] = 'stylesheet';
+      $this->addElement('link', $attrs);
+    }
   }
   
   
@@ -768,6 +792,7 @@ class Page
         $this->mWriteXML = FALSE;
       }
     }
+    $this->mWriteXML = FALSE; //XXX temp
   }
   
   protected function _determineFormatFromFileName($filePath)
@@ -837,7 +862,7 @@ class Page
   function writeDoctype()
   {
     if ($this->mWriteXML) {
-      $this->_writeLine("<?xml version='1.0' encoding='{$this->mEncoding}' ?>", FALSE, $this->_formattingOn());
+      $this->addPI('xml', array('version' => '1.0', 'encoding' => $this->mEncoding));
       $this->_writeLine('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">', FALSE, $this->_formattingOn());
     }
     else {
