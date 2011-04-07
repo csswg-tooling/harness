@@ -485,7 +485,7 @@ class TestCasePage extends HarnessPage
   {
     $this->openElement('div', array('class' => 'header'));
     
-    $this->mSpiderTrap->addTrapLinkTo($this);
+    $this->addSpiderTrap();
 
     $this->writeSmallW3CLogo();
     
@@ -521,7 +521,7 @@ class TestCasePage extends HarnessPage
     
     $this->writeUserAgent();
 
-    $this->mSpiderTrap->addTrapLinkTo($this);
+    $this->addSpiderTrap();
 
     $this->closeElement('div');
   }

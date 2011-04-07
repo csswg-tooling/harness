@@ -122,6 +122,7 @@ class DetailsPage extends ResultsBasedPage
     } 
     else {
       $this->openElement('table');
+      $this->openElement('tbody');
       $this->openElement('tr');
       $this->addElement('th', null, 'Test Case');
       $this->addElement('th', null, 'Format');
@@ -171,7 +172,7 @@ class DetailsPage extends ResultsBasedPage
                 $this->openElement('td');
                 
                 if ($this->mDisplayLinks) {
-                  $this->mSpiderTrap->addTrapLinkTo($this);
+                  $this->addSpiderTrap();
                 
                   $args['s'] = $testSuiteName;
                   $args['c'] = $testCaseName;
@@ -200,6 +201,7 @@ class DetailsPage extends ResultsBasedPage
           }
         }
       }
+      $this->closeElement('tbody');
       $this->closeElement('table');
     }
   }
@@ -209,6 +211,7 @@ class DetailsPage extends ResultsBasedPage
     $this->addElement('h2', null, 'Legend');
     
     $this->openElement('table', array('class' => 'legend'));
+    $this->openElement('tbody');
     
     $this->openElement('tr');
     $this->addElement('th', null, 'Row color codes');
@@ -230,6 +233,7 @@ class DetailsPage extends ResultsBasedPage
     $this->addElement('td', null, 'reported as invalid');
     $this->closeElement('tr');
     
+    $this->closeElement('tbody');
     $this->closeElement('table');
   }
   

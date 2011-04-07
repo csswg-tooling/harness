@@ -94,9 +94,22 @@ class HarnessPage extends DynamicPage
    */
   function writeHeadStyle()
   {
-    $this->addStyleElement('a.report { display: none; }'); // ensure spider trap links are hidden
+    if ($this->mSpiderTrap) {
+      $this->addStyleElement('a.report { display: none; }'); // ensure spider trap links are hidden
+    }
 
     $this->addStyleSheetLink('base.css');
+  }
+  
+  
+  /**
+   * Add spider trap link to page if enabled
+   */
+  function addSpiderTrap()
+  {
+    if ($this->mSpiderTrap) {
+      $this->mSpiderTrap->addTrapLinkTo($this);
+    }
   }
   
   
@@ -180,7 +193,8 @@ class HarnessPage extends DynamicPage
   {
     $this->openElement('div', array('class' => 'header'));
     
-    $this->mSpiderTrap->addTrapLinkTo($this);
+    $this->addSpiderTrap();
+    
     $this->writeLargeW3CLogo();
 
     $this->writeNavLinks();
@@ -209,7 +223,7 @@ class HarnessPage extends DynamicPage
     $this->addHyperLink($contactURI, null, $contactName);
     $this->closeElement('address');
     
-    $this->mSpiderTrap->addTrapLinkTo($this);
+    $this->addSpiderTrap();
   }
 }
 

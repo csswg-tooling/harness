@@ -35,6 +35,7 @@ class IR_ResultsPage extends ResultsPage
     parent::__construct($args);
     
     $this->mDisplayLinks = FALSE;
+    $this->mSpiderTrap = null;
   }
   
   
@@ -77,6 +78,7 @@ class IR_DetailsPage extends DetailsPage
     parent::__construct($args);
     
     $this->mDisplayLinks = FALSE;
+    $this->mSpiderTrap = null;
   }
   
   
@@ -118,6 +120,8 @@ class IR_UserAgentPage extends ResultsBasedPage
   function __construct(Array $args = null)
   {
     parent::__construct($args);
+
+    $this->mSpiderTrap = null;
   }
   
   
@@ -192,6 +196,7 @@ class IR_IndexPage extends HarnessPage
   {
     parent::__construct($args);
     
+    $this->mSpiderTrap = null;
     $this->mSpec = new Specification($this->mTestSuite->getSpecName());
   }
   

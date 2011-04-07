@@ -287,7 +287,7 @@ class ResultsPage extends ResultsBasedPage
     $this->openElement('td');
     
     if ($this->mDisplayLinks) {
-      $this->mSpiderTrap->addTrapLinkTo($this);
+      $this->addSpiderTrap();
 
       $args['s'] = $this->mTestSuite->getName();
       $args['c'] = $testCaseName;
@@ -327,6 +327,8 @@ class ResultsPage extends ResultsBasedPage
   function writeResultTable()
   {
     $this->openElement('table');
+    $this->openElement('tbody');
+
     $this->openElement('tr');
     $this->addElement('th', null, 'Testcase');
     foreach ($this->mResults->getEngines() as $engine) {
@@ -345,6 +347,7 @@ class ResultsPage extends ResultsBasedPage
       $this->_generateRow($testCaseName, $testCaseId, $optional);
     }
     
+    $this->closeElement('tbody');
     $this->closeElement('table');
   }
   
@@ -437,6 +440,7 @@ class ResultsPage extends ResultsBasedPage
     $this->addElement('h2', null, 'Legend');
     
     $this->openElement('table', array('class' => 'legend'));
+    $this->openElement('tbody');
     
     $this->openElement('tr');
     $this->addElement('th', null, 'Row color codes');
@@ -466,9 +470,11 @@ class ResultsPage extends ResultsBasedPage
     $this->addElement('td', null, 'not passing, but optional');
     $this->closeElement('tr');
     
+    $this->closeElement('tbody');
     $this->closeElement('table');
     
     $this->openElement('table', array('class' => 'legend'));
+    $this->openElement('tbody');
     
     $this->openElement('tr');
     $this->addElement('th', null, 'Result color codes');
@@ -502,6 +508,7 @@ class ResultsPage extends ResultsBasedPage
     $this->addElement('td', null, '# pass / # fail / # uncertain');
     $this->closeElement('tr');
     
+    $this->closeElement('tbody');
     $this->closeElement('table');
   }
   

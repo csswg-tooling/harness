@@ -77,21 +77,23 @@ class ReviewPage extends HarnessPage
   function writeHeadScript()
   {
     $script  = "onunload=function() {\n";
-    $script .= "  document.result_form.g.disabled = false;\n";
-    $script .= "  document.result_form.c.disabled = false;\n";
+    $script .= "  var resultForm = document.getElementById('result_form');";
+    $script .= "  resultForm.g.disabled = false;\n";
+    $script .= "  resultForm.c.disabled = false;\n";
     $script .= "}\n";
     $script .= "function filterTypes() {\n";
-    $script .= "  if (document.result_form.t[0].checked) {\n";
-    $script .= "    document.result_form.g.disabled = true;\n";
-    $script .= "    document.result_form.c.disabled = true;\n";
+    $script .= "  var resultForm = document.getElementById('result_form');";
+    $script .= "  if (resultForm.t[0].checked) {\n";
+    $script .= "    resultForm.g.disabled = true;\n";
+    $script .= "    resultForm.c.disabled = true;\n";
     $script .= "  }\n";
-    $script .= "  if (document.result_form.t[1].checked) {\n";
-    $script .= "    document.result_form.g.disabled = false;\n";
-    $script .= "    document.result_form.c.disabled = true;\n";
+    $script .= "  if (resultForm.t[1].checked) {\n";
+    $script .= "    resultForm.g.disabled = false;\n";
+    $script .= "    resultForm.c.disabled = true;\n";
     $script .= "  }\n";
-    $script .= "  if (document.result_form.t[2].checked) {\n";
-    $script .= "    document.result_form.g.disabled = true;\n";
-    $script .= "    document.result_form.c.disabled = false;\n";
+    $script .= "  if (resultForm.t[2].checked) {\n";
+    $script .= "    resultForm.g.disabled = true;\n";
+    $script .= "    resultForm.c.disabled = false;\n";
     $script .= "  }\n";
     $script .= "  return true;\n";
     $script .= "}\n";
@@ -122,7 +124,7 @@ class ReviewPage extends HarnessPage
     $sections = $this->mSections->getSectionData();
     
     $this->openSelectElement('g', array('style' => 'width: 25em',
-                                        'onchange' => 'document.result_form.t[1].checked = true'));
+                                        'onchange' => 'document.getElementById("result_form").t[1].checked = true'));
     $this->writeSectionOptions();
     $this->closeElement('select');
   }
@@ -133,7 +135,7 @@ class ReviewPage extends HarnessPage
     $testCases = $this->mTestCases->getTestCaseData();
     
     $this->openSelectElement('c', array('style' => 'width: 25em',
-                                        'onchange' => 'document.result_form.t[2].checked = true'));
+                                        'onchange' => 'document.getElementById("result_form").t[2].checked = true'));
 
     foreach ($testCases as $testCaseData) {
       $testCaseName = $testCaseData['testcase'];

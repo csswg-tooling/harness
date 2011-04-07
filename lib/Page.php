@@ -36,6 +36,8 @@ class Page
   private   $mElementStack;
   private   $mFormatStack;
   private   $mFormatCount;
+  private   $mPIList;
+  private   $mOutputBuffer;
   
   private   $mOutputFile;
 
@@ -178,6 +180,8 @@ class Page
     $this->mElementStack = array();
     $this->mFormatStack = array();
     $this->mFormatCount = 0;
+    $this->mPIList = array();
+    $this->mOutputBuffer = null;
     
     $this->mErrorIsClient = FALSE;
     $this->mErrorType = null;
@@ -215,6 +219,23 @@ class Page
     return self::_BuildURI($baseURI, $queryArgs, $fragId);
   }
   
+  
+  protected function _beginBuffering()
+  {
+    $this->mOutputBuffer = '';
+  }
+  
+
+  protected function _endBuffering()
+  {
+    $buffer = $this->mOutputBuffer;
+    $this->mOutputBuffer = null;
+    foreach ($this->mPIList as $pi) {
+      $this->_writeLine("<?{$pi} ?" . '>', FALSE, $this->_formattingOn());
+    }
+    $this->_writeLine($buffer, FALSE, FALSE);
+  }
+  
 
   /**
    * Output page data with optional formatting
@@ -233,15 +254,20 @@ class Page
     else {
       $break = '';
     }
-    if ($this->mOutputFile) {
-      fwrite($this->mOutputFile, $indent . $output . $break);
+    if (! is_null($this->mOutputBuffer)) {
+      $this->mOutputBuffer .= $indent . $output . $break;
     }
     else {
-      echo $indent . $output . $break;
+      if ($this->mOutputFile) {
+        fwrite($this->mOutputFile, $indent . $output . $break);
+      }
+      else {
+        echo $indent . $output . $break;
+      }
     }
   }
   
-  
+
   protected function _buildAttrs($arrayName, Array $attrs)
   {
     $output = '';
@@ -375,10 +401,7 @@ class Page
     assert('$this->mWriteXML');
     
     if ($this->mWriteXML) {
-      $outerFormat = $this->_formattingOn();
-      
-      $pi = $this->_buildElement($piName, $attrs);
-      $this->_writeLine('<?' . $pi . ' ?'.'>', $outerFormat, $outerFormat);
+      $this->mPIList[] = $this->_buildElement($piName, $attrs);
     }
   }
   
@@ -612,7 +635,7 @@ class Page
     $attrs['action'] = $uri;
     $attrs['method'] = $method;
     if ($name) {
-      $attrs['name'] = $name;
+      $attrs['id'] = $name;
     }
     $this->openElement('form', $attrs);
   }
@@ -777,13 +800,13 @@ class Page
   {
     if (array_key_exists('HTTP_ACCEPT', $_SERVER)) {
       $accept = $_SERVER['HTTP_ACCEPT'];
-      
+
       if (FALSE !== stripos($accept, 'application/xhtml+xml')) {
         $this->mWriteXML = TRUE;
         if (preg_match('/application\/xhtml\+xml;q=0(\.[1-9]+)/i', $accept, $matches)) {
-          $xhtmlQ = $matches[1];
+          $xhtmlQ = floatval($matches[1]);
           if (preg_match('/text\/html;q=0(\.[1-9]+)/i', $accept, $matches)) {
-            $htmlQ = $matches[1];
+            $htmlQ = floatval($matches[1]);
             $this->mWriteXML = ($htmlQ <= $xhtmlQ);
           }
         }
@@ -792,13 +815,12 @@ class Page
         $this->mWriteXML = FALSE;
       }
     }
-    $this->mWriteXML = FALSE; //XXX temp
   }
   
   protected function _determineFormatFromFileName($filePath)
   {
     $pathInfo = pathinfo($filePath);
-    $this->mWriteXML = (('html' == $pathInfo['extension']) || ('htm' == $pathInfo['extension']));
+    $this->mWriteXML = (('html' != $pathInfo['extension']) && ('htm' != $pathInfo['extension']));
   }
 
   /**
@@ -811,14 +833,13 @@ class Page
     }
     
     if ($this->mOutputFile) {
-      $this->_determineFormatFromFileName($fileName);
+      $this->_determineFormatFromFileName($filePath);
     }
     else {
       $this->_determineFormatFromClient();
       $this->writeHTTPHeaders();
     }
     
-    $this->writeDoctype();
     $this->writeHTML();
     
     if ($this->mOutputFile) {
@@ -870,7 +891,7 @@ class Page
     }
   }
   
-  
+
   /**
    * Generate HTML for the entire page.
    * Subclasses should generally overeide more specific methods
@@ -880,10 +901,17 @@ class Page
   {
     if ($this->mWriteXML) {
       $attrs['xmlns'] = 'http://www.w3.org/1999/xhtml';
+      $this->_beginBuffering();
     }
+
+    $this->writeDoctype();
+
     $attrs['lang'] = 'en';
     $this->openElement('html', $attrs);
     $this->writeHTMLHead();
+    if ($this->mWriteXML) {
+      $this->_endBuffering();
+    }
     $this->writeHTMLBody();
     $this->closeElement('html');
   }
@@ -1075,6 +1103,10 @@ class Page
     
     while (0 < count($this->mElementStack)) {
       $this->closeElement();
+    }
+    
+    if ($this->mWriteXML) {
+      $this->_endBuffering();
     }
     
     die();
