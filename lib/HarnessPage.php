@@ -156,7 +156,7 @@ class HarnessPage extends DynamicPage
       if ($class) {
         $attrs['class'] = $class;
       }
-      $this->openElement($elementName, $attrs);
+      $this->openElement($elementName, $attrs, FALSE);
     
       $index = -1;
       $last = (count($navURIs) - 1);
@@ -165,10 +165,10 @@ class HarnessPage extends DynamicPage
         extract($navURI); // uri, title
         if ($index < $last) {
           $this->addHyperLink($uri, null, $title);
-          $this->addTextContent(' &raquo; ', FALSE);
+          $this->addTextContent('&nbsp;&raquo; ', FALSE);
         }
         else {
-          $this->addTextContent($title);
+          $this->addElement('a', null, $title);
         }
       }
       $this->closeElement($elementName);
@@ -221,9 +221,8 @@ class HarnessPage extends DynamicPage
     $this->openElement('address');
     $this->addTextContent('Please send comments, questions, and error reports to ');
     $this->addHyperLink($contactURI, null, $contactName);
-    $this->closeElement('address');
-    
     $this->addSpiderTrap();
+    $this->closeElement('address');
   }
 }
 

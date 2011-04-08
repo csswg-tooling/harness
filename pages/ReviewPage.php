@@ -158,9 +158,9 @@ class ReviewPage extends HarnessPage
     
     $this->openFormElement(RESULTS_PAGE_URI, 'get', 'result_form', array('onSubmit' => 'return filterTypes();'));
 
-    $this->writeHiddenFormControls(TRUE);
-    
     $this->openElement('p');
+    
+    $this->writeHiddenFormControls(TRUE);
     
     $this->addInputElement('radio', 't', 0, array('checked' => TRUE));
     $this->addTextContent(' The full test suite');

@@ -20,9 +20,47 @@ img {
 p.nav {
   margin-bottom: 6pt;
 }
+p.nav a {
+  white-space: nowrap;
+}
 h1, h2, h3, h4 {
   margin: 0; padding: 0;
 }
+
+.results {
+  font-size: small;
+  float: right;
+  width: auto;
+  margin: 0 0 0 1em;
+}
+.results span {
+  padding: 1px .25em;
+  margin: 0 0.1em;
+  border: solid 1px black;
+}
+.results span.active {
+  border-bottom-width: 2px;
+}
+.results .pass {
+  background-color: #8F8;
+}
+.results .pass.fail,
+.results .pass.uncertain {
+  background-color: #BFB;
+}
+.results .fail {
+  background-color: #F66;
+}
+.results .fail.uncertain {
+  background-color: #FAA;
+}
+.results .uncertain {
+  background-color: yellow;
+}
+.results .invalid {
+  background-color: #AAA;
+}
+
 .suite {
   font: inherit; 
   font-size: 1.3em;

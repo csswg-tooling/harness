@@ -21,6 +21,7 @@ require_once("lib/TestSuite.php");
 require_once("lib/TestCase.php");
 require_once("lib/UserAgent.php");
 require_once("lib/Format.php");
+require_once('lib/Results.php');
 
 /**
  * A class for generating the page that presents a test
@@ -413,6 +414,39 @@ class TestCasePage extends HarnessPage
   }
   
 
+  function writeResults()
+  {
+    $results = new Results($this->mTestSuite, $this->mTestCase->getTestCaseName());
+    
+    $engines = $results->getEngines();
+    if (0 < count($engines)) {
+      $counts = $results->getResultCountsFor($this->mTestCase->getId());
+      
+      $this->openElement('div', array('class' => 'results'), FALSE);
+      foreach ($engines as $engine) {
+        $class = '';
+        if (0 < $counts[$engine]['uncertain']) {
+          $class = 'uncertain';
+        }
+        if (0 < $counts[$engine]['fail']) {
+          $class .= ' fail';
+        }
+        if (0 < $counts[$engine]['pass']) {
+          $class .= ' pass';
+        }
+        if (0 < $counts[$engine]['invalid']) {
+          $class = 'invalid';
+        }
+        if ($engine == $this->mUserAgent->getEngine()) {
+          $class .= ' active';
+        }
+        $this->addElement('span', array('class' => $class), $engine);
+      }
+      $this->closeElement('div');
+    }
+  }
+
+
   function writeTest()
   {
     $this->openElement('div', array('class' => 'test'));
@@ -489,6 +523,8 @@ class TestCasePage extends HarnessPage
 
     $this->writeSmallW3CLogo();
     
+    $this->writeResults();
+
     $this->writeNavLinks();
     
     $this->writeContentTitle('h1', array('class' => 'suite'));
@@ -511,7 +547,7 @@ class TestCasePage extends HarnessPage
 
     $this->writeTest();
   }
-
+  
 
   function writeBodyFooter()
   {
