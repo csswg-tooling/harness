@@ -422,6 +422,10 @@ class TestCasePage extends HarnessPage
     if (0 < count($engines)) {
       $counts = $results->getResultCountsFor($this->mTestCase->getId());
       
+      $args['s'] = $this->mTestSuite->getName();
+      $args['c'] = $this->mTestCase->getTestCaseName();
+      $args['u'] = $this->mUserAgent->getId();
+
       $this->openElement('div', array('class' => 'results'), FALSE);
       foreach ($engines as $engine) {
         $class = '';
@@ -440,7 +444,8 @@ class TestCasePage extends HarnessPage
         if ($engine == $this->mUserAgent->getEngine()) {
           $class .= ' active';
         }
-        $this->addElement('span', array('class' => $class), $engine);
+        $args['e'] = $engine;
+        $this->addHyperLink($this->buildURI(DETAILS_PAGE_URI, $args), array('class' => $class), $engine);
       }
       $this->closeElement('div');
     }

@@ -33,10 +33,11 @@ h1, h2, h3, h4 {
   width: auto;
   margin: 0 0 0 1em;
 }
-.results span {
+.results a {
   padding: 1px .25em;
   margin: 0 0.1em;
   border: solid 1px black;
+  text-decoration: none;
 }
 .results span.active {
   border-bottom-width: 2px;
