@@ -27,13 +27,28 @@ class Format extends DBConnection
 
 
   /**
-   * Load array of all known users
+   * Static function to find format name in array of names
+   * (does case insensitive search)
+   */
+  static function FormatNameInArray($formatName, $formatNames)
+  {
+    foreach ($formatNames as $name) {
+      if (0 == strcasecmp($name, $formatName)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+
+  /**
+   * Load array of all known formats
    */
   static function GetFormatsFor(TestSuite $testSuite)
   {
     $formats = array();
     
-    $testSuiteFormats = $testSuite->getFormats();
+    $testSuiteFormats = $testSuite->getFormatNames();
     
     $sql  = "SELECT * ";
     $sql .= "FROM `formats` ";
@@ -46,7 +61,7 @@ class Format extends DBConnection
       $format = $data['format'];
       
       if (in_array($format, $testSuiteFormats)) {
-        $formats[$format] = new Format($data);
+        $formats[strtolower($format)] = new Format($data);
       }
     }
     return $formats;

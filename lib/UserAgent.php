@@ -59,12 +59,12 @@ class UserAgent extends DBConnection
 
   static function CompareEngine(UserAgent $a, UserAgent $b)
   {
-    return strnatcasecmp($a->getEngine() . $a->getEngineVersion(), $b->getEngine() . $b->getEngineVersion());
+    return strnatcasecmp($a->getEngineName() . $a->getEngineVersion(), $b->getEngineName() . $b->getEngineVersion());
   }
 
   static function CompareBrowser(UserAgent $a, UserAgent $b)
   {
-    return strnatcasecmp($a->getBrowser() . $a->getBrowserVersion(), $b->getBrowser() . $b->getBrowserVersion());
+    return strnatcasecmp($a->getBrowserName() . $a->getBrowserVersion(), $b->getBrowserName() . $b->getBrowserVersion());
   }
 
   static function CompareDescription(UserAgent $a, UserAgent $b)
@@ -99,7 +99,7 @@ class UserAgent extends DBConnection
     if (isset($this->mInfo)) {  // passed a valid UA id or string
       if (array_key_exists('HTTP_USER_AGENT', $_SERVER)) {
         $uaString = $_SERVER['HTTP_USER_AGENT'];
-        if ($uaString != $this->getUAString()) {  // and it's not the actual UA
+        if (0 != strcasecmp($uaString, $this->getUAString())) {  // and it's not the actual UA
           $this->mActualUA = new UserAgent(); // capture actual UA info
         }
       }
@@ -442,7 +442,7 @@ class UserAgent extends DBConnection
     
     // no browser yet, take last product
     if ('' == $browser) {
-      if ('Mobile' == $product) {
+      if ('mobile' == strtolower($product)) {
         $product = 'Safari';
       }
       if ($mobile) {
@@ -544,23 +544,23 @@ class UserAgent extends DBConnection
    */
   function getDescription()
   {
-    if ($this->getBrowser()) {
-      $description = $this->getBrowser();
+    if ($this->getBrowserTitle()) {
+      $description = $this->getBrowserTitle();
       
       if ($this->getBrowserVersion()) {
         $description .= ' ' . $this->getBrowserVersion();
       }
       
-      if ($this->getEngine() && ($this->getEngine() != $this->getBrowser())) {
+      if ($this->getEngineTitle() && ($this->getEngineTitle() != $this->getBrowserTitle())) {
         $version = '';
         if ($this->getEngineVersion()) {
           $version .= ' ' . $this->getEngineVersion();
         }
-        $description .= " ({$this->getEngine()}{$version})";
+        $description .= " ({$this->getEngineTitle()}{$version})";
       }
 
-      if ($this->getPlatform()) {
-        $description .= ' on ' . $this->getPlatform();
+      if ($this->getPlatformTitle()) {
+        $description .= ' on ' . $this->getPlatformTitle();
         if ($this->getPlatformVersion()) {
           $description .= ' ' . $this->getPlatformVersion();
         }
@@ -584,7 +584,18 @@ class UserAgent extends DBConnection
     return $this->mInfo['useragent'];
   }
 
-  function getEngine()
+  /**
+   * Get key value for engine
+   */
+  function getEngineName()
+  {
+    return strtolower($this->mInfo['engine']);
+  }
+
+  /**
+   * Get display name for engine
+   */
+  function getEngineTitle()
   {
     return $this->mInfo['engine'];
   }
@@ -594,7 +605,18 @@ class UserAgent extends DBConnection
     return $this->mInfo['engine_version'];
   }
 
-  function getBrowser()
+  /**
+   * Get key value for browser
+   */
+  function getBrowserName()
+  {
+    return strtolower($this->mInfo['browser']);
+  }
+
+  /**
+   * Get display name for browser
+   */
+  function getBrowserTitle()
   {
     return $this->mInfo['browser'];
   }
@@ -604,7 +626,18 @@ class UserAgent extends DBConnection
     return $this->mInfo['browser_version'];
   }
 
-  function getPlatform()
+  /**
+   * Get key value for platform
+   */
+  function getPlatformName()
+  {
+    return strtolower($this->mInfo['platform']);
+  }
+  
+  /**
+   * Get display name for platform
+   */
+  function getPlatformTitle()
   {
     return $this->mInfo['platform'];
   }

@@ -106,7 +106,7 @@ class TestSuite extends DBConnection
   }
   
   
-  function getFormats()
+  function getFormatNames()
   {
     return explode(',', $this->mInfo['formats']);
   }

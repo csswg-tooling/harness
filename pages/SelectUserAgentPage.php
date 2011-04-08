@@ -17,8 +17,8 @@
  ******************************************************************************/
 
 
-require_once("lib/HarnessPage.php");
-require_once("lib/UserAgent.php");
+require_once('lib/HarnessPage.php');
+require_once('lib/UserAgent.php');
 
 /**
  * A page to select a different user agent for entering test results
@@ -59,11 +59,8 @@ class SelectUserAgentPage extends HarnessPage
   protected function _splitByEngine($userAgents)
   {
     foreach ($userAgents as $userAgent) {
-      $engine = $userAgent->getEngine();
-      if (0 == strlen($engine)) {
-        $engine = "Other";
-      }
-      $engines[$engine][] = $userAgent;
+      $engineTitle = $userAgent->getEngineTitle();
+      $engines[$engineTitle][] = $userAgent;
     }
     uksort($engines, 'strnatcasecmp');
     return $engines;
@@ -72,12 +69,12 @@ class SelectUserAgentPage extends HarnessPage
   protected function _splitByBrowser($userAgents)
   {
     foreach ($userAgents as $userAgent) {
-      $browser = $userAgent->getBrowser();
+      $browserTitle = $userAgent->getBrowserTitle();
       $browserVersion = $userAgent->getBrowserVersion();
       if (0 < strlen($browserVersion)) {
-        $browser .= ' ' . $browserVersion;
+        $browserTitle .= ' ' . $browserVersion;
       }
-      $browsers[$browser][] = $userAgent;
+      $browsers[$browserTitle][] = $userAgent;
     }
     uksort($browsers, 'strnatcasecmp');
     return $browsers;
@@ -86,11 +83,11 @@ class SelectUserAgentPage extends HarnessPage
   protected function _splitByPlatform($userAgents)
   {
     foreach ($userAgents as $userAgent) {
-      $platform = $userAgent->getPlatform();
-      if (0 == strlen($platform)) {
-        $platform = "Unknown";
+      $platformTitle = $userAgent->getPlatformTitle();
+      if (0 == strlen($platformTitle)) {
+        $platformTitle = "Unknown";
       }
-      $platforms[$platform][] = $userAgent;
+      $platforms[$platformTitle][] = $userAgent;
     }
     uksort($platforms, 'strnatcasecmp');
     return $platforms;
@@ -117,12 +114,12 @@ class SelectUserAgentPage extends HarnessPage
 
     if (0 < count($userAgents)) {
       $userAgents = $this->_splitByEngine($userAgents);
-      foreach ($userAgents as $engine => $agentsByEngine) {
-        $userAgents[$engine] = $this->_splitByBrowser($agentsByEngine);
+      foreach ($userAgents as $engineTitle => $agentsByEngine) {
+        $userAgents[$engineTitle] = $this->_splitByBrowser($agentsByEngine);
       }
-      foreach ($userAgents as $engine => $agentsByEngine) {
+      foreach ($userAgents as $engineTitle => $agentsByEngine) {
         foreach ($agentsByEngine as $browser => $agentsByBrowser) {
-          $userAgents[$engine][$browser] = $this->_splitByPlatform($agentsByBrowser);
+          $userAgents[$engineTitle][$browser] = $this->_splitByPlatform($agentsByBrowser);
         }
       }
     
@@ -137,8 +134,8 @@ class SelectUserAgentPage extends HarnessPage
       $attrs['style'] = 'width: 80%';
       $this->openSelectElement('u', $attrs);
       
-      foreach ($userAgents as $engine => $agentsByEngine) {
-        $this->openElement('optgroup', array('label' => $engine));
+      foreach ($userAgents as $engineTitle => $agentsByEngine) {
+        $this->openElement('optgroup', array('label' => $engineTitle));
         foreach ($agentsByEngine as $browser => $agentsByBrowser) {
           foreach ($agentsByBrowser as $platform => $agentsByPlatform) {
             foreach ($agentsByPlatform as $userAgent) {

@@ -32,7 +32,7 @@ require_once('lib/Flags.php');
 class Resequence extends CmdLineWorker
 {
   protected $mTestSuites;
-  protected $mEngines;
+  protected $mEngineNames;
   protected $mCounts;
 
   function __construct() 
@@ -48,10 +48,10 @@ class Resequence extends CmdLineWorker
     $passCount = 0;
     $testInvalid = FALSE;
     
-    foreach ($this->mEngines as $engine) {
-      if ($engineResults) {
-        $pass      = $engineResults[$engine]['pass'];
-        $invalid   = $engineResults[$engine]['invalid'];
+    foreach ($this->mEngineNames as $engineName) {
+      if ($engineResults && array_key_exists($engineName, $engineResults)) {
+        $pass      = $engineResults[$engineName]['pass'];
+        $invalid   = $engineResults[$engineName]['invalid'];
         if (0 < $pass) {
           $passCount++;
         }
@@ -61,12 +61,12 @@ class Resequence extends CmdLineWorker
       }
     }
     
-    foreach ($this->mEngines as $engine) {
+    foreach ($this->mEngineNames as $engineName) {
       $enginePasses = FALSE;
       $engineCount  = 0;
-      if ($engineResults && array_key_exists($engine, $engineResults)) {
-        $engineCount = ((array_key_exists('count', $engineResults[$engine])) ? $engineResults[$engine]['count'] : 0);
-        $pass = ((array_key_exists('pass', $engineResults[$engine])) ? $engineResults[$engine]['pass'] : 0);
+      if ($engineResults && array_key_exists($engineName, $engineResults)) {
+        $engineCount = ((array_key_exists('count', $engineResults[$engineName])) ? $engineResults[$engineName]['count'] : 0);
+        $pass = ((array_key_exists('pass', $engineResults[$engineName])) ? $engineResults[$engineName]['pass'] : 0);
         if (0 < $pass) {
           $enginePasses = TRUE;
         }
@@ -93,7 +93,7 @@ class Resequence extends CmdLineWorker
         }
       }
     
-      $this->mCounts[$engine][$testCaseId] = ($count + 8) + ($index / 10000000);
+      $this->mCounts[$engineName][$testCaseId] = ($count + 8) + ($index / 10000000);
     }
   }
   
@@ -131,7 +131,8 @@ class Resequence extends CmdLineWorker
 
       print "Processing results\n";
       
-      $this->mEngines = $results->getEngines();
+      $this->mEngineNames = $results->getEngineNames();
+      $this->mEngineNames[] = '-no-data-';  // magic engine name for engines with no result data
       $testCases = $results->getTestCases();
       
       $index = 0;
@@ -148,19 +149,19 @@ class Resequence extends CmdLineWorker
       
       $testSuiteName = $this->encode($testSuiteName, TESTSEQUENCE_MAX_TESTSUITE);
       
-      foreach ($this->mEngines as $engine) {
-        print "Storing sequence for {$engine}\n";
+      foreach ($this->mEngineNames as $engineName) {
+        print "Storing sequence for {$engineName}\n";
         
-        $engineCounts = $this->mCounts[$engine];
+        $engineCounts = $this->mCounts[$engineName];
         asort($engineCounts);
-        $engine = $this->encode($engine, TESTSEQUENCE_MAX_ENGINE);
+        $engineName = $this->encode($engineName, TESTSEQUENCE_MAX_ENGINE);
         $sequence = -1;
         foreach ($engineCounts as $testCaseId => $count) {
           $sequence++;
           
           $sql  = "INSERT INTO `testsequence` ";
           $sql .= "(`testsuite`, `engine`, `testcase_id`, `sequence`) ";
-          $sql .= "VALUES ('{$testSuiteName}', '{$engine}', '{$testCaseId}', '{$sequence}') ";
+          $sql .= "VALUES ('{$testSuiteName}', '{$engineName}', '{$testCaseId}', '{$sequence}') ";
           $sql .= "ON DUPLICATE KEY UPDATE `sequence` = '{$sequence}' ";
 
           $this->query($sql);

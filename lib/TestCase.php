@@ -105,12 +105,12 @@ class TestCase extends DBConnection
       $sql .= "FROM `references` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
       
-      $formats = $this->mTestSuite->getFormats();
+      $formatNames = $this->mTestSuite->getFormatNames();
       
       $r = $this->query($sql);
       while ($referenceData = $r->fetchRow()) {
-        $format = $referenceData['format'];
-        if (in_array($format, $formats)) {
+        $formatName = $referenceData['format'];
+        if (Format::FormatNameInArray($formatName, $formatNames)) {
           $this->mReferences[] = $referenceData;
         }
       }
@@ -128,16 +128,16 @@ class TestCase extends DBConnection
       $sql .= "FROM `testpages` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
       
-      $formats = $this->mTestSuite->getFormats();
+      $formatNames = $this->mTestSuite->getFormatNames();
 
       $r = $this->query($sql);
       while ($uriData = $r->fetchRow()) {
-        $format = $uriData['format'];
+        $formatName = $uriData['format'];
         
-        if (in_array($format, $formats)) {
-          $uri    = $uriData['uri'];
+        if (Format::FormatNameInArray($formatName, $formatNames)) {
+          $uri = $uriData['uri'];
         
-          $this->mURIs[$format] = $uri;
+          $this->mURIs[strtolower($formatName)] = $uri;
         }
       }
     }
@@ -208,18 +208,28 @@ class TestCase extends DBConnection
   protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $engine = $this->encode($userAgent->getEngine(), TESTSEQUENCE_MAX_ENGINE);
+    $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
     $index = intval($index);
     
-    if (1 == $order) {  // if engine isn't sequenced, use normal ordering
+    if (1 == $order) {  // if engine isn't sequenced, use magic engine name
       $sql  = "SELECT * FROM `testsequence` ";
-      $sql .= "WHERE `engine` = '{$engine}' ";
+      $sql .= "WHERE `engine` = '{$engineName}' ";
       $sql .= "AND `testsuite` = '{$testSuiteName}' ";
       $sql .= "LIMIT 0, 1";
 
       $r = $this->query($sql);
-      if (0 == $r->rowCount()) {
-        $order = 0;
+      if (0 == $r->rowCount()) {  // if magic engine isn't sequenced, use normal ordering
+        $engineName = $this->encode('-no-data-', TESTSEQUENCE_MAX_ENGINE);
+        
+        $sql  = "SELECT * FROM `testsequence` ";
+        $sql .= "WHERE `engine` = '{$engineName}' ";
+        $sql .= "AND `testsuite` = '{$testSuiteName}' ";
+        $sql .= "LIMIT 0, 1";
+
+        $r = $this->query($sql);
+        if (0 == $r->rowCount()) {
+          $order = 0;
+        }
       }
     }
     
@@ -237,7 +247,7 @@ class TestCase extends DBConnection
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
     if (1 == $order) {
-      $sql .= "AND `testsequence`.`engine` = '{$engine}' ";
+      $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
     $sql .= ") GROUP BY `id` ";
@@ -297,19 +307,29 @@ class TestCase extends DBConnection
                                             UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $engine = $this->encode($userAgent->getEngine(), TESTSEQUENCE_MAX_ENGINE);
+    $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
     $specLinkId = intval($specLinkId);
     $index = intval($index);
     
-    if (1 == $order) {  // if engine isn't sequenced, use normal ordering
+    if (1 == $order) {  // if engine isn't sequenced, use magic engine name
       $sql  = "SELECT * FROM `testsequence` ";
-      $sql .= "WHERE `engine` = '{$engine}' ";
+      $sql .= "WHERE `engine` = '{$engineName}' ";
       $sql .= "AND `testsuite` = '{$testSuiteName}' ";
       $sql .= "LIMIT 0, 1";
 
       $r = $this->query($sql);
-      if (0 == $r->rowCount()) {
-        $order = 0;
+      if (0 == $r->rowCount()) {  // if magic engine isn't sequenced, use normal ordering
+        $engineName = $this->encode('-no-data-', TESTSEQUENCE_MAX_ENGINE);
+
+        $sql  = "SELECT * FROM `testsequence` ";
+        $sql .= "WHERE `engine` = '{$engineName}' ";
+        $sql .= "AND `testsuite` = '{$testSuiteName}' ";
+        $sql .= "LIMIT 0, 1";
+
+        $r = $this->query($sql);
+        if (0 == $r->rowCount()) {
+          $order = 0;
+        }
       }
     }
     
@@ -328,7 +348,7 @@ class TestCase extends DBConnection
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
     if (1 == $order) {
-      $sql .= "AND `testsequence`.`engine` = '{$engine}' ";
+      $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
     $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
@@ -423,7 +443,7 @@ class TestCase extends DBConnection
   /**
    * Store test result
    */
-  function submitResult(UserAgent $userAgent, User $user, $format, $result)
+  function submitResult(UserAgent $userAgent, User $user, Format $format, $result)
   {
     if ($this->isValid()) {
       $sql  = "INSERT INTO `results` ";
@@ -431,11 +451,11 @@ class TestCase extends DBConnection
       $sql .= "VALUES (";
       $sql .= "'" . $this->getId() . "',";
       $sql .= "'" . $this->getRevision() . "',";
-      $sql .= "'" . $this->encode($format) . "', ";
+      $sql .= "'" . $this->encode($format->getName()) . "', ";
       $sql .= "'" . $userAgent->getId() . "',";
       $sql .= "'" . $user->getId() . "',";
       $sql .= "'" . $userAgent->getActualUA()->getId() . "',";
-      $sql .= "'" . $this->encode($result) . "'";
+      $sql .= "'" . $this->encode(strtolower($result)) . "'";
       $sql .= ")";
       
       $r = $this->query($sql);
@@ -464,26 +484,31 @@ class TestCase extends DBConnection
   }
   
   
-  function getFormats()
+  function getFormatNames()
   {
     if ($this->isValid()) {
       if ($this->_loadURIs()) {
-        $formats = array();
-        foreach ($this->mURIs as $format => $uri) {
-          $formats[] = $format;
+        $suiteFormatNames = $this->mTestSuite->getFormatNames();
+
+        $formatNames = array();
+        foreach ($suiteFormatNames as $formatName) {
+          if (array_key_exists(strtolower($formatName), $this->mURIs)) {
+            $formatNames[] = $formatName; // take names form test suite since we normalize names in array key
+          }
         }
-        return $formats;
+        return $formatNames;
       }
     }
     return FALSE;
   }
   
 
-  function getURI($format)
+  function getURI($formatName)
   {
     if ($this->isValid()) {
-      if ($this->_loadURIs() && array_key_exists($format, $this->mURIs)) {
-        return $this->mTestSuite->getBaseURI() . $this->mURIs[$format];
+      $formatName = strtolower($formatName);
+      if ($this->_loadURIs() && array_key_exists($formatName, $this->mURIs)) {
+        return $this->mTestSuite->getBaseURI() . $this->mURIs[$formatName];
       }
     }
     return FALSE;
@@ -540,13 +565,13 @@ class TestCase extends DBConnection
    *
    * @return FALSE|array
    */
-  function getReferences($format)
+  function getReferences($formatName)
   {
     if ($this->isValid()) {
       if ($this->_loadReferences()) {
         $references = array();
         foreach ($this->mReferences as $referenceData) {
-          if ($referenceData['format'] == $format) {
+          if (0 == strcasecmp($referenceData['format'], $formatName)) {
             $references[] = $referenceData;
           }
         }
@@ -559,13 +584,13 @@ class TestCase extends DBConnection
   }
   
 
-  function getReferenceURI($refName, $format)
+  function getReferenceURI($refName, $formatName)
   {
-    if ($this->isValid() && ($refName) && ($format)) {
+    if ($this->isValid() && ($refName) && ($formatName)) {
       if ($this->_loadReferences()) {
         foreach ($this->mReferences as $referenceData) {
-          if (($referenceData['reference'] == $refName) && 
-              ($referenceData['format'] == $format)) {
+          if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
+              (0 == strcasecmp($referenceData['format'], $formatName))) {
             return $this->mTestSuite->getBaseURI() . $referenceData['uri'];
           }
         }
@@ -580,13 +605,13 @@ class TestCase extends DBConnection
    * @param int $refId
    * @return string ('==' or '!=')
    */
-  function getReferenceType($refName, $format)
+  function getReferenceType($refName, $formatName)
   {
-    if ($this->isValid() && ($refName) && ($format)) {
+    if ($this->isValid() && ($refName) && ($formatName)) {
       if ($this->_loadReferences()) {
         foreach ($this->mReferences as $referenceData) {
-          if (($referenceData['reference'] == $refName) && 
-              ($referenceData['format'] == $format)) {
+          if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
+              (0 == strcasecmp($referenceData['format'], $formatName))) {
             return $referenceData['type'];
           }
         }

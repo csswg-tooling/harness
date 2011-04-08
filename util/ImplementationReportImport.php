@@ -102,7 +102,7 @@ class ImplementationReportImport extends CmdLineWorker
     $sourceId = user->getId();
 
     $validResults = array('pass', 'fail', 'uncertain', 'na', 'invalid');
-    $validFormats = array('html4', 'xhtml1');
+    $validFormats = array('html4', 'xhtml1'); // XXX get from test suite
     
     $data = file($reportFileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
@@ -128,7 +128,7 @@ class ImplementationReportImport extends CmdLineWorker
           if ('?' == $result) {
             $result = 'uncertain';
           }
-          if ('skip' == substr($result, 0, 4)) {
+          if (0 == strcasecmp('skip', substr($result, 0, 4))) {
             continue;
           }
           

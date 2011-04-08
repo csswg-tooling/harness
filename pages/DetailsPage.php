@@ -147,7 +147,7 @@ class DetailsPage extends ResultsBasedPage
           $testCaseName   = $testCaseData['testcase'];
           
           foreach ($engineResults as $engine => $engineResultData) {
-            if ((! $this->mEngine) || ($engine == $this->mEngine)) {
+            if ((! $this->mEngine) || (0 == strcasecmp($engine, $this->mEngine))) {
               $results = array();
               foreach ($engineResultData as $resultId => $resultValue) {
                 $results[] = new Result($resultId);
@@ -187,7 +187,7 @@ class DetailsPage extends ResultsBasedPage
                 }
                 $this->closeElement('td');
 
-                $this->addElement('td', null, $formats[$result->getFormatName()]->getTitle());
+                $this->addElement('td', null, $formats[strtolower($result->getFormatName())]->getTitle());
                 $this->addElement('td', null, $resultValue);
                 $this->openElement('td');
                 $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());

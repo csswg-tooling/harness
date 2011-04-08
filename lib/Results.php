@@ -25,7 +25,7 @@ require_once('lib/TestCase.php');
  */
 class Results extends DBConnection
 {
-  protected $mEngines;
+  protected $mEngineNames;
   protected $mTestCases;
   protected $mComponentTestIds;
   protected $mResults;
@@ -33,7 +33,7 @@ class Results extends DBConnection
 
 
   function __construct(TestSuite $testSuite, $testCaseName = null, $specLinkId = null,
-                       $engine = null, $engineVersion = null, $platform = null, 
+                       $engineName = null, $engineVersion = null, $platform = null, 
                        DateTime $modified = null)
   {
     parent::__construct();
@@ -50,9 +50,9 @@ class Results extends DBConnection
     
     $r = $this->query($sql);
     
-    $engines = array();
+    $engineNames = array();
     while ($dbEngine = $r->fetchRow()) {
-      $engines[] = $dbEngine['engine'];
+      $engineNames[] = strtolower($dbEngine['engine']);
     }
 
     // load revision equivalencies
@@ -155,9 +155,9 @@ class Results extends DBConnection
       $modified = $this->encode($modified->format('Y-m-d H:i:s'));
       $sql .= "AND `results`.`modified` <= '{$modified}' ";
     }  
-    if ($engine) {
-      $engine = $this->encode($engine, USERAGENTS_MAX_ENGINE);
-      $sql .= "AND `useragents`.`engine` = '{$engine}' ";
+    if ($engineName) {
+      $engineName = $this->encode($engineName, USERAGENTS_MAX_ENGINE);
+      $sql .= "AND `useragents`.`engine` = '{$engineName}' ";
       if ($engineVersion) {
         $engineVersion = $this->encode($engineVersion, USERAGENTS_MAX_ENGINE_VERSION);
         $sql .= "AND `useragents`.`engine_version` = '{$engineVersion}' ";
@@ -179,21 +179,21 @@ class Results extends DBConnection
       $revision   = intval($resultData['revision']);
       
       if (array_key_exists($revision, $testCaseRevisions[$testCaseId])) {
-        $engine = $resultData['engine'];
-        if ('' != $engine) {
-          $engineResults[$engine] = TRUE;
+        $engineName = strtolower($resultData['engine']);
+        if ('' != $engineName) {
+          $engineResults[$engineName] = TRUE;
           $resultId = intval($resultData['id']);
           $result   = $resultData['result'];
-          $this->mResults[$testCaseId][$engine][$resultId] = $result;
+          $this->mResults[$testCaseId][$engineName][$resultId] = $result;
           $this->mResultCount++;
         }
       }
     }
     
-    $this->mEngines = array();
-    foreach ($engines as $engine) {
-      if (array_key_exists($engine, $engineResults)) {
-        $this->mEngines[] = $engine;
+    $this->mEngineNames = array();
+    foreach ($engineNames as $engineName) {
+      if (array_key_exists($engineName, $engineResults)) {
+        $this->mEngineNames[] = $engineName;
       }
     }
   }
@@ -201,15 +201,15 @@ class Results extends DBConnection
   
   function getEngineCount()
   {
-    if ($this->mEngines) {
-      return count($this->mEngines);
+    if ($this->mEngineNames) {
+      return count($this->mEngineNames);
     }
     return 0;
   }
   
-  function getEngines()
+  function getEngineNames()
   {
-    return $this->mEngines;
+    return $this->mEngineNames;
   }
 
 
@@ -265,20 +265,20 @@ class Results extends DBConnection
   {
     if (array_key_exists($testCaseId, $this->mResults)) {
       $engineResults = array();
-      foreach ($this->mEngines as $engine) {
-        $engineResults[$engine]['count'] = 0;
-        $engineResults[$engine]['pass'] = 0;
-        $engineResults[$engine]['fail'] = 0;
-        $engineResults[$engine]['uncertain'] = 0;
-        $engineResults[$engine]['invalid'] = 0;
-        $engineResults[$engine]['na'] = 0;
+      foreach ($this->mEngineNames as $engineName) {
+        $engineResults[$engineName]['count'] = 0;
+        $engineResults[$engineName]['pass'] = 0;
+        $engineResults[$engineName]['fail'] = 0;
+        $engineResults[$engineName]['uncertain'] = 0;
+        $engineResults[$engineName]['invalid'] = 0;
+        $engineResults[$engineName]['na'] = 0;
         
-        if (array_key_exists($engine, $this->mResults[$testCaseId])) {
-          $engineData = $this->mResults[$testCaseId][$engine];
+        if (array_key_exists($engineName, $this->mResults[$testCaseId])) {
+          $engineData = $this->mResults[$testCaseId][$engineName];
 
           foreach ($engineData as $result) {
-            $engineResults[$engine]['count']++;
-            $engineResults[$engine][$result]++;
+            $engineResults[$engineName]['count']++;
+            $engineResults[$engineName][$result]++;
           }
         }
       }

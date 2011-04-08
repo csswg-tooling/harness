@@ -85,7 +85,7 @@ class DynamicPage extends Page
   protected function _instantiateData($class, $arg)
   {
     if ($class) {
-      if ('DateTime' == $class) {
+      if (0 == strcasecmp('DateTime', $class)) {
         return new DateTime($arg, new DateTimeZone('UTC'));
       }
       return new $class($arg);

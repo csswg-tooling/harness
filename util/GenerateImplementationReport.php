@@ -20,6 +20,7 @@ require_once('lib/CmdLineWorker.php');
 require_once('lib/TestSuite.php');
 require_once('lib/Specification.php');
 require_once('lib/Results.php');
+require_once('lib/Engine.php');
 require_once('pages/ResultsPage.php');
 require_once('pages/DetailsPage.php');
 
@@ -84,11 +85,14 @@ class IR_DetailsPage extends DetailsPage
   
   function getPageTitle()
   {
-    $engine = $this->_getData('e');
+    $engineName = $this->_getData('e');
     
     $title = parent::getPageTitle();
-    if ($engine) {
-      return "{$title} for {$engine}";
+    if ($engineName) {
+      $engine = new Engine($engineName);
+      if ($engine->getTitle()) {
+        return "{$title} for {$engine->getTitle()}";
+      }
     }
     return $title;
   }
@@ -160,12 +164,12 @@ class IR_UserAgentPage extends ResultsBasedPage
     } 
     else {
       $this->openElement('ul');
-      foreach ($this->mResults->getEngines() as $engine) {
-        if (array_key_exists($engine, $this->mUserAgents)) {
-          $this->addElement('li', null, $engine);
-          $this->openElement('ul');
-          $engineUserAgents = $this->mUserAgents[$engine];
+      foreach ($this->mResults->getEngineNames() as $engineName) {
+        if (array_key_exists($engineName, $this->mUserAgents)) {
+          $engineUserAgents = $this->mUserAgents[$engineName];
           uasort($engineUserAgents, array('UserAgent', 'CompareDescription'));
+          $this->addElement('li', null, $engineUserAgents[0]->getEngineTitle());
+          $this->openElement('ul');
           foreach ($engineUserAgents as $userAgent) {
             $this->openElement('li');
             $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
@@ -190,7 +194,7 @@ class IR_IndexPage extends HarnessPage
   protected $mSpec;
   protected $mUserAgents;
   protected $mStats;
-  protected $mEngines;
+  protected $mEngineNames;
   
   function __construct(Array $args = null)
   {
@@ -211,9 +215,9 @@ class IR_IndexPage extends HarnessPage
     $this->mStats = $stats;
   }
   
-  function setEngines(Array $engines)
+  function setEngineNames(Array $engineNames)
   {
-    $this->mEngines = $engines;
+    $this->mEngineNames = $engineNames;
   }
   
   function getPageTitle()
@@ -291,38 +295,38 @@ class IR_IndexPage extends HarnessPage
   
   function countBrowsers()
   {
-    $browsers = array();
+    $browserNames = array();
     
-    foreach ($this->mEngines as $engine) {
-      if (array_key_exists($engine, $this->mUserAgents)) {
-        $engineUserAgents = $this->mUserAgents[$engine];
+    foreach ($this->mEngineNames as $engineName) {
+      if (array_key_exists($engineName, $this->mUserAgents)) {
+        $engineUserAgents = $this->mUserAgents[$engineName];
         foreach ($engineUserAgents as $userAgent) {
-          $browsers[$userAgent->getBrowser()] = TRUE;
+          $browserNames[$userAgent->getBrowserName()] = TRUE;
         }
       }
     }
 
-    return count($browsers);
+    return count($browserNames);
   }
   
   
   function countPlatforms()
   {
-    $platforms = array();
+    $platformNames = array();
     
-    foreach ($this->mEngines as $engine) {
-      if (array_key_exists($engine, $this->mUserAgents)) {
-        $engineUserAgents = $this->mUserAgents[$engine];
+    foreach ($this->mEngineNames as $engineName) {
+      if (array_key_exists($engineName, $this->mUserAgents)) {
+        $engineUserAgents = $this->mUserAgents[$engineName];
         foreach ($engineUserAgents as $userAgent) {
-          $platform = $userAgent->getPlatform();
+          $platformName = $userAgent->getPlatformName();
           if ($platform) {
-            $platforms[$platform] = TRUE;
+            $platformNames[$platformName] = TRUE;
           }
         }
       }
     }
 
-    return count($platforms);
+    return count($platformNames);
   }
   
   
@@ -347,7 +351,7 @@ class IR_IndexPage extends HarnessPage
     $this->addElement('h2', array('id' => 'impls'), 'Implementations');
     
     $browserCountText = $this->numberToText($this->countBrowsers());
-    $engineCountText = $this->numberToText(count($this->mEngines));
+    $engineCountText = $this->numberToText(count($this->mEngineNames));
     $osCount = $this->countPlatforms();
     
     $this->openElement('p');
@@ -427,9 +431,9 @@ class IR_IndexPage extends HarnessPage
     $this->closeElement('li');
     $this->addElement('li', null, 'Detailed results for each rendering implementation');
     $this->openElement('ul');
-    foreach ($this->mEngines as $engine) {
+    foreach ($this->mEngineNames as $engineName) {
       $this->openElement('li');
-      $this->addHyperlink(strtolower("details_{$engine}.html"), null, $engine);
+      $this->addHyperlink(strtolower("details_{$engineName}.html"), null, $engineName);
       $this->closeElement('li');
     }
     $this->closeElement('ul');
@@ -474,10 +478,10 @@ class GenerateImplementationReport extends CmdLineWorker
       $engineResults = $results->getResultsFor($testCaseId);
       
       if ($engineResults) {
-        foreach ($engineResults as $engine => $engineResultData) {
+        foreach ($engineResults as $engineName => $engineResultData) {
           foreach ($engineResultData as  $resultId => $resultValue) {
             $result = new Result($resultId);
-            $userAgentIds[$engine][$result->getUserAgentId()] = TRUE;
+            $userAgentIds[$engineName][$result->getUserAgentId()] = TRUE;
           }
         }
       }
@@ -485,12 +489,12 @@ class GenerateImplementationReport extends CmdLineWorker
     
     $allUserAgents = UserAgent::GetAllUserAgents();
     
-    foreach ($results->getEngines() as $engine) {
-      if (array_key_exists($engine, $userAgentIds)) {
-        $engineUserAgentIds = $userAgentIds[$engine];
+    foreach ($results->getEngineNames() as $engineName) {
+      if (array_key_exists($engineName, $userAgentIds)) {
+        $engineUserAgentIds = $userAgentIds[$engineName];
         foreach ($engineUserAgentIds as $userAgentId => $bool) {
           $userAgent = $allUserAgents[$userAgentId];
-          $userAgents[$engine][] = $userAgent;
+          $userAgents[$engineName][] = $userAgent;
         }
       }
     }
@@ -537,7 +541,7 @@ class GenerateImplementationReport extends CmdLineWorker
       
       $indexPage = new IR_IndexPage($args);
       $indexPage->setStats($resultsPage->getStats());
-      $indexPage->setEngines($results->getEngines());
+      $indexPage->setEngineNames($results->getEngineNames());
       $indexPage->setUserAgents($userAgents);
       $indexPage->write($this->_combinePath($outputPath, 'index.html'));
 
@@ -548,14 +552,14 @@ class GenerateImplementationReport extends CmdLineWorker
       $uaPage->setUserAgents($userAgents);
       $uaPage->write($this->_combinePath($outputPath, 'useragents.html'));
 
-      $engines = $results->getEngines();
-      foreach ($engines as $engine) {
-        echo "Generating details page for {$engine}\n";
+      $engineNames = $results->getEngineNames();
+      foreach ($engineNames as $engineName) {
+        echo "Generating details page for {$engineName}\n";
         
-        $args['e'] = $engine;
+        $args['e'] = $engineName;
         $detailsPage = new IR_DetailsPage($args);
         $detailsPage->setResults($results);
-        $detailsPage->write($this->_combinePath($outputPath, strtolower("details_{$engine}.html")));
+        $detailsPage->write($this->_combinePath($outputPath, strtolower("details_{$engineName}.html")));
       }
       
       // copy stylesheets

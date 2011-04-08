@@ -99,7 +99,7 @@ class ExportResults extends CmdLineWorker
                 $resultValue      = $this->_encode($resultValue);
                 $testFormat       = $this->_encode($formats[$result->getFormatName()]->getTitle());
                 $date             = $this->_encode($result->getDate());
-                $engine           = $this->_encode($userAgent->getEngine());
+                $engine           = $this->_encode($userAgent->getEngineTitle());
                 $userAgentString  = $this->_encode($userAgent->getUAString());
                 if ($sourceId) {
                   $user = $users[$sourceId];

@@ -16,10 +16,11 @@
  * 
  ******************************************************************************/
 
-require_once("lib/HarnessPage.php");
-require_once("lib/TestSuite.php");
-require_once("lib/TestCase.php");
-require_once("lib/UserAgent.php");
+require_once('lib/HarnessPage.php');
+require_once('lib/TestSuite.php');
+require_once('lib/TestCase.php');
+require_once('lib/UserAgent.php');
+require_once('lib/Format.php');
 
 /**
  * This page accepts results posted for a test case
@@ -77,16 +78,18 @@ class SubmitPage extends HarnessPage
     
     $testCaseId = $this->_postData('cid');
     $testCaseName = $this->_postData('c');
-    $format = $this->_postData('f');
-    $desiredFormat = $this->_postData('df');
+    $formatName = $this->_postData('f');
+    $desiredFormatName = $this->_postData('df');
 
     $testGroupName = $this->_postData('g');
     $order = intval($this->_postData('o'));
 
     $testCase = new TestCase($this->mTestSuite, $testCaseId);
+    $format = new Format($formatName);
 
     if ((0 == $testCaseId) || 
-        ($testCase->getTestCaseName() != $testCaseName)) {
+        (0 != strcasecmp($testCase->getTestCaseName(), $testCaseName)) ||
+        (! Format::FormatNameInArray($format->getName(), $testCase->getFormatNames()))) {
       $msg = 'Posted data is invalid.';
       trigger_error($msg, E_USER_WARNING);
     }
@@ -101,8 +104,8 @@ class SubmitPage extends HarnessPage
     $args['s'] = $this->mTestSuite->getName();
     $args['u'] = $this->mUserAgent->getId();
     if (0 < $nextIndex) {
-      if ($desiredFormat) {
-        $args['f'] = $desiredFormat;
+      if ($desiredFormatName) {
+        $args['f'] = $desiredFormatName;
       }
       if ($testGroupName) {
         $args['g'] = $testGroupName;

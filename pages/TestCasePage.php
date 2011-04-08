@@ -16,12 +16,13 @@
  * 
  ******************************************************************************/
 
-require_once("lib/HarnessPage.php");
-require_once("lib/TestSuite.php");
-require_once("lib/TestCase.php");
-require_once("lib/UserAgent.php");
-require_once("lib/Format.php");
+require_once('lib/HarnessPage.php');
+require_once('lib/TestSuite.php');
+require_once('lib/TestCase.php');
+require_once('lib/UserAgent.php');
+require_once('lib/Format.php');
 require_once('lib/Results.php');
+require_once('lib/Engine.php');
 
 /**
  * A class for generating the page that presents a test
@@ -32,8 +33,8 @@ class TestCasePage extends HarnessPage
   protected $mTestCase;
   protected $mIndex;
   protected $mCount;
-  protected $mFormat;
-  protected $mDesiredFormat;
+  protected $mFormatName;
+  protected $mDesiredFormatName;
   protected $mRefName;
 
 
@@ -63,7 +64,7 @@ class TestCasePage extends HarnessPage
     $this->mIndex = intval($this->_getData('r'));
     $order = intval($this->_getData('o'));
     
-    $format = $this->_getData('f');
+    $formatName = $this->_getData('f');
     
     $this->mTestCase = new TestCase();
     $this->mTestCase->load($this->mTestSuite, $testCaseName, $specLinkId,
@@ -74,21 +75,21 @@ class TestCasePage extends HarnessPage
       trigger_error($msg, E_USER_WARNING);
     }
                    
-    $suiteFormats = $this->mTestSuite->getFormats();
-    $testFormats = $this->mTestCase->getFormats();
+    $suiteFormatNames = $this->mTestSuite->getFormatNames();
+    $testFormatNames = $this->mTestCase->getFormatNames();
     
-    if (in_array($format, $suiteFormats)) {
-      $this->mDesiredFormat = $format;
+    if (Format::FormatNameInArray($formatName, $suiteFormatNames)) {
+      $this->mDesiredFormatName = $formatName;
       
-      if (in_array($format, $testFormats)) {
-        $this->mFormat = $format;
+      if (Format::FormatNameInArray($formatName, $testFormatNames)) {
+        $this->mFormatName = $formatName;
       }
       else {
-        $this->mFormat = $testFormats[0];
+        $this->mFormatName = $testFormatNames[0];
       }
     }
     else {
-      $this->mFormat = $testFormats[0];
+      $this->mFormatName = $testFormatNames[0];
     }
     
     if ($testCaseName) {
@@ -104,9 +105,9 @@ class TestCasePage extends HarnessPage
     $this->mSubmitData = $this->mGetData;
     $this->mSubmitData['c'] = $this->mTestCase->getTestCaseName();
     $this->mSubmitData['cid'] = $this->mTestCase->getId();
-    $this->mSubmitData['f'] = $this->mFormat;
-    if ($this->mDesiredFormat) {
-      $this->mSubmitData['df'] = $this->mDesiredFormat;
+    $this->mSubmitData['f'] = $this->mFormatName;
+    if ($this->mDesiredFormatName) {
+      $this->mSubmitData['df'] = $this->mDesiredFormatName;
     }
     if ($this->mIndex < ($this->mCount - 1)) {
       $this->mSubmitData['next'] = ($this->mIndex + 1);
@@ -119,7 +120,7 @@ class TestCasePage extends HarnessPage
     }
 
     $this->mRefName = $this->_getData('ref');
-    if (FALSE === $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormat)) {
+    if (FALSE === $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormatName)) {
       $this->mRefName = null;
     }
   }
@@ -156,9 +157,9 @@ class TestCasePage extends HarnessPage
 
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
-      $actualEngine = strtolower($actualUA->getEngine());
+      $actualEngineName = strtolower($actualUA->getEngineName());
       
-      $this->addStyleSheetLink("test_{$actualEngine}.css");
+      $this->addStyleSheetLink("test_{$actualEngineName}.css");
     }
   }
 
@@ -232,16 +233,16 @@ class TestCasePage extends HarnessPage
     $this->openElement($elementName, $attrs);
     
     $this->addTextContent("Test Case: ");
-    $this->addHyperLink($this->mTestCase->getURI($this->mFormat), 
+    $this->addHyperLink($this->mTestCase->getURI($this->mFormatName), 
                         array('target' => 'test_case'), 
                         $this->mTestCase->getTestCaseName());
     
     if ($this->mTestCase->isReferenceTest()) {
-      $refTests = $this->mTestCase->getReferences($this->mFormat);
+      $refTests = $this->mTestCase->getReferences($this->mFormatName);
       if ($refTests) {
         foreach ($refTests as $refTest) {
           $this->addTextContent(" {$refTest['type']} ");
-          $this->addHyperLink($this->mTestCase->getReferenceURI($refTest['reference'], $this->mFormat), 
+          $this->addHyperLink($this->mTestCase->getReferenceURI($refTest['reference'], $this->mFormatName), 
                               array('target' => 'reference'), 
                               $refTest['reference']);
         }
@@ -300,7 +301,7 @@ class TestCasePage extends HarnessPage
     $suiteFormats = Format::GetFormatsFor($this->mTestSuite);
 
     if ($this->mTestCase->isReferenceTest()) {
-      $refTests = $this->mTestCase->getReferences($this->mFormat);
+      $refTests = $this->mTestCase->getReferences($this->mFormatName);
       if ((FALSE === $refTests) || (0 == count($refTests))) {
         unset($refTests);
       }
@@ -334,7 +335,7 @@ class TestCasePage extends HarnessPage
         foreach ($refTests as $refTest) {
           $refName = $refTest['reference'];
           $refType = $refTest['type'];
-          if ($refName == $this->mRefName) {
+          if (0 == strcasecmp($refName, $this->mRefName)) {
             $this->openElement('span', array('class' => 'tab active'));
             $this->addElement('a', null, "{$refType} Reference Page");
             $this->closeElement('span');
@@ -359,7 +360,7 @@ class TestCasePage extends HarnessPage
           $this->addTextContent("This page must be compared to the Reference Page{$plural}");
         }
         else {
-          $not = (('!=' == $this->mTestCase->getReferenceType($this->mRefName, $this->mFormat)) ? 'NOT ' : '');
+          $not = (('!=' == $this->mTestCase->getReferenceType($this->mRefName, $this->mFormatName)) ? 'NOT ' : '');
           $this->openElement('p', array('class' => 'instruct'));
           $this->addTextContent("This page must {$not}match the Test Case");
         }
@@ -368,14 +369,14 @@ class TestCasePage extends HarnessPage
       if (1 < count($suiteFormats)) {
         $this->openElement('span', array('class' => 'tabgroup format'));
 
-        $testFormats = $this->mTestCase->getFormats();
+        $testFormatNames = $this->mTestCase->getFormatNames();
 
         foreach ($suiteFormats as $formatName => $format) {
           $formatTitle = $format->getTitle();
           
-          if ($formatName == $this->mFormat) {
+          if (0 == strcasecmp($formatName, $this->mFormatName)) {
             $class = 'tab active';
-            if ($this->mDesiredFormat && ($formatName != $this->mDesiredFormat)) {
+            if ($this->mDesiredFormatName && (0 != strcasecmp($formatName, $this->mDesiredFormatName))) {
               $class .= ' other';
             }
             $this->openElement('span', array('class' => $class));
@@ -383,7 +384,7 @@ class TestCasePage extends HarnessPage
             $this->closeElement('span');
           }
           else {
-            if (in_array($formatName, $testFormats)) {
+            if (Format::FormatNameInArray($formatName, $testFormatNames)) {
               $args = $this->mGetData;
               $args['f'] = $formatName;
               if ($this->mRefName) {
@@ -417,9 +418,10 @@ class TestCasePage extends HarnessPage
   function writeResults()
   {
     $results = new Results($this->mTestSuite, $this->mTestCase->getTestCaseName());
+    $engines = Engine::GetAllEngines();
     
-    $engines = $results->getEngines();
-    if (0 < count($engines)) {
+    $engineNames = $results->getEngineNames();
+    if (0 < count($engineNames)) {
       $counts = $results->getResultCountsFor($this->mTestCase->getId());
       
       $args['s'] = $this->mTestSuite->getName();
@@ -427,25 +429,25 @@ class TestCasePage extends HarnessPage
       $args['u'] = $this->mUserAgent->getId();
 
       $this->openElement('div', array('class' => 'results'), FALSE);
-      foreach ($engines as $engine) {
+      foreach ($engineNames as $engineName) {
         $class = '';
-        if (0 < $counts[$engine]['uncertain']) {
+        if (0 < $counts[$engineName]['uncertain']) {
           $class = 'uncertain';
         }
-        if (0 < $counts[$engine]['fail']) {
+        if (0 < $counts[$engineName]['fail']) {
           $class .= ' fail';
         }
-        if (0 < $counts[$engine]['pass']) {
+        if (0 < $counts[$engineName]['pass']) {
           $class .= ' pass';
         }
-        if (0 < $counts[$engine]['invalid']) {
+        if (0 < $counts[$engineName]['invalid']) {
           $class = 'invalid';
         }
-        if ($engine == $this->mUserAgent->getEngine()) {
+        if (0 == strcasecmp($engineName, $this->mUserAgent->getEngineName())) {
           $class .= ' active';
         }
-        $args['e'] = $engine;
-        $this->addHyperLink($this->buildURI(DETAILS_PAGE_URI, $args), array('class' => $class), $engine);
+        $args['e'] = $engineName;
+        $this->addHyperLink($this->buildURI(DETAILS_PAGE_URI, $args), array('class' => $class), $engines[$engineName]->getTitle());
       }
       $this->closeElement('div');
     }
@@ -456,14 +458,14 @@ class TestCasePage extends HarnessPage
   {
     $this->openElement('div', array('class' => 'test'));
     $this->openElement('p');
-    $refURI = $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormat);
+    $refURI = $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormatName);
     if ($refURI) {
       $this->openElement('object', array('data' => $refURI, 'type' => 'text/html'));
       $this->addHyperLink($refURI, array('target' => 'reference'), "Show reference");
       $this->closeElement('object');
     }
     else {
-      $uri = $this->mTestCase->getURI($this->mFormat);
+      $uri = $this->mTestCase->getURI($this->mFormatName);
       $this->openElement('object', array('data' => $uri, 'type' => 'text/html'));
       $this->addHyperLink($uri, array('target' => 'test_case'), "Run test");
       $this->closeElement('object');

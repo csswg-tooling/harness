@@ -73,7 +73,7 @@ class Page
           if ($shortDate) {
             if ('+00:00' == substr($value, -6)) {
               $value = substr($value, 0, -6);
-              if ('T00:00:00' == substr($value, -9)) {
+              if (0 == strcasecmp('T00:00:00', substr($value, -9))) {
                 $value = substr($value, -9);
               }
             }
@@ -122,7 +122,7 @@ class Page
   {
     $hashIndex = strpos($baseURI, '#');
     if (FALSE !== $hashIndex) { // remove existing fragId
-      if (null == $fragId) {
+      if (null === $fragId) {
         $fragId = substr($baseURI, $hashIndex + 1);
       }
       $baseURI = substr($baseURI, 0, $hashIndex);
@@ -821,7 +821,8 @@ class Page
   protected function _determineFormatFromFileName($filePath)
   {
     $pathInfo = pathinfo($filePath);
-    $this->mWriteXML = (('html' != $pathInfo['extension']) && ('htm' != $pathInfo['extension']));
+    $this->mWriteXML = (('html' != strtolower($pathInfo['extension'])) &&
+                        ('htm' != strtolower($pathInfo['extension'])));
   }
 
   /**
