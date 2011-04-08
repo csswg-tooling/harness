@@ -39,7 +39,7 @@ h1, h2, h3, h4 {
   border: solid 1px black;
   text-decoration: none;
 }
-.results span.active {
+.results .active {
   border-bottom-width: 2px;
 }
 .results .pass {
