@@ -100,7 +100,7 @@ td a:focus {
 
 td a {
   display: block;
-  padding-left: 2em;
+  padding-left: 1em;
   text-indent: -1em;
 }
 .refs {
@@ -151,6 +151,9 @@ td.uncertain.invalid {
   background-color: #AAA;
 }
 th.engine, td.pass, td.fail, td.uncertain, td.invalid, td.na {
+  text-align: right;
+}
+tfoot th {
   text-align: right;
 }
 
