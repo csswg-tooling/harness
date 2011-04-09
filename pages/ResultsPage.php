@@ -326,7 +326,7 @@ class ResultsPage extends ResultsBasedPage
     $this->openElement('tr');
     $this->addElement('th', null, 'Testcase');
     foreach ($this->mResults->getEngineNames() as $engineName) {
-      $this->addElement('th', null, $engines[$engineName]->getTitle());
+      $this->addElement('th', array('class' => 'engine'), $engines[$engineName]->getTitle());
     }
     $this->closeElement('tr');
     $this->closeElement('thead');
@@ -467,12 +467,15 @@ class ResultsPage extends ResultsBasedPage
     $this->addElement('h2', null, 'Legend');
     
     $this->openElement('table', array('class' => 'legend'));
-    $this->openElement('tbody');
-    
+
+    $this->openElement('thead');
     $this->openElement('tr');
     $this->addElement('th', null, 'Row color codes');
     $this->closeElement('tr');
+    $this->closeElement('thead');
     
+    $this->openElement('tbody');
+
     $this->openElement('tr', array('class' => 'pass'));
     $this->addElement('td', null, 'two or more passes');
     $this->closeElement('tr');
@@ -501,12 +504,14 @@ class ResultsPage extends ResultsBasedPage
     $this->closeElement('table');
     
     $this->openElement('table', array('class' => 'legend'));
-    $this->openElement('tbody');
-    
+
+    $this->openElement('thead');
     $this->openElement('tr');
     $this->addElement('th', null, 'Result color codes');
     $this->closeElement('tr');
+    $this->closeElement('thead');
     
+    $this->openElement('tbody');
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'pass'), 'all results pass');
     $this->closeElement('tr');

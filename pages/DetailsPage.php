@@ -122,7 +122,8 @@ class DetailsPage extends ResultsBasedPage
     } 
     else {
       $this->openElement('table');
-      $this->openElement('tbody');
+
+      $this->openElement('thead');
       $this->openElement('tr');
       $this->addElement('th', null, 'Test Case');
       $this->addElement('th', null, 'Format');
@@ -131,6 +132,9 @@ class DetailsPage extends ResultsBasedPage
       $this->addElement('th', null, 'Date');
       $this->addElement('th', null, 'Source');
       $this->closeElement('tr');
+      $this->closeElement('thead');
+
+      $this->openElement('tbody');
 
       $testSuiteName  = $this->mTestSuite->getName();
       
@@ -211,12 +215,15 @@ class DetailsPage extends ResultsBasedPage
     $this->addElement('h2', null, 'Legend');
     
     $this->openElement('table', array('class' => 'legend'));
-    $this->openElement('tbody');
     
+    $this->openElement('thead');
     $this->openElement('tr');
     $this->addElement('th', null, 'Row color codes');
     $this->closeElement('tr');
+    $this->closeElement('thead');
     
+    $this->openElement('tbody');
+
     $this->openElement('tr', array('class' => 'pass'));
     $this->addElement('td', null, 'test passed');
     $this->closeElement('tr');

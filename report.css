@@ -68,15 +68,12 @@ tbody th :visited {
 
 th, td {
   padding: 0.2em 0.5em;
-  text-align: right;
+  text-align: left;
   vertical-align: baseline;
 }
 tfoot th, tbody td {
   border: solid thin #DDD;
   border-style: none solid;
-}
-th:first-child, td:first-child {
-  text-align: left;
 }
 
 td {
@@ -153,7 +150,7 @@ td.fail.invalid,
 td.uncertain.invalid {
   background-color: #AAA;
 }
-td.pass, td.fail, td.uncertain, td.invalid, td.na {
+th.engine, td.pass, td.fail, td.uncertain, td.invalid, td.na {
   text-align: right;
 }
 
