@@ -37,7 +37,7 @@ class Page
   private   $mFormatStack;
   private   $mFormatCount;
   private   $mPIList;
-  private   $mOutputBuffer;
+  private   $mBufferStack;
   
   private   $mOutputFile;
 
@@ -181,7 +181,7 @@ class Page
     $this->mFormatStack = array();
     $this->mFormatCount = 0;
     $this->mPIList = array();
-    $this->mOutputBuffer = null;
+    $this->mBufferStack = array();
     
     $this->mErrorIsClient = FALSE;
     $this->mErrorType = null;
@@ -220,23 +220,58 @@ class Page
   }
   
   
+  /**
+   * Begin output buffering context
+   */
   protected function _beginBuffering()
   {
-    $this->mOutputBuffer = '';
+    $this->mBufferStack[] = '';
   }
   
 
-  protected function _endBuffering()
+  /**
+   * End output buffering context
+   * Outputs PIs if last buffer
+   *
+   * @param bool optionally abort buffered output
+   * @return string buffered data
+   */
+  protected function _endBuffering($abort = FALSE)
   {
-    $buffer = $this->mOutputBuffer;
-    $this->mOutputBuffer = null;
-    foreach ($this->mPIList as $pi) {
-      $this->_writeLine("<?{$pi} ?" . '>', FALSE, $this->_formattingOn());
+    $buffer = array_pop($this->mBufferStack);
+
+    if (0 == count($this->mBufferStack)) {
+      foreach ($this->mPIList as $pi) {
+        $this->_writeLine("<?{$pi} ?" . '>', FALSE, $this->_formattingOn());
+      }
     }
-    $this->_writeLine($buffer, FALSE, FALSE);
+    if (! $abort) {
+      $this->_write($buffer);
+    }
+    return $buffer;
   }
   
 
+  /**
+   * Output page data
+   */
+  protected function _write($output)
+  {
+    if (0 < count($this->mBufferStack)) {
+      $buffer = array_pop($this->mBufferStack) . $output;
+      $this->mBufferStack[] = $buffer;
+    }
+    else {
+      if ($this->mOutputFile) {
+        fwrite($this->mOutputFile, $output);
+      }
+      else {
+        echo $output;
+      }
+    }
+  }
+  
+  
   /**
    * Output page data with optional formatting
    */
@@ -254,17 +289,7 @@ class Page
     else {
       $break = '';
     }
-    if (! is_null($this->mOutputBuffer)) {
-      $this->mOutputBuffer .= $indent . $output . $break;
-    }
-    else {
-      if ($this->mOutputFile) {
-        fwrite($this->mOutputFile, $indent . $output . $break);
-      }
-      else {
-        echo $indent . $output . $break;
-      }
-    }
+    $this->_write($indent . $output . $break);
   }
   
 

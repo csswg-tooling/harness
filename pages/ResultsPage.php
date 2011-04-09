@@ -30,6 +30,8 @@ class ResultsPage extends ResultsBasedPage
   protected $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   protected $mModified;                       // modified date for results
   
+  protected $mRows;                           // cached table row output for test case
+  
   protected $mTestCaseRequiredCount;          // number of required tests
   protected $mTestCaseRequiredPassCount;      // number of required tests with 2 or more passes
   protected $mTestCaseOptionalCount;          // number of optional tests ('may' or 'should')
@@ -78,6 +80,8 @@ class ResultsPage extends ResultsBasedPage
     }
 
     $this->mModified = $this->_getData('m', 'DateTime');
+    
+    $this->mRows = array();
   }
   
   
@@ -316,6 +320,24 @@ class ResultsPage extends ResultsBasedPage
   }
 
   
+  function _getRow($testCaseData)
+  {
+    $testCaseId   = intval($testCaseData['id']);
+    
+    if (! array_key_exists($testCaseId, $this->mRows)) {
+      $testCaseName = $testCaseData['testcase'];
+      
+      $flags = new Flags($testCaseData['flags']);
+      $optional = $this->mTestSuite->testIsOptional($flags);
+      
+      $this->_beginBuffering();
+      $this->_generateRow($testCaseName, $testCaseId, $optional);
+      $this->mRows[$testCaseId] = $this->_endBuffering(TRUE);
+    }
+    return $this->mRows[$testCaseId];
+  }
+  
+  
   function writeResultTable()
   {
     $engines = Engine::GetAllEngines();
@@ -334,13 +356,7 @@ class ResultsPage extends ResultsBasedPage
     $this->openElement('tbody');
     $testCases = $this->mResults->getTestCases();
     foreach ($testCases as $testCaseData) {
-      $testCaseId   = intval($testCaseData['id']);
-      $testCaseName = $testCaseData['testcase'];
-      
-      $flags = new Flags($testCaseData['flags']);
-      $optional = $this->mTestSuite->testIsOptional($flags);
-      
-      $this->_generateRow($testCaseName, $testCaseId, $optional);
+      $this->_write($this->_getRow($testCaseData));
     }
     $this->closeElement('tbody');
     
