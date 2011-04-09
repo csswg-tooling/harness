@@ -227,6 +227,12 @@ class Results extends DBConnection
   }
   
   
+  function getTestCaseCount()
+  {
+    return count($this->mTestCases);
+  }
+  
+  
   /**
    * Get total result count
    *
@@ -271,7 +277,6 @@ class Results extends DBConnection
         $engineResults[$engineName]['fail'] = 0;
         $engineResults[$engineName]['uncertain'] = 0;
         $engineResults[$engineName]['invalid'] = 0;
-        $engineResults[$engineName]['na'] = 0;
         
         if (array_key_exists($engineName, $this->mResults[$testCaseId])) {
           $engineData = $this->mResults[$testCaseId][$engineName];

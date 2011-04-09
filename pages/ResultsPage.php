@@ -38,7 +38,9 @@ class ResultsPage extends ResultsBasedPage
   protected $mTestCaseNeededCount;            // number of required, valid tests that do not have 2 or more passes
   protected $mTestCaseNeedMoreResults;        // number of needed tests that might pass but need more results
   protected $mTestCaseTooManyFails;           // number of needed tests that have fails blocking exit criteria
-  protected $mTestCaseNeededCountPerEngine;   // number of needed results per engine
+  protected $mTestCaseEngineNeededCount;      // number of needed results per engine
+  protected $mTestCaseEnginePassCount;        // number of passes per engine
+  protected $mTestCaseEngineResultCount;      // number of results per engine
 
   /**
    * Expected URL paramaters:
@@ -78,16 +80,6 @@ class ResultsPage extends ResultsBasedPage
     $this->mModified = $this->_getData('m', 'DateTime');
   }
   
-  
-  function loadResults()
-  {
-    parent::loadResults();
-    
-    foreach ($this->mResults->getEngineNames() as $engineName) {
-      $this->mTestCaseNeededCountPerEngine[$engineName] = 0;
-    }
-  }
-
   
   function getPageTitle()
   {
@@ -146,11 +138,13 @@ class ResultsPage extends ResultsBasedPage
         $fail      = $engineResults[$engineName]['fail'];
         $uncertain = $engineResults[$engineName]['uncertain'];
         $invalid   = $engineResults[$engineName]['invalid'];
-        $na        = $engineResults[$engineName]['na'];
+
+        $this->mTestCaseEngineResultCount[$engineName]++;
         $class = '';
         if (0 < $pass) {
           $passCount++;
           $engineMissing[$engineName] = FALSE;
+          $this->mTestCaseEnginePassCount[$engineName]++;
           $class .= 'pass ';
         }
         if (0 < $fail) {
@@ -167,10 +161,7 @@ class ResultsPage extends ResultsBasedPage
           $class .= 'invalid ';
           $testInvalid = TRUE;
         }
-        if (0 < $na) {
-          $class .= 'na ';
-        }
-        
+
         $args['s'] = $this->mTestSuite->getName();
         $args['c'] = $testCaseName;
         $args['e'] = $engineName;
@@ -252,7 +243,7 @@ class ResultsPage extends ResultsBasedPage
             $this->mTestCaseNeedMoreResults++;
             foreach ($engineMissing as $engineName => $missing) {
               if ($missing) {
-                $this->mTestCaseNeededCountPerEngine[$engineName]++;
+                $this->mTestCaseEngineNeededCount[$engineName]++;
               }
             }
           }
@@ -285,7 +276,7 @@ class ResultsPage extends ResultsBasedPage
   
   function _generateTestCaseCell($testCaseName, $hasResults)
   {
-    $this->openElement('td');
+    $this->openElement('td', null, FALSE);
     
     if ($this->mDisplayLinks) {
       $this->addSpiderTrap();
@@ -315,7 +306,7 @@ class ResultsPage extends ResultsBasedPage
   function _generateResultCell($class, $uri, $content)
   {
     if ($this->mDisplayLinks) {
-      $this->openElement('td', array('class' => $class));
+      $this->openElement('td', array('class' => $class), FALSE);
       $this->addHyperLink($uri, null, $content, FALSE);
       $this->closeElement('td');
     }
@@ -330,15 +321,17 @@ class ResultsPage extends ResultsBasedPage
     $engines = Engine::GetAllEngines();
     
     $this->openElement('table');
-    $this->openElement('tbody');
 
+    $this->openElement('thead');
     $this->openElement('tr');
     $this->addElement('th', null, 'Testcase');
     foreach ($this->mResults->getEngineNames() as $engineName) {
       $this->addElement('th', null, $engines[$engineName]->getTitle());
     }
     $this->closeElement('tr');
+    $this->closeElement('thead');
     
+    $this->openElement('tbody');
     $testCases = $this->mResults->getTestCases();
     foreach ($testCases as $testCaseData) {
       $testCaseId   = intval($testCaseData['id']);
@@ -349,8 +342,27 @@ class ResultsPage extends ResultsBasedPage
       
       $this->_generateRow($testCaseName, $testCaseId, $optional);
     }
-    
     $this->closeElement('tbody');
+    
+    $testCount = $this->mResults->getTestCaseCount();
+    $this->openElement('tfoot');
+    $this->openElement('tr');
+    $this->addElement('th', null, 'Passed');
+    foreach ($this->mResults->getEngineNames() as $engineName) {
+      $passPercentage = round(($this->mTestCaseEnginePassCount[$engineName] / $testCount) * 100.0, 2);
+      $this->addElement('th', null, "{$passPercentage}%");
+    }
+    $this->closeElement('tr');
+    
+    $this->openElement('tr');
+    $this->addElement('th', null, 'Coverage');
+    foreach ($this->mResults->getEngineNames() as $engineName) {
+      $coveragePercentage = round(($this->mTestCaseEngineResultCount[$engineName] / $testCount) * 100.0, 2);
+      $this->addElement('th', null, "{$coveragePercentage}%");
+    }
+    $this->closeElement('tr');
+    $this->closeElement('tfoot');
+    
     $this->closeElement('table');
   }
   
@@ -365,6 +377,16 @@ class ResultsPage extends ResultsBasedPage
     $this->mTestCaseNeededCount = 0;
     $this->mTestCaseNeedMoreResults = 0;
     $this->mTestCaseTooManyFails = 0;
+    
+    $this->mTestCaseEngineNeededCount = array();
+    $this->mTestCaseEnginePassCount = array();
+    $this->mTestCaseEngineResultCount = array();
+
+    foreach ($this->mResults->getEngineNames() as $engineName) {
+      $this->mTestCaseEngineNeededCount[$engineName] = 0;
+      $this->mTestCaseEnginePassCount[$engineName] = 0;
+      $this->mTestCaseEngineResultCount[$engineName] = 0;
+    }
   }
   
   
@@ -406,7 +428,7 @@ class ResultsPage extends ResultsBasedPage
       if (0 < $this->mTestCaseNeedMoreResults) {
         $this->addElement('p', null, "Additional results needed from:");
         $this->openElement('ul');
-        foreach ($this->mTestCaseNeededCountPerEngine as $engineName => $count) {
+        foreach ($this->mTestCaseEngineNeededCount as $engineName => $count) {
           if (0 < $count) {
             $this->addElement('li', null, "{$engines[$engineName]->getTitle()}: $count");
           }

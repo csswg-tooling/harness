@@ -101,7 +101,7 @@ class DetailsPage extends ResultsBasedPage
 
   function _compareResults(Result $a, Result $b)
   {
-    $resultOrder = array('pass' => '0', 'fail' => '1', 'uncertain' => '2', 'invalid' => '3', 'na' => '4');
+    $resultOrder = array('pass' => '0', 'fail' => '1', 'uncertain' => '2', 'invalid' => '3');
   
     $userAgentA = $this->mUserAgents[$a->getUserAgentId()];
     $userAgentB = $this->mUserAgents[$b->getUserAgentId()];

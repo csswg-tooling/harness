@@ -27,9 +27,14 @@ ul {
 
 table {
   border-collapse: collapse;
+  margin-bottom: 0.5em;
 }
 
 thead {
+  border-bottom: 0.2em solid;
+}
+
+tfoot {
   border-bottom: 0.2em solid;
 }
 
@@ -62,9 +67,16 @@ tbody th :visited {
 }
 
 th, td {
-  padding: 0.2em;
-  text-align: left;
+  padding: 0.2em 0.5em;
+  text-align: right;
   vertical-align: baseline;
+}
+tfoot th, tbody td {
+  border: solid thin #DDD;
+  border-style: none solid;
+}
+th:first-child, td:first-child {
+  text-align: left;
 }
 
 td {
@@ -144,6 +156,7 @@ td.uncertain.invalid {
 td.pass, td.fail, td.uncertain, td.invalid, td.na {
   text-align: right;
 }
+
 table.legend {
   margin-bottom: 1em;
 }

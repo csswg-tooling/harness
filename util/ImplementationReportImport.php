@@ -19,6 +19,7 @@
 
 require_once("lib/CmdLineWorker.php");
 require_once("lib/UserAgent.php");
+require_once("lib/User.php");
 
 /**
  * Import results from implementation report files
@@ -26,6 +27,7 @@ require_once("lib/UserAgent.php");
 class ImplementationReportImport extends CmdLineWorker
 {
   protected $mTestCaseRevision;
+  protected $mTestCaseFlags;
 
 
   function __construct() 
@@ -40,12 +42,14 @@ class ImplementationReportImport extends CmdLineWorker
     parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
 
     $revision = intval($testCaseData['revision']);
+    $flagString = $testCaseData['flags'];
     
     $this->mTestCaseRevision[$testCaseId] = $revision;
+    $this->mTestCaseFlags[$testCaseId] = $flagString;
   }
 
 
-  protected function _loadTestCases($testSuiteName)
+  protected function _loadTestCases($testSuiteName = '')
   {
     unset ($this->mTestCaseRevision);
     $this->mTestCaseRevision = array();
@@ -99,7 +103,7 @@ class ImplementationReportImport extends CmdLineWorker
 
     $user = new User($source);
     $user->update();
-    $sourceId = user->getId();
+    $sourceId = $user->getId();
 
     $validResults = array('pass', 'fail', 'uncertain', 'na', 'invalid');
     $validFormats = array('html4', 'xhtml1'); // XXX get from test suite
@@ -137,7 +141,7 @@ class ImplementationReportImport extends CmdLineWorker
           }
         
           $format = pathinfo($testCasePath, PATHINFO_DIRNAME);
-          if (! $format) {
+          if ((! $format) || ('.' == $format)) {
             $format = $defaultFormat;
           }
           if (! in_array($format, $validFormats)) {
@@ -218,13 +222,13 @@ class ImplementationReportImport extends CmdLineWorker
 
 $worker = new ImplementationReportImport();
 
-$worker->initFor('CSS21');
+$worker->initFor('CSS21_RC6');
 
-$worker->loadRevisionInfo('testinfo.data');
+//$worker->loadRevisionInfo('testinfo.data');
 
-$worker->import('implementation-report-WebToPDF.NETv1.0.3.6.data', 'html4',
-                'Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/1.0.3.6 WebToPDF.NET/1.0.3.6', 
-                'TallComponents', 
-                '2011-02-21 04:23:00');
+$worker->import('IE9_20110323_ImplementationReport.txt', 'html4',
+                'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0;)', 
+                'Microsoft', 
+                '2011-03-23 12:00:00');
 
 ?>
