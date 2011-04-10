@@ -1125,6 +1125,9 @@ class Page
     while (2 < count($this->mElementStack)) {
       $this->closeElement();
     }
+    while (0 < count($this->mBufferStack)) {
+      $this->_endBuffering();
+    }
     
     $this->writeError();
     

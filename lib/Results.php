@@ -227,6 +227,11 @@ class Results extends DBConnection
   }
   
   
+  function getTestCaseData($testCaseId)
+  {
+    return $this->mTestCases[$testCaseId];
+  }
+  
   function getTestCaseCount()
   {
     return count($this->mTestCases);

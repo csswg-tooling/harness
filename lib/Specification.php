@@ -17,7 +17,8 @@
  ******************************************************************************/
 
 
-require_once("lib/DBConnection.php");
+require_once('lib/DBConnection.php');
+require_once('lib/TestSuite.php');
 
 /**
  * Wrapper class for information about a particular specification
@@ -32,10 +33,11 @@ class Specification extends DBConnection
    *
    * @param string  $testSuiteName  Suite name
    */
-  function __construct($specName) 
+  function __construct(TestSuite $testSuite) 
   {
     parent::__construct();
 
+    $specName = $testSuite->getSpecName();
     if ($specName) {
       $specQuery = $this->encode($specName, TESTSUITES_MAX_TESTSUITE);
       
@@ -93,7 +95,7 @@ class Specification extends DBConnection
   
   function getBaseURI()
   {
-    return $this->mInfo['uri'];
+    return $this->mInfo['base_uri'];
   }
 
   function getHomeURI()

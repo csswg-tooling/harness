@@ -19,6 +19,8 @@
 
 require_once('lib/ResultsBasedPage.php');
 require_once('lib/Engine.php');
+require_once('lib/Sections.php');
+require_once('lib/Specification.php');
 
 
 /**
@@ -29,8 +31,12 @@ class ResultsPage extends ResultsBasedPage
   protected $mDisplayLinks;
   protected $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   protected $mModified;                       // modified date for results
+  protected $mGroup;                          // spec section id
+  protected $mOrdering;                       // display ordering
   
-  protected $mRows;                           // cached table row output for test case
+  protected $mSpecification;
+  protected $mSections;
+  protected $mRowCache;                       // cached table row output per test case
   
   protected $mTestCaseRequiredCount;          // number of required tests
   protected $mTestCaseRequiredPassCount;      // number of required tests with 2 or more passes
@@ -55,6 +61,7 @@ class ResultsPage extends ResultsBasedPage
    * 'e' Engine (optional, filter results for this engine)
    * 'v' Engine Version (optional)
    * 'p' Platform
+   * 'o' Ordering (optional) 0 = one list, 1 = group by section
    */
   function __construct(Array $args = null) 
   {
@@ -80,8 +87,10 @@ class ResultsPage extends ResultsBasedPage
     }
 
     $this->mModified = $this->_getData('m', 'DateTime');
+    $this->mGroup = intval($this->_getData('g'));
+    $this->mOrdering = intval($this->_getData('o'));
     
-    $this->mRows = array();
+    $this->mRowCache = array();
   }
   
   
@@ -324,7 +333,7 @@ class ResultsPage extends ResultsBasedPage
   {
     $testCaseId   = intval($testCaseData['id']);
     
-    if (! array_key_exists($testCaseId, $this->mRows)) {
+    if (! array_key_exists($testCaseId, $this->mRowCache)) {
       $testCaseName = $testCaseData['testcase'];
       
       $flags = new Flags($testCaseData['flags']);
@@ -332,11 +341,55 @@ class ResultsPage extends ResultsBasedPage
       
       $this->_beginBuffering();
       $this->_generateRow($testCaseName, $testCaseId, $optional);
-      $this->mRows[$testCaseId] = $this->_endBuffering(TRUE);
+      $this->mRowCache[$testCaseId] = $this->_endBuffering(TRUE);
     }
-    return $this->mRows[$testCaseId];
+    return $this->mRowCache[$testCaseId];
   }
   
+  
+  function writeGroupRows($specLinkId)
+  {
+    if (0 < $specLinkId) {
+      $sectionData = $this->mSections->getSectionData($specLinkId);
+      $testCount = intval($sectionData['test_count']);
+
+      if (0 < $testCount) {
+        $this->_beginBuffering();
+        $hadOutput = FALSE;
+        
+        $this->openElement('tbody', array('id' => "s{$sectionData['section']}"));
+        $this->openElement('tr');
+        $this->openElement('th', array('colspan' => 0));
+        $specURI = $this->mSpecification->getBaseURI() . $sectionData['uri'];
+        $this->addHyperLink($specURI, null, "{$sectionData['section']}: {$sectionData['title']}");
+        $this->closeElement('th');
+        $this->closeElement('tr');
+
+        $testCasesIds = $this->mSections->getTestCaseIdsFor($specLinkId);
+        
+        foreach ($testCasesIds as $testCaseId) {
+          $row = $this->_getRow($this->mResults->getTestCaseData($testCaseId));
+          if ($row) {
+            $this->_write($row);
+            $hadOutput = TRUE;
+          }
+        }
+        
+        $this->closeElement('tbody');
+        $this->_endBuffering(! $hadOutput);
+      }
+    }
+  
+    $subSections = $this->mSections->getSubSectionData($specLinkId);
+    if ($subSections) {
+      foreach ($subSections as $subSectionId => $sectionData) {
+        $testCount = intval($sectionData['test_count']);
+        if ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId))) {
+          $this->writeGroupRows($subSectionId);
+        }
+      }
+    }
+  }
   
   function writeResultTable()
   {
@@ -353,12 +406,19 @@ class ResultsPage extends ResultsBasedPage
     $this->closeElement('tr');
     $this->closeElement('thead');
     
-    $this->openElement('tbody');
-    $testCases = $this->mResults->getTestCases();
-    foreach ($testCases as $testCaseData) {
-      $this->_write($this->_getRow($testCaseData));
+    if (0 == $this->mOrdering) {
+      $this->openElement('tbody');
+      $testCases = $this->mResults->getTestCases();
+      foreach ($testCases as $testCaseData) {
+        $this->_write($this->_getRow($testCaseData));
+      }
+      $this->closeElement('tbody');
     }
-    $this->closeElement('tbody');
+    else {
+      $this->mSections = new Sections($this->mTestSuite, TRUE);
+      $this->mSpecification = new Specification($this->mTestSuite);
+      $this->writeGroupRows($this->mGroup);
+    }
     
     $testCount = $this->mResults->getTestCaseCount();
     $this->openElement('tfoot');

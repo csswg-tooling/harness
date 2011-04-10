@@ -201,7 +201,7 @@ class IR_IndexPage extends HarnessPage
     parent::__construct($args);
     
     $this->mSpiderTrap = null;
-    $this->mSpec = new Specification($this->mTestSuite->getSpecName());
+    $this->mSpec = new Specification($this->mTestSuite);
   }
   
   

@@ -104,11 +104,11 @@ class ReviewPage extends HarnessPage
   
   function writeSectionOptions($parentId = 0)
   {
-    $data = $this->mSections->getSectionData($parentId);
+    $data = $this->mSections->getSubSectionData($parentId);
     foreach ($data as $sectionData) {
       $id = $sectionData['id'];
       $testCount = $sectionData['test_count'];
-      $subSectionCount = $this->mSections->getCount($id);
+      $subSectionCount = $this->mSections->getSubSectionCount($id);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
         $this->addOptionElement($id, null, "{$sectionData['section']}: {$sectionData['title']}");
       }
@@ -121,8 +121,6 @@ class ReviewPage extends HarnessPage
 
   function writeSectionSelect()
   {
-    $sections = $this->mSections->getSectionData();
-    
     $this->openSelectElement('g', array('style' => 'width: 25em',
                                         'onchange' => 'document.getElementById("result_form").t[1].checked = true'));
     $this->writeSectionOptions();
@@ -166,7 +164,7 @@ class ReviewPage extends HarnessPage
     $this->addTextContent(' The full test suite');
     $this->addElement('br');
     
-    if (0 < $this->mSections->getCount()) {
+    if (0 < $this->mSections->getSubSectionCount()) {
       $this->addInputElement('radio', 't', 1);
       $this->addTextContent(' A section of the specification: ');
       $this->writeSectionSelect();

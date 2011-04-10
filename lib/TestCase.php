@@ -341,7 +341,7 @@ class TestCase extends DBConnection
     $sql .= "FROM (`testcases` ";
     $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
     $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `suitetests`.`testcase_id` = `testlinks`.`testcase_id` ";
+    $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
     if (1 == $order) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }

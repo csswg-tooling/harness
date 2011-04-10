@@ -90,11 +90,11 @@ class TestSuitePage extends HarnessPage
   
   function writeSectionOptions($parentId = 0)
   {
-    $data = $this->mSections->getSectionData($parentId);
+    $data = $this->mSections->getSubSectionData($parentId);
     foreach ($data as $sectionData) {
       $id = $sectionData['id'];
       $testCount = $sectionData['test_count'];
-      $subSectionCount = $this->mSections->getCount($id);
+      $subSectionCount = $this->mSections->getSubSectionCount($id);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
         $this->addOptionElement($id, null, "{$sectionData['section']}: {$sectionData['title']}");
       }
@@ -206,7 +206,7 @@ class TestSuitePage extends HarnessPage
     $this->writeTestSuiteForm();
     $this->closeElement('li');
     
-    if (0 < $this->mSections->getCount()) {
+    if (0 < $this->mSections->getSubSectionCount()) {
       $this->openElement('li');
       $this->writeSectionForm("A section of the specification: ");
       $this->closeElement('li');

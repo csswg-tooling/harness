@@ -27,7 +27,7 @@ class TestCases extends DBConnection
   protected $mTestCases;
 
 
-  function __construct(TestSuite $testSuite) 
+  function __construct(TestSuite $testSuite, $specLinkId = 0, $group = TRUE)
   {
     parent::__construct();
     
@@ -35,13 +35,29 @@ class TestCases extends DBConnection
     
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, `testcases`.`title` ";
     $sql .= "FROM `testcases` ";
-    $sql .= "LEFT JOIN `suitetests` ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
+    if (0 < $specLinkId) {
+      $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
+      $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
+      $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
+      $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
+      $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
+      if (! $group) {
+        $sql .= "AND `testlinks`.`group` = 0 ";
+      }
+    }
+    else {
+      $sql .= "LEFT JOIN `suitetests` ";
+      $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
+      $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
+    }
     $sql .= "ORDER BY `testcases`.`testcase` ";
-    
+
     $r = $this->query($sql);
 
-    $this->mTestCases = $r->fetchTable();
+    while ($testCaseData = $r->fetchRow()) {
+      $testCaseId = intval($testCaseData['id']);
+      $this->mTestCases[$testCaseId] = $testCaseData;
+    }
 
     if (! $this->mTestCases) {
       $msg = 'Unable to obtain list of test cases.';

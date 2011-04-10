@@ -25,9 +25,10 @@ require_once("lib/DBConnection.php");
 class Sections extends DBConnection
 {
   protected $mSections;
+  protected $mTestCaseIds;
 
 
-  function __construct(TestSuite $testSuite)
+  function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE)
   {
     parent::__construct();
 
@@ -64,10 +65,42 @@ class Sections extends DBConnection
 
       $this->mSections[$parentId][$id] = $sectionData;
     }
+    
+    if ($loadTestCaseIds) {
+      $sql  = "SELECT `testcases`.`id`, `testlinks`.`speclink_id` ";
+      $sql .= "FROM `testcases` ";
+      $sql .= "LEFT JOIN (`suitetests`, `testlinks`, `speclinks`) ";
+      $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
+      $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
+      $sql .= "AND `speclinks`.`id` = `testlinks`.`speclink_id` ";
+      $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
+      $sql .= "AND `testlinks`.`group` = 0 ";
+      $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
+      $sql .= "ORDER BY `testcases`.`testcase` ";
+
+      $r = $this->query($sql);
+      
+      while ($testCaseData = $r->fetchRow()) {
+        $specLinkId = intval($testCaseData['speclink_id']);
+        $testCaseId = intval($testCaseData['id']);
+        $this->mTestCaseIds[$specLinkId][] = $testCaseId;
+      }
+    }
   }
 
 
-  function getCount($parentId = 0)
+  function getSectionData($specLinkId)
+  {
+    foreach ($this->mSections as $parentId => $subSections) {
+      if (array_key_exists($specLinkId, $subSections)) {
+        return $subSections[$specLinkId];
+      }
+    }
+    return FALSE;
+  }
+  
+
+  function getSubSectionCount($parentId = 0)
   {
     if ($this->mSections && array_key_exists($parentId, $this->mSections)) {
       return count($this->mSections[$parentId]);
@@ -76,10 +109,19 @@ class Sections extends DBConnection
   }
   
   
-  function getSectionData($parentId = 0)
+  function getSubSectionData($parentId = 0)
   {
     if ($this->mSections && array_key_exists($parentId, $this->mSections)) {
       return $this->mSections[$parentId];
+    }
+    return FALSE;
+  }
+  
+  
+  function getTestCaseIdsFor($specLinkId)
+  {
+    if ($this->mTestCaseIds && array_key_exists($specLinkId, $this->mTestCaseIds)) {
+      return $this->mTestCaseIds[$specLinkId];
     }
     return FALSE;
   }
