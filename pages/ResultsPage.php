@@ -283,7 +283,7 @@ class ResultsPage extends ResultsBasedPage
     if ($display) {
       $this->openElement('tr', array('class' => $class));
       
-      $this->_generateTestCaseCell($testCaseName, $hasResults);
+      $this->_generateTestCaseCell($testCaseName, $section, $hasResults);
       
       foreach ($cells as $cell) {
         if (is_array($cell)) {
@@ -301,10 +301,16 @@ class ResultsPage extends ResultsBasedPage
   }
   
   
-  function _generateTestCaseCell($testCaseName, $hasResults)
+  function _generateTestCaseCell($testCaseName, $section, $hasResults)
   {
     $this->openElement('td', null, FALSE);
     
+    if ($section) {
+      $anchor = array('name' => "s{$section}_{$testCaseName}");
+    }
+    else {
+      $anchor = array('name' => $testCaseName);
+    }
     if ($this->mDisplayLinks) {
       $this->addSpiderTrap();
 
@@ -321,10 +327,10 @@ class ResultsPage extends ResultsBasedPage
         $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
       }
       
-      $this->addHyperLink($uri, array('name' => $testCaseName), $testCaseName);
+      $this->addHyperLink($uri, $anchor, $testCaseName);
     }
     else {
-      $this->addElement('a', array('name' => $testCaseName), $testCaseName);
+      $this->addElement('a', $anchor, $testCaseName);
     }
     $this->closeElement('td');
   }

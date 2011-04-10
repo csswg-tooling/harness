@@ -414,8 +414,29 @@ class IR_IndexPage extends HarnessPage
     $this->openElement('p', null, FALSE);
     $this->addTextContent('The ');
     $this->addHyperlink($this->mTestSuite->getHomeURI(), null, $this->mTestSuite->getDateTime()->format('j F Y'));
-    $optionalText = ((0 < $optionalCount) ? ", {$optionalCount} of which test for optional behavior" : '');
-    $this->addTextContent(" revision of the {$this->mSpec->getTitle()} test suite was used. The test suite consists of {$totalCount} tests{$optionalText}.");
+    $this->addTextContent(" revision of the {$this->mSpec->getTitle()} test suite was used.");
+    if (1 == $totalCount) {
+      if (0 == $optionalCount) {
+        $this->addTextContent(' The test suite consists of 1 test.');
+      }
+      else {
+        $this->addTextContent(' The test suite consists of 1 test, which tests for optional behavior.');
+      }
+    }
+    else {
+      if (0 < $optionalCount) {
+        if (1 == $optionalCount) {
+          $optionalText = ', 1 of which tests for optional behavior';
+        }
+        else {
+          $optionalText = ", {$optionalCount} of which test for optional behavior";
+        }
+      }
+      else {
+        $optionalText = '';
+      }
+      $this->addTextContent(" The test suite consists of {$totalCount} tests{$optionalText}.");
+    }
     $this->closeElement('p');
 
     if (1 < count($formats)) {
@@ -427,42 +448,52 @@ class IR_IndexPage extends HarnessPage
         $this->closeElement('li');
       }
       $this->closeElement('ul');
-      $this->addElement('p', null, "Some tests only apply to certain language variants; the results for each tested implementation are reported for each tested language variant. Also, not all tests are applicable to each implementation; for example, a browser which implements HTML but not XHTML is not tested for XHTML.");
+      $this->addElement('p', null, 'Some tests only apply to certain language variants; the results for each tested implementation are reported for each tested language variant. Also, not all tests are applicable to each implementation; for example, a browser which implements HTML but not XHTML is not tested for XHTML.');
     }
 
     $this->addElement('h2', array('id' => 'results'), 'Results');
    
-    $testCountText = (($passCount == $testCount) ? "all {$testCount}" : "{$passCount} of {$testCount}");
-    if (0 < $optionalCount) {
-      $requiredText = ' for required behavior';
-      if (0 < $optionalPassCount) {
-        if (1 == $optionalCount) {
-          $optionalText = " In addition, the 1 test for optional behavior was passed by at least two of the tested implementations.";
-        }
-        else {
-          if ($optionalPassCount == $optionalCount) {
-            if (2 == $optionalCount) {
-              $optionalCountText = 'both';
-            }
-            else {
-              $optionalCountText = "all {$optionalCount}";
-            }
-          }
-          else {
-            $optionalCountText = "{$optionalPassCount} of {$optionalCount}";
-          }
-          $optionalText = " In addition, {$optionalCountText} tests for optional behavior were passed by at least two of the tested implementations.";
-        }
+    if (1 == $testCount) {
+      if (0 < $passCount) {
+        $this->addElement('p', null, 'In summary, the results show that the test was passed by at least two of the tested implementations.');
       }
       else {
-        $optionalText = " No tests for optional behavior were passed by at least two of the tested implementations.";
+        $this->addElement('p', null, 'In summary, the results show that the test was not passed by at least two of the tested implementations.');
       }
     }
     else {
-      $requiredText = '';
-      $optionalText = '';
+      $testCountText = (($passCount == $testCount) ? "all {$testCount}" : "{$passCount} of {$testCount}");
+      if (0 < $optionalCount) {
+        $requiredText = ' for required behavior';
+        if (0 < $optionalPassCount) {
+          if (1 == $optionalCount) {
+            $optionalText = ' In addition, the 1 test for optional behavior was passed by at least two of the tested implementations.';
+          }
+          else {
+            if ($optionalPassCount == $optionalCount) {
+              if (2 == $optionalCount) {
+                $optionalCountText = 'both';
+              }
+              else {
+                $optionalCountText = "all {$optionalCount}";
+              }
+            }
+            else {
+              $optionalCountText = "{$optionalPassCount} of {$optionalCount}";
+            }
+            $optionalText = " In addition, {$optionalCountText} tests for optional behavior were passed by at least two of the tested implementations.";
+          }
+        }
+        else {
+          $optionalText = ' No tests for optional behavior were passed by at least two of the tested implementations.';
+        }
+      }
+      else {
+        $requiredText = '';
+        $optionalText = '';
+      }
+      $this->addElement('p', null, "In summary, the results show that {$testCountText} tests{$requiredText} were passed by at least two of the tested implementations.{$optionalText}");
     }
-    $this->addElement('p', null, "In summary, the results show that {$testCountText} tests{$requiredText} were passed by at least two of the tested implementations.{$optionalText}");
     
     $this->openElement('p', null, FALSE);
     $this->addTextContent('Results were gathered from implementation reports submitted by user agent vendors as well as the general public via the ');
