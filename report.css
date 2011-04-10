@@ -152,6 +152,7 @@ td.uncertain.invalid {
 }
 th.engine, td.pass, td.fail, td.uncertain, td.invalid, td.na {
   text-align: right;
+  white-space: nowrap;
 }
 tfoot th {
   text-align: right;

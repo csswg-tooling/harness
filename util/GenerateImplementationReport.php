@@ -24,6 +24,8 @@ require_once('lib/Engine.php');
 require_once('pages/ResultsPage.php');
 require_once('pages/DetailsPage.php');
 
+
+define('UA_THRESHOLD', 10);
   
 /**
  * Class for generating simplified results table
@@ -61,9 +63,22 @@ class IR_ResultsPage extends ResultsPage
   }
   
   
+  function _generateResultCell($testCaseName, $engineName, $class, $section, $content)
+  {
+    $uri = "details_{$engineName}.html#" . (($section) ? "s{$section}_{$testCaseName}" : $testCaseName);
+    
+    $this->openElement('td', array('class' => $class), FALSE);
+    $this->addHyperLink($uri, null, $content, FALSE);
+    $this->closeElement('td');
+  }
+  
+  
   function writeBodyFooter()
   {
     $this->writeLedgend();
+
+    $this->addElement('hr');
+    $this->addElement('address', null, '$Id$');
   }
 }
   
@@ -113,6 +128,9 @@ class IR_DetailsPage extends DetailsPage
   function writeBodyFooter()
   {
     $this->writeLedgend();
+
+    $this->addElement('hr');
+    $this->addElement('address', null, '$Id$');
   }
 }
 
@@ -120,6 +138,7 @@ class IR_DetailsPage extends DetailsPage
 class IR_UserAgentPage extends ResultsBasedPage
 {
   protected $mUserAgents;
+  protected $mUserAgentResultCounts;
   
   function __construct(Array $args = null)
   {
@@ -129,9 +148,10 @@ class IR_UserAgentPage extends ResultsBasedPage
   }
   
   
-  function setUserAgents($userAgents)
+  function setUserAgents($userAgents, $userAgentResultCounts)
   {
     $this->mUserAgents = $userAgents;
+    $this->mUserAgentResultCounts = $userAgentResultCounts;
   }
   
   
@@ -164,19 +184,23 @@ class IR_UserAgentPage extends ResultsBasedPage
     } 
     else {
       $this->openElement('ul');
-      foreach ($this->mResults->getEngineNames() as $engineName) {
-        if (array_key_exists($engineName, $this->mUserAgents)) {
-          $engineUserAgents = $this->mUserAgents[$engineName];
-          uasort($engineUserAgents, array('UserAgent', 'CompareDescription'));
-          $this->addElement('li', null, $engineUserAgents[0]->getEngineTitle());
-          $this->openElement('ul');
-          foreach ($engineUserAgents as $userAgent) {
-            $this->openElement('li');
-            $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
-            $this->closeElement('li');
+      foreach ($this->mUserAgents as $engineName => $engineUserAgents) {
+        uasort($engineUserAgents, array('UserAgent', 'CompareDescription'));
+        $this->addElement('li', null, $engineUserAgents[0]->getEngineTitle());
+        $this->openElement('ul');
+        foreach ($engineUserAgents as $userAgent) {
+          $this->openElement('li');
+          $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
+          $count = $this->mUserAgentResultCounts[$userAgent->getId()];
+          if (1 < $count) {
+            $this->addTextContent(" - {$count} results.");
           }
-          $this->closeElement('ul');
+          else {
+            $this->addTextContent(' - 1 result.');
+          }
+          $this->closeElement('li');
         }
+        $this->closeElement('ul');
       }
       $this->closeElement('ul');
     }
@@ -185,7 +209,9 @@ class IR_UserAgentPage extends ResultsBasedPage
   
   function writeBodyFooter()
   {
-  }  
+    $this->addElement('hr');
+    $this->addElement('address', null, '$Id$');
+  }
 }
 
 
@@ -205,9 +231,10 @@ class IR_IndexPage extends HarnessPage
   }
   
   
-  function setUserAgents($userAgents)
+  function setUserAgents($userAgents, $userAgentResultCounts)
   {
     $this->mUserAgents = $userAgents;
+    $this->mUserAgentResultCounts = $userAgentResultCounts;
   }
   
   function setStats(Array $stats)
@@ -297,12 +324,9 @@ class IR_IndexPage extends HarnessPage
   {
     $browserNames = array();
     
-    foreach ($this->mEngineNames as $engineName) {
-      if (array_key_exists($engineName, $this->mUserAgents)) {
-        $engineUserAgents = $this->mUserAgents[$engineName];
-        foreach ($engineUserAgents as $userAgent) {
-          $browserNames[$userAgent->getBrowserName()] = TRUE;
-        }
+    foreach ($this->mUserAgents as $engineUserAgents) {
+      foreach ($engineUserAgents as $userAgent) {
+        $browserNames[$userAgent->getBrowserName()] = TRUE;
       }
     }
 
@@ -314,14 +338,11 @@ class IR_IndexPage extends HarnessPage
   {
     $platformNames = array();
     
-    foreach ($this->mEngineNames as $engineName) {
-      if (array_key_exists($engineName, $this->mUserAgents)) {
-        $engineUserAgents = $this->mUserAgents[$engineName];
-        foreach ($engineUserAgents as $userAgent) {
-          $platformName = $userAgent->getPlatformName();
-          if ($platform) {
-            $platformNames[$platformName] = TRUE;
-          }
+    foreach ($this->mUserAgents as $engineUserAgents) {
+      foreach ($engineUserAgents as $userAgent) {
+        $platformName = $userAgent->getPlatformName();
+        if ($platformName) {
+          $platformNames[$platformName] = TRUE;
         }
       }
     }
@@ -358,11 +379,35 @@ class IR_IndexPage extends HarnessPage
     $osText = ((1 < $osCount) ? " across " . $this->numberToText($osCount) . " operating systems" : '');
     $this->addTextContent(ucfirst("{$browserCountText} user agents, built from {$engineCountText} rendering implementations, were tested{$osText}."));
     $this->closeElement('p');
-    $this->openElement('ul');
-    $this->openElement('li');
-    $this->addHyperlink('useragents.html', null, 'Complete list of user agents tested');
-    $this->closeElement('li');
-    $this->closeElement('ul');
+    if (count($this->mUserAgents, COUNT_RECURSIVE) <= UA_THRESHOLD) {
+      $this->openElement('ul');
+      foreach ($this->mUserAgents as $engineName => $engineUserAgents) {
+        uasort($engineUserAgents, array('UserAgent', 'CompareDescription'));
+        $this->addElement('li', null, $engineUserAgents[0]->getEngineTitle());
+        $this->openElement('ul');
+        foreach ($engineUserAgents as $userAgent) {
+          $this->openElement('li');
+          $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
+          $count = $this->mUserAgentResultCounts[$userAgent->getId()];
+          if (1 < $count) {
+            $this->addTextContent(" - {$count} results.");
+          }
+          else {
+            $this->addTextContent(' - 1 result.');
+          }
+          $this->closeElement('li');
+        }
+        $this->closeElement('ul');
+      }
+      $this->closeElement('ul');
+    }
+    else {
+      $this->openElement('ul');
+      $this->openElement('li');
+      $this->addHyperlink('useragents.html', null, 'Complete list of user agents tested');
+      $this->closeElement('li');
+      $this->closeElement('ul');
+    }
 
     $this->addElement('h2', array('id' => 'tests'), 'Tests');
     
@@ -432,8 +477,9 @@ class IR_IndexPage extends HarnessPage
     $this->addElement('li', null, 'Detailed results for each rendering implementation');
     $this->openElement('ul');
     foreach ($this->mEngineNames as $engineName) {
+      $engine = new Engine($engineName);
       $this->openElement('li');
-      $this->addHyperlink(strtolower("details_{$engineName}.html"), null, $engineName);
+      $this->addHyperlink(strtolower("details_{$engineName}.html"), null, $engine->getTitle());
       $this->closeElement('li');
     }
     $this->closeElement('ul');
@@ -455,6 +501,9 @@ class IR_IndexPage extends HarnessPage
  */
 class GenerateImplementationReport extends CmdLineWorker
 {
+  protected $mResults;
+  protected $mUserAgents;
+  protected $mUserAgentResultCounts;
   
   function __construct() 
   {
@@ -468,20 +517,29 @@ class GenerateImplementationReport extends CmdLineWorker
   }
   
   
-  function findUserAgents(Results $results)
+  function findUserAgents()
   {
-    $userAgents = array();
+    $this->mUserAgents = array();
+    $this->mUserAgentResultCounts = array();
+    
     $userAgentIds = array();
     
-    $testCases = $results->getTestCases();
+    $testCases = $this->mResults->getTestCases();
     foreach ($testCases as $testCaseId => $testCaseData) {
-      $engineResults = $results->getResultsFor($testCaseId);
+      $engineResults = $this->mResults->getResultsFor($testCaseId);
       
       if ($engineResults) {
         foreach ($engineResults as $engineName => $engineResultData) {
           foreach ($engineResultData as  $resultId => $resultValue) {
             $result = new Result($resultId);
-            $userAgentIds[$engineName][$result->getUserAgentId()] = TRUE;
+            $userAgentId = $result->getUserAgentId();
+            $userAgentIds[$engineName][$userAgentId] = TRUE;
+            if (array_key_exists($userAgentId, $this->mUserAgentResultCounts)) {
+              $this->mUserAgentResultCounts[$userAgentId] += 1;
+            }
+            else {
+              $this->mUserAgentResultCounts[$userAgentId] = 1;
+            }
           }
         }
       }
@@ -489,17 +547,15 @@ class GenerateImplementationReport extends CmdLineWorker
     
     $allUserAgents = UserAgent::GetAllUserAgents();
     
-    foreach ($results->getEngineNames() as $engineName) {
+    foreach ($this->mResults->getEngineNames() as $engineName) {
       if (array_key_exists($engineName, $userAgentIds)) {
         $engineUserAgentIds = $userAgentIds[$engineName];
         foreach ($engineUserAgentIds as $userAgentId => $bool) {
           $userAgent = $allUserAgents[$userAgentId];
-          $userAgents[$engineName][] = $userAgent;
+          $this->mUserAgents[$engineName][] = $userAgent;
         }
       }
     }
-    
-    return $userAgents;
   }
   
   
@@ -523,42 +579,45 @@ class GenerateImplementationReport extends CmdLineWorker
       
       echo "Loading results for {$testSuiteName}\n";
       
-      $results = new Results($testSuite);
+      $this->mResults = new Results($testSuite);
       
       $args['s'] = $testSuiteName;
+      $args['o'] = 1; // section ordering
       
       echo "Generating results page\n";
       
       $resultsPage = new IR_ResultsPage($args);
-      $resultsPage->setResults($results);
+      $resultsPage->setResults($this->mResults);
       $resultsPage->write($this->_combinePath($outputPath, 'results.html'));
       
       echo "Finding User Agents\n";
 
-      $userAgents = $this->findUserAgents($results);
+      $this->findUserAgents();
       
       echo "Generating index page\n";
       
       $indexPage = new IR_IndexPage($args);
       $indexPage->setStats($resultsPage->getStats());
-      $indexPage->setEngineNames($results->getEngineNames());
-      $indexPage->setUserAgents($userAgents);
+      $indexPage->setEngineNames($this->mResults->getEngineNames());
+      $indexPage->setUserAgents($this->mUserAgents, $this->mUserAgentResultCounts);
       $indexPage->write($this->_combinePath($outputPath, 'index.html'));
 
-      echo "Generating User Agent page\n";
-      
-      $uaPage = new IR_UserAgentPage($args);
-      $uaPage->setResults($results);
-      $uaPage->setUserAgents($userAgents);
-      $uaPage->write($this->_combinePath($outputPath, 'useragents.html'));
+      if (UA_THRESHOLD < count($this->mUserAgents, COUNT_RECURSIVE)) {
+        echo "Generating User Agent page\n";
+        
+        $uaPage = new IR_UserAgentPage($args);
+        $uaPage->setResults($this->mResults);
+        $uaPage->setUserAgents($this->mUserAgents, $this->mUserAgentResultCounts);
+        $uaPage->write($this->_combinePath($outputPath, 'useragents.html'));
+      }
 
-      $engineNames = $results->getEngineNames();
+      $engineNames = $this->mResults->getEngineNames();
       foreach ($engineNames as $engineName) {
         echo "Generating details page for {$engineName}\n";
         
         $args['e'] = $engineName;
         $detailsPage = new IR_DetailsPage($args);
-        $detailsPage->setResults($results);
+        $detailsPage->setResults($this->mResults);
         $detailsPage->write($this->_combinePath($outputPath, strtolower("details_{$engineName}.html")));
       }
       

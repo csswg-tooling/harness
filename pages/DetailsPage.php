@@ -20,6 +20,8 @@
 require_once("lib/ResultsBasedPage.php");
 require_once("lib/Result.php");
 require_once("lib/Format.php");
+require_once("lib/Specification.php");
+require_once("lib/Sections.php");
 
 
 /**
@@ -31,6 +33,13 @@ class DetailsPage extends ResultsBasedPage
   protected $mDisplayLinks;
   protected $mEngine;
   protected $mUserAgents;
+  protected $mFormats;
+  protected $mUsers;
+  protected $mSpecification;
+  protected $mSections;
+  
+  protected $mGroup;
+  protected $mOrdering;
 
 
   /**
@@ -44,6 +53,7 @@ class DetailsPage extends ResultsBasedPage
    * 'e' Engine (filter results for this engine)
    * 'v' Engine Version
    * 'p' Platform
+   * 'o' Ordering (optional)
    */
   function __construct(Array $args = null) 
   {
@@ -58,7 +68,11 @@ class DetailsPage extends ResultsBasedPage
 
     $this->mEngine = $this->_getData('e');
     
-    $order = intval($this->_getData('o'));
+    $this->mGroup = intval($this->_getData('g'));
+    $this->mOrdering = intval($this->_getData('o'));
+    if ($this->_getData('c')) {
+      $this->mOrdering = 0;
+    }
   }
   
   
@@ -110,6 +124,131 @@ class DetailsPage extends ResultsBasedPage
                          $resultOrder[$b->getResult()] . $userAgentB->getDescription() . $b->getDate());
   }
   
+  
+  function _writeResultsFor($testCaseId, $testCaseData, $section = null)
+  {
+    $haveResults = FALSE;
+    $engineResults = $this->mResults->getResultsFor($testCaseId);
+    
+    if ($engineResults) {
+      ksort($engineResults);
+      
+      $testCaseName = $testCaseData['testcase'];
+      if ($section) {
+        $anchor = array('name' => "s{$section}_{$testCaseName}");
+      }
+      else {
+        $anchor = array('name' => $testCaseName);
+      }
+      
+      foreach ($engineResults as $engine => $engineResultData) {
+        if ((! $this->mEngine) || (0 == strcasecmp($engine, $this->mEngine))) {
+          $results = array();
+          foreach ($engineResultData as $resultId => $resultValue) {
+            $results[] = new Result($resultId);
+          }
+          uasort($results, array($this, '_compareResults'));
+          
+          foreach ($results as $result) {
+            $haveResults = TRUE;
+            $resultValue = $result->getResult();
+
+            $this->openElement('tr', array('class' => $resultValue));
+
+            $userAgent = $this->mUserAgents[$result->getUserAgentId()];
+            $sourceId = $result->getSourceId();
+            if ($sourceId) {
+              $user = $this->mUsers[$sourceId];
+              $source = $user->getName();
+            }
+            else {
+              $source = '';
+            }
+
+            $this->openElement('td');
+            
+            if ($this->mDisplayLinks) {
+              $this->addSpiderTrap();
+            
+              $args['s'] = $this->mTestSuite->getName();
+              $args['c'] = $testCaseName;
+              $args['f'] = $result->getFormatName();
+              $args['u'] = $this->mUserAgent->getId();
+              $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+              
+              $this->addHyperLink($uri, $anchor, $testCaseName);
+            }
+            else {
+              if ($anchor) {
+                $this->addElement('a', $anchor, $testCaseName);
+              }
+              else {
+                $this->addTextContent($testCaseName);
+              }
+            }
+            $this->closeElement('td');
+
+            $this->addElement('td', null, $this->mFormats[$result->getFormatName()]->getTitle());
+            $this->addElement('td', null, $resultValue);
+            $this->openElement('td');
+            $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
+            $this->closeElement('td');
+            $this->addElement('td', null, $result->getDate());
+            $this->addElement('td', null, $source);
+
+            $this->closeElement('tr');
+            $anchor = null; // only first row gets anchor
+          }
+        }
+      }
+    }
+    return $haveResults;
+  }
+  
+
+  function writeGroupRows($specLinkId)
+  {
+    if (0 < $specLinkId) {
+      $sectionData = $this->mSections->getSectionData($specLinkId);
+      $testCount = intval($sectionData['test_count']);
+
+      if (0 < $testCount) {
+        $this->_beginBuffering();
+        $hadOutput = FALSE;
+        
+        $this->openElement('tbody', array('id' => "s{$sectionData['section']}"));
+        $this->openElement('tr');
+        $this->openElement('th', array('colspan' => 6, 'scope' => 'rowgroup'));
+        $specURI = $this->mSpecification->getBaseURI() . $sectionData['uri'];
+        $this->addHyperLink($specURI, null, "{$sectionData['section']}: {$sectionData['title']}");
+        $this->closeElement('th');
+        $this->closeElement('tr');
+
+        $testCasesIds = $this->mSections->getTestCaseIdsFor($specLinkId);
+        
+        foreach ($testCasesIds as $testCaseId) {
+          if ($this->_writeResultsFor($testCaseId, $this->mResults->getTestCaseData($testCaseId), $sectionData['section'])) {
+            $hadOutput = TRUE;
+          }
+        }
+        
+        $this->closeElement('tbody');
+        $this->_endBuffering(! $hadOutput);
+      }
+    }
+  
+    $subSections = $this->mSections->getSubSectionData($specLinkId);
+    if ($subSections) {
+      foreach ($subSections as $subSectionId => $sectionData) {
+        $testCount = intval($sectionData['test_count']);
+        if ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId))) {
+          $this->writeGroupRows($subSectionId);
+        }
+      }
+    }
+  }
+
+
   /**
    * Output details table
    */
@@ -134,78 +273,26 @@ class DetailsPage extends ResultsBasedPage
       $this->closeElement('tr');
       $this->closeElement('thead');
 
-      $this->openElement('tbody');
 
-      $testSuiteName  = $this->mTestSuite->getName();
-      
-      $formats = Format::GetFormatsFor($this->mTestSuite);
+      $this->mFormats = Format::GetFormatsFor($this->mTestSuite);
       $this->mUserAgents = UserAgent::GetAllUserAgents();
+      $this->mUsers = User::GetAllUsers();
       
       $testCases = $this->mResults->getTestCases();
-      foreach ($testCases as $testCaseId => $testCaseData) {
-        $engineResults = $this->mResults->getResultsFor($testCaseId);
-        
-        if ($engineResults) {
-          ksort($engineResults);
-          
-          $testCaseName   = $testCaseData['testcase'];
-          
-          foreach ($engineResults as $engine => $engineResultData) {
-            if ((! $this->mEngine) || (0 == strcasecmp($engine, $this->mEngine))) {
-              $results = array();
-              foreach ($engineResultData as $resultId => $resultValue) {
-                $results[] = new Result($resultId);
-              }
-              uasort($results, array($this, '_compareResults'));
-              
-              foreach ($results as $result) {
-                $resultValue = $result->getResult();
 
-                $this->openElement('tr', array('class' => $resultValue));
-
-                $userAgent = $this->mUserAgents[$result->getUserAgentId()];
-                $sourceId = $result->getSourceId();
-                if ($sourceId) {
-                  $user = new User($sourceId);
-                  $source = $user->getName();
-                }
-                else {
-                  $source = '';
-                }
-
-                $this->openElement('td');
-                
-                if ($this->mDisplayLinks) {
-                  $this->addSpiderTrap();
-                
-                  $args['s'] = $testSuiteName;
-                  $args['c'] = $testCaseName;
-                  $args['f'] = $result->getFormatName();
-                  $args['u'] = $this->mUserAgent->getId();
-                  $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
-                  
-                  $this->addHyperLink($uri, array('name' => $testCaseName), $testCaseName);
-                }
-                else {
-                  $this->addElement('a', array('name' => $testCaseName), $testCaseName);
-                }
-                $this->closeElement('td');
-
-                $this->addElement('td', null, $formats[strtolower($result->getFormatName())]->getTitle());
-                $this->addElement('td', null, $resultValue);
-                $this->openElement('td');
-                $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
-                $this->closeElement('td');
-                $this->addElement('td', null, $result->getDate());
-                $this->addElement('td', null, $source);
-
-                $this->closeElement('tr');
-              }
-            }
-          }
+      if (0 == $this->mOrdering) {
+        $this->openElement('tbody');
+        foreach ($testCases as $testCaseId => $testCaseData) {
+          $this->_writeResultsFor($testCaseId, $testCaseData);
         }
+        $this->closeElement('tbody');
       }
-      $this->closeElement('tbody');
+      else {
+        $this->mSections = new Sections($this->mTestSuite, TRUE);
+        $this->mSpecification = new Specification($this->mTestSuite);
+        $this->writeGroupRows($this->mGroup);
+      }
+      
       $this->closeElement('table');
     }
   }

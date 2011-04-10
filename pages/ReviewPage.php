@@ -80,6 +80,7 @@ class ReviewPage extends HarnessPage
     $script .= "  var resultForm = document.getElementById('result_form');";
     $script .= "  resultForm.g.disabled = false;\n";
     $script .= "  resultForm.c.disabled = false;\n";
+    $script .= "  resultForm.o.disabled = false;\n";
     $script .= "}\n";
     $script .= "function filterTypes() {\n";
     $script .= "  var resultForm = document.getElementById('result_form');";
@@ -94,6 +95,7 @@ class ReviewPage extends HarnessPage
     $script .= "  if (resultForm.t[2].checked) {\n";
     $script .= "    resultForm.g.disabled = true;\n";
     $script .= "    resultForm.c.disabled = false;\n";
+    $script .= "    resultForm.o.disabled = true;\n";
     $script .= "  }\n";
     $script .= "  return true;\n";
     $script .= "}\n";
@@ -160,13 +162,13 @@ class ReviewPage extends HarnessPage
     
     $this->writeHiddenFormControls(TRUE);
     
-    $this->addInputElement('radio', 't', 0, array('checked' => TRUE));
-    $this->addTextContent(' The full test suite');
+    $this->addInputElement('radio', 't', 0, 't0', array('checked' => TRUE));
+    $this->addLabelElement('t0', ' The full test suite');
     $this->addElement('br');
     
     if (0 < $this->mSections->getSubSectionCount()) {
-      $this->addInputElement('radio', 't', 1);
-      $this->addTextContent(' A section of the specification: ');
+      $this->addInputElement('radio', 't', 1, 't1');
+      $this->addLabelElement('t1', ' A section of the specification: ');
       $this->writeSectionSelect();
       $this->addElement('br');
     }
@@ -177,35 +179,44 @@ class ReviewPage extends HarnessPage
       $this->closeElement('span');
     }
     
-    $this->addInputElement('radio', 't', 2);
-    $this->addTextContent(' A single test case: ');
+    $this->addInputElement('radio', 't', 2, 't2');
+    $this->addLabelElement('t2', ' A single test case: ');
     $this->writeTestCaseSelect();
     $this->addElement('br');
     
     $this->closeElement('p');
+    
+    if (0 < $this->mSections->getSubSectionCount()) {
+      $this->openElement('p');
+      $this->addTextContent('Options:');
+      $this->addElement('br');
+      $this->addInputElement('checkbox', 'o', 1, 'o1');
+      $this->addLabelElement('o1', ' Group by specification section');
+      $this->closeElement('p');
+    }
 
     $this->openElement('p');
     $this->addTextContent('Do not display tests that:');
     $this->addElement('br');
 
-    $this->addInputElement('checkbox', 'f[]', 1);
-    $this->addTextContent(' Meet exit criteria');
+    $this->addInputElement('checkbox', 'f[]', 1, 'f1');
+    $this->addLabelElement('f1', ' Meet exit criteria');
     $this->addElement('br');
     
-    $this->addInputElement('checkbox', 'f[]', 2);
-    $this->addTextContent(' Have blocking failures');
+    $this->addInputElement('checkbox', 'f[]', 2, 'f2');
+    $this->addLabelElement('f2', ' Have blocking failures');
     $this->addElement('br');
     
-    $this->addInputElement('checkbox', 'f[]', 4);
-    $this->addTextContent(' Lack sufficient data');
+    $this->addInputElement('checkbox', 'f[]', 4, 'f4');
+    $this->addLabelElement('f4', ' Lack sufficient data');
     $this->addElement('br');
     
-    $this->addInputElement('checkbox', 'f[]', 8);
-    $this->addTextContent(' Have been reported as invalid');
+    $this->addInputElement('checkbox', 'f[]', 8, 'f8');
+    $this->addLabelElement('f8', ' Have been reported as invalid');
     $this->addElement('br');
     
-    $this->addInputElement('checkbox', 'f[]', 16);
-    $this->addTextContent(' Are not required');
+    $this->addInputElement('checkbox', 'f[]', 16, 'f16');
+    $this->addLabelElement('f16', ' Are not required');
     $this->addElement('br');
         
     $this->closeElement('p');

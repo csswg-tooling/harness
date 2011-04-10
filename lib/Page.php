@@ -674,7 +674,7 @@ class Page
    * @param string|int|bool value
    * @param array attribute array
    */
-  function addInputElement($type, $name = null, $value = null, Array $attrs = null)
+  function addInputElement($type, $name = null, $value = null, $id = null, Array $attrs = null)
   {
     $attrs['type'] = $type;
     if (! is_null($name)) {
@@ -683,7 +683,24 @@ class Page
     if (! is_null($value)) {
       $attrs['value'] = $value;
     }
+    if (! is_null($id)) {
+      $attrs['id'] = $id;
+    }
     $this->addElement('input', $attrs);
+  }
+  
+  
+  /**
+   * Shortcut to add label element
+   *
+   * @param string id of element label is attached to
+   * @param string content
+   * @param array attribute array
+   */
+  function addLabelElement($for, $content, Array $attrs = null)
+  {
+    $attrs['for'] = $for;
+    $this->addElement('label', $attrs, $content);
   }
   
   
@@ -935,11 +952,13 @@ class Page
 
     $attrs['lang'] = 'en';
     $this->openElement('html', $attrs);
+
     $this->writeHTMLHead();
     if ($this->mWriteXML) {
       $this->_endBuffering();
     }
     $this->writeHTMLBody();
+    
     $this->closeElement('html');
   }
   
@@ -1128,17 +1147,20 @@ class Page
     while (0 < count($this->mBufferStack)) {
       $this->_endBuffering();
     }
-    
+
+    $this->_beginBuffering();
     $this->writeError();
+    $error = $this->_endBuffering();
     
     while (0 < count($this->mElementStack)) {
       $this->closeElement();
     }
     
-    if ($this->mWriteXML) {
-      $this->_endBuffering();
+    if ($this->mOutputFile) {
+      fclose($this->mOutputFile);
+      $this->mOutputFile = null;
+      echo $error . "\n"; 
     }
-    
     die();
   }
 

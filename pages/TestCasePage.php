@@ -482,10 +482,10 @@ class TestCasePage extends HarnessPage
     $this->writeHiddenFormControls();
     
     $locked = $this->mTestSuite->isLocked();
-    $this->addInputElement('submit', 'result', 'Pass [1]', array('accesskey' => '1', 'disabled' => $locked));
-    $this->addInputElement('submit', 'result', 'Fail [2]', array('accesskey' => '2', 'disabled' => $locked));
-    $this->addInputElement('submit', 'result', 'Cannot tell [3]', array('accesskey' => '3', 'disabled' => $locked));
-    $this->addInputElement('submit', 'result', 'Skip [4]', array('accesskey' => '4'));
+    $this->addInputElement('submit', 'result', 'Pass [1]', null, array('accesskey' => '1', 'disabled' => $locked));
+    $this->addInputElement('submit', 'result', 'Fail [2]', null, array('accesskey' => '2', 'disabled' => $locked));
+    $this->addInputElement('submit', 'result', 'Cannot tell [3]', null, array('accesskey' => '3', 'disabled' => $locked));
+    $this->addInputElement('submit', 'result', 'Skip [4]', null, array('accesskey' => '4'));
     
     $this->closeElement('p');
     $this->closeElement('form');

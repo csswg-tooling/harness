@@ -84,7 +84,7 @@ class Result extends DBConnection
   function getFormatName()
   {
     if ($this->isValid()) {
-      return $this->mInfo['format'];
+      return strtolower($this->mInfo['format']);
     }
     return FALSE;
   }
@@ -116,7 +116,7 @@ class Result extends DBConnection
   function getResult()
   {
     if ($this->isValid()) {
-      return $this->mInfo['result'];
+      return strtolower($this->mInfo['result']);
     }
     return FALSE;
   }

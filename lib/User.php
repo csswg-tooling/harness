@@ -42,7 +42,7 @@ class User extends DBConnection
     $r = $db->query($sql);
 
     while ($data = $r->fetchRow()) {
-      $userId = $data['id'];
+      $userId = intval($data['id']);
       
       $users[$userId] = new User($data);
     }

@@ -36,7 +36,7 @@ class ResultsPage extends ResultsBasedPage
   
   protected $mSpecification;
   protected $mSections;
-  protected $mRowCache;                       // cached table row output per test case
+  protected $mTestCaseCounted;                // array of test case ids already counted for stats
   
   protected $mTestCaseRequiredCount;          // number of required tests
   protected $mTestCaseRequiredPassCount;      // number of required tests with 2 or more passes
@@ -89,8 +89,11 @@ class ResultsPage extends ResultsBasedPage
     $this->mModified = $this->_getData('m', 'DateTime');
     $this->mGroup = intval($this->_getData('g'));
     $this->mOrdering = intval($this->_getData('o'));
+    if ($this->_getData('c')) {
+      $this->mOrdering = 0;
+    }
     
-    $this->mRowCache = array();
+    $this->mTestCaseCounted = array();
   }
   
   
@@ -132,7 +135,7 @@ class ResultsPage extends ResultsBasedPage
   }
 
 
-  function _generateRow($testCaseName, $testCaseId, $optional)
+  function _generateRow($testCaseName, $testCaseId, $optional, $getStats, $section)
   {
     $engineResults = $this->mResults->getResultCountsFor($testCaseId);
     $componentTestIds = $this->mResults->getComponentTestsFor($testCaseId);
@@ -152,12 +155,16 @@ class ResultsPage extends ResultsBasedPage
         $uncertain = $engineResults[$engineName]['uncertain'];
         $invalid   = $engineResults[$engineName]['invalid'];
 
-        $this->mTestCaseEngineResultCount[$engineName]++;
+        if ($getStats) {
+          $this->mTestCaseEngineResultCount[$engineName]++;
+        }
         $class = '';
         if (0 < $pass) {
           $passCount++;
           $engineMissing[$engineName] = FALSE;
-          $this->mTestCaseEnginePassCount[$engineName]++;
+          if ($getStats) {
+            $this->mTestCaseEnginePassCount[$engineName]++;
+          }
           $class .= 'pass ';
         }
         if (0 < $fail) {
@@ -175,23 +182,14 @@ class ResultsPage extends ResultsBasedPage
           $testInvalid = TRUE;
         }
 
-        $args['s'] = $this->mTestSuite->getName();
-        $args['c'] = $testCaseName;
-        $args['e'] = $engineName;
-        $args['u'] = $this->mUserAgent->getId();
-        if ($this->mModified) {
-          $args['m'] = $this->mModified;
-        }
-        $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
-        
-        $content  = ((0 < $pass) ? $pass : '.') . '&nbsp;/&nbsp;';
-        $content .= ((0 < $fail) ? $fail : '.') . '&nbsp;/&nbsp;';
+        $content  = ((0 < $pass) ? $pass : '.') . ' / ';
+        $content .= ((0 < $fail) ? $fail : '.') . ' / ';
         $content .= ((0 < $uncertain) ? $uncertain : '.');
         
-        $cells[] = array($class, $uri, $content); 
+        $cells[] = array($engineName, $class, $section, $content); 
       }
       else {
-        $cells[] = '&nbsp;';
+        $cells[] = '';
       }
     }
     
@@ -200,16 +198,22 @@ class ResultsPage extends ResultsBasedPage
     if ($testInvalid) {
       $class .= 'invalid ';
       $display = (($this->mDisplayFilter & 0x8) == 0);
-      $this->mTestCaseInvalidCount++;
+      if ($getStats) {
+        $this->mTestCaseInvalidCount++;
+      }
     }
     else {
       if ($optional) {
         $class .= 'optional ';
         $display = $display & (($this->mDisplayFilter & 0x10) == 0);
-        $this->mTestCaseOptionalCount++;
+        if ($getStats) {
+          $this->mTestCaseOptionalCount++;
+        }
       }
       else {
-        $this->mTestCaseRequiredCount++;
+        if ($getStats) {
+          $this->mTestCaseRequiredCount++;
+        }
       }
       $allComponentsPass = FALSE;
       if (($passCount < 2) && $componentTestIds) {
@@ -241,29 +245,37 @@ class ResultsPage extends ResultsBasedPage
           $class .= ' bycomponents';
         }
         $display = $display & (($this->mDisplayFilter & 0x01) == 0);
-        if ($optional) {
-          $this->mTestCaseOptionalPassCount++;
-        } else {
-          $this->mTestCaseRequiredPassCount++;
+        if ($getStats) {
+          if ($optional) {
+            $this->mTestCaseOptionalPassCount++;
+          } else {
+            $this->mTestCaseRequiredPassCount++;
+          }
         }
       }
       else {
         if (! $optional) {
-          $this->mTestCaseNeededCount++;
+          if ($getStats) {
+            $this->mTestCaseNeededCount++;
+          }
           if ($failCount < ($this->mResults->getEngineCount() - 1)) {
             $class .= 'uncertain';
             $display = $display & (($this->mDisplayFilter & 0x04) == 0);
-            $this->mTestCaseNeedMoreResults++;
-            foreach ($engineMissing as $engineName => $missing) {
-              if ($missing) {
-                $this->mTestCaseEngineNeededCount[$engineName]++;
+            if ($getStats) {
+              $this->mTestCaseNeedMoreResults++;
+              foreach ($engineMissing as $engineName => $missing) {
+                if ($missing) {
+                  $this->mTestCaseEngineNeededCount[$engineName]++;
+                }
               }
             }
           }
           else {
             $class .= 'fail';
             $display = $display & (($this->mDisplayFilter & 0x02) == 0);
-            $this->mTestCaseTooManyFails++;
+            if ($getStats) {
+              $this->mTestCaseTooManyFails++;
+            }
           }
         }
       }
@@ -275,15 +287,17 @@ class ResultsPage extends ResultsBasedPage
       
       foreach ($cells as $cell) {
         if (is_array($cell)) {
-          list($class, $uri, $content) = $cell;
-          $this->_generateResultCell($class, $uri, $content);
+          list($engineName, $class, $section, $content) = $cell;
+          $this->_generateResultCell($testCaseName, $engineName, $class, $section, $content);
         }
         else {
           $this->addElement('td', null, $cell, FALSE);
         }
       }
       $this->closeElement('tr');
+      return TRUE;
     }
+    return FALSE;
   }
   
   
@@ -316,9 +330,18 @@ class ResultsPage extends ResultsBasedPage
   }
   
   
-  function _generateResultCell($class, $uri, $content)
+  function _generateResultCell($testCaseName, $engineName, $class, $section, $content)
   {
     if ($this->mDisplayLinks) {
+      $args['s'] = $this->mTestSuite->getName();
+      $args['c'] = $testCaseName;
+      $args['e'] = $engineName;
+      $args['u'] = $this->mUserAgent->getId();
+      if ($this->mModified) {
+        $args['m'] = $this->mModified;
+      }
+      $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
+      
       $this->openElement('td', array('class' => $class), FALSE);
       $this->addHyperLink($uri, null, $content, FALSE);
       $this->closeElement('td');
@@ -329,21 +352,19 @@ class ResultsPage extends ResultsBasedPage
   }
 
   
-  function _getRow($testCaseData)
+  function writeRow($testCaseData, $section = null)
   {
     $testCaseId   = intval($testCaseData['id']);
     
-    if (! array_key_exists($testCaseId, $this->mRowCache)) {
-      $testCaseName = $testCaseData['testcase'];
-      
-      $flags = new Flags($testCaseData['flags']);
-      $optional = $this->mTestSuite->testIsOptional($flags);
-      
-      $this->_beginBuffering();
-      $this->_generateRow($testCaseName, $testCaseId, $optional);
-      $this->mRowCache[$testCaseId] = $this->_endBuffering(TRUE);
-    }
-    return $this->mRowCache[$testCaseId];
+    $needStats = (! array_key_exists($testCaseId, $this->mTestCaseCounted));
+    $this->mTestCaseCounted[$testCaseId] = TRUE;
+
+    $testCaseName = $testCaseData['testcase'];
+    
+    $flags = new Flags($testCaseData['flags']);
+    $optional = $this->mTestSuite->testIsOptional($flags);
+
+    return $this->_generateRow($testCaseName, $testCaseId, $optional, $needStats, $section);
   }
   
   
@@ -359,7 +380,7 @@ class ResultsPage extends ResultsBasedPage
         
         $this->openElement('tbody', array('id' => "s{$sectionData['section']}"));
         $this->openElement('tr');
-        $this->openElement('th', array('colspan' => 0));
+        $this->openElement('th', array('colspan' => ($this->mResults->getEngineCount() + 1), 'scope' => 'rowgroup'));
         $specURI = $this->mSpecification->getBaseURI() . $sectionData['uri'];
         $this->addHyperLink($specURI, null, "{$sectionData['section']}: {$sectionData['title']}");
         $this->closeElement('th');
@@ -368,9 +389,7 @@ class ResultsPage extends ResultsBasedPage
         $testCasesIds = $this->mSections->getTestCaseIdsFor($specLinkId);
         
         foreach ($testCasesIds as $testCaseId) {
-          $row = $this->_getRow($this->mResults->getTestCaseData($testCaseId));
-          if ($row) {
-            $this->_write($row);
+          if ($this->writeRow($this->mResults->getTestCaseData($testCaseId), $sectionData['section'])) {
             $hadOutput = TRUE;
           }
         }
@@ -410,7 +429,7 @@ class ResultsPage extends ResultsBasedPage
       $this->openElement('tbody');
       $testCases = $this->mResults->getTestCases();
       foreach ($testCases as $testCaseData) {
-        $this->_write($this->_getRow($testCaseData));
+        $this->writeRow($testCaseData);
       }
       $this->closeElement('tbody');
     }

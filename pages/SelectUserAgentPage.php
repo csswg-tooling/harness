@@ -160,8 +160,8 @@ class SelectUserAgentPage extends HarnessPage
     $this->openElement('p');
     $this->openFormElement(SET_UA_PAGE_URI, 'post');
     $this->writeHiddenFormControls();
-    $this->addTextContent("Custom User Agent String: ");
-    $this->addInputElement('text', 'ua', null, array('size' => 80));
+    $this->addLabelElement('uatext', 'Custom User Agent String: ');
+    $this->addInputElement('text', 'ua', null, 'uatext', array('size' => 80));
     $this->addInputElement('submit', 'action', 'Enter');
     $this->closeElement('form');
 
