@@ -59,16 +59,16 @@ function addAnnotationTo(element, data)
       
       var engineNode = document.createElement('span');
       var toolTip = '';
-      var class = '';
+      var engineClass = '';
       if (0 < resultCount) {
         if (engineData.passCount == data.testCount) {
           toolTip = 'All tests pass';
-          class = 'pass';
+          engineClass = 'pass';
         }
         else {
           if (engineData.failCount == data.testCount) {
             toolTip = 'All tests fail';
-            class = 'fail';
+            engineClass = 'fail';
           }
           else {
             if (0 < engineData.passCount) {
@@ -86,7 +86,7 @@ function addAnnotationTo(element, data)
               }
               toolTip += (data.testCount - resultCount) + ' untested';
             }
-            class = 'uncertain';
+            engineClass = 'uncertain';
           }
         }
       }
@@ -94,7 +94,7 @@ function addAnnotationTo(element, data)
         toolTip = 'No data';
       }
       engineNode.setAttribute('title', toolTip);
-      engineNode.setAttribute('class', class);
+      engineNode.setAttribute('class', engineClass);
 
       var detailsLink = document.createElement('a');
       detailsLink.setAttribute('href', engineData.detailsURI);
