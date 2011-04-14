@@ -26,6 +26,7 @@ class Sections extends DBConnection
 {
   protected $mSections;
   protected $mTestCaseIds;
+  protected $mPrimarySectionIds;
 
 
   function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE)
@@ -67,7 +68,8 @@ class Sections extends DBConnection
     }
     
     if ($loadTestCaseIds) {
-      $sql  = "SELECT `testcases`.`id`, `testlinks`.`speclink_id` ";
+      $sql  = "SELECT `testcases`.`id`, `testlinks`.`speclink_id`, ";
+      $sql .= "`testlinks`.`sequence` ";
       $sql .= "FROM `testcases` ";
       $sql .= "LEFT JOIN (`suitetests`, `testlinks`, `speclinks`) ";
       $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
@@ -84,6 +86,9 @@ class Sections extends DBConnection
         $sectionId = intval($testCaseData['speclink_id']);
         $testCaseId = intval($testCaseData['id']);
         $this->mTestCaseIds[$sectionId][] = $testCaseId;
+        if (0 == intval($testCaseData['sequence'])) {
+          $this->mPrimarySectionIds[$testCaseId] = $sectionId;
+        }
       }
     }
   }
@@ -136,6 +141,15 @@ class Sections extends DBConnection
       }
     }
     return ((0 < count($testCaseIds)) ? $testCaseIds : FALSE);
+  }
+  
+  
+  function getPrimarySectionFor($testCaseId)
+  {
+    if ($this->mPrimarySectionIds && array_key_exists($testCaseId, $this->mPrimarySectionIds)) {
+      return $this->mPrimarySectionIds[$testCaseId];
+    }
+    return FALSE;
   }
   
   

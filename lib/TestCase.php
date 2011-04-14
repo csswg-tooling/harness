@@ -162,6 +162,7 @@ class TestCase extends DBConnection
       $sql .= "WHERE `testlinks`.`testcase_id` = '{$testCaseId}' ";
       $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
       $sql .= "AND `testlinks`.`group` = 0 ";
+      $sql .= "ORDER BY `testlinks`.`sequence` ";
       
       $r = $this->query($sql);
       while ($specLink = $r->fetchRow()) {

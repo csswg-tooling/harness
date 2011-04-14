@@ -317,14 +317,16 @@ class TestCaseImport extends CmdLineWorker
       }
       
       // add parent spec links for grouping
+      $sequence = -1;
       foreach ($linkArray as $specLinkURI) {
+        $sequence++;
         $specLinkId = $this->_getSpecLinkId($specLinkURI);
         
         while ($specLinkId = $this->_getSpecLinkParentId($specLinkId)) {
           if (! isset($usedSpecLinkIds[$specLinkId])) {
             $sql  = "INSERT INTO `testlinks` ";
             $sql .= "(`testcase_id`, `speclink_id`, `sequence`, `group`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', 0, 1) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', '{$sequence}', 1) ";
             
             $this->query($sql);
             $usedSpecLinkIds[$specLinkId] = TRUE;

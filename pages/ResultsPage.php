@@ -135,7 +135,7 @@ class ResultsPage extends ResultsBasedPage
   }
 
 
-  function _generateRow($testCaseName, $testCaseId, $optional, $getStats, $section)
+  function _generateRow($testCaseName, $testCaseId, $optional, $getStats, $section, $isPrimarySection)
   {
     $engineResults = $this->mResults->getResultCountsFor($testCaseId);
     $componentTestIds = $this->mResults->getComponentTestsFor($testCaseId);
@@ -283,7 +283,7 @@ class ResultsPage extends ResultsBasedPage
     if ($display) {
       $this->openElement('tr', array('class' => $class));
       
-      $this->_generateTestCaseCell($testCaseName, $section, $hasResults);
+      $this->_generateTestCaseCell($testCaseName, $section, $hasResults, $isPrimarySection);
       
       foreach ($cells as $cell) {
         if (is_array($cell)) {
@@ -301,9 +301,13 @@ class ResultsPage extends ResultsBasedPage
   }
   
   
-  function _generateTestCaseCell($testCaseName, $section, $hasResults)
+  function _generateTestCaseCell($testCaseName, $section, $hasResults, $isPrimarySection)
   {
-    $this->openElement('td', null, FALSE);
+    $attrs = null;
+    if ($isPrimarySection) {
+      $attrs['class'] = 'primary';
+    }
+    $this->openElement('td', $attrs, FALSE);
     
     if ($section) {
       $anchor = array('name' => "s{$section}_{$testCaseName}");
@@ -358,7 +362,7 @@ class ResultsPage extends ResultsBasedPage
   }
 
   
-  function writeRow($testCaseData, $section = null)
+  function writeRow($testCaseData, $section = null, $isPrimarySection = FALSE)
   {
     $testCaseId   = intval($testCaseData['id']);
     
@@ -370,7 +374,7 @@ class ResultsPage extends ResultsBasedPage
     $flags = new Flags($testCaseData['flags']);
     $optional = $this->mTestSuite->testIsOptional($flags);
 
-    return $this->_generateRow($testCaseName, $testCaseId, $optional, $needStats, $section);
+    return $this->_generateRow($testCaseName, $testCaseId, $optional, $needStats, $section, $isPrimarySection);
   }
   
   
@@ -395,7 +399,8 @@ class ResultsPage extends ResultsBasedPage
         $testCasesIds = $this->mSections->getTestCaseIdsFor($sectionId);
         
         foreach ($testCasesIds as $testCaseId) {
-          if ($this->writeRow($this->mResults->getTestCaseData($testCaseId), $sectionData['section'])) {
+          $isPrimarySection = ($this->mSections->getPrimarySectionFor($testCaseId) == $sectionId);
+          if ($this->writeRow($this->mResults->getTestCaseData($testCaseId), $sectionData['section'], $isPrimarySection)) {
             $hadOutput = TRUE;
           }
         }

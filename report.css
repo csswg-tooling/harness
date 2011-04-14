@@ -150,6 +150,9 @@ td.fail.invalid,
 td.uncertain.invalid {
   background-color: #AAA;
 }
+td.primary {
+  font-weight: bold;
+}
 th.engine, td.pass, td.fail, td.uncertain, td.invalid, td.na {
   text-align: right;
   white-space: nowrap;

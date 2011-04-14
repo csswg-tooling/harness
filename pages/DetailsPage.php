@@ -125,7 +125,7 @@ class DetailsPage extends ResultsBasedPage
   }
   
   
-  function _writeResultsFor($testCaseId, $testCaseData, $section = null)
+  function _writeResultsFor($testCaseId, $testCaseData, $section = null, $isPrimarySection = FALSE)
   {
     $haveResults = FALSE;
     $engineResults = $this->mResults->getResultsFor($testCaseId);
@@ -165,7 +165,12 @@ class DetailsPage extends ResultsBasedPage
               $source = '';
             }
 
-            $this->openElement('td');
+
+            $attrs = null;
+            if ($isPrimarySection) {
+              $attrs['class'] = 'primary';
+            }
+            $this->openElement('td', $attrs, FALSE);
             
             if ($this->mDisplayLinks) {
               $this->addSpiderTrap();
@@ -227,7 +232,8 @@ class DetailsPage extends ResultsBasedPage
         $testCasesIds = $this->mSections->getTestCaseIdsFor($sectionId);
         
         foreach ($testCasesIds as $testCaseId) {
-          if ($this->_writeResultsFor($testCaseId, $this->mResults->getTestCaseData($testCaseId), $sectionData['section'])) {
+          $isPrimarySection = ($this->mSections->getPrimarySectionFor($testCaseId) == $sectionId);
+          if ($this->_writeResultsFor($testCaseId, $this->mResults->getTestCaseData($testCaseId), $sectionData['section'], $isPrimarySection)) {
             $hadOutput = TRUE;
           }
         }
