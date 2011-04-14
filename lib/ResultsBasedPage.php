@@ -56,12 +56,12 @@ class ResultsBasedPage extends HarnessPage
   {
     if (! $this->mResults) {
       $testCaseName = $this->_getData('c');
-      $specLinkId = intval($this->_getData('g'));
+      $sectionId = intval($this->_getData('g'));
       
       if ($this->_getData('t')) {
         $type = intval($this->_getData('t'));
         switch ($type) {
-          case 0: $specLinkId = 0;        // whole suite
+          case 0: $sectionId = 0;         // whole suite
           case 1: $testCaseName = null;   // test group
           case 2: break;                  // individual test case
         }
@@ -73,7 +73,7 @@ class ResultsBasedPage extends HarnessPage
       $modified = $this->_getData('m', 'DateTime');
       
       $this->mResults = 
-        new Results($this->mTestSuite, $testCaseName, $specLinkId,
+        new Results($this->mTestSuite, $testCaseName, $sectionId,
                     $engine, $engineVersion, $platform, 
                     $modified);
     }

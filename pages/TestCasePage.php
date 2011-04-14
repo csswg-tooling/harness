@@ -60,7 +60,7 @@ class TestCasePage extends HarnessPage
     }
 
     $testCaseName = $this->_getData('c');
-    $specLinkId = intval($this->_getData('g'));
+    $sectionId = intval($this->_getData('g'));
 
     $this->mIndex = intval($this->_getData('r'));
     $order = intval($this->_getData('o'));
@@ -68,7 +68,7 @@ class TestCasePage extends HarnessPage
     $formatName = $this->_getData('f');
     
     $this->mTestCase = new TestCase();
-    $this->mTestCase->load($this->mTestSuite, $testCaseName, $specLinkId,
+    $this->mTestCase->load($this->mTestSuite, $testCaseName, $sectionId,
                            $this->mUserAgent, $order, $this->mIndex);
                            
     if (! $this->mTestCase->isValid()) {
@@ -96,8 +96,8 @@ class TestCasePage extends HarnessPage
     if ($testCaseName) {
       $this->mCount = 1;
     }
-    elseif ($specLinkId) {
-      $this->mCount = $this->mTestCase->countCasesInSection($specLinkId);
+    elseif ($sectionId) {
+      $this->mCount = $this->mTestCase->countCasesInSection($sectionId);
     }
     else {
       $this->mCount = $this->mTestCase->countCasesInSuite();

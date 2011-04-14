@@ -32,7 +32,7 @@ class Results extends DBConnection
   protected $mResultCount;
 
 
-  function __construct(TestSuite $testSuite, $testCaseName = null, $specLinkId = null,
+  function __construct(TestSuite $testSuite, $testCaseName = null, $sectionId = null,
                        $engineName = null, $engineVersion = null, $platform = null, 
                        DateTime $modified = null)
   {
@@ -85,10 +85,10 @@ class Results extends DBConnection
     if ($searchTestCaseId) {
       $sql .= "AND `testcases`.`id` = '{$searchTestCaseId}' ";
     }
-    elseif ($specLinkId) {
-      $sql .= "AND `speclink_id` = '{$specLinkId}' ";
+    elseif ($sectionId) {
+      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     }
-    $sql .= "ORDER BY `testcase` ";
+    $sql .= "ORDER BY `testcases`.`testcase` ";
 
     $r = $this->query($sql);
     
@@ -147,8 +147,8 @@ class Results extends DBConnection
     if ($searchTestCaseId) {
       $sql .= "AND `results`.`testcase_id` = '{$searchTestCaseId}' ";
     }
-    elseif ($specLinkId) {
-      $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
+    elseif ($sectionId) {
+      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     }
     if ($modified) {
       $modified->setTimeZone(new DateTimeZone(SERVER_TIME_ZONE));

@@ -63,7 +63,7 @@ class TestCaseImport extends CmdLineWorker
   }
   
   
-  protected function _loadSpecLinkIDs($spec)
+  protected function _loadSpecLinkIds($spec)
   {
     $this->mSpecLinkIds = array();
     $this->mSpecLinkParentIds = array();
@@ -118,7 +118,7 @@ class TestCaseImport extends CmdLineWorker
     $testSuite = new TestSuite($testSuiteName);
     $formats = Format::GetFormatsFor($testSuite);
     
-    $this->_loadSpecLinkIDs($testSuite->getSpecName());
+    $this->_loadSpecLinkIds($testSuite->getSpecName());
     
     $testSuiteName = $this->encode($testSuiteName, SUITETESTS_MAX_TESTSUITE);
 
@@ -288,7 +288,9 @@ class TestCaseImport extends CmdLineWorker
       
       $linkArray = $this->_explodeTrimAndFilter(',', $links);
       $usedSpecLinkIds = array();
+      $sequence = -1;
       foreach ($linkArray as $specLinkURI) {
+        $sequence++;
         $specLinkId = $this->_getSpecLinkId($specLinkURI);
         
         if (FALSE === $specLinkId) {
@@ -306,8 +308,8 @@ class TestCaseImport extends CmdLineWorker
         }
         
         $sql  = "INSERT INTO `testlinks` ";
-        $sql .= "(`testcase_id`, `speclink_id`, `group`) ";
-        $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', 0) ";
+        $sql .= "(`testcase_id`, `speclink_id`, `sequence`, `group`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', '{$sequence}', 0) ";
         
         $this->query($sql);
         
@@ -321,8 +323,8 @@ class TestCaseImport extends CmdLineWorker
         while ($specLinkId = $this->_getSpecLinkParentId($specLinkId)) {
           if (! isset($usedSpecLinkIds[$specLinkId])) {
             $sql  = "INSERT INTO `testlinks` ";
-            $sql .= "(`testcase_id`, `speclink_id`, `group`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', 1) ";
+            $sql .= "(`testcase_id`, `speclink_id`, `sequence`, `group`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', 0, 1) ";
             
             $this->query($sql);
             $usedSpecLinkIds[$specLinkId] = TRUE;

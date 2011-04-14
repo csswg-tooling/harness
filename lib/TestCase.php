@@ -70,7 +70,7 @@ class TestCase extends DBConnection
     }
   }
   
-  function load(TestSuite $testSuite, $testCaseName, $specLinkId,
+  function load(TestSuite $testSuite, $testCaseName, $sectionId,
                 UserAgent $userAgent, $order, $index)
   {
     if ($index < 0) {
@@ -82,8 +82,8 @@ class TestCase extends DBConnection
     if ($testCaseName) {  // load specific test case
       $this->mInfo = $this->_selectCaseByName($testCaseName);
     }
-    elseif ($specLinkId) { // load test from spec section
-      $this->mInfo = $this->_selectCaseFromSection($specLinkId, $userAgent, $order, $index);
+    elseif ($sectionId) { // load test from spec section
+      $this->mInfo = $this->_selectCaseFromSection($sectionId, $userAgent, $order, $index);
       
     }
     else { // load test from suite
@@ -252,10 +252,10 @@ class TestCase extends DBConnection
     }
     $sql .= ") GROUP BY `id` ";
     if (1 == $order) {
-      $sql .= "ORDER BY `sequence`, `testcase` ";
+      $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
     }
     else {
-      $sql .= "ORDER BY `testcase` ";
+      $sql .= "ORDER BY `testcases`.`testcase` ";
     }
     $sql .= "LIMIT {$index}, 1";
 
@@ -275,17 +275,17 @@ class TestCase extends DBConnection
   /**
    * Count number of test cases in a particular section
    */
-  function countCasesInSection($specLinkId)
+  function countCasesInSection($sectionId)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $specLinkId = intval($specLinkId);
+    $sectionId = intval($sectionId);
     
     $sql  = "SELECT COUNT(*) AS `count` ";
     $sql .= "FROM `suitetests` ";
     $sql .= "LEFT JOIN `testlinks` ";
     $sql .= "ON `suitetests`.`testcase_id` = `testlinks`.`testcase_id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
+    $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
@@ -303,12 +303,12 @@ class TestCase extends DBConnection
   /**
    * Load data about test case from section by index
    */
-  protected function _selectCaseFromSection($specLinkId,
+  protected function _selectCaseFromSection($sectionId,
                                             UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
     $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
-    $specLinkId = intval($specLinkId);
+    $sectionId = intval($sectionId);
     $index = intval($index);
     
     if (1 == $order) {  // if engine isn't sequenced, use magic engine name
@@ -351,13 +351,13 @@ class TestCase extends DBConnection
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
-    $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
+    $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     $sql .= ") GROUP BY `id` ";
     if (1 == $order) {
-      $sql .= "ORDER BY `sequence`, `testcase` ";
+      $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
     }
     else {
-      $sql .= "ORDER BY `testcase` ";
+      $sql .= "ORDER BY `testcases`.`testcase` ";
     }
     $sql .= "LIMIT {$index}, 1";
 

@@ -27,7 +27,7 @@ class TestCases extends DBConnection
   protected $mTestCases;
 
 
-  function __construct(TestSuite $testSuite, $specLinkId = 0, $group = TRUE)
+  function __construct(TestSuite $testSuite, $sectionId = 0, $group = TRUE)
   {
     parent::__construct();
     
@@ -35,12 +35,12 @@ class TestCases extends DBConnection
     
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, `testcases`.`title` ";
     $sql .= "FROM `testcases` ";
-    if (0 < $specLinkId) {
+    if (0 < $sectionId) {
       $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
       $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
       $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
       $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-      $sql .= "AND `testlinks`.`speclink_id` = '{$specLinkId}' ";
+      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
       if (! $group) {
         $sql .= "AND `testlinks`.`group` = 0 ";
       }
