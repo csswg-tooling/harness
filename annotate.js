@@ -110,6 +110,7 @@ function addAnnotationTo(element, data)
   }
 }
 
+
 function processAnnotation(testData)
 {
   var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
@@ -141,53 +142,88 @@ function processAnnotation(testData)
 }
 
 
-function annotate(testSuiteName)
+function annotate()
 {
   try {
-    var styleSheet = document.createElement('link');
-    styleSheet.setAttribute('rel', 'stylesheet');
-    styleSheet.setAttribute('type', 'text/css');
-    styleSheet.setAttribute('href', STYLESHEET_URI);
-    document.getElementsByTagName('head')[0].appendChild(styleSheet)
-
-    var xhr = new XMLHttpRequest();
+    var testSuiteName = '';
     
-    xhr.onreadystatechange = function() {
-      if (4 == xhr.readyState) {
-        if (200 == xhr.status) {
-          var contentType = xhr.getResponseHeader('Content-Type');
-          if (-1 < contentType.indexOf('application/json')) {
-            var data = JSON.parse(xhr.responseText);
-            
-            if (data) {
-              if (data instanceof Array) {
-                for (index in data) {
-                  processAnnotation(data[index]);
+    var scripts = document.getElementsByTagName('script');
+    for (index in scripts) {
+      if (scripts[index].hasAttribute('src')) {
+        var scriptSource = scripts[index].getAttribute('src');
+        if (-1 < scriptSource.indexOf('harness/annotate.js#')) {
+          testSuiteName = scriptSource.substr(scriptSource.indexOf('#') + 1);
+          break;
+        }
+      }
+    }
+    
+    if (0 < testSuiteName.length) {
+      var styleSheet = document.createElement('link');
+      styleSheet.setAttribute('rel', 'stylesheet');
+      styleSheet.setAttribute('type', 'text/css');
+      styleSheet.setAttribute('href', STYLESHEET_URI);
+      document.getElementsByTagName('head')[0].appendChild(styleSheet)
+
+      var xhr = new XMLHttpRequest();
+      
+      xhr.onreadystatechange = function() {
+        if (4 == xhr.readyState) {
+          if (200 == xhr.status) {
+            var contentType = xhr.getResponseHeader('Content-Type');
+            if (-1 < contentType.indexOf('application/json')) {
+              var data = JSON.parse(xhr.responseText);
+              
+              if (data) {
+                if (data instanceof Array) {
+                  for (index in data) {
+                    processAnnotation(data[index]);
+                  }
                 }
-              }
-              else {
-                processAnnotation(data);
+                else {
+                  processAnnotation(data);
+                }
               }
             }
           }
+          else if (500 == xhr.status) {
+  // DEBUG          document.documentElement.innerHTML = xhr.responseText;  // DEBUG
+          }
+          else {
+  // DEBUG          document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
+          }
         }
-        else if (500 == xhr.status) {
-// DEBUG          document.documentElement.innerHTML = xhr.responseText;  // DEBUG
-        }
-        else {
-// DEBUG          document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
-        }
-      }
-    };
-    
-    var statusURI = QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
-    
-    xhr.open('GET', statusURI, true);
-    xhr.setRequestHeader('Accept', 'application/json,text/html');
-    xhr.send();
+      };
+      
+      var statusURI = QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
+      xhr.open('GET', statusURI, true);
+      xhr.setRequestHeader('Accept', 'application/json,text/html');
+      xhr.send();
+    }
   }
   catch (err)
   {
 // DEBUG    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
   }
 }
+
+
+function addLoadEvent(loadFunc)
+{
+  var oldOnLoad = window.onload;
+  if (typeof window.onload != 'function') {
+    window.onload = loadFunc;
+  }
+  else {
+    window.onload = function () {
+      if (oldOnLoad) {
+        oldOnLoad();
+      }
+      loadFunc();
+    }
+  }
+}
+
+
+addLoadEvent(annotate);
+
