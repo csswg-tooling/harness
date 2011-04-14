@@ -36,108 +36,118 @@ var STYLESHEET_URI  = 'http://test.csswg.org/harness/annotate.css';
 
 function addAnnotationTo(element, data)
 {
-  if (element) {
-    var annotation = document.createElement('div');
-    
-    annotation.setAttribute('class', 'annotation');
-    
-    var heading = document.createElement('div');
-    var testLink = document.createElement('a');
-    testLink.setAttribute('href', data.testURI);
-    heading.appendChild(testLink);
-    if (1 == data.testCount) {
-      testLink.appendChild(document.createTextNode('1 Test'));
-    }
-    else {
-      testLink.appendChild(document.createTextNode(data.testCount + ' Tests'));
-    }
-    annotation.appendChild(heading);
-    
-    for (index in data.engines) {
-      var engineData = data.engines[index];
-      var resultCount = (engineData.passCount + engineData.failCount);
+  try {
+    if (element) {
+      var annotation = document.createElement('div');
       
-      var engineNode = document.createElement('span');
-      var toolTip = '';
-      var engineClass = '';
-      if (0 < resultCount) {
-        if (engineData.passCount == data.testCount) {
-          toolTip = 'All tests pass';
-          engineClass = 'pass';
-        }
-        else {
-          if (engineData.failCount == data.testCount) {
-            toolTip = 'All tests fail';
-            engineClass = 'fail';
-          }
-          else {
-            if (0 < engineData.passCount) {
-              toolTip = engineData.passCount + ' pass';
-            }
-            if (0 < engineData.failCount) {
-              if (toolTip.length) {
-                toolTip += ', '
-              }
-              toolTip += engineData.failCount + ' fail';
-            }
-            if (resultCount < data.testCount) {
-              if (toolTip.length) {
-                toolTip += ', '
-              }
-              toolTip += (data.testCount - resultCount) + ' untested';
-            }
-            engineClass = 'uncertain';
-          }
-        }
+      annotation.setAttribute('class', 'annotation');
+      
+      var heading = document.createElement('div');
+      var testLink = document.createElement('a');
+      testLink.setAttribute('href', data.testURI);
+      heading.appendChild(testLink);
+      if (1 == data.testCount) {
+        testLink.appendChild(document.createTextNode('1 Test'));
       }
       else {
-        toolTip = 'No data';
+        testLink.appendChild(document.createTextNode(data.testCount + ' Tests'));
       }
-      engineNode.setAttribute('title', toolTip);
-      engineNode.setAttribute('class', engineClass);
+      annotation.appendChild(heading);
+      
+      for (index in data.engines) {
+        var engineData = data.engines[index];
+        var resultCount = (engineData.passCount + engineData.failCount);
+        
+        var engineNode = document.createElement('span');
+        var toolTip = '';
+        var engineClass = '';
+        if (0 < resultCount) {
+          if (engineData.passCount == data.testCount) {
+            toolTip = 'All tests pass';
+            engineClass = 'pass';
+          }
+          else {
+            if (engineData.failCount == data.testCount) {
+              toolTip = 'All tests fail';
+              engineClass = 'fail';
+            }
+            else {
+              if (0 < engineData.passCount) {
+                toolTip = engineData.passCount + ' pass';
+              }
+              if (0 < engineData.failCount) {
+                if (toolTip.length) {
+                  toolTip += ', '
+                }
+                toolTip += engineData.failCount + ' fail';
+              }
+              if (resultCount < data.testCount) {
+                if (toolTip.length) {
+                  toolTip += ', '
+                }
+                toolTip += (data.testCount - resultCount) + ' untested';
+              }
+              engineClass = 'uncertain';
+            }
+          }
+        }
+        else {
+          toolTip = 'No data';
+        }
+        engineNode.setAttribute('title', toolTip);
+        engineNode.setAttribute('class', engineClass);
 
-      var detailsLink = document.createElement('a');
-      detailsLink.setAttribute('href', engineData.detailsURI);
+        var detailsLink = document.createElement('a');
+        detailsLink.setAttribute('href', engineData.detailsURI);
+        
+        detailsLink.appendChild(document.createTextNode(engineData.title));
+        engineNode.appendChild(detailsLink);
+        
+        annotation.appendChild(engineNode);
+        annotation.appendChild(document.createTextNode(' '));
+      }
       
-      detailsLink.appendChild(document.createTextNode(engineData.title));
-      engineNode.appendChild(detailsLink);
-      
-      annotation.appendChild(engineNode);
-      annotation.appendChild(document.createTextNode(' '));
+      element.parentNode.insertBefore(annotation, element);
     }
-    
-    element.parentNode.insertBefore(annotation, element);
+  }
+  catch (err)
+  {
   }
 }
 
 
 function processAnnotation(testData)
 {
-  var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
-                  'H1':'', 'H2':'', 'H3':'', 'H4':'', 'H5':'', 'H6':''};
-  var anchorName = testData.anchorName;
+  try {
+    var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
+                    'H1':'', 'H2':'', 'H3':'', 'H4':'', 'H5':'', 'H6':''};
+    var anchorName = testData.anchorName;
 
-  if (anchorName) { // find heading that contains anchor
-    var anchors = document.getElementsByName(anchorName);
-    
-    if (anchors && (0 < anchors.length)) {
-      var anchor = anchors[0];
-      var heading = anchor.parentNode;
+    if (anchorName) { // find heading that contains anchor
+      var anchors = document.getElementsByName(anchorName);
       
-      while (heading && (Node.ELEMENT_NODE == heading.nodeType) && (! (heading.tagName in headings))) {
-        heading = heading.parentNode;
+      if (anchors && (0 < anchors.length)) {
+        var anchor = anchors[0];
+        var heading = anchor.parentNode;
+        
+        while (heading && (Node.ELEMENT_NODE == heading.nodeType) && (! (heading.tagName in headings))) {
+          heading = heading.parentNode;
+        }
+        if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
+          addAnnotationTo(heading, testData);
+        }
       }
-      if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
-        addAnnotationTo(heading, testData);
+    }
+    else {  // find first h1
+      var headings = document.getElementsByTagName('h1');
+      
+      if (headings && (0 < headings.length)) {
+        addAnnotationTo(headings[0], testData);
       }
     }
   }
-  else {  // find first h1
-    var headings = document.getElementsByTagName('h1');
-    
-    if (headings && (0 < headings.length)) {
-      addAnnotationTo(headings[0], testData);
-    }
+  catch (err)
+  {
   }
 }
 
@@ -210,17 +220,22 @@ function annotate()
 
 function addLoadEvent(loadFunc)
 {
-  var oldOnLoad = window.onload;
-  if (typeof window.onload != 'function') {
-    window.onload = loadFunc;
-  }
-  else {
-    window.onload = function () {
-      if (oldOnLoad) {
-        oldOnLoad();
-      }
-      loadFunc();
+  try {
+    var oldOnLoad = window.onload;
+    if (typeof window.onload != 'function') {
+      window.onload = loadFunc;
     }
+    else {
+      window.onload = function () {
+        if (oldOnLoad) {
+          oldOnLoad();
+        }
+        loadFunc();
+      }
+    }
+  }
+  catch (err)
+  {
   }
 }
 
