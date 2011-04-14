@@ -189,12 +189,13 @@ class StatusQueryPage extends HarnessPage
         }
 
         foreach ($this->mResults->getEngineNames() as $engineName) {
-          $args['e'] = $engineName;
+//          $args['e'] = $engineName;
           $engineResponse = new EngineResponse();
           $engineResponse->title = $this->mEngines[$engineName]->getTitle();
           $engineResponse->passCount = (array_key_exists($engineName, $enginePassCounts) ? $enginePassCounts[$engineName] : 0);
           $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
-          $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
+//          $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
+          $engineResponse->detailsURI = $this->buildURI(RESULTS_PAGE_URI, $args, null, TRUE);
           $result->engines[] = $engineResponse;
           
           if ($engineName == $clientEngineName) {
