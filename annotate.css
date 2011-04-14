@@ -10,6 +10,7 @@ div.annotation {
   padding: 0.15em 0.25em; 
   text-align: center;
   background: #EEE;
+  margin: 0 0 0.5em 1em;
 }
 
 div.annoation div {
