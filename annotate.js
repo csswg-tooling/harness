@@ -178,6 +178,28 @@ function processAnnotation(testData)
   }
 }
 
+function processResponse(contentType, responseText)
+{
+  try {
+    if (-1 < contentType.indexOf('application/json')) {
+      var data = JSON.parse(responseText);
+      
+      if (data) {
+        if (data instanceof Array) {
+          for (index in data) {
+            processAnnotation(data[index]);
+          }
+        }
+        else {
+          processAnnotation(data);
+        }
+      }
+    }
+  }
+  catch (err)
+  {
+  }
+}
 
 function annotate()
 {
@@ -202,40 +224,39 @@ function annotate()
       styleSheet.setAttribute('href', STYLESHEET_URI);
       document.getElementsByTagName('head')[0].appendChild(styleSheet)
 
-      var xhr = new XMLHttpRequest();
+      var statusURI = QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
       
-      xhr.onreadystatechange = function() {
-        if (4 == xhr.readyState) {
-          if (200 == xhr.status) {
-            var contentType = xhr.getResponseHeader('Content-Type');
-            if (-1 < contentType.indexOf('application/json')) {
-              var data = JSON.parse(xhr.responseText);
-              
-              if (data) {
-                if (data instanceof Array) {
-                  for (index in data) {
-                    processAnnotation(data[index]);
-                  }
-                }
-                else {
-                  processAnnotation(data);
-                }
-              }
+      if (window.XDomainRequest) {  // The IE way...
+        var xdr = new XDomainRequest();
+        if (xdr) {
+          xdr.onload = function () {
+            processResponse(xdr.contentType, xdr.responseText);
+          }
+          xdr.open('GET', statusURI);
+          xdr.send();
+        }
+      }
+      else {  // The standard way
+        var xhr = new XMLHttpRequest();
+        
+        xhr.onreadystatechange = function() {
+          if (4 == xhr.readyState) {
+            if (200 == xhr.status) {
+              processResponse(xhr.getResponseHeader('Content-Type'), xhr.responseText);
+            }
+            else if (500 == xhr.status) {
+//              document.documentElement.innerHTML = xhr.responseText;  // DEBUG
+            }
+            else {
+//              document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
             }
           }
-          else if (500 == xhr.status) {
-//            document.documentElement.innerHTML = xhr.responseText;  // DEBUG
-          }
-          else {
-//            document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
-          }
-        }
-      };
-      
-      var statusURI = QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
-      xhr.open('GET', statusURI, true);
-      xhr.setRequestHeader('Accept', 'application/json,text/html');
-      xhr.send();
+        };
+        
+        xhr.open('GET', statusURI, true);
+        xhr.setRequestHeader('Accept', 'application/json,text/html');
+        xhr.send();
+      }
     }
   }
   catch (err)

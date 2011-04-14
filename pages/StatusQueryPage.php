@@ -113,7 +113,7 @@ class StatusQueryPage extends HarnessPage
   protected function _determineContentType($filePath = null)
   {
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      // XXX check for origin header
+      // XXX check for origin header to restrict to w3.org servers...
       
       if (array_key_exists('HTTP_ACCEPT', $_SERVER)) {
         $accept = $_SERVER['HTTP_ACCEPT'];
@@ -122,6 +122,10 @@ class StatusQueryPage extends HarnessPage
           $this->mRequestValid = TRUE;
           return 'application/json';
         }
+      }
+      if ('trident' == $this->mUserAgent->getEngineName()) {  // IE8 can't sent proper accept headers
+        $this->mRequestValid = TRUE;
+        return 'application/json';
       }
     }
     return parent::_determineContentType($filePath);
