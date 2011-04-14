@@ -136,7 +136,7 @@ class Sections extends DBConnection
         }
       }
     }
-    return 0;
+    return FALSE;
   }
   
 }

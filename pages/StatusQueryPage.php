@@ -78,6 +78,10 @@ class StatusQueryPage extends HarnessPage
         $specURIName = basename($specURIParts['path']);
       
         $this->mSpecLinkId = $this->mSections->findSectionIdForURI($specURIName);
+        
+        if (! $this->mSpecLinkId) {
+          trigger_error('Not a valid specification url');
+        }
       }
     }
   }
@@ -160,30 +164,34 @@ class StatusQueryPage extends HarnessPage
       $result->testCount = count($testCaseIds);
       $result->testURI = $testURI;
       
-      foreach ($this->mResults->getEngineNames() as $engineName) {
-        $enginePassCounts[$engineName] = 0;
-        $engineFailCounts[$engineName] = 0;
-      }
-      foreach ($testCaseIds as $testCaseId) {
-        $engineCounts = $this->mResults->getResultCountsFor($testCaseId);
-        foreach ($engineCounts as $engineName => $resultCounts) {
-          if (0 < $resultCounts['pass']) {
-            $enginePassCounts[$engineName]++;
-          }
-          elseif (0 < $resultCounts['fail']) {
-            $engineFailCounts[$engineName]++;
+      if (0 < $this->mResults->getEngineCount()) {
+        foreach ($this->mResults->getEngineNames() as $engineName) {
+          $enginePassCounts[$engineName] = 0;
+          $engineFailCounts[$engineName] = 0;
+        }
+        foreach ($testCaseIds as $testCaseId) {
+          $engineCounts = $this->mResults->getResultCountsFor($testCaseId);
+          if ($engineCounts) {
+            foreach ($engineCounts as $engineName => $resultCounts) {
+              if (0 < $resultCounts['pass']) {
+                $enginePassCounts[$engineName]++;
+              }
+              elseif (0 < $resultCounts['fail']) {
+                $engineFailCounts[$engineName]++;
+              }
+            }
           }
         }
-      }
 
-      foreach ($this->mResults->getEngineNames() as $engineName) {
-        $args['e'] = $engineName;
-        $engineResponse = new EngineResponse();
-        $engineResponse->title = $this->mEngines[$engineName]->getTitle();
-        $engineResponse->passCount = (array_key_exists($engineName, $enginePassCounts) ? $enginePassCounts[$engineName] : 0);
-        $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
-        $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
-        $result->engines[] = $engineResponse;
+        foreach ($this->mResults->getEngineNames() as $engineName) {
+          $args['e'] = $engineName;
+          $engineResponse = new EngineResponse();
+          $engineResponse->title = $this->mEngines[$engineName]->getTitle();
+          $engineResponse->passCount = (array_key_exists($engineName, $enginePassCounts) ? $enginePassCounts[$engineName] : 0);
+          $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
+          $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
+          $result->engines[] = $engineResponse;
+        }
       }
       
       $results[] = $result;
@@ -209,10 +217,7 @@ class StatusQueryPage extends HarnessPage
     
     if ($this->mResults) {
       $results = $this->getResultsForSection($this->mSpecLinkId);
-    
-      if ($results) {
-        $this->_write(json_encode($results));
-      }
+      $this->_write(json_encode($results));
     }
   }
   

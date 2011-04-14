@@ -97,11 +97,16 @@ function addAnnotationTo(element, data)
         engineNode.setAttribute('title', toolTip);
         engineNode.setAttribute('class', engineClass);
 
-        var detailsLink = document.createElement('a');
-        detailsLink.setAttribute('href', engineData.detailsURI);
-        
-        detailsLink.appendChild(document.createTextNode(engineData.title));
-        engineNode.appendChild(detailsLink);
+        if (0 < resultCount) {
+          var detailsLink = document.createElement('a');
+          detailsLink.setAttribute('href', engineData.detailsURI);
+          
+          detailsLink.appendChild(document.createTextNode(engineData.title));
+          engineNode.appendChild(detailsLink);
+        }
+        else {
+          engineNode.appendChild(document.createTextNode(engineData.title));
+        }
         
         annotation.appendChild(engineNode);
         annotation.appendChild(document.createTextNode(' '));
