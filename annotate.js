@@ -94,22 +94,25 @@ function addAnnotationTo(element, data)
         else {
           toolTip = 'No data';
         }
-        engineNode.setAttribute('title', toolTip);
-        engineNode.setAttribute('class', engineClass);
-
-        if (0 < resultCount) {
-          var detailsLink = document.createElement('a');
-          detailsLink.setAttribute('href', engineData.detailsURI);
-          
-          detailsLink.appendChild(document.createTextNode(engineData.title));
-          engineNode.appendChild(detailsLink);
-        }
-        else {
-          engineNode.appendChild(document.createTextNode(engineData.title));
-        }
         
-        annotation.appendChild(engineNode);
-        annotation.appendChild(document.createTextNode(' '));
+        if (0 < resultCount) {
+          engineNode.setAttribute('title', toolTip);
+          engineNode.setAttribute('class', engineClass);
+
+          if (0 < resultCount) {
+            var detailsLink = document.createElement('a');
+            detailsLink.setAttribute('href', engineData.detailsURI);
+            
+            detailsLink.appendChild(document.createTextNode(engineData.title));
+            engineNode.appendChild(detailsLink);
+          }
+          else {
+            engineNode.appendChild(document.createTextNode(engineData.title));
+          }
+          
+          annotation.appendChild(engineNode);
+          annotation.appendChild(document.createTextNode(' '));
+        }
       }
       
       element.parentNode.insertBefore(annotation, element);
@@ -202,10 +205,10 @@ function annotate()
             }
           }
           else if (500 == xhr.status) {
-  // DEBUG          document.documentElement.innerHTML = xhr.responseText;  // DEBUG
+//            document.documentElement.innerHTML = xhr.responseText;  // DEBUG
           }
           else {
-  // DEBUG          document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
+//            document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
           }
         }
       };
@@ -218,7 +221,7 @@ function annotate()
   }
   catch (err)
   {
-// DEBUG    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
+//    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
   }
 }
 

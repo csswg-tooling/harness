@@ -46,7 +46,7 @@ class ResultResponse
 class StatusQueryPage extends HarnessPage
 {
   protected $mRequestValid;
-  protected $mSpecLinkId;
+  protected $mSectionId;
   protected $mSections;
   protected $mResults;
   protected $mEngines;
@@ -77,9 +77,9 @@ class StatusQueryPage extends HarnessPage
         $specURIParts = parse_url($specURI);
         $specURIName = basename($specURIParts['path']);
       
-        $this->mSpecLinkId = $this->mSections->findSectionIdForURI($specURIName);
+        $this->mSectionId = $this->mSections->findSectionIdForURI($specURIName);
         
-        if (! $this->mSpecLinkId) {
+        if (! $this->mSectionId) {
           trigger_error('Not a valid specification url');
         }
       }
@@ -95,14 +95,14 @@ class StatusQueryPage extends HarnessPage
   
   function loadResults()
   {
-    if ((! $this->mResults) && ($this->mSpecLinkId)) {
+    if ((! $this->mResults) && ($this->mSectionId)) {
       $engine = $this->_getData('e');
       $engineVersion = $this->_getData('v');
       $platform = $this->_getData('p');
       $modified = $this->_getData('m', 'DateTime');
       
       $this->mResults = 
-        new Results($this->mTestSuite, null, $this->mSpecLinkId,
+        new Results($this->mTestSuite, null, $this->mSectionId,
                     $engine, $engineVersion, $platform, 
                     $modified);
     }
@@ -137,14 +137,14 @@ class StatusQueryPage extends HarnessPage
   }
 
 
-  function getResultsForSection($sectionId)
+  function getResultsForSection($sectionId, $forceRecurse = FALSE)
   {
     $sectionData = $this->mSections->getSectionData($sectionId);
     $testCount = intval($sectionData['test_count']);
 
     $results = array();
 
-    if (0 < $testCount) {
+    if ($forceRecurse || (0 < $testCount) || (1 < $this->mSections->getSubSectionCount($sectionId))) {
       if (FALSE !== strpos($sectionData['uri'], '#')) {
         $fragId = substr(strstr($sectionData['uri'], '#'), 1);
       }
@@ -152,7 +152,7 @@ class StatusQueryPage extends HarnessPage
         $fragId = '';
       }
       
-      $testCaseIds = $this->mSections->getTestCaseIdsFor($sectionId);
+      $testCaseIds = $this->mSections->getTestCaseIdsFor($sectionId, TRUE);
 
       $args['s'] = $this->mTestSuite->getName();
       $args['g'] = $sectionId;
@@ -161,10 +161,11 @@ class StatusQueryPage extends HarnessPage
 
       $result = new ResultResponse();
       $result->anchorName = $fragId;
-      $result->testCount = count($testCaseIds);
+      $result->testCount = (($testCaseIds) ? count($testCaseIds) : 0);
       $result->testURI = $testURI;
+      $result->engines = array();
       
-      if (0 < $this->mResults->getEngineCount()) {
+      if ((0 < $this->mResults->getEngineCount()) && ($testCaseIds)) {
         foreach ($this->mResults->getEngineNames() as $engineName) {
           $enginePassCounts[$engineName] = 0;
           $engineFailCounts[$engineName] = 0;
@@ -216,7 +217,7 @@ class StatusQueryPage extends HarnessPage
     $this->loadResults();
     
     if ($this->mResults) {
-      $results = $this->getResultsForSection($this->mSpecLinkId);
+      $results = $this->getResultsForSection($this->mSectionId, TRUE);
       $this->_write(json_encode($results));
     }
   }

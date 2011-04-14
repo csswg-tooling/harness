@@ -3,11 +3,12 @@
 
 div.annotation {
   float: right; 
+  clear: right;
   display: block; 
   max-width: 12em; 
   border: 2px solid black;
   border-radius: 0.5em;
-  padding: 0.15em 0.25em; 
+  padding: 0.15em 0.5em; 
   text-align: center;
   background: #EEE;
   margin: 0 0 0.5em 1em;

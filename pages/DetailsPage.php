@@ -206,10 +206,10 @@ class DetailsPage extends ResultsBasedPage
   }
   
 
-  function writeGroupRows($specLinkId)
+  function writeGroupRows($sectionId)
   {
-    if (0 < $specLinkId) {
-      $sectionData = $this->mSections->getSectionData($specLinkId);
+    if (0 < $sectionId) {
+      $sectionData = $this->mSections->getSectionData($sectionId);
       $testCount = intval($sectionData['test_count']);
 
       if (0 < $testCount) {
@@ -224,7 +224,7 @@ class DetailsPage extends ResultsBasedPage
         $this->closeElement('th');
         $this->closeElement('tr');
 
-        $testCasesIds = $this->mSections->getTestCaseIdsFor($specLinkId);
+        $testCasesIds = $this->mSections->getTestCaseIdsFor($sectionId);
         
         foreach ($testCasesIds as $testCaseId) {
           if ($this->_writeResultsFor($testCaseId, $this->mResults->getTestCaseData($testCaseId), $sectionData['section'])) {
@@ -237,7 +237,7 @@ class DetailsPage extends ResultsBasedPage
       }
     }
   
-    $subSections = $this->mSections->getSubSectionData($specLinkId);
+    $subSections = $this->mSections->getSubSectionData($sectionId);
     if ($subSections) {
       foreach ($subSections as $subSectionId => $sectionData) {
         $testCount = intval($sectionData['test_count']);

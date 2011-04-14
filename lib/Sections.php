@@ -81,19 +81,19 @@ class Sections extends DBConnection
       $r = $this->query($sql);
       
       while ($testCaseData = $r->fetchRow()) {
-        $specLinkId = intval($testCaseData['speclink_id']);
+        $sectionId = intval($testCaseData['speclink_id']);
         $testCaseId = intval($testCaseData['id']);
-        $this->mTestCaseIds[$specLinkId][] = $testCaseId;
+        $this->mTestCaseIds[$sectionId][] = $testCaseId;
       }
     }
   }
 
 
-  function getSectionData($specLinkId)
+  function getSectionData($sectionId)
   {
     foreach ($this->mSections as $parentId => $subSections) {
-      if (array_key_exists($specLinkId, $subSections)) {
-        return $subSections[$specLinkId];
+      if (array_key_exists($sectionId, $subSections)) {
+        return $subSections[$sectionId];
       }
     }
     return FALSE;
@@ -118,12 +118,24 @@ class Sections extends DBConnection
   }
   
   
-  function getTestCaseIdsFor($specLinkId)
+  function getTestCaseIdsFor($sectionId, $recursive = FALSE)
   {
-    if ($this->mTestCaseIds && array_key_exists($specLinkId, $this->mTestCaseIds)) {
-      return $this->mTestCaseIds[$specLinkId];
+    $testCaseIds = array();
+    if ($this->mTestCaseIds && array_key_exists($sectionId, $this->mTestCaseIds)) {
+      $testCaseIds = $this->mTestCaseIds[$sectionId];
     }
-    return FALSE;
+    if ($recursive) {
+      $subSections = $this->getSubSectionData($sectionId);
+      if ($subSections) {
+        foreach ($subSections as $subSectionId => $subSectionData) {
+          $subSectionTestIds = $this->getTestCaseIdsFor($subSectionData['id'], TRUE);
+          if ($subSectionTestIds) {
+            $testCaseIds = array_unique(array_merge($testCaseIds, $subSectionTestIds));
+          }
+        }
+      }
+    }
+    return ((0 < count($testCaseIds)) ? $testCaseIds : FALSE);
   }
   
   

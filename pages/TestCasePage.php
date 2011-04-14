@@ -183,7 +183,7 @@ class TestCasePage extends HarnessPage
       }
       if ($title) {
         if ($assertion) {
-          $this->addAbbrElement($assertion, null, $title);
+          $this->addElement('span', array('title' => $assertion), $title);
         }
         else {
           $this->addTextContent($title);
@@ -215,7 +215,7 @@ class TestCasePage extends HarnessPage
             $section = $this->encode($specTitle);
           }
           if ($title) {
-            $this->addAbbrElement($title, null, $section, FALSE);
+            $this->addElement('span', array('title' => $title), $section, FALSE);
           }
           else {
             $this->addTextContent($section);
