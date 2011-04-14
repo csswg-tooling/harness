@@ -36,6 +36,7 @@ class TestCasePage extends HarnessPage
   protected $mFormatName;
   protected $mDesiredFormatName;
   protected $mRefName;
+  protected $mHasResults;
 
 
   /**
@@ -123,6 +124,8 @@ class TestCasePage extends HarnessPage
     if (FALSE === $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormatName)) {
       $this->mRefName = null;
     }
+    
+    $this->mHasResults = FALSE;
   }
   
   
@@ -249,16 +252,18 @@ class TestCasePage extends HarnessPage
       }
     }
     
-    $args['s'] = $this->mTestSuite->getName();
-    $args['c'] = $this->mTestCase->getTestCaseName();
-    $args['u'] = $this->mUserAgent->getId();
-    $detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args);
+    if ($this->mHasResults) {
+      $args['s'] = $this->mTestSuite->getName();
+      $args['c'] = $this->mTestCase->getTestCaseName();
+      $args['u'] = $this->mUserAgent->getId();
+      $detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args);
 
-    $this->openElement('span', null, FALSE);
-    $this->addTextContent(' (');
-    $this->addHyperLink($detailsURI, null, 'Results');
-    $this->addTextContent(')');
-    $this->closeElement('span');
+      $this->openElement('span', null, FALSE);
+      $this->addTextContent(' (');
+      $this->addHyperLink($detailsURI, null, 'Results');
+      $this->addTextContent(')');
+      $this->closeElement('span');
+    }
     
     $this->closeElement($elementName);
   }
@@ -422,6 +427,7 @@ class TestCasePage extends HarnessPage
     
     $engineNames = $results->getEngineNames();
     if (0 < count($engineNames)) {
+      $this->mHasResults = TRUE;
       $counts = $results->getResultCountsFor($this->mTestCase->getId());
       
       $args['s'] = $this->mTestSuite->getName();

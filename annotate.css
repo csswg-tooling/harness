@@ -1,0 +1,47 @@
+
+
+
+div.annotation {
+  float: right; 
+  display: block; 
+  max-width: 12em; 
+  border: 2px solid black;
+  border-radius: 0.5em;
+  padding: 0.15em 0.25em; 
+  text-align: center;
+  background: #EEE;
+}
+
+div.annoation div {
+  display: block; marginx: 0 auto; xtext-align: center;
+}
+
+div.annotation a {
+  text-decoration: none;
+}
+div.annotation a:hover {
+  text-decoration: underline;
+}
+
+div.annotation span {
+  font-size: x-small; 
+  border: 1px solid black; 
+  padding: 0.1em;
+  background: white;
+}
+div.annotation span a:hover {
+  background: none;
+}
+
+div.annotation span.pass {
+  background-color: #8F8;
+}
+
+div.annotation span.fail {
+  background-color: #F66;
+}
+
+div.annotation span.uncertain {
+  background-color: yellow;
+}
+

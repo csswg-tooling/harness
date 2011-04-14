@@ -23,8 +23,9 @@
 class Page
 {
   protected $mShouldCache;  // reset in subclass as needed before write
-  protected $mWriteXML;     // reset in subclass as needed before write
-  protected $mEncoding;     // reset in subclass as needed before write
+  private   $mWriteXML;
+  protected $mContentType;  // override _determineContentType to set 
+  protected $mEncoding;     // override _determineEncoding to set
   
   protected $mErrorIsClient;
   protected $mErrorType;
@@ -118,18 +119,21 @@ class Page
    * @param string fragment identifier
    * @return string URL encoded
    */
-  static function _BuildURI($baseURI, Array $queryArgs, $fragId = null)
+  static function _BuildURI($baseURI, Array $queryArgs, $fragId = null, $absolute = FALSE)
   {
-    $hashIndex = strpos($baseURI, '#');
-    if (FALSE !== $hashIndex) { // remove existing fragId
-      if (null === $fragId) {
-        $fragId = substr($baseURI, $hashIndex + 1);
-      }
-      $baseURI = substr($baseURI, 0, $hashIndex);
+    if (null === $fragId) {
+      $fragId = rawurldecode(substr(strstr($baseURI, '#'), 1));
     }
+    if (FALSE !== strpos($baseURI, '#')) {
+      $baseURI = strstr($baseURI, '#', TRUE); // remove existing frag id
+    }
+    if (FALSE !== strpos($baseURI, '?')) {
+      $baseURI = strstr($baseURI, '?', TRUE); // remove existing query
+    }
+
     if (0 < strlen($fragId)) {
       if ('#' != substr($fragId, 0, 1)) {
-        $fragId = '#' . rawurlencode($fragId);
+        $fragId = '#' . rawurlencode($fragId);  // XXX encode?
       }
       else {
         $fragId = '#' . rawurlencode(substr(1, $fragId));
@@ -137,15 +141,26 @@ class Page
     }
     
     if (0 < count($queryArgs)) {
-      $query = self::_BuildQuery($queryArgs);
-      if ('?' != substr($baseURI, -1, 1)) {
-        $query = '?' . $query;
-      }
+      $query = '?' . self::_BuildQuery($queryArgs);
     }
     else {
       $query = '';
     }
-    return $baseURI . $query . $fragId;
+    
+    $abs = '';
+    if ($absolute) {
+      if (! empty($_SERVER['HTTP_HOST'])) {
+        $abs = 'http://' . $_SERVER['HTTP_HOST'];
+      }
+      if (! empty($_SERVER['PHP_SELF'])) {
+        $abs .= dirname($_SERVER['PHP_SELF']);
+        if (substr($abs, -1) != '/') {
+          $abs .= '/';
+        }
+      }
+    }
+    
+    return $abs . $baseURI . $query . $fragId;
   }
   
   
@@ -174,7 +189,8 @@ class Page
   function __construct() 
   {
     $this->mShouldCache = TRUE;
-    $this->mWriteXML = FALSE;
+    $this->mWriteXML = TRUE;
+    $this->mContentType = 'text/html';
     $this->mEncoding = 'utf-8';
     
     $this->mElementStack = array();
@@ -214,9 +230,9 @@ class Page
    * @param string fragment identifier
    * @return string URL encoded
    */
-  function buildURI($baseURI, Array $queryArgs, $fragId = null)
+  function buildURI($baseURI, Array $queryArgs, $fragId = null, $absolute = FALSE)
   {
-    return self::_BuildURI($baseURI, $queryArgs, $fragId);
+    return self::_BuildURI($baseURI, $queryArgs, $fragId, $absolute);
   }
   
   
@@ -836,37 +852,66 @@ class Page
   
 
   /**
-   * Determine output format from client accept headers
+   * Determine output format from client accept headers or file extension
    */
-  protected function _determineFormatFromClient()
+  protected function _determineContentType($filePath = null)
   {
-    if (array_key_exists('HTTP_ACCEPT', $_SERVER)) {
-      $accept = $_SERVER['HTTP_ACCEPT'];
+    $contentType = $this->mContentType;
+    
+    if ($filePath) {
+      $pathInfo = pathinfo($filePath);
+      $extension = strtolower($pathInfo['extension']);
+      
+      $contentType = 'text/plain';
+      if (('html' == $extension) || ('htm' == $extension)) {
+        $contentType = 'text/html';
+      }
+      elseif ('xml' == $extention) {
+        $contentType = 'application/xml';
+      }
+      elseif (('xht' == $extension) || ('xhtml' == $extension)) {
+        $contentType = 'application/xhtml+xml';
+      }
+    }
+    else {
+      if (array_key_exists('HTTP_ACCEPT', $_SERVER)) {
+        $accept = $_SERVER['HTTP_ACCEPT'];
+        
+        if (FALSE !== stripos($accept, 'text/plain')) {
+          $contentType = 'text/plain';
+        }
+        if (FALSE !== stripos($accept, 'application/xml')) {
+          $contentType = 'application/xml';
+        }
+        if (FALSE !== stripos($accept, 'text/html')) {
+          $contentType = 'text/html';
+        }
 
-      if (FALSE !== stripos($accept, 'application/xhtml+xml')) {
-        $this->mWriteXML = TRUE;
-        if (preg_match('/application\/xhtml\+xml;q=0(\.[1-9]+)/i', $accept, $matches)) {
-          $xhtmlQ = floatval($matches[1]);
-          if (preg_match('/text\/html;q=0(\.[1-9]+)/i', $accept, $matches)) {
-            $htmlQ = floatval($matches[1]);
-            $this->mWriteXML = ($htmlQ <= $xhtmlQ);
+        if (FALSE !== stripos($accept, 'application/xhtml+xml')) {
+//          $contentType = 'application/xhtml+xml';     XXX disable to to wierd FF bug with optgroups
+          if (preg_match('/application\/xhtml\+xml;q=0(\.[1-9]+)/i', $accept, $matches)) {
+            $xhtmlQ = floatval($matches[1]);
+            if (preg_match('/text\/html;q=0(\.[1-9]+)/i', $accept, $matches)) {
+              $htmlQ = floatval($matches[1]);
+              if ($xhtmlQ < $htmlQ) {
+                $contentType = 'text/html';
+              }
+            }
           }
         }
       }
-      else {
-        $this->mWriteXML = FALSE;
-      }
     }
-    $this->mWriteXML = FALSE; // XXX disable for now (wierd FF bug with optgroups...)
+    
+    return $contentType;
   }
   
-  protected function _determineFormatFromFileName($filePath)
+  protected function _determineEncoding($filePath = null)
   {
-    $pathInfo = pathinfo($filePath);
-    $this->mWriteXML = (('html' != strtolower($pathInfo['extension'])) &&
-                        ('htm' != strtolower($pathInfo['extension'])));
+    // XXX TODO: check accept headers...
+    return 'utf-8';
   }
-
+  
+  
   /**
    * Generate HTTP headers and write HTML output for this page
    */
@@ -876,15 +921,27 @@ class Page
       $this->mOutputFile = fopen($filePath, "wb");
     }
     
-    if ($this->mOutputFile) {
-      $this->_determineFormatFromFileName($filePath);
-    }
-    else {
-      $this->_determineFormatFromClient();
+    $this->mContentType = $this->_determineContentType($filePath);
+    $this->mEncoding = $this->_determineEncoding($filePath);
+    
+    if (! $this->mOutputFile) {
       $this->writeHTTPHeaders();
     }
     
-    $this->writeHTML();
+    switch (strtolower($this->mContentType)) {
+      case 'text/html':
+        $this->mWriteXML = FALSE;
+      case 'application/xml':
+      case 'application/xhtml+xml':
+        $this->writeHTML();
+        break;
+      case 'application/json':
+        $this->writeJSON();
+        break;
+      case 'text/plain':
+        $this->writePlainText();
+        break;
+    }
     
     if ($this->mOutputFile) {
       fclose($this->mOutputFile);
@@ -909,12 +966,7 @@ class Page
       $this->sendHTTPHeader('Cache-Control', 'max-age=0');
     }
     
-    if ($this->mWriteXML) {
-      $this->sendHTTPHeader('Content-Type', "application/xhtml+xml; charset={$this->mEncoding}");
-    }
-    else {
-      $this->sendHTTPHeader('Content-Type', "text/html; charset={$this->mEncoding}");
-    }
+    $this->sendHTTPHeader('Content-Type', "{$this->mContentType}; charset={$this->mEncoding}");
     $this->sendHTTPHeader('Vary', 'Accept');
   }
 
@@ -960,6 +1012,24 @@ class Page
     $this->writeHTMLBody();
     
     $this->closeElement('html');
+  }
+  
+  
+  /**
+   * Generate JSON for the page response
+   * Subclasses override to provide data
+   */
+  function writeJSON()
+  {
+  }
+  
+  
+  /**
+   * Generate plain text content for page
+   * Subclasses override to provide data
+   */
+  function writePlainText()
+  {
   }
   
 
@@ -1013,12 +1083,7 @@ class Page
   function writeHeadMetas()
   {
     $args['http-equiv'] = 'Content-Type';
-    if ($this->mWriteXML) {
-      $args['content'] = "application/xhtml+xml; charset={$this->mEncoding}";
-    }
-    else {
-      $args['content'] = "text/html; charset={$this->mEncoding}";
-    }
+    $args['content'] = "{$this->mContentType}; charset={$this->mEncoding}";
     $this->addElement('meta', $args);
   }
 
@@ -1099,15 +1164,15 @@ class Page
       case E_USER_NOTICE:
         $this->mErrorIsClient = TRUE;
       case E_NOTICE:
-        $this->mErrorType = 'NOTICE:';
+        $this->mErrorType = 'NOTICE: ';
         break;
       case E_WARNING:
-        $this->mErrorType = 'WARNING:';
+        $this->mErrorType = 'WARNING: ';
         break;
       case E_USER_WARNING:
         $this->mErrorIsClient = TRUE;
       default:
-        $this->mErrorType = 'ERROR:';
+        $this->mErrorType = 'ERROR: ';
     }
     
     if (! $errorString) {
@@ -1129,46 +1194,83 @@ class Page
       }
     }
 
-    if (! in_array('html', $this->mElementStack)) {
+    if (0 != strcasecmp('application/json', $this->mContentType)) {
+      $this->mContentType = 'text/html'; //XXX debug
+    }
+
+    $writingHTML = FALSE;
+    $writingMarkup = FALSE;
+    switch (strtolower($this->mContentType)) {
+      case 'text/html':
+      case 'application/xhtml+xml':
+        $writingHTML = TRUE;
+      case 'application/xml':
+        $writingMarkup = TRUE;
+        break;
+    }
+
+    if ($writingHTML) {
+      if (! in_array('html', $this->mElementStack)) {
+        while (0 < count($this->mElementStack)) {
+          $this->closeElement();
+        }
+        $this->openElement('html');
+      }
+      if (! in_array('body', $this->mElementStack)) {
+        while (1 < count($this->mElementStack)) {
+          $this->closeElement();
+        }
+        $this->openElement('body');
+      }
+      while (2 < count($this->mElementStack)) {
+        $this->closeElement();
+      }
+    }
+    else if ($writingMarkup) {
       while (0 < count($this->mElementStack)) {
         $this->closeElement();
       }
       $this->openElement('html');
-    }
-    if (! in_array('body', $this->mElementStack)) {
-      while (1 < count($this->mElementStack)) {
-        $this->closeElement();
-      }
       $this->openElement('body');
     }
-    while (2 < count($this->mElementStack)) {
-      $this->closeElement();
-    }
+    
     while (0 < count($this->mBufferStack)) {
       $this->_endBuffering();
     }
 
-    $this->_beginBuffering();
-    $this->writeError();
+    if ($writingMarkup) {
+      $this->writeHTMLError();
+    }
+    else {
+      if (! headers_sent()) {
+        $this->mContentType = 'text/plain';
+        $this->writeHTTPHeaders();
+      }
+      if (0 != strcasecmp('application/json', $this->mContentType)) {
+        $this->writePlainTextError();
+      }
+    }
     $error = $this->_endBuffering();
     
-    while (0 < count($this->mElementStack)) {
-      $this->closeElement();
+    if ($writingMarkup) {
+      while (0 < count($this->mElementStack)) {
+        $this->closeElement();
+      }
     }
     
     if ($this->mOutputFile) {
       fclose($this->mOutputFile);
       $this->mOutputFile = null;
-      echo $error . "\n"; 
+      $this->writePlainTextError(); 
     }
     die();
   }
 
 
   /**
-   * Generate error text
+   * Generate error text in HTML
    */
-  function writeError()
+  function writeHTMLError()
   {
     if ($this->mErrorType) {
       $this->openElement('p');
@@ -1224,6 +1326,49 @@ class Page
         $this->addTextContent(print_r($this->mCookieData, TRUE));
         $this->closeElement('pre');
         $this->closeElement('p');
+      }
+    }
+  }
+  
+  
+  /**
+   * Generate error text in plain text
+   */
+  function writePlainTextError()
+  {
+    if ($this->mErrorType) {
+      $this->_write($this->mErrorType);
+      if ($this->mErrorMessage) {
+        $this->_write($this->mErrorMessage);
+      }
+      $this->_write("\n");
+    } 
+    else {
+      if ($this->mErrorMessage) {
+        $this->_writeLine($this->mErrorMessage, FALSE, TRUE);
+      }
+    }
+    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+      if ($this->mErrorFile) {
+        $this->_write("File: {$this->mErrorFile}\n");
+      }
+      if ($this->mErrorLine) {
+        $this->_write("Line: {$this->mErrorLine}\n");
+      }
+      if ($this->mErrorContext) {
+        $this->_write('Context: ' . print_r($this->mErrorContext, TRUE) . "\n");
+      }
+      
+      if (0 < count($this->mGetData)) {
+        $this->_write('Get: ' . print_r($this->mGetData, TRUE) . "\n");
+      }
+      
+      if (0 < count($this->mPostData)) {
+        $this->_write('Post: ' . print_r($this->mPostData, TRUE) . "\n");
+      }
+
+      if (0 < count($this->mCookieData)) {
+        $this->_write('Cookie: ' . print_r($this->mCookieData, TRUE) . "\n");
       }
     }
   }  

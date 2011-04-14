@@ -126,6 +126,19 @@ class Sections extends DBConnection
     return FALSE;
   }
   
+  
+  function findSectionIdForURI($uri)
+  {
+    foreach ($this->mSections as $parentId => $subSections) {
+      foreach ($subSections as $sectionId => $sectionData) {
+        if ($sectionData['uri'] == $uri) {
+          return $sectionId;
+        }
+      }
+    }
+    return 0;
+  }
+  
 }
 
 ?>
