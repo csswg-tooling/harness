@@ -22,6 +22,7 @@
   data.testCount;
   data.engines[];
   data.testURI;
+  data.needData;
 
   engine.title;
   engine.passCount;
@@ -30,8 +31,8 @@
 
 **/
 
-var QUERY_URI       = 'http://test.csswg.org/harness/status';
-var STYLESHEET_URI  = 'http://test.csswg.org/harness/annotate.css';
+var QUERY_URI       = "http://<?php echo $_SERVER['HTTP_HOST']; ?>/harness/status";
+var STYLESHEET_URI  = "http://<?php echo $_SERVER['HTTP_HOST']; ?>/harness/annotate.css";
 
 
 function addAnnotationTo(element, data)
@@ -46,6 +47,19 @@ function addAnnotationTo(element, data)
       var testLink = document.createElement('a');
       testLink.setAttribute('href', data.testURI);
       heading.appendChild(testLink);
+
+      if (0 < data.needData) {
+        var image = document.createElement('img');
+        image.setAttribute('src', "http://<?php echo $_SERVER['HTTP_HOST']; ?>/harness/img/please_help_48.png");
+        testLink.appendChild(image);
+        if (1 == data.needData) {
+          testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
+        }
+        else {
+          testLink.setAttribute('title', data.needData + ' tests need results from your client, please click here to run tests');
+        }
+      }
+      
       if (1 == data.testCount) {
         testLink.appendChild(document.createTextNode('1 Test'));
       }
@@ -87,7 +101,12 @@ function addAnnotationTo(element, data)
                 }
                 toolTip += (data.testCount - resultCount) + ' untested';
               }
-              engineClass = 'uncertain';
+              if ((resultCount / data.testCount) < 0.95) {
+                engineClass = 'uncertain';
+              }
+              else {
+                engineClass = 'p' + Math.round((engineData.passCount / data.testCount) * 10.0) + '0';
+              }
             }
           }
         }

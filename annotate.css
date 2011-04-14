@@ -36,7 +36,28 @@ div.annotation span a:hover {
 }
 
 div.annotation span.pass {
+  background-color: #4F4;
+}
+
+div.annotation span.p100 {
   background-color: #8F8;
+}
+div.annotation span.p90 {
+  background-color: #9F6;
+}
+div.annotation span.p80 {
+  background-color: #FF6;
+}
+div.annotation span.p70 {
+  background-color: #F93;
+}
+div.annotation span.p60,
+div.annotation span.p50,
+div.annotation span.p40,
+div.annotation span.p30,
+div.annotation span.p20,
+div.annotation span.p10 {
+  background-color: #F60;
 }
 
 div.annotation span.fail {
@@ -44,6 +65,6 @@ div.annotation span.fail {
 }
 
 div.annotation span.uncertain {
-  background-color: yellow;
+  background-color: #DDD;
 }
 

@@ -37,6 +37,7 @@ class ResultResponse
   public  $testCount;
   public  $engines;
   public  $testURI;
+  public  $needData;
 }
 
 
@@ -164,6 +165,9 @@ class StatusQueryPage extends HarnessPage
       $result->testCount = (($testCaseIds) ? count($testCaseIds) : 0);
       $result->testURI = $testURI;
       $result->engines = array();
+
+      $clientEngineName = $this->mUserAgent->getEngineName();
+      $result->needData = $result->testCount;
       
       if ((0 < $this->mResults->getEngineCount()) && ($testCaseIds)) {
         foreach ($this->mResults->getEngineNames() as $engineName) {
@@ -192,6 +196,10 @@ class StatusQueryPage extends HarnessPage
           $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
           $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
           $result->engines[] = $engineResponse;
+          
+          if ($engineName == $clientEngineName) {
+            $result->needData = ($result->testCount - ($engineResponse->passCount + $engineResponse->failCount));
+          }
         }
       }
       
