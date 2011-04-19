@@ -31,8 +31,10 @@
 
 **/
 
-var QUERY_URI       = "http://<?php echo $_SERVER['HTTP_HOST']; ?>/harness/status";
-var STYLESHEET_URI  = "http://<?php echo $_SERVER['HTTP_HOST']; ?>/harness/annotate.css";
+<?php require_once('lib/Page.php'); ?>
+
+var QUERY_URI       = "<?php echo Page::_BuildURI('status', null, null, TRUE); ?>";
+var STYLESHEET_URI  = "<?php echo Page::_BuildURI('annotate.css', null, null, TRUE); ?>";
 
 
 function addAnnotationTo(element, data)
@@ -40,33 +42,45 @@ function addAnnotationTo(element, data)
   try {
     if (element) {
       var annotation = document.createElement('div');
-      
       annotation.setAttribute('class', 'annotation');
-      
-      var heading = document.createElement('div');
-      var testLink = document.createElement('a');
-      testLink.setAttribute('href', data.testURI);
-      heading.appendChild(testLink);
 
       if (0 < data.needData) {
-        var image = document.createElement('img');
-        image.setAttribute('src', "http://<?php echo $_SERVER['HTTP_HOST']; ?>/harness/img/please_help_48.png");
-        testLink.appendChild(image);
-        if (1 == data.needData) {
-          testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
-        }
-        else {
-          testLink.setAttribute('title', data.needData + ' tests need results from your client, please click here to run tests');
-        }
       }
       
+      var heading = document.createElement('div');
+      heading.setAttribute('class', 'heading');
+      
+      var testLink = document.createElement('a');
+      testLink.setAttribute('href', data.testURI);
+
       if (1 == data.testCount) {
         testLink.appendChild(document.createTextNode('1 Test'));
       }
       else {
         testLink.appendChild(document.createTextNode(data.testCount + ' Tests'));
       }
+      if (0 < data.needData) {
+        var image = document.createElement('img');
+        image.setAttribute('src', "<?php echo Page::_BuildURI('img/please_help_48.png', null, null, TRUE); ?>");
+        image.setAttribute('class', 'need');
+        testLink.appendChild(image);
+
+        annotation.setAttribute('class', 'annotation need');
+        if (1 == data.needData) {
+          testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
+        }
+        else {
+          testLink.setAttribute('title', data.needData + ' tests need results from your client, please click here to run tests');
+        }
+        var untested = document.createElement('span');
+        untested.appendChild(document.createTextNode(' ' + data.needData + '\u00A0untested, please\u00A0test'));
+        testLink.appendChild(untested);
+      }
+      heading.appendChild(testLink);
       annotation.appendChild(heading);
+
+      var engines = document.createElement('div');
+      engines.setAttribute('class', 'engines');
       
       for (index in data.engines) {
         var engineData = data.engines[index];
@@ -129,10 +143,11 @@ function addAnnotationTo(element, data)
             engineNode.appendChild(document.createTextNode(engineData.title));
           }
           
-          annotation.appendChild(engineNode);
-          annotation.appendChild(document.createTextNode(' '));
+          engines.appendChild(engineNode);
+          engines.appendChild(document.createTextNode(' '));
         }
       }
+      annotation.appendChild(engines);
       
       element.parentNode.insertBefore(annotation, element);
     }
@@ -153,8 +168,8 @@ function processAnnotation(testData)
     if (anchorName) { // find heading that contains anchor
       var anchors = document.getElementsByName(anchorName);
       
-      if (anchors && (0 < anchors.length)) {
-        var anchor = anchors[0];
+      for (index in anchors) {
+        var anchor = anchors[index];
         var heading = anchor.parentNode;
         
         while (heading && (Node.ELEMENT_NODE == heading.nodeType) && (! (heading.tagName in headings))) {
@@ -162,6 +177,7 @@ function processAnnotation(testData)
         }
         if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
           addAnnotationTo(heading, testData);
+          break;
         }
       }
     }
@@ -210,7 +226,7 @@ function annotate()
     for (index in scripts) {
       if (scripts[index].hasAttribute('src')) {
         var scriptSource = scripts[index].getAttribute('src');
-        if (-1 < scriptSource.indexOf('harness/annotate.js#')) {
+        if (-1 < scriptSource.indexOf('/annotate.js#')) {
           testSuiteName = scriptSource.substr(scriptSource.indexOf('#') + 1);
           break;
         }

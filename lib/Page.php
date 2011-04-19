@@ -112,14 +112,14 @@ class Page
   
   /**
    * Static helper function to build URI with query string
-   * Instances of this class should use $this-buildURI instead
+   * Instances of this class should use $this->buildURI instead
    * 
    * @param string base uri
    * @param array associative array of aurguments
    * @param string fragment identifier
    * @return string URL encoded
    */
-  static function _BuildURI($baseURI, Array $queryArgs, $fragId = null, $absolute = FALSE)
+  static function _BuildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
   {
     if (null === $fragId) {
       $fragId = rawurldecode(substr(strstr($baseURI, '#'), 1));
@@ -140,7 +140,7 @@ class Page
       }
     }
     
-    if (0 < count($queryArgs)) {
+    if (is_array($queryArgs) && (0 < count($queryArgs))) {
       $query = '?' . self::_BuildQuery($queryArgs);
     }
     else {
@@ -230,7 +230,7 @@ class Page
    * @param string fragment identifier
    * @return string URL encoded
    */
-  function buildURI($baseURI, Array $queryArgs, $fragId = null, $absolute = FALSE)
+  function buildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
   {
     return self::_BuildURI($baseURI, $queryArgs, $fragId, $absolute);
   }

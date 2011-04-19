@@ -14,57 +14,81 @@ div.annotation {
   margin: 0 0 0.5em 1em;
 }
 
+div.annotation.need {
+  background-color: #CCC;
+}
+
 div.annoation div {
   display: block;
+}
+
+div.annotation div.heading span {
+  display: block;
+  font-size: smaller;
 }
 
 div.annotation a {
   text-decoration: none;
 }
-div.annotation a:hover {
+div.annotation a:hover,
+div.annotation a:hover span {
   text-decoration: underline;
+  background: none;
 }
 
-div.annotation span {
+div.annotation img.need {
+  xfloat: right;
+  margin-top: -0.15em;
+}
+
+div.annotation div.engines {
+  clear: both;
+}
+div.annotation div.engines span {
   font-size: x-small; 
   border: 1px solid black; 
   padding: 0.1em;
   background: white;
 }
-div.annotation span a:hover {
+div.annotation div.engines span a:hover {
   background: none;
 }
 
-div.annotation span.pass {
+div.annotation div.engines span.pass {
   background-color: #4F4;
 }
 
-div.annotation span.p100 {
+div.annotation div.engines span.p100 {
   background-color: #8F8;
 }
-div.annotation span.p90 {
+div.annotation div.engines span.p90 {
   background-color: #9F6;
 }
-div.annotation span.p80 {
+div.annotation div.engines span.p80 {
   background-color: #FF6;
 }
-div.annotation span.p70 {
+div.annotation div.engines span.p70 {
   background-color: #F93;
 }
-div.annotation span.p60,
-div.annotation span.p50,
-div.annotation span.p40,
-div.annotation span.p30,
-div.annotation span.p20,
-div.annotation span.p10 {
+div.annotation div.engines span.p60,
+div.annotation div.engines span.p50,
+div.annotation div.engines span.p40,
+div.annotation div.engines span.p30,
+div.annotation div.engines span.p20,
+div.annotation div.engines span.p10 {
   background-color: #F60;
 }
 
-div.annotation span.fail {
+div.annotation div.engines span.fail {
   background-color: #F66;
 }
 
-div.annotation span.uncertain {
+div.annotation div.engines span.uncertain {
   background-color: #DDD;
 }
 
+@media print {
+  div.annotation {
+    display: none ! important;
+  }
+}

@@ -54,7 +54,7 @@ class HarnessPage extends DynamicPage
    * @param string fragment identifier
    * @return string URL encoded
    */
-  function buildURI($baseURI, Array $queryArgs, $fragId = null, $absolute = FALSE)
+  function buildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
   {
     // XXX if mod_rewrite, remove 's' arg and convert to path
     if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
