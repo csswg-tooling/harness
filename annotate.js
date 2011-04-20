@@ -35,17 +35,85 @@
 
 var QUERY_URI       = "<?php echo Page::_BuildURI('status', null, null, TRUE); ?>";
 var STYLESHEET_URI  = "<?php echo Page::_BuildURI('annotate.css', null, null, TRUE); ?>";
+var NEED_TEST_URI   = "<?php echo Page::_BuildURI('img/please_help_32.png', null, null, TRUE); ?>";
+
+var annotationData;
+var annotationsClosed = false;
 
 
-function addAnnotationTo(element, data)
+function removeAnnotation(anchorName)
+{
+  try {
+    var annotation = document.getElementById('annotation_' + ((0 < anchorName.length) ? anchorName : 'root_'));
+
+    if (annotation) {
+      annotation.parentNode.removeChild(annotation);
+    }
+  }
+  catch (err) {
+  }
+}
+
+function removeAllAnnotations()
+{
+  try {
+    if (annotationData) {
+      if (annotationData instanceof Array) {
+        for (index in annotationData) {
+          removeAnnotation(annotationData[index].anchorName);
+        }
+      }
+      else {
+        removeAnnotation(annotationData.anchorName);
+      }
+    }
+  }
+  catch (err) {
+  }
+}
+
+function toggleAnnotations()
+{
+  annotationsClosed = (! annotationsClosed);
+  removeAllAnnotations();
+  addAnnotations();
+}
+
+
+function addAnnotationTo(element, data, first)
 {
   try {
     if (element) {
       var annotation = document.createElement('div');
-      annotation.setAttribute('class', 'annotation');
-
-      if (0 < data.needData) {
+      annotation.setAttribute('id', 'annotation_' + ((0 == data.anchorName.length) ? 'root_' : data.anchorName));
+      var annotationClass = 'annotation';
+      if (first) {
+        annotationClass += ' first';
       }
+      if (0 < data.needData) {
+        annotationClass += ' need';
+      }
+      if (annotationsClosed) {
+        annotationClass += ' closed';
+      }
+      annotation.setAttribute('class', annotationClass);
+
+      if (first) {
+        var disclosure = document.createElement('div');
+        disclosure.setAttribute('class', 'disclosureBox');
+        disclosure.setAttribute('onclick', 'toggleAnnotations()');
+        annotation.appendChild(disclosure);
+      }
+      
+      var closeBox = document.createElement('div');
+      closeBox.setAttribute('class', 'closeBox');
+      if (first) {
+        closeBox.setAttribute('onclick', 'removeAllAnnotations()');
+      }
+      else {
+        closeBox.setAttribute('onclick', 'removeAnnotation("' + data.anchorName + '")');
+      }
+      annotation.appendChild(closeBox);
       
       var heading = document.createElement('div');
       heading.setAttribute('class', 'heading');
@@ -59,13 +127,12 @@ function addAnnotationTo(element, data)
       else {
         testLink.appendChild(document.createTextNode(data.testCount + ' Tests'));
       }
-      if (0 < data.needData) {
+      if ((! annotationsClosed) && (0 < data.needData)) {
         var image = document.createElement('img');
-        image.setAttribute('src', "<?php echo Page::_BuildURI('img/please_help_48.png', null, null, TRUE); ?>");
+        image.setAttribute('src', NEED_TEST_URI);
         image.setAttribute('class', 'need');
         testLink.appendChild(image);
 
-        annotation.setAttribute('class', 'annotation need');
         if (1 == data.needData) {
           testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
         }
@@ -79,86 +146,88 @@ function addAnnotationTo(element, data)
       heading.appendChild(testLink);
       annotation.appendChild(heading);
 
-      var engines = document.createElement('div');
-      engines.setAttribute('class', 'engines');
-      
-      for (index in data.engines) {
-        var engineData = data.engines[index];
-        var resultCount = (engineData.passCount + engineData.failCount);
+      if (! annotationsClosed) {
+        var engines = document.createElement('div');
+        engines.setAttribute('class', 'engines');
         
-        var engineNode = document.createElement('span');
-        var toolTip = '';
-        var engineClass = '';
-        if (0 < resultCount) {
-          if (engineData.passCount == data.testCount) {
-            toolTip = 'All tests pass';
-            engineClass = 'pass';
-          }
-          else {
-            if (engineData.failCount == data.testCount) {
-              toolTip = 'All tests fail';
-              engineClass = 'fail';
+        for (index in data.engines) {
+          var engineData = data.engines[index];
+          var resultCount = (engineData.passCount + engineData.failCount);
+          
+          var engineNode = document.createElement('span');
+          var toolTip = '';
+          var engineClass = '';
+          if (0 < resultCount) {
+            if (engineData.passCount == data.testCount) {
+              toolTip = 'All tests pass';
+              engineClass = 'pass';
             }
             else {
-              if (0 < engineData.passCount) {
-                toolTip = engineData.passCount + ' pass';
-              }
-              if (0 < engineData.failCount) {
-                if (toolTip.length) {
-                  toolTip += ', '
-                }
-                toolTip += engineData.failCount + ' fail';
-              }
-              if (resultCount < data.testCount) {
-                if (toolTip.length) {
-                  toolTip += ', '
-                }
-                toolTip += (data.testCount - resultCount) + ' untested';
-              }
-              if ((resultCount / data.testCount) < 0.95) {
-                engineClass = 'uncertain';
+              if (engineData.failCount == data.testCount) {
+                toolTip = 'All tests fail';
+                engineClass = 'fail';
               }
               else {
-                engineClass = 'p' + Math.round((engineData.passCount / data.testCount) * 10.0) + '0';
+                if (0 < engineData.passCount) {
+                  toolTip = engineData.passCount + ' pass';
+                }
+                if (0 < engineData.failCount) {
+                  if (toolTip.length) {
+                    toolTip += ', '
+                  }
+                  toolTip += engineData.failCount + ' fail';
+                }
+                if (resultCount < data.testCount) {
+                  if (toolTip.length) {
+                    toolTip += ', '
+                  }
+                  toolTip += (data.testCount - resultCount) + ' untested';
+                }
+                if ((resultCount / data.testCount) < 0.95) {
+                  engineClass = 'uncertain';
+                }
+                else {
+                  engineClass = 'p' + Math.round((engineData.passCount / data.testCount) * 10.0) + '0';
+                }
               }
             }
           }
-        }
-        else {
-          toolTip = 'No data';
-        }
-        
-        if (0 < resultCount) {
-          engineNode.setAttribute('title', toolTip);
-          engineNode.setAttribute('class', engineClass);
-
-          if (0 < resultCount) {
-            var detailsLink = document.createElement('a');
-            detailsLink.setAttribute('href', engineData.detailsURI);
-            
-            detailsLink.appendChild(document.createTextNode(engineData.title));
-            engineNode.appendChild(detailsLink);
-          }
           else {
-            engineNode.appendChild(document.createTextNode(engineData.title));
+            toolTip = 'No data';
           }
           
-          engines.appendChild(engineNode);
-          engines.appendChild(document.createTextNode(' '));
+          if (0 < resultCount) {
+            engineNode.setAttribute('title', toolTip);
+            engineNode.setAttribute('class', engineClass);
+
+            if (0 < resultCount) {
+              var detailsLink = document.createElement('a');
+              detailsLink.setAttribute('href', engineData.detailsURI);
+              
+              detailsLink.appendChild(document.createTextNode(engineData.title));
+              engineNode.appendChild(detailsLink);
+            }
+            else {
+              engineNode.appendChild(document.createTextNode(engineData.title));
+            }
+            
+            engines.appendChild(engineNode);
+            engines.appendChild(document.createTextNode(' '));
+          }
         }
+        annotation.appendChild(engines);
       }
-      annotation.appendChild(engines);
       
       element.parentNode.insertBefore(annotation, element);
     }
   }
-  catch (err)
-  {
+  catch (err) {
+//    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
   }
 }
 
 
-function processAnnotation(testData)
+function addAnnotation(testData, first)
 {
   try {
     var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
@@ -176,7 +245,7 @@ function processAnnotation(testData)
           heading = heading.parentNode;
         }
         if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
-          addAnnotationTo(heading, testData);
+          addAnnotationTo(heading, testData, first);
           break;
         }
       }
@@ -185,14 +254,40 @@ function processAnnotation(testData)
       var headings = document.getElementsByTagName('h1');
       
       if (headings && (0 < headings.length)) {
-        addAnnotationTo(headings[0], testData);
+        addAnnotationTo(headings[0], testData, first);
       }
     }
   }
-  catch (err)
-  {
+  catch (err) {
   }
 }
+
+
+function addAnnotations()
+{
+  try {
+    if (annotationData) {
+      if (annotationData instanceof Array) {
+        if (annotationsClosed) {
+          addAnnotation(annotationData[0], true);
+        }
+        else {
+          var first = true;
+          for (index in annotationData) {
+            addAnnotation(annotationData[index], first);
+            first = false;
+          }
+        }
+      }
+      else {
+        addAnnotation(annotationData, true);
+      }
+    }
+  }
+  catch (err) {
+  }
+}
+
 
 function processResponse(contentType, responseText)
 {
@@ -201,19 +296,12 @@ function processResponse(contentType, responseText)
       var data = JSON.parse(responseText);
       
       if (data) {
-        if (data instanceof Array) {
-          for (index in data) {
-            processAnnotation(data[index]);
-          }
-        }
-        else {
-          processAnnotation(data);
-        }
+        annotationData = data;
+        addAnnotations();
       }
     }
   }
-  catch (err)
-  {
+  catch (err) {
   }
 }
 
@@ -228,6 +316,10 @@ function annotate()
         var scriptSource = scripts[index].getAttribute('src');
         if (-1 < scriptSource.indexOf('/annotate.js#')) {
           testSuiteName = scriptSource.substr(scriptSource.indexOf('#') + 1);
+          if ('!' == testSuiteName[0]) {
+            testSuiteName = testSuiteName.substr(1);
+            annotationsClosed = true;
+          }
           break;
         }
       }
@@ -275,8 +367,7 @@ function annotate()
       }
     }
   }
-  catch (err)
-  {
+  catch (err) {
 //    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
   }
 }
@@ -298,8 +389,7 @@ function addLoadEvent(loadFunc)
       }
     }
   }
-  catch (err)
-  {
+  catch (err) {
   }
 }
 
