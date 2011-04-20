@@ -30,30 +30,20 @@ div.annotation div.disclosureBox {
   left: 3px;
   width: 16px;
   height: 16px;
-  border: thin none;
+  border: thin none #444;
   border-radius: 4px;
-  background: url(img/open_dark.png);
-  background-repeat: no-repeat;
-  background-position: center;
+  background: url(img/open_dark.png) no-repeat center;
 }
 div.annotation.closed div.disclosureBox {
-  background: url(img/closed_dark.png);
-  background-repeat: no-repeat;
-  background-position: center;
+  background-image: url(img/closed_dark.png);
 }
 
 div.annotation div.disclosureBox:hover {
-  border: thin solid #444;
-  background: url(img/open_light.png);
-  background-color: #888; 
-  background-repeat: no-repeat;
-  background-position: center;
+  border-style: solid;
+  background: #888 url(img/open_light.png) no-repeat center;
 }
 div.annotation.closed div.disclosureBox:hover {
-  background: url(img/closed_light.png);
-  background-color: #888; 
-  background-repeat: no-repeat;
-  background-position: center;
+  background-image: url(img/closed_light.png);
 }
 
 div.annotation div.closeBox {
@@ -62,19 +52,14 @@ div.annotation div.closeBox {
   right: 3px;
   width: 16px;
   height: 16px;
-  border: thin none;
+  border: thin none #444;
   border-radius: 4px;
-  background: url(img/close_dark.png);
-  background-repeat: no-repeat;
-  background-position: center;
+  background: url(img/close_dark.png) no-repeat center;
 }
 
 div.annotation div.closeBox:hover {
-  border: thin solid #444;
-  background: url(img/close_light.png);
-  background-color: #888;
-  background-repeat: no-repeat;
-  background-position: center;
+  border-style: solid;
+  background: #888 url(img/close_light.png) no-repeat center;
 }
 
 div.annotation div.heading {
@@ -149,6 +134,6 @@ div.annotation div.engines span.uncertain {
 
 @media print {
   div.annotation {
-    display: none ! important;
+    display: none;
   }
 }

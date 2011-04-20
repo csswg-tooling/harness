@@ -268,14 +268,16 @@ function addAnnotations()
   try {
     if (annotationData) {
       if (annotationData instanceof Array) {
-        if (annotationsClosed) {
-          addAnnotation(annotationData[0], true);
-        }
-        else {
-          var first = true;
-          for (index in annotationData) {
-            addAnnotation(annotationData[index], first);
-            first = false;
+        if (0 < annotationData.length) {
+          if (annotationsClosed) {
+            addAnnotation(annotationData[0], true);
+          }
+          else {
+            var first = true;
+            for (index in annotationData) {
+              addAnnotation(annotationData[index], first);
+              first = false;
+            }
           }
         }
       }
