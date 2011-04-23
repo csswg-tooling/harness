@@ -185,6 +185,7 @@ CREATE TABLE IF NOT EXISTS `testcases` (
 CREATE TABLE IF NOT EXISTS `testlinks` (
   `testcase_id` int(11) unsigned NOT NULL,
   `speclink_id` int(11) unsigned NOT NULL,
+  `sequence` int(11) unsigned NOT NULL default '0',
   `group` tinyint(1) unsigned NOT NULL default '0',
   PRIMARY KEY  (`testcase_id`,`speclink_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -42,6 +42,18 @@ class Results extends DBConnection
       $modified = $testSuite->getLockDateTime();
     }
     
+    $this->mEngineNames = array();
+    $this->mTestCases = array();
+    $this->mComponentTestIds = array();
+    $this->mResults = array();
+    $this->mResultCount = 0;
+
+    $testSuiteName = $this->encode($testSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $searchTestCaseId = TestCase::GetTestCaseIdFor($testCaseName);
+    if ((null !== $testCaseName) && (! $searchTestCaseId)) {
+      return;
+    }
+
     // load engine list
     $sql  = "SELECT DISTINCT `engine` ";
     $sql .= "FROM `useragents` ";
@@ -71,9 +83,6 @@ class Results extends DBConnection
       $testCaseEqualRevisions[$testCaseId][$revision] = $equalRevision;
     }
 
-    $testSuiteName = $this->encode($testSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $searchTestCaseId = TestCase::GetTestCaseIdFor($testCaseName);
-
     // load testcases
     $sql  = "SELECT DISTINCT `testcases`.`id`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`flags`, `suitetests`.`revision` ";
@@ -93,8 +102,6 @@ class Results extends DBConnection
     $r = $this->query($sql);
     
     $currentComboId = 0;
-    $this->mTestCases = array();
-    $this->mComponentTestIds = array();
     while ($testCaseData = $r->fetchRow()) {
       $testCaseId = intval($testCaseData['id']);
       $revision   = intval($testCaseData['revision']);
@@ -172,8 +179,6 @@ class Results extends DBConnection
     $r = $this->query($sql);
 
     $engineResults = array();
-    $this->mResultCount = 0;
-    $this->mResults = array();
     while ($resultData = $r->fetchRow()) {
       $testCaseId = intval($resultData['testcase_id']);
       $revision   = intval($resultData['revision']);
@@ -190,7 +195,6 @@ class Results extends DBConnection
       }
     }
     
-    $this->mEngineNames = array();
     foreach ($engineNames as $engineName) {
       if (array_key_exists($engineName, $engineResults)) {
         $this->mEngineNames[] = $engineName;

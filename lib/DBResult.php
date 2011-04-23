@@ -83,7 +83,7 @@ class DBResult
    */
   function fetchField($rowIndex, $field = 0)
   {
-    if (is_resource($this->mResult)) {
+    if (is_resource($this->mResult) && ($rowIndex < $this->rowCount())) {
       return mysql_result($this->mResult, $rowIndex, $field);
     }
     return FALSE;
