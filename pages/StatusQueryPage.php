@@ -26,18 +26,25 @@ require_once('lib/Results.php');
 class EngineResponse
 {
   public  $title;
+  public  $name;
   public  $passCount;
   public  $failCount;
   public  $detailsURI;
 }
 
-class ResultResponse
+class SectionResponse
 {
   public  $anchorName;
   public  $testCount;
-  public  $engines;
+  public  $needCount;
   public  $testURI;
-  public  $needData;
+  public  $engines;
+}
+
+class Response
+{
+  public  $clientEngineName;
+  public  $sections;
 }
 
 
@@ -123,7 +130,7 @@ class StatusQueryPage extends HarnessPage
           return 'application/json';
         }
       }
-      if ('trident' == $this->mUserAgent->getEngineName()) {  // IE8 can't sent proper accept headers
+      if ('trident' == $this->mUserAgent->getEngineName()) {  // IE8 can't send proper accept headers
         $this->mRequestValid = TRUE;
         return 'application/json';
       }
@@ -164,14 +171,14 @@ class StatusQueryPage extends HarnessPage
       $args['o'] = 1;
       $testURI = $this->buildURI(TESTCASE_PAGE_URI, $args, null, TRUE);
 
-      $result = new ResultResponse();
-      $result->anchorName = $fragId;
-      $result->testCount = (($testCaseIds) ? count($testCaseIds) : 0);
-      $result->testURI = $testURI;
-      $result->engines = array();
+      $sectionResponse = new SectionResponse();
+      $sectionResponse->anchorName = $fragId;
+      $sectionResponse->testCount = (($testCaseIds) ? count($testCaseIds) : 0);
+      $sectionResponse->testURI = $testURI;
+      $sectionResponse->engines = array();
 
       $clientEngineName = $this->mUserAgent->getEngineName();
-      $result->needData = $result->testCount;
+      $sectionResponse->needCount = $sectionResponse->testCount;
       
       if ((0 < $this->mResults->getEngineCount()) && ($testCaseIds)) {
         foreach ($this->mResults->getEngineNames() as $engineName) {
@@ -196,19 +203,20 @@ class StatusQueryPage extends HarnessPage
 //          $args['e'] = $engineName;
           $engineResponse = new EngineResponse();
           $engineResponse->title = $this->mEngines[$engineName]->getTitle();
+          $engineResponse->name = $engineName;
           $engineResponse->passCount = (array_key_exists($engineName, $enginePassCounts) ? $enginePassCounts[$engineName] : 0);
           $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
 //          $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
           $engineResponse->detailsURI = $this->buildURI(RESULTS_PAGE_URI, $args, null, TRUE);
-          $result->engines[] = $engineResponse;
+          $sectionResponse->engines[] = $engineResponse;
           
           if ($engineName == $clientEngineName) {
-            $result->needData = ($result->testCount - ($engineResponse->passCount + $engineResponse->failCount));
+            $sectionResponse->needCount = ($sectionResponse->testCount - ($engineResponse->passCount + $engineResponse->failCount));
           }
         }
       }
       
-      $results[] = $result;
+      $results[] = $sectionResponse;
     }
     
     $subSections = $this->mSections->getSubSectionData($sectionId);
@@ -230,8 +238,10 @@ class StatusQueryPage extends HarnessPage
     $this->loadResults();
     
     if ($this->mResults) {
-      $results = $this->getResultsForSection($this->mSectionId, TRUE);
-      $this->_write(json_encode($results));
+      $response = new Response();
+      $response->clientEngineName = $this->mUserAgent->getEngineName();
+      $response->sections = $this->getResultsForSection($this->mSectionId, TRUE);
+      $this->_write(json_encode($response));
     }
   }
   

@@ -18,13 +18,17 @@
 /**
   Data returned from server:
   
-  data.anchorName;
-  data.testCount;
-  data.engines[];
-  data.testURI;
-  data.needData;
+  response.clientEngineName;
+  response.sections[];
+  
+  section.anchorName;
+  section.testCount;
+  section.needCount;  // (bool) results needed from client engine
+  section.testURI;
+  section.engines[];
 
-  engine.title;
+  engine.title;       // human readable title
+  engine.name;        // string key for harness
   engine.passCount;
   engine.failCount;
   engine.detailsURI;
@@ -33,368 +37,353 @@
 
 <?php require_once('lib/Page.php'); ?>
 
-var QUERY_URI       = "<?php echo Page::_BuildURI('status', null, null, TRUE); ?>";
-var STYLESHEET_URI  = "<?php echo Page::_BuildURI('annotate.css', null, null, TRUE); ?>";
-var NEED_TEST_URI   = "<?php echo Page::_BuildURI('img/please_help_32.png', null, null, TRUE); ?>";
+var annotator = {
+  QUERY_URI:          "<?php echo Page::_BuildURI('status', null, null, TRUE); ?>",
+  STYLESHEET_URI:     "<?php echo Page::_BuildURI('annotate.css', null, null, TRUE); ?>",
+  NEED_TEST_ICON_URI: "<?php echo Page::_BuildURI('img/please_help_32.png', null, null, TRUE); ?>",
 
-var annotationData;
-var annotationsClosed = false;
+  mResponse: null,
+  mClosed: false,
+  
+  removeAnnotation: function(anchorName) {
+    try {
+      var annotation = document.getElementById('annotation_' + ((0 < anchorName.length) ? anchorName : 'root_'));
 
-
-function removeAnnotation(anchorName)
-{
-  try {
-    var annotation = document.getElementById('annotation_' + ((0 < anchorName.length) ? anchorName : 'root_'));
-
-    if (annotation) {
-      annotation.parentNode.removeChild(annotation);
+      if (annotation) {
+        annotation.parentNode.removeChild(annotation);
+      }
     }
-  }
-  catch (err) {
-  }
-}
-
-function removeAllAnnotations()
-{
-  try {
-    if (annotationData) {
-      if (annotationData instanceof Array) {
-        for (index in annotationData) {
-          removeAnnotation(annotationData[index].anchorName);
+    catch (err) {
+    }
+  },
+  
+  removeAllAnnotations: function () {
+    try {
+      if (this.mResponse && this.mResponse.sections) {
+        for (index in this.mResponse.sections) {
+          this.removeAnnotation(this.mResponse.sections[index].anchorName);
         }
       }
-      else {
-        removeAnnotation(annotationData.anchorName);
-      }
     }
-  }
-  catch (err) {
-  }
-}
+    catch (err) {
+    }
+  },
+  
+  toggleAnnotations: function() {
+    this.mClosed = (! this.mClosed);
+    this.removeAllAnnotations();
+    this.addAnnotations();
+  },
+  
+  addAnnotationTo: function(element, section, first) {
+    try {
+      if (element) {
+        var annotation = document.createElement('div');
+        annotation.setAttribute('id', 'annotation_' + ((0 == section.anchorName.length) ? 'root_' : section.anchorName));
+        var annotationClass = 'annotation';
+        if (first) {
+          annotationClass += ' first';
+        }
+        if (0 < section.needCount) {
+          annotationClass += ' need';
+        }
+        if (this.mClosed) {
+          annotationClass += ' closed';
+        }
+        annotation.setAttribute('class', annotationClass);
+        annotation.setAttribute('testCount', section.testCount);
+        annotation.setAttribute('needCount', section.needCount);
 
-function toggleAnnotations()
-{
-  annotationsClosed = (! annotationsClosed);
-  removeAllAnnotations();
-  addAnnotations();
-}
-
-
-function addAnnotationTo(element, data, first)
-{
-  try {
-    if (element) {
-      var annotation = document.createElement('div');
-      annotation.setAttribute('id', 'annotation_' + ((0 == data.anchorName.length) ? 'root_' : data.anchorName));
-      var annotationClass = 'annotation';
-      if (first) {
-        annotationClass += ' first';
-      }
-      if (0 < data.needData) {
-        annotationClass += ' need';
-      }
-      if (annotationsClosed) {
-        annotationClass += ' closed';
-      }
-      annotation.setAttribute('class', annotationClass);
-
-      if (first) {
-        var disclosure = document.createElement('div');
-        disclosure.setAttribute('class', 'disclosureBox');
-        disclosure.setAttribute('onclick', 'toggleAnnotations()');
-        annotation.appendChild(disclosure);
-      }
-      
-      var closeBox = document.createElement('div');
-      closeBox.setAttribute('class', 'closeBox');
-      if (first) {
-        closeBox.setAttribute('onclick', 'removeAllAnnotations()');
-      }
-      else {
-        closeBox.setAttribute('onclick', 'removeAnnotation("' + data.anchorName + '")');
-      }
-      annotation.appendChild(closeBox);
-      
-      var heading = document.createElement('div');
-      heading.setAttribute('class', 'heading');
-      
-      var testLink = document.createElement('a');
-      testLink.setAttribute('href', data.testURI);
-
-      if (1 == data.testCount) {
-        testLink.appendChild(document.createTextNode('1 Test'));
-      }
-      else {
-        testLink.appendChild(document.createTextNode(data.testCount + ' Tests'));
-      }
-      if ((! annotationsClosed) && (0 < data.needData)) {
-        var image = document.createElement('img');
-        image.setAttribute('src', NEED_TEST_URI);
-        image.setAttribute('class', 'need');
-        testLink.appendChild(image);
-
-        if (1 == data.needData) {
-          testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
+        if (first) {
+          var disclosure = document.createElement('div');
+          disclosure.setAttribute('class', 'disclosureBox');
+          disclosure.setAttribute('onclick', 'annotator.toggleAnnotations()');
+          annotation.appendChild(disclosure);
+        }
+        
+        var closeBox = document.createElement('div');
+        closeBox.setAttribute('class', 'closeBox');
+        if (first) {
+          closeBox.setAttribute('onclick', 'annotator.removeAllAnnotations()');
         }
         else {
-          testLink.setAttribute('title', data.needData + ' tests need results from your client, please click here to run tests');
+          closeBox.setAttribute('onclick', 'annotator.removeAnnotation("' + section.anchorName + '")');
         }
-        var untested = document.createElement('span');
-        untested.appendChild(document.createTextNode(' ' + data.needData + '\u00A0untested, please\u00A0test'));
-        testLink.appendChild(untested);
-      }
-      heading.appendChild(testLink);
-      annotation.appendChild(heading);
-
-      if (! annotationsClosed) {
-        var engines = document.createElement('div');
-        engines.setAttribute('class', 'engines');
+        annotation.appendChild(closeBox);
         
-        for (index in data.engines) {
-          var engineData = data.engines[index];
-          var resultCount = (engineData.passCount + engineData.failCount);
-          
-          var engineNode = document.createElement('span');
-          var toolTip = '';
-          var engineClass = '';
-          if (0 < resultCount) {
-            if (engineData.passCount == data.testCount) {
-              toolTip = 'All tests pass';
-              engineClass = 'pass';
-            }
-            else {
-              if (engineData.failCount == data.testCount) {
-                toolTip = 'All tests fail';
-                engineClass = 'fail';
-              }
-              else {
-                if (0 < engineData.passCount) {
-                  toolTip = engineData.passCount + ' pass';
-                }
-                if (0 < engineData.failCount) {
-                  if (toolTip.length) {
-                    toolTip += ', '
-                  }
-                  toolTip += engineData.failCount + ' fail';
-                }
-                if (resultCount < data.testCount) {
-                  if (toolTip.length) {
-                    toolTip += ', '
-                  }
-                  toolTip += (data.testCount - resultCount) + ' untested';
-                }
-                if ((resultCount / data.testCount) < 0.95) {
-                  engineClass = 'uncertain';
-                }
-                else {
-                  engineClass = 'p' + Math.round((engineData.passCount / data.testCount) * 10.0) + '0';
-                }
-              }
-            }
+        var heading = document.createElement('div');
+        heading.setAttribute('class', 'heading');
+        
+        var testLink = document.createElement('a');
+        testLink.setAttribute('href', section.testURI);
+
+        if (1 == section.testCount) {
+          testLink.appendChild(document.createTextNode('1 Test'));
+        }
+        else {
+          testLink.appendChild(document.createTextNode(section.testCount + ' Tests'));
+        }
+        if ((! this.mClosed) && (0 < section.needCount)) {
+          var image = document.createElement('img');
+          image.setAttribute('src', this.NEED_TEST_ICON_URI);
+          image.setAttribute('class', 'need');
+          testLink.appendChild(image);
+
+          if (1 == section.needCount) {
+            testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
           }
           else {
-            toolTip = 'No data';
+            testLink.setAttribute('title', section.needCount + ' tests need results from your client, please click here to run tests');
           }
-          
-          if (0 < resultCount) {
-            engineNode.setAttribute('title', toolTip);
-            engineNode.setAttribute('class', engineClass);
+          var untested = document.createElement('span');
+          untested.appendChild(document.createTextNode(' ' + section.needCount + '\u00A0untested, please\u00A0test'));
+          testLink.appendChild(untested);
+        }
+        heading.appendChild(testLink);
+        annotation.appendChild(heading);
 
+        if (! this.mClosed) {
+          var engines = document.createElement('div');
+          engines.setAttribute('class', 'engines');
+          
+          for (index in section.engines) {
+            var engine = section.engines[index];
+            var resultCount = (engine.passCount + engine.failCount);
+            
+            var toolTip = '';
+            var engineClass = '';
             if (0 < resultCount) {
-              var detailsLink = document.createElement('a');
-              detailsLink.setAttribute('href', engineData.detailsURI);
-              
-              detailsLink.appendChild(document.createTextNode(engineData.title));
-              engineNode.appendChild(detailsLink);
+              if (engine.passCount == section.testCount) {
+                toolTip = 'All tests pass';
+                engineClass = 'pass';
+              }
+              else {
+                if (engine.failCount == section.testCount) {
+                  toolTip = 'All tests fail';
+                  engineClass = 'fail';
+                }
+                else {
+                  if (0 < engine.passCount) {
+                    toolTip = engine.passCount + ' pass';
+                  }
+                  if (0 < engine.failCount) {
+                    if (toolTip.length) {
+                      toolTip += ', '
+                    }
+                    toolTip += engine.failCount + ' fail';
+                  }
+                  if (resultCount < section.testCount) {
+                    if (toolTip.length) {
+                      toolTip += ', '
+                    }
+                    toolTip += (section.testCount - resultCount) + ' untested';
+                  }
+                  if ((resultCount / section.testCount) < 0.95) {
+                    engineClass = 'untested';
+                  }
+                  else {
+                    engineClass = 'p' + Math.round((engine.passCount / section.testCount) * 10.0) + '0';
+                  }
+                }
+              }
             }
             else {
-              engineNode.appendChild(document.createTextNode(engineData.title));
+              toolTip = 'No data';
             }
             
-            engines.appendChild(engineNode);
-            engines.appendChild(document.createTextNode(' '));
+            if (0 < resultCount) {
+              var engineNode = document.createElement('span');
+              engineNode.setAttribute('title', toolTip);
+              if (engine.name == this.mResponse.clientEngineName) {
+                engineClass += ' active';
+              }
+              engineNode.setAttribute('class', engine.name + ' ' + engineClass);
+              engineNode.setAttribute('passCount', engine.passCount);
+              engineNode.setAttribute('failCount', engine.failCount);
+              engineNode.setAttribute('needCount', section.testCount - resultCount);
+
+              if (0 < resultCount) {
+                var detailsLink = document.createElement('a');
+                detailsLink.setAttribute('href', engine.detailsURI);
+                
+                detailsLink.appendChild(document.createTextNode(engine.title));
+                engineNode.appendChild(detailsLink);
+              }
+              else {
+                engineNode.appendChild(document.createTextNode(engine.title));
+              }
+              
+              engines.appendChild(engineNode);
+              engines.appendChild(document.createTextNode(' '));
+            }
+          }
+          annotation.appendChild(engines);
+        }
+        
+        element.parentNode.insertBefore(annotation, element);
+      }
+    }
+    catch (err) {
+//      document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
+    }
+  },
+  
+  addAnnotation: function(section, first) {
+    try {
+      var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
+                      'H1':'', 'H2':'', 'H3':'', 'H4':'', 'H5':'', 'H6':''};
+      var anchorName = section.anchorName;
+
+      if (anchorName) { // find heading that contains anchor
+        var anchors = document.getElementsByName(anchorName);
+        
+        for (index in anchors) {
+          var anchor = anchors[index];
+          var heading = anchor.parentNode;
+          
+          while (heading && (Node.ELEMENT_NODE == heading.nodeType) && (! (heading.tagName in headings))) {
+            heading = heading.parentNode;
+          }
+          if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
+            this.addAnnotationTo(heading, section, first);
+            break;
           }
         }
-        annotation.appendChild(engines);
       }
-      
-      element.parentNode.insertBefore(annotation, element);
-    }
-  }
-  catch (err) {
-//    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
-  }
-}
-
-
-function addAnnotation(testData, first)
-{
-  try {
-    var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
-                    'H1':'', 'H2':'', 'H3':'', 'H4':'', 'H5':'', 'H6':''};
-    var anchorName = testData.anchorName;
-
-    if (anchorName) { // find heading that contains anchor
-      var anchors = document.getElementsByName(anchorName);
-      
-      for (index in anchors) {
-        var anchor = anchors[index];
-        var heading = anchor.parentNode;
+      else {  // find first h1
+        var headings = document.getElementsByTagName('h1');
         
-        while (heading && (Node.ELEMENT_NODE == heading.nodeType) && (! (heading.tagName in headings))) {
-          heading = heading.parentNode;
-        }
-        if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
-          addAnnotationTo(heading, testData, first);
-          break;
+        if (headings && (0 < headings.length)) {
+          this.addAnnotationTo(headings[0], section, first);
         }
       }
     }
-    else {  // find first h1
-      var headings = document.getElementsByTagName('h1');
-      
-      if (headings && (0 < headings.length)) {
-        addAnnotationTo(headings[0], testData, first);
-      }
+    catch (err) {
     }
-  }
-  catch (err) {
-  }
-}
-
-
-function addAnnotations()
-{
-  try {
-    if (annotationData) {
-      if (annotationData instanceof Array) {
-        if (0 < annotationData.length) {
-          if (annotationsClosed) {
-            addAnnotation(annotationData[0], true);
+  },
+  
+  addAnnotations: function () {
+    try {
+      if (this.mResponse && this.mResponse.sections) {
+        if (0 < this.mResponse.sections.length) {
+          if (this.mClosed) {
+            this.addAnnotation(this.mResponse.sections[0], true);
           }
           else {
             var first = true;
-            for (index in annotationData) {
-              addAnnotation(annotationData[index], first);
+            for (index in this.mResponse.sections) {
+              this.addAnnotation(this.mResponse.sections[index], first);
               first = false;
             }
           }
         }
       }
+    }
+    catch (err) {
+    }
+  },
+  
+  processResponse: function(contentType, responseText) {
+    try {
+      if (-1 < contentType.indexOf('application/json')) {
+        var response = JSON.parse(responseText);
+        
+        if (response) {
+          this.mResponse = response;
+          this.addAnnotations();
+        }
+      }
+    }
+    catch (err) {
+    }
+  },
+  
+  annotate: function() {
+    try {
+      var testSuiteName = '';
+      
+      var scripts = document.getElementsByTagName('script');
+      for (index in scripts) {
+        if (scripts[index].hasAttribute('src')) {
+          var scriptSource = scripts[index].getAttribute('src');
+          if (-1 < scriptSource.indexOf('/annotate.js#')) {
+            testSuiteName = scriptSource.substr(scriptSource.indexOf('#') + 1);
+            if ('!' == testSuiteName[0]) {
+              testSuiteName = testSuiteName.substr(1);
+              this.mClosed = true;
+            }
+            break;
+          }
+        }
+      }
+      
+      if (0 < testSuiteName.length) {
+        var styleSheet = document.createElement('link');
+        styleSheet.setAttribute('rel', 'stylesheet');
+        styleSheet.setAttribute('type', 'text/css');
+        styleSheet.setAttribute('href', this.STYLESHEET_URI);
+        document.getElementsByTagName('head')[0].appendChild(styleSheet)
+
+        var statusURI = this.QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
+        
+        if (window.XDomainRequest) {  // The IE way...
+          var xdr = new XDomainRequest();
+          if (xdr) {
+            xdr.onload = function () {
+              annotator.processResponse(xdr.contentType, xdr.responseText);
+            }
+            xdr.open('GET', statusURI);
+            xdr.send();
+          }
+        }
+        else {  // The standard way
+          var xhr = new XMLHttpRequest();
+          
+          xhr.onreadystatechange = function() {
+            if (4 == xhr.readyState) {
+              if (200 == xhr.status) {
+                annotator.processResponse(xhr.getResponseHeader('Content-Type'), xhr.responseText);
+              }
+              else if (500 == xhr.status) {
+//                document.documentElement.innerHTML = xhr.responseText;  // DEBUG
+              }
+              else {
+//                document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
+              }
+            }
+          };
+          
+          xhr.open('GET', statusURI, true);
+          xhr.setRequestHeader('Accept', 'application/json,text/html');
+          xhr.send();
+        }
+      }
+    }
+    catch (err) {
+//      document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
+    }
+  },
+  
+  addLoadEvent: function() {
+    try {
+      var oldOnLoad = window.onload;
+      if (typeof window.onload != 'function') {
+        window.onload = this.annotate();
+      }
       else {
-        addAnnotation(annotationData, true);
-      }
-    }
-  }
-  catch (err) {
-  }
-}
-
-
-function processResponse(contentType, responseText)
-{
-  try {
-    if (-1 < contentType.indexOf('application/json')) {
-      var data = JSON.parse(responseText);
-      
-      if (data) {
-        annotationData = data;
-        addAnnotations();
-      }
-    }
-  }
-  catch (err) {
-  }
-}
-
-function annotate()
-{
-  try {
-    var testSuiteName = '';
-    
-    var scripts = document.getElementsByTagName('script');
-    for (index in scripts) {
-      if (scripts[index].hasAttribute('src')) {
-        var scriptSource = scripts[index].getAttribute('src');
-        if (-1 < scriptSource.indexOf('/annotate.js#')) {
-          testSuiteName = scriptSource.substr(scriptSource.indexOf('#') + 1);
-          if ('!' == testSuiteName[0]) {
-            testSuiteName = testSuiteName.substr(1);
-            annotationsClosed = true;
+        window.onload = function () {
+          if (oldOnLoad) {
+            oldOnLoad();
           }
-          break;
+          annotator.annotate();
         }
       }
     }
-    
-    if (0 < testSuiteName.length) {
-      var styleSheet = document.createElement('link');
-      styleSheet.setAttribute('rel', 'stylesheet');
-      styleSheet.setAttribute('type', 'text/css');
-      styleSheet.setAttribute('href', STYLESHEET_URI);
-      document.getElementsByTagName('head')[0].appendChild(styleSheet)
-
-      var statusURI = QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
-      
-      if (window.XDomainRequest) {  // The IE way...
-        var xdr = new XDomainRequest();
-        if (xdr) {
-          xdr.onload = function () {
-            processResponse(xdr.contentType, xdr.responseText);
-          }
-          xdr.open('GET', statusURI);
-          xdr.send();
-        }
-      }
-      else {  // The standard way
-        var xhr = new XMLHttpRequest();
-        
-        xhr.onreadystatechange = function() {
-          if (4 == xhr.readyState) {
-            if (200 == xhr.status) {
-              processResponse(xhr.getResponseHeader('Content-Type'), xhr.responseText);
-            }
-            else if (500 == xhr.status) {
-//              document.documentElement.innerHTML = xhr.responseText;  // DEBUG
-            }
-            else {
-//              document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
-            }
-          }
-        };
-        
-        xhr.open('GET', statusURI, true);
-        xhr.setRequestHeader('Accept', 'application/json,text/html');
-        xhr.send();
-      }
+    catch (err) {
     }
-  }
-  catch (err) {
-//    document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
   }
 }
 
 
-function addLoadEvent(loadFunc)
-{
-  try {
-    var oldOnLoad = window.onload;
-    if (typeof window.onload != 'function') {
-      window.onload = loadFunc;
-    }
-    else {
-      window.onload = function () {
-        if (oldOnLoad) {
-          oldOnLoad();
-        }
-        loadFunc();
-      }
-    }
-  }
-  catch (err) {
-  }
-}
-
-
-addLoadEvent(annotate);
+annotator.addLoadEvent();
 
