@@ -156,13 +156,13 @@ class TestCasePage extends HarnessPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink('test.css');
+    $this->addStyleSheetLink(TEST_STYLESHEET_URI);
 
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
       $actualEngineName = strtolower($actualUA->getEngineName());
       
-      $this->addStyleSheetLink("test_{$actualEngineName}.css");
+      $this->addStyleSheetLink(sprintf(TEST_ENGINE_STYLESHEET_URI, $actualEngineName));
     }
   }
 

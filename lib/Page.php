@@ -16,6 +16,8 @@
  * 
  ******************************************************************************/
   
+require_once('lib/Config.php');
+
 
 /**
  * This base class encapsulates the writing of basic HTML pages.
@@ -149,13 +151,16 @@ class Page
     
     $abs = '';
     if ($absolute) {
-      if (! empty($_SERVER['HTTP_HOST'])) {
-        $abs = 'http://' . $_SERVER['HTTP_HOST'];
+      if (empty($_SERVER['HTTP_HOST'])) {
+        $abs = HARNESS_BASE_URI;
       }
-      if (! empty($_SERVER['PHP_SELF'])) {
-        $abs .= dirname($_SERVER['PHP_SELF']);
-        if (substr($abs, -1) != '/') {
-          $abs .= '/';
+      else {
+        $abs = 'http://' . $_SERVER['HTTP_HOST'];
+        if (! empty($_SERVER['PHP_SELF'])) {
+          $abs .= dirname($_SERVER['PHP_SELF']);
+          if (substr($abs, -1) != '/') {
+            $abs .= '/';
+          }
         }
       }
     }
@@ -442,7 +447,13 @@ class Page
     assert('$this->mWriteXML');
     
     if ($this->mWriteXML) {
-      $this->mPIList[] = $this->_buildElement($piName, $attrs);
+      if ((0 == count($this->mBufferStack)) && (0 == count($this->mElementStack))) {
+        $pi = $this->_buildElement($piName, $attrs);
+        $this->_writeLine("<?{$pi} ?" . '>', FALSE, $this->_formattingOn());
+      }
+      else {
+        $this->mPIList[] = $this->_buildElement($piName, $attrs);
+      }
     }
   }
   
@@ -580,6 +591,49 @@ class Page
   }
 
 
+  /**
+   * Encode a variable as XML
+   */
+  function xmlEncode($name, $value)
+  {
+    if (is_null($value)) {
+      $this->addElement($name);
+    }
+    elseif (is_bool($value)) {
+      $this->addElement($name, null, ($value) ? 'true' : 'false', FALSE, FALSE);
+    }
+    elseif (is_string($value) || is_numeric($value)) {
+      $this->addElement($name, null, $value, TRUE, FALSE);
+    }
+    elseif (is_array($value)) {
+      if (is_string($name)) {
+        $this->openElement($name);
+      }
+      foreach ($value as $key => $value) {
+        $this->xmlEncode($key, $value);
+      }
+      if (is_string($name)) {
+        $this->closeElement($name);
+      }
+    }
+    elseif (is_object($value)) {
+      $reflect = new ReflectionClass($value);
+      if (method_exists($value, '_getElementName')) {
+        $elementName = $value->_getElementName();
+      }
+      else {
+        $elementName = get_class($value);
+      }
+      $this->openElement($elementName);
+      $properties = $reflect->getProperties(ReflectionProperty::IS_PUBLIC);
+      foreach ($properties as $property) {
+        $this->xmlEncode($property->getName(), $property->getValue($value));
+      }
+      $this->closeElement($elementName);
+    }
+  }
+  
+  
   /**
    * Shortcut to add style element
    *
@@ -931,9 +985,11 @@ class Page
     switch (strtolower($this->mContentType)) {
       case 'text/html':
         $this->mWriteXML = FALSE;
-      case 'application/xml':
       case 'application/xhtml+xml':
         $this->writeHTML();
+        break;
+      case 'application/xml':
+        $this->writeXML();
         break;
       case 'application/json':
         $this->writeJSON();
@@ -1012,6 +1068,15 @@ class Page
     $this->writeHTMLBody();
     
     $this->closeElement('html');
+  }
+  
+  
+  /**
+   * Generate XML page response
+   * Subclasses override to provide data
+   */
+  function writeXML()
+  {
   }
   
   

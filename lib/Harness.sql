@@ -10,7 +10,7 @@
 --
 
 CREATE TABLE IF NOT EXISTS `flags` (
-  `flag` enum('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','reftest','should','scroll','svg','userstyle','32bit','96dpi') NOT NULL default 'ahem',
+  `flag` enum('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','refonly','reftest','should','scroll','svg','userstyle','32bit','96dpi') NOT NULL default 'ahem',
   `description` varchar(255) NOT NULL,
   `set_test` varchar(255) default NULL,
   `unset_test` varchar(255) default NULL,
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS `testcases` (
   `testcase` varchar(63) NOT NULL default '',
   `last_revision` int(11) unsigned NOT NULL default '0',
   `title` varchar(255) default NULL,
-  `flags` set('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','reftest','should','scroll','svg','userstyle','32bit','96dpi') default NULL,
+  `flags` set('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','refonly','reftest','should','scroll','svg','userstyle','32bit','96dpi') default NULL,
   `assertion` varchar(1023) default NULL,
   `credits` varchar(255) default NULL,
   PRIMARY KEY  (`id`)
@@ -230,7 +230,7 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
   `spec` varchar(31) default NULL,
   `title` varchar(255) default NULL,
   `formats` set('html4','xhtml1') NOT NULL default 'html4,xhtml1',
-  `optional_flags` set('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','reftest','should','scroll','svg','userstyle','32bit','96dpi') default NULL,
+  `optional_flags` set('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','refonly','reftest','should','scroll','svg','userstyle','32bit','96dpi') default NULL,
   `active` tinyint(1) unsigned NOT NULL default '1',
   `date` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `locked` timestamp NULL default NULL,

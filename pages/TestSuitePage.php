@@ -73,7 +73,7 @@ class TestSuitePage extends HarnessPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink('suite.css');
+    $this->addStyleSheetLink(TESTSUITE_STYLESHEET_URI);
   }
 
 

@@ -98,7 +98,7 @@ class HarnessPage extends DynamicPage
       $this->addStyleElement('a.report { display: none; }'); // ensure spider trap links are hidden
     }
 
-    $this->addStyleSheetLink('base.css');
+    $this->addStyleSheetLink(BASE_STYLESHEET_URI);
   }
   
   

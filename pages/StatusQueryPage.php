@@ -30,6 +30,8 @@ class EngineResponse
   public  $passCount;
   public  $failCount;
   public  $detailsURI;
+  
+  function _getElementName()  { return 'engine'; }
 }
 
 class SectionResponse
@@ -39,12 +41,16 @@ class SectionResponse
   public  $needCount;
   public  $testURI;
   public  $engines;
+  
+  function _getElementName()  { return 'section'; }
 }
 
 class Response
 {
   public  $clientEngineName;
   public  $sections;
+  
+  function _getElementName()  { return 'status'; }
 }
 
 
@@ -128,6 +134,10 @@ class StatusQueryPage extends HarnessPage
         if (FALSE !== stripos($accept, 'application/json')) {
           $this->mRequestValid = TRUE;
           return 'application/json';
+        }
+        if (FALSE !== stripos($accept, 'application/xml')) {
+          $this->mRequestValid = TRUE;
+          return 'application/xml';
         }
       }
       if ('trident' == $this->mUserAgent->getEngineName()) {  // IE8 can't send proper accept headers
@@ -233,7 +243,7 @@ class StatusQueryPage extends HarnessPage
   }
   
   
-  function writeJSON()
+  function generateResponse()
   {
     $this->loadResults();
     
@@ -241,8 +251,31 @@ class StatusQueryPage extends HarnessPage
       $response = new Response();
       $response->clientEngineName = $this->mUserAgent->getEngineName();
       $response->sections = $this->getResultsForSection($this->mSectionId, TRUE);
-      $this->_write(json_encode($response));
+      return $response;
     }
+    return null;
+  }
+  
+  
+  function writeJSON()
+  {
+    $response = null;
+    if ($this->mRequestValid) {
+      $response = $this->generateResponse();
+    }
+    $this->_write(json_encode($response));
+  }
+  
+  
+  function writeXML()
+  {
+    $response = null;
+    if ($this->mRequestValid) {
+      $response = $this->generateResponse();
+    }
+    
+    $this->addPI('xml', array('version' => '1.0', 'encoding' => $this->mEncoding));
+    $this->xmlEncode('status', $response);
   }
   
   

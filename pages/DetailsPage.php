@@ -110,7 +110,7 @@ class DetailsPage extends ResultsBasedPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink('report.css');
+    $this->addStyleSheetLink(REPORT_STYLESHEET_URI);
   }
 
   function _compareResults(Result $a, Result $b)

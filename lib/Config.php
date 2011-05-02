@@ -44,6 +44,7 @@ define('CONTACT_NAME', 'public-css-testsuite@w3.org');
 /**
  * URIs used within the harness
  */
+define('HARNESS_BASE_URI', 'http://test.csswg.org/harness/');
 define('TESTSUITE_PAGE_URI', 'testsuite');
 define('TESTCASE_PAGE_URI', 'testcase');
 define('SELECT_UA_PAGE_URI', 'useragent');
@@ -53,8 +54,19 @@ define('RESULTS_PAGE_URI', 'results');
 define('DETAILS_PAGE_URI', 'details');
 define('SUBMIT_PAGE_URI', 'submit');
 define('SUCCESS_PAGE_URI', 'success');
+define('STATUS_QUERY_URI', 'status');
 
- 
+/**
+ * Stylesheet URIs used within the harness
+ */
+define('ANNOTATION_STYLESHEET_URI', 'annotate.css');
+define('BASE_STYLESHEET_URI', 'base.css');
+define('REPORT_STYLESHEET_URI', 'report.css');
+define('TEST_STYLESHEET_URI', 'test.css');
+define('TEST_ENGINE_STYLESHEET_URI', 'test_%s.css');
+define('TESTSUITE_STYLESHEET_URI', 'suite.css');
+
+
 /**
  * Spider trap config
  *
