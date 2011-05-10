@@ -209,52 +209,9 @@ class TestCaseImport extends CmdLineWorker
       if (0 < $testCaseId) {  // we already have this testcase, update as needed
       
         $newRevision = FALSE;
-        if ($this->mTestCaseRevisionInSuite[$testCaseId] != $revision) {
+        if ($this->mTestCaseRevisionInSuite[$testCaseId] != $revision) {  // not the same revision
           if (in_array($revision, $this->mTestCaseRevisions[$testCaseId])) {
             echo "Set {$testCaseName}:{$testCaseId} to existing revision {$revision}\n";
-            
-            /////
-            
-            $compared = FALSE;
-            $matches = TRUE;
-            if ($this->mNewSuitePath) {
-              foreach ($formats as $format) {
-                if ($matches && $format->validForFlags($flagArray)) {
-                  $compared = TRUE;
-                  $testPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
-                      
-                  $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $testPath));
-                  $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $testPath));
-                  
-                  $matches = ($newTest->getContent() == $oldTest->getContent());
-                }
-              }
-            }
-            
-            if ($compared && $matches) {
-              // detect revisions since old version and chain them together
-              $revisions = $this->mTestCaseRevisions[$testCaseId];
-              $prevRevisionIndex = array_search($this->mTestCaseRevisionInSuite[$testCaseId], $revisions);
-              $newRevisionIndex = array_search($revision, $revisions);
-              
-              for ($index = $prevRevisionIndex; $index < $newRevisionIndex; $index++) {
-                $oldRevision = $revisions[$index];
-                $newRevision = $revisions[$index + 1];
-                
-                $sql  = "UPDATE `revisions` ";
-                $sql .= "SET `equal_revision` = '{$oldRevision}' ";
-                $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
-                $sql .= "AND `revision` = '{$newRevision}' ";
-                
-                $this->query($sql);
-                echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
-              }
-            }
-            else {
-              echo "** revision not equal\n";
-            }
-            
-            /////
           }
           else {
             // this is a new revision
@@ -268,20 +225,35 @@ class TestCaseImport extends CmdLineWorker
                 if ($matches && $format->validForFlags($flagArray)) {
                   $compared = TRUE;
                   $testPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+                  
+                  // XXX use stored url path for old test
                       
                   $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $testPath));
                   $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $testPath));
                   
                   $matches = ($newTest->getContent() == $oldTest->getContent());
+                  
+                  // XXX need to compare references as well if present
+                  // XXX and other dependent files
                 }
               }
             }
             
             if ($compared && $matches) {
               $revisions = $this->mTestCaseRevisions[$testCaseId];
+              $lastRevision = $revisions[count($revisions) - 1];
+              
+              $sql  = "INSERT INTO `revisions` ";
+              $sql .= "(`testcase_id`, `revision`, `equal_revision`, `date`) ";
+              $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$lastRevision}', '{$now}') ";
+
+              $this->query($sql);
+
+              echo "Updated {$testCaseName}:{$testCaseId} to revision {$revision} = {$lastRevision}\n";
+
               $prevRevisionIndex = array_search($this->mTestCaseRevisionInSuite[$testCaseId], $revisions);
               
-              for ($index = $prevRevisionIndex; $index < (count($revisions) - 1); $index++) {
+              for ($index = $prevRevisionIndex; $index < (count($revisions) - 1); $index++) { // if revisions between last and new, chain equality
                 $oldRevision = $revisions[$index];
                 $newRevision = $revisions[$index + 1];
                 
@@ -293,16 +265,6 @@ class TestCaseImport extends CmdLineWorker
                 $this->query($sql);
                 echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
               }
-
-              $lastRevision = $revisions[count($revisions) - 1];
-              
-              $sql  = "INSERT INTO `revisions` ";
-              $sql .= "(`testcase_id`, `revision`, `equal_revision`, `date`) ";
-              $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$lastRevision}', '{$now}') ";
-
-              $this->query($sql);
-              
-              echo "** Updated {$testCaseName}:{$testCaseId} to revision {$revision} = {$lastRevision}\n";
             }
             else {
               $sql  = "INSERT INTO `revisions` ";
