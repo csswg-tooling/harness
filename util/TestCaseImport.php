@@ -16,10 +16,11 @@
  * 
  ******************************************************************************/
 
-require_once("lib/CmdLineWorker.php");
-require_once("lib/Page.php");
-require_once("lib/Format.php");
-require_once("lib/TestSuite.php");
+require_once('lib/CmdLineWorker.php');
+require_once('lib/Page.php');
+require_once('lib/Format.php');
+require_once('lib/TestSuite.php');
+require_once('lib/NormalizedTest.php');
 
 /**
  * Import test case data from manifest file
@@ -28,22 +29,30 @@ require_once("lib/TestSuite.php");
  */
 class TestCaseImport extends CmdLineWorker
 {  
+  protected $mTestCaseRevisionInSuite;
   protected $mTestCaseRevisions;
   protected $mSpecLinkIds;
   protected $mSpecLinkParentIds;
   protected $mTestCaseIsActive;
+  protected $mNewSuitePath;
+  protected $mOldSuitePath;
 
   function __construct() 
   {
     parent::__construct();
 
     $this->mTestCaseIsActive = array();
+    
+    $this->mOldSuitePath = $this->_getArg(4);
+    if ($this->mOldSuitePath) {
+      $this->mNewSuitePath = $this->_getArg(3);
+    }
   }
 
 
   function usage()
   {
-    echo "USAGE: php TestCaseImport.php manifestfile testsuite\n";
+    echo "USAGE: php TestCaseImport.php manifestFile testSuite [newSuitePath oldSuitePath]\n";
   }
   
   
@@ -51,15 +60,50 @@ class TestCaseImport extends CmdLineWorker
   {
     parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
     
-    $this->mTestCaseRevisions[$testCaseId] = intval($testCaseData['last_revision']);
+    $this->mTestCaseRevisionInSuite[$testCaseId] = intval($testCaseData['last_revision']);
   }
 
   protected function _loadTestCases($testSuiteName = '')
   {
-    unset ($this->mTestCaseRevisions);
-    $this->mTestCaseRevisions = array();
+    unset ($this->mTestCaseRevisionInSuite);
+    $this->mTestCaseRevisionInSuite = array();
     
     return parent::_loadTestCases($testSuiteName);
+  }
+  
+  
+  protected function _loadTestCaseRevisions($testSuiteName)
+  {
+    $testSuiteName = $this->encode($testSuiteName, SUITETESTS_MAX_TESTSUITE);
+    
+    $sql  = "SELECT `testcase_id`, `revision` ";
+    $sql .= "FROM `suitetests` ";
+    $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+
+    $r = $this->query($sql);
+    while ($testCaseData = $r->fetchRow()) {
+      $testCaseId = intval($testCaseData['testcase_id']);
+      
+      $this->mTestCaseRevisionInSuite[$testCaseId] = intval($testCaseData['revision']);
+    }
+    
+    $this->mTestCaseRevisions = array();
+    
+    $sql  = "SELECT `testcase_id`, `revision` ";
+    $sql .= "FROM `revisions` ";
+    $sql .= "ORDER BY `testcase_id`, `date` ";
+    
+    $r = $this->query($sql);
+    while ($revisionData = $r->fetchRow()) {
+      $testCaseId = intval($revisionData['testcase_id']);
+      $revision   = intval($revisionData['revision']);
+      
+      if (array_key_exists($testCaseId, $this->mTestCaseRevisions) && 
+          in_array($revision, $this->mTestCaseRevisions[$testCaseId])) {
+        die("Multiple entries for revision {$revision} for {$testCaseId}\n");
+      }
+      $this->mTestCaseRevisions[$testCaseId][] = $revision;
+    }
   }
   
   
@@ -114,6 +158,7 @@ class TestCaseImport extends CmdLineWorker
   {
     echo "Loading testcases\n";
     $this->_loadTestCases();
+    $this->_loadTestCaseRevisions($testSuiteName);
     
     $testSuite = new TestSuite($testSuiteName);
     $formats = Format::GetFormatsFor($testSuite);
@@ -161,10 +206,121 @@ class TestCaseImport extends CmdLineWorker
       $revision   = intval($revision);
 
       // testcases
-      if (0 < $testCaseId) {
+      if (0 < $testCaseId) {  // we already have this testcase, update as needed
+      
+        $newRevision = FALSE;
+        if ($this->mTestCaseRevisionInSuite[$testCaseId] != $revision) {
+          if (in_array($revision, $this->mTestCaseRevisions[$testCaseId])) {
+            echo "Set {$testCaseName}:{$testCaseId} to existing revision {$revision}\n";
+            
+            /////
+            
+            $compared = FALSE;
+            $matches = TRUE;
+            if ($this->mNewSuitePath) {
+              foreach ($formats as $format) {
+                if ($matches && $format->validForFlags($flagArray)) {
+                  $compared = TRUE;
+                  $testPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+                      
+                  $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $testPath));
+                  $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $testPath));
+                  
+                  $matches = ($newTest->getContent() == $oldTest->getContent());
+                }
+              }
+            }
+            
+            if ($compared && $matches) {
+              // detect revisions since old version and chain them together
+              $revisions = $this->mTestCaseRevisions[$testCaseId];
+              $prevRevisionIndex = array_search($this->mTestCaseRevisionInSuite[$testCaseId], $revisions);
+              $newRevisionIndex = array_search($revision, $revisions);
+              
+              for ($index = $prevRevisionIndex; $index < $newRevisionIndex; $index++) {
+                $oldRevision = $revisions[$index];
+                $newRevision = $revisions[$index + 1];
+                
+                $sql  = "UPDATE `revisions` ";
+                $sql .= "SET `equal_revision` = '{$oldRevision}' ";
+                $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+                $sql .= "AND `revision` = '{$newRevision}' ";
+                
+                $this->query($sql);
+                echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
+              }
+            }
+            else {
+              echo "** revision not equal\n";
+            }
+            
+            /////
+          }
+          else {
+            // this is a new revision
+            $newRevision = $revision;
+
+            // if available, compare revisions
+            $compared = FALSE;
+            $matches = TRUE;
+            if ($this->mNewSuitePath) {
+              foreach ($formats as $format) {
+                if ($matches && $format->validForFlags($flagArray)) {
+                  $compared = TRUE;
+                  $testPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+                      
+                  $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $testPath));
+                  $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $testPath));
+                  
+                  $matches = ($newTest->getContent() == $oldTest->getContent());
+                }
+              }
+            }
+            
+            if ($compared && $matches) {
+              $revisions = $this->mTestCaseRevisions[$testCaseId];
+              $prevRevisionIndex = array_search($this->mTestCaseRevisionInSuite[$testCaseId], $revisions);
+              
+              for ($index = $prevRevisionIndex; $index < (count($revisions) - 1); $index++) {
+                $oldRevision = $revisions[$index];
+                $newRevision = $revisions[$index + 1];
+                
+                $sql  = "UPDATE `revisions` ";
+                $sql .= "SET `equal_revision` = '{$oldRevision}' ";
+                $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+                $sql .= "AND `revision` = '{$newRevision}' ";
+                
+                $this->query($sql);
+                echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
+              }
+
+              $lastRevision = $revisions[count($revisions) - 1];
+              
+              $sql  = "INSERT INTO `revisions` ";
+              $sql .= "(`testcase_id`, `revision`, `equal_revision`, `date`) ";
+              $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$lastRevision}', '{$now}') ";
+
+              $this->query($sql);
+              
+              echo "** Updated {$testCaseName}:{$testCaseId} to revision {$revision} = {$lastRevision}\n";
+            }
+            else {
+              $sql  = "INSERT INTO `revisions` ";
+              $sql .= "(`testcase_id`, `revision`, `date`) ";
+              $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$now}') ";
+
+              $this->query($sql);
+              
+              echo "Updated {$testCaseName}:{$testCaseId} to revision {$revision}\n";
+            }
+          }
+        }
+
         $sql  = "UPDATE `testcases` ";
-        $sql .= "SET `last_revision` = '{$revision}', ";
-        $sql .= "`title` = '{$title}', ";
+        $sql .= "SET `title` = '{$title}', ";
+        if ($newRevision) {
+          $sql .= "`last_revision` = '{$newRevision}', ";
+        }
         $sql .= "`flags` = '{$flagString}', ";
         $sql .= "`assertion` = '{$assertion}', ";
         $sql .= "`credits` = '{$credits}' ";
@@ -173,14 +329,6 @@ class TestCaseImport extends CmdLineWorker
         $r = $this->query($sql);
         if (! $r->succeeded()) {
           die("Update failed {$testCaseName}:{$testCaseId}\n");
-        }
-        
-        if ($this->mTestCaseRevisions[$testCaseId] != $revision) {
-          $sql  = "INSERT INTO `revisions` ";
-          $sql .= "(`testcase_id`, `revision`, `date`) ";
-          $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$now}') ";
-
-          $this->query($sql);
         }
       }
       else {
@@ -225,6 +373,7 @@ class TestCaseImport extends CmdLineWorker
       // testpages
       $sql  = "DELETE FROM `testpages` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+      // XXX testcase may live in multiple suites - other suites may have more formats...
       
       $this->query($sql);
 
@@ -245,6 +394,7 @@ class TestCaseImport extends CmdLineWorker
       // references
       $sql  = "DELETE FROM `references` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+      // XXX formats? see above
       
       $this->query($sql);
 
@@ -283,6 +433,7 @@ class TestCaseImport extends CmdLineWorker
       // update links
       $sql  = "DELETE FROM `testlinks` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+      // XXX only delete links for spec tested from this suite
       
       $this->query($sql);
       

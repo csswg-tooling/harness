@@ -86,7 +86,7 @@ class CmdLineWorker extends DBConnection
     $r = $this->query($sql);
     while ($testCaseData = $r->fetchRow()) {
       $testCaseName = $testCaseData['testcase'];
-      $testCaseId   = $testCaseData['id'];
+      $testCaseId   = intval($testCaseData['id']);
       
       $this->_addTestCase($testCaseName, $testCaseId, $testCaseData);
     }
