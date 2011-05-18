@@ -1,0 +1,5 @@
+syntax: glob
+*.xcodeproj
+*.DS_Store
+lib/DBConfig.php
+

@@ -22,10 +22,11 @@ define('DEBUG_MODE', TRUE);
 /**
  * Database configuration
  */
-define('DB_HOST', '');
-define('DB_USER', 'testharness');
-define('DB_PASSWORD', 'r3B7xzXyPJZJ8pS7');
-define('DB_NAME', 'testharness2');
+include_once('DBConfig.php');
+//define('DB_HOST', 'localhost');
+//define('DB_USER', '');
+//define('DB_PASSWORD', '');
+//define('DB_NAME', '');
 
 
 /**
