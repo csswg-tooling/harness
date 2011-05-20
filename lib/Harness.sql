@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `references` (
 CREATE TABLE IF NOT EXISTS `results` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `testcase_id` int(11) unsigned NOT NULL default '0',
-  `revision` int(11) unsigned NOT NULL default '0',
+  `revision` varchar(40) NOT NULL default '0',
   `format` enum('html4','xhtml1') NOT NULL default 'html4',
   `useragent_id` int(11) unsigned NOT NULL default '0',
   `source_id` int(11) unsigned NOT NULL default '0',
@@ -80,8 +80,8 @@ CREATE TABLE IF NOT EXISTS `results` (
 
 CREATE TABLE IF NOT EXISTS `revisions` (
   `testcase_id` int(11) unsigned NOT NULL default '0',
-  `revision` int(11) unsigned NOT NULL default '0',
-  `equal_revision` int(11) NOT NULL default '0',
+  `revision` varchar(40) NOT NULL default '0',
+  `equal_revision` varchar(40) NOT NULL default '0',
   `date` timestamp NOT NULL default CURRENT_TIMESTAMP,
   KEY `testcase_id` (`testcase_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS `revisions` (
 
 CREATE TABLE IF NOT EXISTS `sources` (
   `id` int(11) unsigned NOT NULL auto_increment,
-  `source` varchar(31) default NULL,
+  `source` varchar(63) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `speclinks` (
 --
 
 CREATE TABLE IF NOT EXISTS `spidertrap` (
-  `ip_address` varchar(15) NOT NULL,
+  `ip_address` varchar(39) NOT NULL,
   `user_agent` varchar(255) default NULL,
   `last_uri` varchar(255) default NULL,
   `visit_count` int(11) unsigned NOT NULL default '0',
@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS `spidertrap` (
 CREATE TABLE IF NOT EXISTS `suitetests` (
   `testsuite` varchar(31) NOT NULL default '',
   `testcase_id` int(11) unsigned NOT NULL default '0',
-  `revision` int(11) unsigned NOT NULL default '0',
+  `revision` varchar(40) NOT NULL default '0',
   PRIMARY KEY  (`testsuite`,`testcase_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `suitetests` (
 CREATE TABLE IF NOT EXISTS `testcases` (
   `id` int(11) unsigned NOT NULL auto_increment,
   `testcase` varchar(63) NOT NULL default '',
-  `last_revision` int(11) unsigned NOT NULL default '0',
+  `last_revision` varchar(40) NOT NULL default '0',
   `title` varchar(255) default NULL,
   `flags` set('ahem','animated','combo','dom','font','history','http','HTMLonly','image','interact','invalid','namespace','nonHTML','may','may21','paged','refonly','reftest','should','scroll','svg','userstyle','32bit','96dpi') default NULL,
   `assertion` varchar(1023) default NULL,

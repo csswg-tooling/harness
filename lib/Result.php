@@ -76,7 +76,7 @@ class Result extends DBConnection
   function getRevision()
   {
     if ($this->isValid()) {
-      return intval($this->mInfo['revision']);
+      return $this->mInfo['revision'];
     }
     return FALSE;
   }

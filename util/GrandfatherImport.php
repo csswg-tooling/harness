@@ -36,7 +36,7 @@ class GrandfatherImport extends CmdLineWorker
   {
     parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
 
-    $revision = intval($testCaseData['revision']);
+    $revision = $testCaseData['revision'];
     
     $this->$mNewTestCaseRevision[$testCaseId] = $revision;
   }

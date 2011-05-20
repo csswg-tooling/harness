@@ -22,14 +22,22 @@
  */
 class NormalizedTest
 {
+  protected $mURI;
   protected $mContent;
   
   function __construct($uri)
   {
-    $this->mContent = file_get_contents($uri);
+    $this->mURI = $uri;
     
-    if ($this->mContent) {
-      $this->_normalize();
+    if (file_exists($this->mURI)) {
+      $this->mContent = file_get_contents($this->mURI);
+      
+      if ($this->mContent) {
+        $this->_normalize();
+      }
+    }
+    else {
+      $this->mContent = null;
     }
   }
   
@@ -37,6 +45,12 @@ class NormalizedTest
   function getContent()
   {
     return $this->mContent;
+  }
+  
+  
+  protected function _warning($message)
+  {
+    fprintf(STDERR, "WARNING: {$message} in {$this->mURI}\n");
   }
 
 
@@ -50,7 +64,8 @@ class NormalizedTest
       }
       $end = stripos($this->mContent, $to, $start + strlen($from));
       if (FALSE === $end) {
-        trigger_error("ERROR: end not found '{$from}'-'{$to}'\n");
+        $this->_warning("end not found '{$from}'-'{$to}'");
+        return;
       }
       $index = $end + strlen($to);
       if (0 < strlen($contains)) {
@@ -116,7 +131,8 @@ class NormalizedTest
       if (FALSE === $end) {
         $end = stripos($this->mContent, '>', $start + strlen($search));
         if (FALSE === $end) {
-          exit("ERROR: end '>' not found for <{$element}\n");
+          $this->_warning("end '>' not found for <{$element}");
+          return;
         }
         $index = $end + 1;
       }

@@ -77,8 +77,8 @@ class Results extends DBConnection
     $testCaseEqualRevisions = array();
     while ($revisionData = $r->fetchRow()) {
       $testCaseId     = intval($revisionData['testcase_id']);
-      $revision       = intval($revisionData['revision']);
-      $equalRevision  = intval($revisionData['equal_revision']);
+      $revision       = $revisionData['revision'];
+      $equalRevision  = $revisionData['equal_revision'];
       
       $testCaseEqualRevisions[$testCaseId][$revision] = $equalRevision;
     }
@@ -104,7 +104,7 @@ class Results extends DBConnection
     $currentComboId = 0;
     while ($testCaseData = $r->fetchRow()) {
       $testCaseId = intval($testCaseData['id']);
-      $revision   = intval($testCaseData['revision']);
+      $revision   = $testCaseData['revision'];
       
       $testCaseRevisions[$testCaseId][$revision] = TRUE;
 
@@ -181,7 +181,7 @@ class Results extends DBConnection
     $engineResults = array();
     while ($resultData = $r->fetchRow()) {
       $testCaseId = intval($resultData['testcase_id']);
-      $revision   = intval($resultData['revision']);
+      $revision   = $resultData['revision'];
       
       if (array_key_exists($revision, $testCaseRevisions[$testCaseId])) {
         $engineName = strtolower($resultData['engine']);

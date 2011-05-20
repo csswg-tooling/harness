@@ -60,7 +60,7 @@ class TestCaseImport extends CmdLineWorker
   {
     parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
     
-    $this->mTestCaseRevisionInSuite[$testCaseId] = intval($testCaseData['last_revision']);
+    $this->mTestCaseRevisionInSuite[$testCaseId] = $testCaseData['last_revision'];
   }
 
   protected function _loadTestCases($testSuiteName = '')
@@ -84,7 +84,7 @@ class TestCaseImport extends CmdLineWorker
     while ($testCaseData = $r->fetchRow()) {
       $testCaseId = intval($testCaseData['testcase_id']);
       
-      $this->mTestCaseRevisionInSuite[$testCaseId] = intval($testCaseData['revision']);
+      $this->mTestCaseRevisionInSuite[$testCaseId] = $testCaseData['revision'];
     }
     
     $this->mTestCaseRevisions = array();
@@ -96,7 +96,7 @@ class TestCaseImport extends CmdLineWorker
     $r = $this->query($sql);
     while ($revisionData = $r->fetchRow()) {
       $testCaseId = intval($revisionData['testcase_id']);
-      $revision   = intval($revisionData['revision']);
+      $revision   = $revisionData['revision'];
       
       if (array_key_exists($testCaseId, $this->mTestCaseRevisions) && 
           in_array($revision, $this->mTestCaseRevisions[$testCaseId])) {
@@ -203,7 +203,7 @@ class TestCaseImport extends CmdLineWorker
       $assertion  = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
       $credits    = $this->encode($credits, TESTCASES_MAX_CREDITS);
       $flagString = $this->encode($flagString);
-      $revision   = intval($revision);
+//      $revision   = $this->encode($revision, XXX_MAX_REVISION); // XXX this could break string compares
 
       // testcases
       if (0 < $testCaseId) {  // we already have this testcase, update as needed

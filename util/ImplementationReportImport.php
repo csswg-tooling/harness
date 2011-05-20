@@ -41,7 +41,7 @@ class ImplementationReportImport extends CmdLineWorker
   {
     parent::_addTestCase($testCaseName, $testCaseId, $testCaseData);
 
-    $revision = intval($testCaseData['revision']);
+    $revision = $testCaseData['revision'];
     $flagString = $testCaseData['flags'];
     
     $this->mTestCaseRevision[$testCaseId] = $revision;
