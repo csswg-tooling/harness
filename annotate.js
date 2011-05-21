@@ -256,7 +256,7 @@ var annotator = {
           }
         }
       }
-      else {  // find first h1
+      else if (first) {  // find first h1
         var headings = document.getElementsByTagName('h1');
         
         if (headings && (0 < headings.length)) {
