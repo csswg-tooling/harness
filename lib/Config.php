@@ -55,7 +55,7 @@ define('RESULTS_PAGE_URI', 'results');
 define('DETAILS_PAGE_URI', 'details');
 define('SUBMIT_PAGE_URI', 'submit');
 define('SUCCESS_PAGE_URI', 'success');
-define('STATUS_QUERY_URI', 'status');
+define('STATUS_QUERY_URI', 'status.php');
 
 /**
  * Stylesheet URIs used within the harness

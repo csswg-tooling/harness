@@ -16,8 +16,12 @@
  ******************************************************************************/
 
 div.annotation {
+  font-size: 12pt;
+  font-weight: normal;
+  font-style: normal;
+  font-variant: normal;
+  color: black;
   float: right; 
-  clear: right;
   display: block; 
   max-width: 12em; 
   border: 2px solid black;

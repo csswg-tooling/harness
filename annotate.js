@@ -75,9 +75,16 @@ var annotator = {
     this.addAnnotations();
   },
   
-  addAnnotationTo: function(element, section, first) {
+  addAnnotationTo: function(anchorElement, section, first) {
     try {
-      if (element) {
+      var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
+                      'H1':'', 'H2':'', 'H3':'', 'H4':'', 'H5':'', 'H6':''};
+      var targetElement = anchorElement;
+      
+      while (targetElement && (Node.ELEMENT_NODE == targetElement.nodeType) && (! (targetElement.tagName in headings))) {
+        targetElement = targetElement.parentNode;
+      }
+      if (targetElement && (Node.ELEMENT_NODE == targetElement.nodeType)) {
         var annotation = document.createElement('div');
         annotation.setAttribute('id', 'annotation_' + ((0 == section.anchorName.length) ? 'root_' : section.anchorName));
         var annotationClass = 'annotation';
@@ -220,33 +227,32 @@ var annotator = {
           annotation.appendChild(engines);
         }
         
-        element.parentNode.insertBefore(annotation, element);
+        targetElement.insertBefore(annotation, targetElement.firstChild);
+        return true;
       }
     }
     catch (err) {
 //      document.body.innerHTML = 'EXCEPTION: ' + err.toString(); // DEBUG
     }
+    return false;
   },
   
   addAnnotation: function(section, first) {
     try {
-      var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
-                      'H1':'', 'H2':'', 'H3':'', 'H4':'', 'H5':'', 'H6':''};
       var anchorName = section.anchorName;
 
-      if (anchorName) { // find heading that contains anchor
-        var anchors = document.getElementsByName(anchorName);
-        
-        for (index in anchors) {
-          var anchor = anchors[index];
-          var heading = anchor.parentNode;
+      if (anchorName) { // find element that has anchor name or id
+        var found = false;
+
+        anchor = document.getElementById(anchorName);
+        if (! (anchor && this.addAnnotationTo(anchor, section, first))) {
+          var anchors = document.getElementsByName(anchorName);
           
-          while (heading && (Node.ELEMENT_NODE == heading.nodeType) && (! (heading.tagName in headings))) {
-            heading = heading.parentNode;
-          }
-          if (heading && (Node.ELEMENT_NODE == heading.nodeType)) {
-            this.addAnnotationTo(heading, section, first);
-            break;
+          for (index in anchors) {
+            var anchor = anchors[index];
+            if (this.addAnnotationTo(anchor, section, first)) {
+              break;
+            }
           }
         }
       }
@@ -348,7 +354,7 @@ var annotator = {
 //                document.documentElement.innerHTML = xhr.responseText;  // DEBUG
               }
               else {
-//                document.body.innerHTML = 'error: ' + xhr.status; // DEBUG
+//                document.body.innerHTML = 'error: ' + xhr.status + xhr.responseText; // DEBUG
               }
             }
           };

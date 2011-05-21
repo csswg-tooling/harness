@@ -89,12 +89,21 @@ class StatusQueryPage extends HarnessPage
       
       if ($specURI) {
         $specURIParts = parse_url($specURI);
-        $specURIName = basename($specURIParts['path']);
-      
-        $this->mSectionId = $this->mSections->findSectionIdForURI($specURIName);
-        
-        if (! $this->mSectionId) {
-          trigger_error('Not a valid specification url');
+        if ('/' == substr($specURIParts['path'], -1)) {
+          $specURIName = '';
+        }
+        else {
+          $specURIName = basename($specURIParts['path']);
+        }
+        if (('' == $specURIName) || (0 === stripos($specURIName, 'index.'))) {
+          $this->mSectionId = 0;
+        }
+        else {
+          $this->mSectionId = $this->mSections->findSectionIdForURI($specURIName);
+          
+          if (! $this->mSectionId) {
+            trigger_error('Not a valid specification url');
+          }
         }
       }
     }
@@ -109,7 +118,7 @@ class StatusQueryPage extends HarnessPage
   
   function loadResults()
   {
-    if ((! $this->mResults) && ($this->mSectionId)) {
+    if (! $this->mResults) {
       $engine = $this->_getData('e');
       $engineVersion = $this->_getData('v');
       $platform = $this->_getData('p');
