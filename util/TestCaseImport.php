@@ -156,12 +156,15 @@ class TestCaseImport extends CmdLineWorker
   
   function import($manifest, $testSuiteName)
   {
+    $testSuite = new TestSuite($testSuiteName);
+    if (! $testSuite->isValid()) {
+      exit;
+    }
+    $formats = Format::GetFormatsFor($testSuite);
+    
     echo "Loading testcases\n";
     $this->_loadTestCases();
     $this->_loadTestCaseRevisions($testSuiteName);
-    
-    $testSuite = new TestSuite($testSuiteName);
-    $formats = Format::GetFormatsFor($testSuite);
     
     $this->_loadSpecLinkIds($testSuite->getSpecName());
     
@@ -409,10 +412,12 @@ class TestCaseImport extends CmdLineWorker
         if (FALSE === $specLinkId) {
           echo "Adding new spec link: '{$specLinkURI}'\n";
           $specLinkURI = $this->encode($specLinkURI, SPECLINKS_MAX_URI);
+          $spec = $this->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
+
           
           $sql  = "INSERT INTO `speclinks` ";
-          $sql .= "(`uri`) ";
-          $sql .= "VALUES ('{$specLinkURI}') ";
+          $sql .= "(`spec`, `uri`) ";
+          $sql .= "VALUES ('{$spec}', '{$specLinkURI}') ";
           
           $this->query($sql);
         

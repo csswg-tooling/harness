@@ -170,11 +170,16 @@ class CmdLineWorker extends DBConnection
   }
 
   
-  protected function _explodeAndTrim($delimiter, $string)
+  protected function _explodeAndTrim($delimiter, $string, $limit = FALSE)
   {
     $result = array();
     
-    $array = explode($delimiter, $string);
+    if (FALSE !== $limit) {
+      $array = explode($delimiter, $string, $limit);
+    }
+    else {
+      $array = explode($delimiter, $string);
+    }
     foreach($array as $field) {
       $result[] = trim($field);
     }
@@ -183,11 +188,16 @@ class CmdLineWorker extends DBConnection
   }
 
 
-  protected function _explodeTrimAndFilter($delimiter, $string)
+  protected function _explodeTrimAndFilter($delimiter, $string, $limit = FALSE)
   {
     $result = array();
     
-    $array = explode($delimiter, $string);
+    if (FALSE !== $limit) {
+      $array = explode($delimiter, $string, $limit);
+    }
+    else {
+      $array = explode($delimiter, $string);
+    }
     foreach($array as $field) {
       $field = trim($field);
       if ($field) {
