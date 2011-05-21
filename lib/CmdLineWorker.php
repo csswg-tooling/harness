@@ -56,7 +56,7 @@ class CmdLineWorker extends DBConnection
   
   function _warning($message)
   {
-    fprintf(STDERR, "WARNING: {$message} in {$this->mURI}\n");
+    fprintf(STDERR, "WARNING: {$message}\n");
   }
   
   
