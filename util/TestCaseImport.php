@@ -403,6 +403,9 @@ class TestCaseImport extends CmdLineWorker
       $this->query($sql);
       
       $linkArray = $this->_explodeTrimAndFilter(',', $links);
+      if (0 == count($linkArray)) {
+        $this->_warning("Test {$testCase} does not have and spec links");
+      }
       $usedSpecLinkIds = array();
       $sequence = -1;
       foreach ($linkArray as $specLinkURI) {

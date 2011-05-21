@@ -54,6 +54,12 @@ class CmdLineWorker extends DBConnection
   }
   
   
+  function _warning($message)
+  {
+    fprintf(STDERR, "WARNING: {$message} in {$this->mURI}\n");
+  }
+  
+  
   /**
    * Subclass hook to store additional test case data
    */
