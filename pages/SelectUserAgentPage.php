@@ -127,7 +127,7 @@ class SelectUserAgentPage extends HarnessPage
                         "You may select from one of the following known user agents, " .
                         "or enter a custom user agent string below:");
 
-      $this->openFormElement(TESTSUITE_PAGE_URI);
+      $this->openFormElement((($this->mTestSuite && $this->mTestSuite->isValid()) ? TESTSUITE_PAGE_URI : './'));
       $this->writeHiddenFormControls();
 
       $attrs['size'] = 10;
@@ -165,7 +165,7 @@ class SelectUserAgentPage extends HarnessPage
     $this->addInputElement('submit', 'action', 'Enter');
     $this->closeElement('form');
 
-    $this->openFormElement(TESTSUITE_PAGE_URI);
+    $this->openFormElement((($this->mTestSuite && $this->mTestSuite->isValid()) ? TESTSUITE_PAGE_URI : './'));
     $this->writeHiddenFormControls();
     $this->addInputElement('submit', null, 'Cancel');
     $this->closeElement('form');
