@@ -146,10 +146,10 @@ p.nouserstyle {
   display: block;
   padding: 0.24em 1em;
   text-align: center;
-  background: #eee;
+  background: #e4e4e4;
 }
 .tabbar .tabgroup .tab a:hover {
-  background: #ddd;
+  background: #eee;
 }
 .tabbar .tabgroup .tab.active {
   border-color: black;
