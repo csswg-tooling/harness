@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -17,40 +17,54 @@
  ******************************************************************************/
 
 
-require_once("lib/HarnessPage.php");
-require_once("lib/UserAgent.php");
+require_once('lib/HarnessPage.php');
+require_once('lib/Sections.php');
+require_once('lib/TestCase.php');
 
 /**
  * A page to set a different user agent for entering test results
  */
-class SetUserAgentPage extends HarnessPage
+class StartTestPage extends HarnessPage
 {  
   protected $mNewURI;
 
 
+  /**
+   * Mandatory paramaters:
+   * 's'    Test Suite
+   *
+   * Optional paramaters:
+   * 'c'    Name of Test Case
+   * 'g'    Sepc section Id
+   * 'sec'  Spec section name
+   * 'o'    Order of tests is sequence table
+   * 'u'    User Agent Id
+   */
   function __construct(Array $args = null) 
   {
     parent::__construct($args);
     
-    if ('Enter' == $this->_postData('action')) {
-      $uaString = $this->_postData('ua');
-      if ($uaString) {
-        $this->mUserAgent = new UserAgent($uaString);
-        $this->mUserAgent->update();
+    $args = $this->mGetData;
+    
+    if ((! $this->_getData('c')) && (! $this->_getData('i'))) { // find first test in suite or section
+      $order = $this->_getData('o');
+      $sectionId = intval($this->_getData('g'));
+      $sectionName = $this->_getData('sec');
+      if ((0 == $sectionId) && ($sectionName)) {
+        $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
       }
+      
+      $testCase = new TestCase();
+      $testCase->load($this->mTestSuite, null, $sectionId, $this->mUserAgent, $order, 0);
+                             
+      $args['i'] = $testCase->getTestCaseName();
     }
     
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      $args['s'] = $this->mTestSuite->getName();
-    }
-    
-    $args['u'] = $this->mUserAgent->getId();
-
-    if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      $this->mNewURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildURI(TESTCASE_PAGE_URI, $args);
     }
     else {
-      $this->mNewURI = $this->buildURI(HOME_PAGE_URI, $args);
+      $this->mNewURI = $this->buildURI(HOME_PAGE_URI);
     }
   }  
 
@@ -66,11 +80,6 @@ class SetUserAgentPage extends HarnessPage
 
   function writeBodyContent()
   {
-    $this->openElement('p');
-    $this->addTextContent("You have requested to provide results for the following user agent: ");
-    $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
-    $this->closeElement('p');
-
     $this->openElement('p', null, FALSE);
     $this->addTextContent("We have processed your request and you should have been redirected ");
     $this->addHyperLink($this->mNewURI, null, "here");

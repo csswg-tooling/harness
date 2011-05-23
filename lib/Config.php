@@ -33,7 +33,7 @@ include_once('DBConfig.php');
  * Server info
  */
 define('SERVER_TIME_ZONE' , 'America/Los_Angeles');
-
+define('REWRITE_ON', TRUE); // if mod_rewrite rules in force
 
 /**
  * Contact info
@@ -46,7 +46,10 @@ define('CONTACT_NAME', 'public-css-testsuite@w3.org');
  * URIs used within the harness
  */
 define('HARNESS_BASE_URI', 'http://test.csswg.org/harness/');
+define('HARNESS_INSTALL_URI', '/harness');
+define('HOME_PAGE_URI', './');
 define('TESTSUITE_PAGE_URI', 'testsuite');
+define('START_PAGE_URI', 'teststart');
 define('TESTCASE_PAGE_URI', 'testcase');
 define('SELECT_UA_PAGE_URI', 'useragent');
 define('SET_UA_PAGE_URI', 'setuseragent');
@@ -60,12 +63,12 @@ define('STATUS_QUERY_URI', 'status.php');
 /**
  * Stylesheet URIs used within the harness
  */
-define('ANNOTATION_STYLESHEET_URI', 'annotate.css');
-define('BASE_STYLESHEET_URI', 'base.css');
-define('REPORT_STYLESHEET_URI', 'report.css');
-define('TEST_STYLESHEET_URI', 'test.css');
-define('TEST_ENGINE_STYLESHEET_URI', 'test_%s.css');
-define('TESTSUITE_STYLESHEET_URI', 'suite.css');
+define('ANNOTATION_STYLESHEET_URI', 'stylesheets/annotate.css');
+define('BASE_STYLESHEET_URI', 'stylesheets/base.css');
+define('REPORT_STYLESHEET_URI', 'stylesheets/report.css');
+define('TEST_STYLESHEET_URI', 'stylesheets/testcase.css');
+define('TEST_ENGINE_STYLESHEET_URI', 'stylesheets/test_%s.css');
+define('TESTSUITE_STYLESHEET_URI', 'stylesheets/testsuite.css');
 
 
 /**

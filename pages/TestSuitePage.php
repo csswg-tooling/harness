@@ -73,13 +73,13 @@ class TestSuitePage extends HarnessPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink(TESTSUITE_STYLESHEET_URI);
+    $this->addStyleSheetLink($this->buildURI(TESTSUITE_STYLESHEET_URI));
   }
 
 
   function writeTestSuiteForm()
   {
-    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->openFormElement($this->buildURI(START_PAGE_URI));
     $this->writeHiddenFormControls();
     $this->addElement('strong', null, "The full test suite: ");
     $this->writeOrderSelect();
@@ -116,7 +116,7 @@ class TestSuitePage extends HarnessPage
   
   function writeSectionForm($title)
   {
-    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->openFormElement($this->buildURI(START_PAGE_URI));
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeSectionSelect();
@@ -145,7 +145,7 @@ class TestSuitePage extends HarnessPage
   
   function writeTestCaseForm($title)
   {
-    $this->openFormElement(TESTCASE_PAGE_URI);
+    $this->openFormElement($this->buildURI(START_PAGE_URI));
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeTestCaseSelect();

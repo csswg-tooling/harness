@@ -1366,6 +1366,7 @@ class Page
         $this->closeElement('p');
       }
       
+      // XXX factor this back into dynamic page, add mArgData
       if (0 < count($this->mGetData)) {
         $this->openElement('p');
         $this->addTextContent('Get: ');

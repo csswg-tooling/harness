@@ -46,6 +46,19 @@ class HarnessPage extends DynamicPage
   }  
   
   
+  protected function _appendURI(&$uri, $key, &$args, $path = null)
+  {
+    if ($args && array_key_exists($key, $args)) {
+      if ($path) {
+        $uri .= $path . '/';
+      }
+      $uri .= $args[$key] . '/';
+      unset($args[$key]);
+      return TRUE;
+    }
+    return FALSE;
+  }
+  
   /**
    * Helper function to build URI with query string
    * 
@@ -56,9 +69,46 @@ class HarnessPage extends DynamicPage
    */
   function buildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
   {
-    // XXX if mod_rewrite, remove 's' arg and convert to path
     if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
       unset ($queryArgs['u']);
+    }
+    if (REWRITE_ON) {
+      switch ($baseURI) {
+        case HOME_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
+        case TESTSUITE_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'suite');
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
+        case SELECT_UA_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'agent');
+          break;
+        case TESTCASE_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'test');
+          if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
+            $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
+            if ($queryArgs && array_key_exists('o', $queryArgs) && (0 == $queryArgs['o'])) {
+              $baseURI .= 'all/';
+            }
+            $this->_appendURI($baseURI, 'i', $queryArgs);
+          }
+          unset($queryArgs['o']);
+          $this->_appendURI($baseURI, 'ref', $queryArgs, 'ref');
+          $this->_appendURI($baseURI, 'f', $queryArgs, 'format');
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
+        case SUCCESS_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'done');
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
+      }
+      $baseURI = HARNESS_INSTALL_URI . '/' . $baseURI;
     }
     return parent::buildURI($baseURI, $queryArgs, $fragId, $absolute);
   }
@@ -98,7 +148,7 @@ class HarnessPage extends DynamicPage
       $this->addStyleElement('a.report { display: none; }'); // ensure spider trap links are hidden
     }
 
-    $this->addStyleSheetLink(BASE_STYLESHEET_URI);
+    $this->addStyleSheetLink($this->buildURI(BASE_STYLESHEET_URI));
   }
   
   

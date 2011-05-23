@@ -174,13 +174,13 @@ class TestCasePage extends HarnessPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink(TEST_STYLESHEET_URI);
+    $this->addStyleSheetLink($this->buildURI(TEST_STYLESHEET_URI));
 
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
       $actualEngineName = strtolower($actualUA->getEngineName());
       
-      $this->addStyleSheetLink(sprintf(TEST_ENGINE_STYLESHEET_URI, $actualEngineName));
+      $this->addStyleSheetLink($this->buildURI(sprintf(TEST_ENGINE_STYLESHEET_URI, $actualEngineName)));
     }
   }
 
@@ -501,7 +501,7 @@ class TestCasePage extends HarnessPage
   
   function writeSubmitForm()
   {
-    $this->openFormElement(SUBMIT_PAGE_URI, 'post', 'eval');
+    $this->openFormElement($this->buildURI(SUBMIT_PAGE_URI), 'post', 'eval');
     $this->openElement('p', array('class' => 'buttons'));
     $this->writeHiddenFormControls();
     

@@ -136,7 +136,7 @@ class ResultsPage extends ResultsBasedPage
   {  
     parent::writeHeadStyle();
 
-    $this->addStyleSheetLink(REPORT_STYLESHEET_URI);
+    $this->addStyleSheetLink($this->buildURI(REPORT_STYLESHEET_URI));
   }
 
 

@@ -64,7 +64,7 @@ class SuccessPage extends HarnessPage
                                  $this->mTestSuite->getTitle());
 
     $args['u'] = $this->mUserAgent->getId();
-    $homeURI = $this->buildURI('./', $args);
+    $homeURI = $this->buildURI(HOME_PAGE_URI, $args);
 
     $args['s'] = $this->mTestSuite->getName();
     $reviewURI = $this->buildURI(REVIEW_PAGE_URI, $args);
