@@ -61,9 +61,16 @@ class TestCasePage extends HarnessPage
 
     $testCaseName = $this->_getData('c');
     $sectionId = intval($this->_getData('g'));
-
-    $this->mIndex = intval($this->_getData('r'));
     $order = intval($this->_getData('o'));
+    
+    $this->mCount = 0;
+    if ($testCaseName) {
+      $this->mCount = 1;
+    }
+    else {
+      $testCaseName = $this->_getData('i');
+    }
+    $this->mIndex = intval($this->_getData('r'));
     
     $formatName = $this->_getData('f');
     
@@ -74,6 +81,10 @@ class TestCasePage extends HarnessPage
     if (! $this->mTestCase->isValid()) {
       $msg = 'No test case identified.';
       trigger_error($msg, E_USER_WARNING);
+    }
+    
+    if (0 == $this->mIndex) {
+      $this->mIndex = $this->mTestCase->getIndex($sectionId, $this->mUserAgent, $order);
     }
                    
     $suiteFormatNames = $this->mTestSuite->getFormatNames();
@@ -93,14 +104,13 @@ class TestCasePage extends HarnessPage
       $this->mFormatName = $testFormatNames[0];
     }
     
-    if ($testCaseName) {
-      $this->mCount = 1;
-    }
-    elseif ($sectionId) {
-      $this->mCount = $this->mTestCase->countCasesInSection($sectionId);
-    }
-    else {
-      $this->mCount = $this->mTestCase->countCasesInSuite();
+    if (0 == $this->mCount) {
+      if ($sectionId) {
+        $this->mCount = $this->mTestCase->countCasesInSection($sectionId);
+      }
+      else {
+        $this->mCount = $this->mTestCase->countCasesInSuite();
+      }
     }
 
     $this->mSubmitData = $this->mGetData;

@@ -203,36 +203,44 @@ class TestCase extends DBConnection
   }
 
 
+  protected function _getSequenceEngine(UserAgent $userAgent)
+  {
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), TESTSEQUENCE_MAX_TESTSUITE);
+    $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
+    
+    // check if engine is sequenced
+    $sql  = "SELECT * FROM `testsequence` ";
+    $sql .= "WHERE `engine` = '{$engineName}' ";
+    $sql .= "AND `testsuite` = '{$testSuiteName}' ";
+    $sql .= "LIMIT 0, 1";
+    $r = $this->query($sql);
+
+    if (0 == $r->rowCount()) {  // try magic engine name
+      $engineName = $this->encode('-no-data-', TESTSEQUENCE_MAX_ENGINE);
+      
+      $sql  = "SELECT * FROM `testsequence` ";
+      $sql .= "WHERE `engine` = '{$engineName}' ";
+      $sql .= "AND `testsuite` = '{$testSuiteName}' ";
+      $sql .= "LIMIT 0, 1";
+      $r = $this->query($sql);
+
+      if (0 == $r->rowCount()) {
+        return FALSE;
+      }
+    }
+    return $engineName;
+  }
+  
   /**
    * Load data about a test case based on index within suite
    */
   protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
-    $index = intval($index);
-    
-    if (1 == $order) {  // if engine isn't sequenced, use magic engine name
-      $sql  = "SELECT * FROM `testsequence` ";
-      $sql .= "WHERE `engine` = '{$engineName}' ";
-      $sql .= "AND `testsuite` = '{$testSuiteName}' ";
-      $sql .= "LIMIT 0, 1";
-
-      $r = $this->query($sql);
-      if (0 == $r->rowCount()) {  // if magic engine isn't sequenced, use normal ordering
-        $engineName = $this->encode('-no-data-', TESTSEQUENCE_MAX_ENGINE);
-        
-        $sql  = "SELECT * FROM `testsequence` ";
-        $sql .= "WHERE `engine` = '{$engineName}' ";
-        $sql .= "AND `testsuite` = '{$testSuiteName}' ";
-        $sql .= "LIMIT 0, 1";
-
-        $r = $this->query($sql);
-        if (0 == $r->rowCount()) {
-          $order = 0;
-        }
-      }
+    if (1 == $order) {
+      $engineName = $this->_getSequenceEngine($userAgent);
     }
+    $index = intval($index);
     
     // Select case ordered by sequence table
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
@@ -304,35 +312,14 @@ class TestCase extends DBConnection
   /**
    * Load data about test case from section by index
    */
-  protected function _selectCaseFromSection($sectionId,
-                                            UserAgent $userAgent, $order, $index)
+  protected function _selectCaseFromSection($sectionId, UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
+    if (1 == $order) {
+      $engineName = $this->_getSequenceEngine($userAgent);
+    }
     $sectionId = intval($sectionId);
     $index = intval($index);
-    
-    if (1 == $order) {  // if engine isn't sequenced, use magic engine name
-      $sql  = "SELECT * FROM `testsequence` ";
-      $sql .= "WHERE `engine` = '{$engineName}' ";
-      $sql .= "AND `testsuite` = '{$testSuiteName}' ";
-      $sql .= "LIMIT 0, 1";
-
-      $r = $this->query($sql);
-      if (0 == $r->rowCount()) {  // if magic engine isn't sequenced, use normal ordering
-        $engineName = $this->encode('-no-data-', TESTSEQUENCE_MAX_ENGINE);
-
-        $sql  = "SELECT * FROM `testsequence` ";
-        $sql .= "WHERE `engine` = '{$engineName}' ";
-        $sql .= "AND `testsuite` = '{$testSuiteName}' ";
-        $sql .= "LIMIT 0, 1";
-
-        $r = $this->query($sql);
-        if (0 == $r->rowCount()) {
-          $order = 0;
-        }
-      }
-    }
     
     // Select case ordered by sequence table
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
@@ -441,6 +428,54 @@ class TestCase extends DBConnection
   }
 
 
+  function getIndex($sectionId, UserAgent $userAgent, $order)
+  {
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), TESTSEQUENCE_MAX_TESTSUITE);
+    if (1 == $order) {
+      $engineName = $this->_getSequenceEngine($userAgent);
+    }
+    $sectionId = intval($sectionId);
+    $testCaseName = $this->getTestCaseName();
+    
+    // Yuck, there really should be a way to query this from MySQL, but I don't know how...
+    // so we query for all testcases in the group, and search
+    $sql  = "SELECT `testcases`.`testcase` ";
+    $sql .= "FROM (`testcases` ";
+    $sql .= "LEFT JOIN `suitetests` ON `testcases`.`id` = `suitetests`.`testcase_id` ";
+    if ($sectionId) {
+      $sql .= "LEFT JOIN `testlinks`ON `testcases`.`id` = `testlinks`.`testcase_id` ";
+    }
+    if (1 == $order) {
+      $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
+    }
+    $sql .= ") ";
+    $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
+    if ($sectionId) {
+      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+    }
+    if (1 == $order) {
+      $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
+      $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
+    }
+    $sql .= ") GROUP BY `id` ";
+    if (1 == $order) {
+      $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
+    }
+    else {
+      $sql .= "ORDER BY `testcases`.`testcase` ";
+    }
+    $r = $this->query($sql);
+    $index = 0;
+    while ($data = $r->fetchRow()) {
+      if ($data['testcase'] == $testCaseName) {
+        return $index;
+      }
+      $index++;
+    }
+    return FALSE;
+  }
+  
+  
   /**
    * Store test result
    */
