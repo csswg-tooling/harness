@@ -17,8 +17,9 @@
  ******************************************************************************/
 
 
-require_once("lib/HarnessPage.php");
-require_once("lib/Results.php");
+require_once('lib/HarnessPage.php');
+require_once('lib/Results.php');
+require_once('lib/Sections.php');
 
 
 /**
@@ -33,6 +34,7 @@ class ResultsBasedPage extends HarnessPage
    * 's' Test Suite Name
    * 'c' Test Case Name
    * 'g' Spec Section Id (optional)
+   * 'sec' Spec Section Name (optional)
    * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
    * 'm' Modified date (optional, only results before date)
    * 'e' Engine (optional, filter results for this engine)
@@ -57,6 +59,10 @@ class ResultsBasedPage extends HarnessPage
     if (! $this->mResults) {
       $testCaseName = $this->_getData('c');
       $sectionId = intval($this->_getData('g'));
+      $sectionName = $this->_getData('sec');
+      if ((0 == $sectionId) && ($sectionName)) {
+        $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+      }
       
       if ($this->_getData('t')) {
         $type = intval($this->_getData('t'));

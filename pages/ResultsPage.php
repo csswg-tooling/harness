@@ -31,7 +31,7 @@ class ResultsPage extends ResultsBasedPage
   protected $mDisplayLinks;
   protected $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   protected $mModified;                       // modified date for results
-  protected $mGroup;                          // spec section id
+  protected $mSectionId;                      // spec section id
   protected $mOrdering;                       // display ordering
   
   protected $mSpecification;
@@ -55,6 +55,7 @@ class ResultsPage extends ResultsBasedPage
    * 's' Test Suite Name
    * 'c' Test Case Name
    * 'g' Spec Section Id (optional)
+   * 'sec' Spec Section Name (optional)
    * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
    * 'f' Result filter (array or bitfield)
    * 'm' Modified date (optional, only results before date)
@@ -87,7 +88,11 @@ class ResultsPage extends ResultsBasedPage
     }
 
     $this->mModified = $this->_getData('m', 'DateTime');
-    $this->mGroup = intval($this->_getData('g'));
+    $this->mSectionId = intval($this->_getData('g'));
+    $sectionName = $this->_getData('sec');
+    if ((0 == $this->mSectionId) && $sectionName) {
+      $this->mSectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+    }
     $this->mOrdering = intval($this->_getData('o'));
     if ($this->_getData('c')) {
       $this->mOrdering = 0;
@@ -378,7 +383,7 @@ class ResultsPage extends ResultsBasedPage
   }
   
   
-  function writeGroupRows($sectionId)
+  function writeSectionRows($sectionId)
   {
     if (0 < $sectionId) {
       $sectionData = $this->mSections->getSectionData($sectionId);
@@ -415,7 +420,7 @@ class ResultsPage extends ResultsBasedPage
       foreach ($subSections as $subSectionId => $sectionData) {
         $testCount = intval($sectionData['test_count']);
         if ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId))) {
-          $this->writeGroupRows($subSectionId);
+          $this->writeSectionRows($subSectionId);
         }
       }
     }
@@ -447,7 +452,7 @@ class ResultsPage extends ResultsBasedPage
     else {
       $this->mSections = new Sections($this->mTestSuite, TRUE);
       $this->mSpecification = new Specification($this->mTestSuite);
-      $this->writeGroupRows($this->mGroup);
+      $this->writeSectionRows($this->mSectionId);
     }
     
     $testCount = $this->mResults->getTestCaseCount();

@@ -97,7 +97,7 @@ class TestSuitePage extends HarnessPage
       $testCount = $sectionData['test_count'];
       $subSectionCount = $this->mSections->getSubSectionCount($id);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
-        $this->addOptionElement($sectionName, null, "{$sectionData['section']}: {$sectionData['title']}");
+        $this->addOptionElement($sectionName, null, "{$sectionName}: {$sectionData['title']}");
       }
       if (0 < $subSectionCount) {
         $this->writeSectionOptions($id);

@@ -78,22 +78,22 @@ class ReviewPage extends HarnessPage
   {
     $script  = "onunload=function() {\n";
     $script .= "  var resultForm = document.getElementById('result_form');";
-    $script .= "  resultForm.g.disabled = false;\n";
+    $script .= "  resultForm.sec.disabled = false;\n";
     $script .= "  resultForm.c.disabled = false;\n";
     $script .= "  resultForm.o.disabled = false;\n";
     $script .= "}\n";
     $script .= "function filterTypes() {\n";
     $script .= "  var resultForm = document.getElementById('result_form');";
     $script .= "  if (resultForm.t[0].checked) {\n";
-    $script .= "    resultForm.g.disabled = true;\n";
+    $script .= "    resultForm.sec.disabled = true;\n";
     $script .= "    resultForm.c.disabled = true;\n";
     $script .= "  }\n";
     $script .= "  if (resultForm.t[1].checked) {\n";
-    $script .= "    resultForm.g.disabled = false;\n";
+    $script .= "    resultForm.sec.disabled = false;\n";
     $script .= "    resultForm.c.disabled = true;\n";
     $script .= "  }\n";
     $script .= "  if (resultForm.t[2].checked) {\n";
-    $script .= "    resultForm.g.disabled = true;\n";
+    $script .= "    resultForm.sec.disabled = true;\n";
     $script .= "    resultForm.c.disabled = false;\n";
     $script .= "    resultForm.o.disabled = true;\n";
     $script .= "  }\n";
@@ -109,10 +109,11 @@ class ReviewPage extends HarnessPage
     $data = $this->mSections->getSubSectionData($parentId);
     foreach ($data as $sectionData) {
       $id = $sectionData['id'];
+      $sectionName = $sectionData['section'];
       $testCount = $sectionData['test_count'];
       $subSectionCount = $this->mSections->getSubSectionCount($id);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
-        $this->addOptionElement($id, null, "{$sectionData['section']}: {$sectionData['title']}");
+        $this->addOptionElement($sectionName, null, "{$sectionName}: {$sectionData['title']}");
       }
       if (0 < $subSectionCount) {
         $this->writeSectionOptions($id);
@@ -123,8 +124,8 @@ class ReviewPage extends HarnessPage
 
   function writeSectionSelect()
   {
-    $this->openSelectElement('g', array('style' => 'width: 25em',
-                                        'onchange' => 'document.getElementById("result_form").t[1].checked = true'));
+    $this->openSelectElement('sec', array('style' => 'width: 25em',
+                                          'onchange' => 'document.getElementById("result_form").t[1].checked = true'));
     $this->writeSectionOptions();
     $this->closeElement('select');
   }
@@ -175,7 +176,7 @@ class ReviewPage extends HarnessPage
     else {  // write dummy controls so script still works
       $this->openElement('span', array('style' => 'display: none'));
       $this->addInputElement('radio', 't', 1);
-      $this->addInputElement('hidden', 'g', '');
+      $this->addInputElement('hidden', 'sec', '');
       $this->closeElement('span');
     }
     

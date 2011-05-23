@@ -237,6 +237,7 @@ class TestCase extends DBConnection
   protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $engineName = FALSE;
     if (1 == $order) {
       $engineName = $this->_getSequenceEngine($userAgent);
     }
@@ -250,17 +251,17 @@ class TestCase extends DBConnection
     $sql .= "FROM (`testcases` ";
     $sql .= "LEFT JOIN `suitetests` ";
     $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
     $sql .= ") GROUP BY `id` ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
     }
     else {
@@ -315,6 +316,7 @@ class TestCase extends DBConnection
   protected function _selectCaseFromSection($sectionId, UserAgent $userAgent, $order, $index)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $engineName = FALSE;
     if (1 == $order) {
       $engineName = $this->_getSequenceEngine($userAgent);
     }
@@ -330,18 +332,18 @@ class TestCase extends DBConnection
     $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
     $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
     $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
     $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     $sql .= ") GROUP BY `id` ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
     }
     else {
@@ -431,6 +433,7 @@ class TestCase extends DBConnection
   function getIndex($sectionId, UserAgent $userAgent, $order)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), TESTSEQUENCE_MAX_TESTSUITE);
+    $engineName = FALSE;
     if (1 == $order) {
       $engineName = $this->_getSequenceEngine($userAgent);
     }
@@ -445,7 +448,7 @@ class TestCase extends DBConnection
     if ($sectionId) {
       $sql .= "LEFT JOIN `testlinks`ON `testcases`.`id` = `testlinks`.`testcase_id` ";
     }
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }
     $sql .= ") ";
@@ -453,12 +456,12 @@ class TestCase extends DBConnection
     if ($sectionId) {
       $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     }
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
     $sql .= ") GROUP BY `id` ";
-    if (1 == $order) {
+    if ($engineName) {
       $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
     }
     else {

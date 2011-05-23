@@ -186,7 +186,7 @@ class StatusQueryPage extends HarnessPage
       $testCaseIds = $this->mSections->getTestCaseIdsFor($sectionId, TRUE);
 
       $args['s'] = $this->mTestSuite->getName();
-      $args['g'] = $sectionId;
+      $args['sec'] = $sectionData['section'];
       $args['o'] = 1;
       $testURI = $this->buildURI(TESTCASE_PAGE_URI, $args, null, TRUE);
 

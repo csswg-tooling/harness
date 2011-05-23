@@ -38,7 +38,7 @@ class DetailsPage extends ResultsBasedPage
   protected $mSpecification;
   protected $mSections;
   
-  protected $mGroup;
+  protected $mSectionId;
   protected $mOrdering;
 
 
@@ -68,7 +68,11 @@ class DetailsPage extends ResultsBasedPage
 
     $this->mEngine = $this->_getData('e');
     
-    $this->mGroup = intval($this->_getData('g'));
+    $this->mSectionId = intval($this->_getData('g'));
+    $sectionName = $this->_getData('sec');
+    if ((0 == $this->mSectionId) && $sectionName) {
+      $this->mSectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+    }
     $this->mOrdering = intval($this->_getData('o'));
     if ($this->_getData('c')) {
       $this->mOrdering = 0;
@@ -211,7 +215,7 @@ class DetailsPage extends ResultsBasedPage
   }
   
 
-  function writeGroupRows($sectionId)
+  function writeSectionRows($sectionId)
   {
     if (0 < $sectionId) {
       $sectionData = $this->mSections->getSectionData($sectionId);
@@ -248,7 +252,7 @@ class DetailsPage extends ResultsBasedPage
       foreach ($subSections as $subSectionId => $sectionData) {
         $testCount = intval($sectionData['test_count']);
         if ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId))) {
-          $this->writeGroupRows($subSectionId);
+          $this->writeSectionRows($subSectionId);
         }
       }
     }
@@ -296,7 +300,7 @@ class DetailsPage extends ResultsBasedPage
       else {
         $this->mSections = new Sections($this->mTestSuite, TRUE);
         $this->mSpecification = new Specification($this->mTestSuite);
-        $this->writeGroupRows($this->mGroup);
+        $this->writeSectionRows($this->mSectionId);
       }
       
       $this->closeElement('table');
