@@ -43,6 +43,7 @@ class SubmitPage extends HarnessPage
    * Optional paramaters:
    * 'next' Index of next test, done if 0 or absent
    * 'g'    Sepc section Id
+   * 'sec'  Spec section name
    * 'o'    Order of tests is sequence table
    * 'u'    User Agent Id
    */
@@ -82,6 +83,7 @@ class SubmitPage extends HarnessPage
     $desiredFormatName = $this->_postData('df');
 
     $sectionId = intval($this->_postData('g'));
+    $sectionName = $this->_postData('sec');
     $order = intval($this->_postData('o'));
 
     $testCase = new TestCase($this->mTestSuite, $testCaseId);
@@ -107,8 +109,13 @@ class SubmitPage extends HarnessPage
       if ($desiredFormatName) {
         $args['f'] = $desiredFormatName;
       }
-      if ($sectionId) {
-        $args['g'] = $sectionId;
+      if ($sectionName) {
+        $args['sec'] = $sectionName;
+      }
+      else {
+        if ($sectionId) {
+          $args['g'] = $sectionId;
+        }
       }
 //      $args['r'] = $nextIndex;
       $nextTestCase = new TestCase();

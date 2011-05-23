@@ -23,6 +23,7 @@ require_once('lib/UserAgent.php');
 require_once('lib/Format.php');
 require_once('lib/Results.php');
 require_once('lib/Engine.php');
+require_once('lib/Sections.php');
 
 /**
  * A class for generating the page that presents a test
@@ -61,6 +62,11 @@ class TestCasePage extends HarnessPage
 
     $testCaseName = $this->_getData('c');
     $sectionId = intval($this->_getData('g'));
+    $sectionName = $this->_getData('sec');
+    if ((0 == $sectionId) && ($sectionName)) {
+      $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+    }
+    
     $order = intval($this->_getData('o'));
     
     $this->mCount = 0;
@@ -115,6 +121,8 @@ class TestCasePage extends HarnessPage
 
     $this->mSubmitData = $this->mGetData;
     $this->mSubmitData['c'] = $this->mTestCase->getTestCaseName();
+    $this->mSubmitData['g'] = $sectionId;
+    $this->mSubmitData['sec'] = $sectionName;
     $this->mSubmitData['cid'] = $this->mTestCase->getId();
     $this->mSubmitData['f'] = $this->mFormatName;
     if ($this->mDesiredFormatName) {

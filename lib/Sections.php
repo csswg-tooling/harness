@@ -29,6 +29,29 @@ class Sections extends DBConnection
   protected $mPrimarySectionIds;
 
 
+  static function GetSectionIdFor(TestSuite $testSuite, $sectionName)
+  {
+    if ($testSuite->isValid() && $sectionName) {
+      $db = new DBConnection();
+
+      $specName = $db->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
+      $sectionName = $db->encode($sectionName, SPECLINKS_MAX_SECTION);
+      
+      $sql  = "SELECT `id` ";
+      $sql .= "FROM `speclinks` ";
+      $sql .= "WHERE `spec` = '{$specName}' AND `section` = '{$sectionName}' ";
+      
+      $r = $db->query($sql);
+      $sectionId = intval($r->fetchField(0, 'id'));
+      
+      if ($sectionId) {
+        return $sectionId;
+      }
+    }
+    return FALSE;
+  }
+  
+  
   function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE)
   {
     parent::__construct();

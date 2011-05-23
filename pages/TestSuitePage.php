@@ -93,10 +93,11 @@ class TestSuitePage extends HarnessPage
     $data = $this->mSections->getSubSectionData($parentId);
     foreach ($data as $sectionData) {
       $id = $sectionData['id'];
+      $sectionName = $sectionData['section'];
       $testCount = $sectionData['test_count'];
       $subSectionCount = $this->mSections->getSubSectionCount($id);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
-        $this->addOptionElement($id, null, "{$sectionData['section']}: {$sectionData['title']}");
+        $this->addOptionElement($sectionName, null, "{$sectionData['section']}: {$sectionData['title']}");
       }
       if (0 < $subSectionCount) {
         $this->writeSectionOptions($id);
@@ -107,7 +108,7 @@ class TestSuitePage extends HarnessPage
 
   function writeSectionSelect()
   {
-    $this->openSelectElement('g', array('style' => 'width: 25em'));
+    $this->openSelectElement('sec', array('style' => 'width: 25em'));
     $this->writeSectionOptions();
     $this->closeElement('select');
   }
