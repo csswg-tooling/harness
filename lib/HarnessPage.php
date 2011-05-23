@@ -108,7 +108,14 @@ class HarnessPage extends DynamicPage
           $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
           break;
       }
-      $baseURI = HARNESS_INSTALL_URI . '/' . $baseURI;
+      if (! $absolute) {
+        if (empty($_SERVER['PHP_SELF'])) {
+          $baseURI = HARNESS_INSTALL_URI . '/' . $baseURI;
+        }
+        else {
+          $baseURI = dirname($_SERVER['PHP_SELF']) . '/' . $baseURI;
+        }
+      }
     }
     return parent::buildURI($baseURI, $queryArgs, $fragId, $absolute);
   }

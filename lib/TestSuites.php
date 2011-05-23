@@ -34,7 +34,8 @@ class TestSuites extends DBConnection
     $sql  = "SELECT DISTINCT `suitetests`.`testsuite` ";
     $sql .= "FROM `suitetests` LEFT JOIN `testsuites` ";
     $sql .= "ON `suitetests`.`testsuite` = `testsuites`.`testsuite` ";
-    $sql .= "WHERE `testsuites`.`active` = '1';";
+    $sql .= "WHERE `testsuites`.`active` = '1' ";
+    $sql .= "ORDER BY `testsuites`.`locked`, `testsuites`.`testsuite` ";
     
     $r = $this->query($sql);
     
