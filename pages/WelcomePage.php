@@ -95,10 +95,18 @@ class WelcomePage extends HarnessPage
     $this->addTextContent(" to provide navigation and result recording controls for efficiently assessing " .
                           "browser-based test cases, allowing anyone to easily submit pass/fail " .
                           "data in conformance testing.");
+
+    $mailArgs['subject'] = 'W3C Conformance Test Harness';
+    $this->openElement('span', null, FALSE);  // turn off source formatting
     $this->addTextContent("It was developed by ");
     $this->addHyperLink('http://www.w3.org/People/Dom/', null, "Dominique Hazael-Massieux");
-    $this->addTextContent(" (dom&nbsp;@w3.org), David M. Berfanger (david.berfanger&nbsp;@hp.com) and ".
-                          "Peter Linss (peter.linss&nbsp;@hp.com)", FALSE);
+    $this->addTextContent(" ");
+    $this->addEmailHyperLink('dom@w3.org', null, $mailArgs);
+    $this->addTextContent(', ');
+    $this->addEmailHyperLink('david.berfanger@hp.com', 'David M. Berfanger', $mailArgs);
+    $this->addTextContent(" and ");
+    $this->addEmailHyperLink('peter.linss@hp.com', 'Peter Linss', $mailArgs);
+    $this->closeElement('span');
     $this->closeElement('small');
     $this->closeElement('p');
 

@@ -34,11 +34,10 @@ class CSSWelcomePage extends WelcomePage
   {
     parent::writeBodyHeader();
 
-    $this->addElement('p', null, "This is a development version of a test harness for conducting CSS conformance " .
-                                 "testing using the CSS 2.1 Conformance Test Suite.");
+    $this->addElement('p', null, "This is a development version of a test harness for conducting CSS conformance testing.");
 
     $this->openElement('p', null, FALSE);
-    $this->addTextContent("More information about the CSS 2.1 Conformance Test Suite can be found on the ");
+    $this->addTextContent("More information about the CSS Conformance Test Suites can be found on the ");
     $this->addHyperLink('http://wiki.csswg.org/test', null, "CSS Working Group Wiki");
     $this->addTextContent('.');
     $this->closeElement('p');

@@ -225,6 +225,21 @@ class Page
     }
     return htmlentities($string, ENT_QUOTES, $this->mEncoding);
   }
+  
+  
+  /**
+   * Helper function to covert string entirely into numeric entity references
+   * Useful for hiding email addresses from spam harvesters
+   */
+  function obfuscate($string)
+  {
+    $output = '';
+    $count = strlen($string);
+    for ($index = 0; $index < $count; $index++) {
+      $output .= '&#' . ord($string[$index]) . ';';
+    }
+    return $output;
+  }
 
   
   /**
@@ -314,7 +329,7 @@ class Page
   }
   
 
-  protected function _buildAttrs($arrayName, Array $attrs)
+  protected function _buildAttrs($arrayName, Array $attrs, $encodeValues = TRUE)
   {
     $output = '';
     
@@ -340,7 +355,7 @@ class Page
         }
       }
       elseif (is_array($value)) {
-        $output .= $this->_buildAttrs($name, $value);
+        $output .= $this->_buildAttrs($name, $value, $encodeAttrs);
       }
       elseif (is_bool($value)) {
         if ($value) {
@@ -359,7 +374,9 @@ class Page
         }
       }
       else {
-        $value = $this->encode($value);
+        if ($encodeValues) {
+          $value = $this->encode($value);
+        }
         $output .= " {$name}='{$value}'";
         
         if ($this->mWriteXML && ('lang' == $name)) {
@@ -378,13 +395,13 @@ class Page
    * @param array attribute key/value pairs
    * @return string
    */
-  protected function _buildElement($elementName, Array $attrs = null)
+  protected function _buildElement($elementName, Array $attrs = null, $encodeAttrs = TRUE)
   {
     $elementName = $this->encode($elementName);
     
     if ($attrs) {
       $attrs = self::_ConvertArgs($attrs);
-      $output = $elementName . $this->_buildAttrs(null, $attrs);
+      $output = $elementName . $this->_buildAttrs(null, $attrs, $encodeAttrs);
     }
     else {
       $output = $elementName;
@@ -466,8 +483,10 @@ class Page
    * @param string element content
    * @param bool encode content
    * @param bool format source within element
+   * @param bool encode attribute values
    */
-  function addElement($elementName, Array $attrs = null, $content = null, $encode = TRUE, $mayFormat = TRUE)
+  function addElement($elementName, Array $attrs = null, $content = null,
+                      $encodeContent = TRUE, $mayFormat = TRUE, $encodeAttrs = TRUE)
   {
     if (strlen($content) < 80) {
       $mayFormat = FALSE;
@@ -476,12 +495,12 @@ class Page
     $outerFormat = $this->_formattingOn();
     $innerFormat = ($outerFormat && $mayFormat);
     
-    $element = $this->_buildElement($elementName, $attrs);
+    $element = $this->_buildElement($elementName, $attrs, $encodeAttrs);
     if (isset($content)) {
       $this->_writeLine("<{$element}>", $outerFormat, $innerFormat);
       $this->_pushState($elementName, $mayFormat);
 
-      if ($encode) {
+      if ($encodeContent) {
         $this->_writeLine($this->encode($content), $innerFormat, $innerFormat);
       }
       else {
@@ -714,6 +733,36 @@ class Page
   {
     $attrs['href'] = $uri;
     $this->addElement('a', $attrs, $content, $encode);
+  }
+  
+  
+  /**
+   * Shortcut to add obfuscated email hyperlink
+   */
+  function addEmailHyperLink($address, $name = null, Array $args = null)
+  {
+    $attrs['href'] = $this->obfuscate("mailto:{$address}");
+    if (is_array($args) && (0 < count($args))) {
+      $args = self::_ConvertArgs($args, TRUE);
+      $argStr = '';
+      foreach ($args as $key => $value) {
+        if ($argStr) {
+          $argStr .= '&amp;';
+        }
+        if (('cc' == $key) || ('bcc' == $key)) {
+          $value = $this->obfuscate($value);
+        }
+        $argStr .= "{$key}={$value}";
+      }
+      $attrs['href'] .= '?' . $argStr;
+    }
+    if ($name) {
+      $content = $name . ' ' . $this->obfuscate("<{$address}>");
+    }
+    else {
+      $content = $this->obfuscate("<{$address}>");
+    }
+    $this->addElement('a', $attrs, $content, FALSE, FALSE, FALSE);
   }
   
   
