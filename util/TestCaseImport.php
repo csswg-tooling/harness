@@ -201,12 +201,12 @@ class TestCaseImport extends CmdLineWorker
       }
       $flagString = implode(',', $flagArray);
 
-      $testCaseName   = $this->encode($testCaseName, TESTCASES_MAX_TESTCASE);
-      $title      = $this->encode($title, TESTCASES_MAX_TITLE);
-      $assertion  = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
-      $credits    = $this->encode($credits, TESTCASES_MAX_CREDITS);
-      $flagString = $this->encode($flagString);
-//      $revision   = $this->encode($revision, XXX_MAX_REVISION); // XXX this could break string compares
+      $referenceArray = $this->_explodeTrimAndFilter(',', $references);
+            
+      $title        = $this->encode($title, TESTCASES_MAX_TITLE);
+      $assertion    = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
+      $credits      = $this->encode($credits, TESTCASES_MAX_CREDITS);
+      $flagString   = $this->encode($flagString);
 
       // testcases
       if (0 < $testCaseId) {  // we already have this testcase, update as needed
@@ -236,7 +236,20 @@ class TestCaseImport extends CmdLineWorker
                   
                   $matches = ($newTest->getContent() == $oldTest->getContent());
                   
-                  // XXX need to compare references as well if present
+                  // compare references as well if present
+                  foreach ($referenceArray as $referencePath) {
+                    if ($matches) {
+                      if ('!' == $referencePath[0]) {
+                        $referencePath = $substr($referencePath, 1);
+                      }
+                      $referencePath = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
+
+                      $newReference = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $referencePath));
+                      $oldReference = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $referencePath));
+                      
+                      $matches = ($newReference->getContent() == $oldReference->getContent());
+                    }
+                  }
                   // XXX and other dependent files
                 }
               }
@@ -246,9 +259,12 @@ class TestCaseImport extends CmdLineWorker
               $revisions = $this->mTestCaseRevisions[$testCaseId];
               $lastRevision = $revisions[count($revisions) - 1];
               
+              $revisionSql = $this->encode($revision, REVISIONS_MAX_REVISION);
+              $lastRevisionSql = $this->encode($lastRevision, REVISIONS_MAX_EQUAL_REVISION);
+              
               $sql  = "INSERT INTO `revisions` ";
               $sql .= "(`testcase_id`, `revision`, `equal_revision`, `date`) ";
-              $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$lastRevision}', '{$now}') ";
+              $sql .= "VALUES ('{$testCaseId}', '{$revisionSql}', '{$lastRevisionSql}', '{$now}') ";
 
               $this->query($sql);
 
@@ -257,8 +273,10 @@ class TestCaseImport extends CmdLineWorker
               $prevRevisionIndex = array_search($this->mTestCaseRevisionInSuite[$testCaseId], $revisions);
               
               for ($index = $prevRevisionIndex; $index < (count($revisions) - 1); $index++) { // if revisions between last and new, chain equality
-                $oldRevision = $revisions[$index];
-                $newRevision = $revisions[$index + 1];
+                echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
+
+                $newRevision = $this->encode($revisions[$index + 1], REVISIONS_MAX_REVISION);
+                $oldRevision = $this->encode($revisions[$index], REVISIONS_MAX_EQUAL_REVISION);
                 
                 $sql  = "UPDATE `revisions` ";
                 $sql .= "SET `equal_revision` = '{$oldRevision}' ";
@@ -266,13 +284,13 @@ class TestCaseImport extends CmdLineWorker
                 $sql .= "AND `revision` = '{$newRevision}' ";
                 
                 $this->query($sql);
-                echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
               }
             }
             else {
+              $revisionSql = $this->encode($revision, REVISIONS_MAX_REVISION);
               $sql  = "INSERT INTO `revisions` ";
               $sql .= "(`testcase_id`, `revision`, `date`) ";
-              $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$now}') ";
+              $sql .= "VALUES ('{$testCaseId}', '{$revisionSql}', '{$now}') ";
 
               $this->query($sql);
               
@@ -297,8 +315,11 @@ class TestCaseImport extends CmdLineWorker
         }
       }
       else {
+        $testCaseNameSql = $this->encode($testCaseName, TESTCASES_MAX_TESTCASE);
+        $revisionSql = $this->encode($revision, TESTCASES_MAX_LAST_REVISION);
+        
         $sql  = "INSERT INTO `testcases` (`testcase`, `last_revision`, `title`, `flags`, `assertion`, `credits`) ";
-        $sql .= "VALUES ('{$testCaseName}', '{$revision}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}');";
+        $sql .= "VALUES ('{$testCaseNameSql}', '{$revisionSql}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}');";
         
         $r = $this->query($sql);
         
@@ -312,7 +333,7 @@ class TestCaseImport extends CmdLineWorker
         
         $sql  = "INSERT INTO `revisions` ";
         $sql .= "(`testcase_id`, `revision`, `date`) ";
-        $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$now}') ";
+        $sql .= "VALUES ('{$testCaseId}', '{$revisionSql}', '{$now}') ";
 
         $this->query($sql);
       }
@@ -363,8 +384,6 @@ class TestCaseImport extends CmdLineWorker
       
       $this->query($sql);
 
-      $referenceArray = $this->_explodeTrimAndFilter(',', $references);
-            
       foreach ($referenceArray as $referencePath) {
       
         if ('!' === $referencePath[0]) {
@@ -459,10 +478,11 @@ class TestCaseImport extends CmdLineWorker
       }
 
       // suitetests
+      $revisionSql = $this->encode($revision, SUITETESTS_MAX_REVISION);
       $sql  = "INSERT INTO `suitetests` ";
       $sql .= "(`testsuite`, `testcase_id`, `revision`) ";
-      $sql .= "VALUES ('{$testSuiteName}', '{$testCaseId}', '{$revision}') ";
-      $sql .= "ON DUPLICATE KEY UPDATE `revision` = '{$revision}' ";
+      $sql .= "VALUES ('{$testSuiteName}', '{$testCaseId}', '{$revisionSql}') ";
+      $sql .= "ON DUPLICATE KEY UPDATE `revision` = '{$revisionSql}' ";
       
       $this->query($sql);
       
