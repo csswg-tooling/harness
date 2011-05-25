@@ -107,6 +107,44 @@ class HarnessPage extends DynamicPage
           $this->_appendURI($baseURI, 's', $queryArgs, 'done');
           $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
           break;
+        case REVIEW_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'review');
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
+        case RESULTS_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'results');
+          if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
+            $baseURI .= 'grouped/';
+          }
+          unset($queryArgs['o']);
+          if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
+            $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
+          }
+          $this->_appendURI($baseURI, 'f', $queryArgs, 'filter');
+          $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
+          $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
+          $this->_appendURI($baseURI, 'v', $queryArgs, 'version');
+          $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
+        case DETAILS_PAGE_URI:
+          $baseURI = '';
+          $this->_appendURI($baseURI, 's', $queryArgs, 'details');
+          if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
+            $baseURI .= 'grouped/';
+          }
+          unset($queryArgs['o']);
+          if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
+            $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
+          }
+          $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
+          $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
+          $this->_appendURI($baseURI, 'v', $queryArgs, 'version');
+          $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
+          $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+          break;
       }
       if (! $absolute) {
         if (empty($_SERVER['PHP_SELF'])) {

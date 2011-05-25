@@ -54,6 +54,7 @@ define('TESTCASE_PAGE_URI', 'testcase');
 define('SELECT_UA_PAGE_URI', 'useragent');
 define('SET_UA_PAGE_URI', 'setuseragent');
 define('REVIEW_PAGE_URI', 'review');
+define('LOAD_RESULTS_PAGE_URI', 'loadresults');
 define('RESULTS_PAGE_URI', 'results');
 define('DETAILS_PAGE_URI', 'details');
 define('SUBMIT_PAGE_URI', 'submit');

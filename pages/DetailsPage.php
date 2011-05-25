@@ -45,8 +45,11 @@ class DetailsPage extends ResultsBasedPage
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
+   *
+   * Optional URL paramaters:
    * 'c' Test Case Name
-   * 'g' Spec Section Id (optional)
+   * 'g' Spec Section Id
+   * 'sec' Spec Section name 
    * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
    * 'o' Display order (currently unused)
    * 'm' Modified date (only results before date)

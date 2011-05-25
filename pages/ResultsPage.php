@@ -53,7 +53,9 @@ class ResultsPage extends ResultsBasedPage
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
-   * 'c' Test Case Name
+   *
+   * Optional Paramaters:
+   * 'c' Test Case Name (optional)
    * 'g' Spec Section Id (optional)
    * 'sec' Spec Section Name (optional)
    * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)

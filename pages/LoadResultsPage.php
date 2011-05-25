@@ -22,46 +22,63 @@ require_once('lib/Sections.php');
 require_once('lib/TestCase.php');
 
 /**
- * A page to convert test index to test name
+ * A page to convert a result query to path based URL
  */
-class StartTestPage extends HarnessPage
+class LoadResultsPage extends HarnessPage
 {  
   protected $mNewURI;
 
 
   /**
    * Mandatory paramaters:
-   * 's'    Test Suite
+   * 's' Test Suite
+   * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
    *
    * Optional paramaters:
-   * 'c'    Name of Test Case
-   * 'g'    Sepc section Id
-   * 'sec'  Spec section name
-   * 'o'    Order of tests is sequence table
-   * 'u'    User Agent Id
+   * 'c' Test Case Name
+   * 'g' Spec Section Id
+   * 'sec' Spec Section Name
+   * 'f' Result filter (array or bitfield)
+   * 'm' Modified date (only results before date)
+   * 'e' Engine (optional, filter results for this engine)
+   * 'v' Engine Version
+   * 'p' Platform
+   * 'o' Ordering 0 = one list, 1 = group by section
    */
   function __construct(Array $args = null) 
   {
     parent::__construct($args);
     
     $args = $this->mGetData;
+
+    $testCaseName = $this->_getData('c');
+    $sectionId = intval($this->_getData('g'));
+    $sectionName = $this->_getData('sec');
+    if ((0 == $sectionId) && ($sectionName)) {
+      $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+    }
     
-    if ((! $this->_getData('c')) && (! $this->_getData('i'))) { // find first test in suite or section
-      $order = $this->_getData('o');
-      $sectionId = intval($this->_getData('g'));
-      $sectionName = $this->_getData('sec');
-      if ((0 == $sectionId) && ($sectionName)) {
-        $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+    if ($this->_getData('t')) {
+      $type = intval($this->_getData('t'));
+      switch ($type) {
+        case 0: unset($args['g']);   // whole suite
+        case 1: unset($args['c']);   // test group
+        case 2: break;               // individual test case
       }
-      
-      $testCase = new TestCase();
-      $testCase->load($this->mTestSuite, null, $sectionId, $this->mUserAgent, $order, 0);
-                             
-      $args['i'] = $testCase->getTestCaseName();
+    }
+    unset($args['t']);
+
+    $filter = $this->_getData('f');
+    if (is_array($filter)) {
+      $filterValue = 0;
+      foreach ($filter as $value) {
+        $filterValue = $filterValue | intval($value);
+      }
+      $args['f'] = $filterValue;
     }
     
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      $this->mNewURI = $this->buildURI(TESTCASE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildURI(RESULTS_PAGE_URI, $args);
     }
     else {
       $this->mNewURI = $this->buildURI(HOME_PAGE_URI);
