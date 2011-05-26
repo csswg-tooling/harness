@@ -220,7 +220,7 @@ class Page
   function encode($string)
   {
     if ($this->mWriteXML) {
-      // XXX should convert other chars to numeric entiries or leave as is
+      // XXX should convert other chars to numeric entiries or leave as is?
       return htmlspecialchars($string, ENT_QUOTES, $this->mEncoding);
     }
     return htmlentities($string, ENT_QUOTES, $this->mEncoding);
@@ -991,7 +991,7 @@ class Page
         }
 
         if (FALSE !== stripos($accept, 'application/xhtml+xml')) {
-//          $contentType = 'application/xhtml+xml';     XXX disable to to wierd FF bug with optgroups
+//          $contentType = 'application/xhtml+xml';     XXX disable due to wierd FF bug with optgroups
           if (preg_match('/application\/xhtml\+xml;q=0(\.[1-9]+)/i', $accept, $matches)) {
             $xhtmlQ = floatval($matches[1]);
             if (preg_match('/text\/html;q=0(\.[1-9]+)/i', $accept, $matches)) {
@@ -1414,34 +1414,6 @@ class Page
         $this->closeElement('pre');
         $this->closeElement('p');
       }
-      
-      // XXX factor this back into dynamic page, add mArgData
-      if (0 < count($this->mGetData)) {
-        $this->openElement('p');
-        $this->addTextContent('Get: ');
-        $this->openElement('pre', null, FALSE);
-        $this->addTextContent(print_r($this->mGetData, TRUE));
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
-      
-      if (0 < count($this->mPostData)) {
-        $this->openElement('p');
-        $this->addTextContent('Post: ');
-        $this->openElement('pre', null, FALSE);
-        $this->addTextContent(print_r($this->mPostData, TRUE));
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
-
-      if (0 < count($this->mCookieData)) {
-        $this->openElement('p');
-        $this->addTextContent('Cookie: ');
-        $this->openElement('pre', null, FALSE);
-        $this->addTextContent(print_r($this->mCookieData, TRUE));
-        $this->closeElement('pre');
-        $this->closeElement('p');
-      }
     }
   }
   
@@ -1472,18 +1444,6 @@ class Page
       }
       if ($this->mErrorContext) {
         $this->_write('Context: ' . print_r($this->mErrorContext, TRUE) . "\n");
-      }
-      
-      if (0 < count($this->mGetData)) {
-        $this->_write('Get: ' . print_r($this->mGetData, TRUE) . "\n");
-      }
-      
-      if (0 < count($this->mPostData)) {
-        $this->_write('Post: ' . print_r($this->mPostData, TRUE) . "\n");
-      }
-
-      if (0 < count($this->mCookieData)) {
-        $this->_write('Cookie: ' . print_r($this->mCookieData, TRUE) . "\n");
       }
     }
   }  

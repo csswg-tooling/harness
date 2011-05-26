@@ -46,13 +46,16 @@ class HarnessPage extends DynamicPage
   }  
   
   
+  /**
+   * Hellper functon for building path URIs form query args
+   */
   protected function _appendURI(&$uri, $key, &$args, $path = null)
   {
     if ($args && array_key_exists($key, $args)) {
       if ($path) {
         $uri .= $path . '/';
       }
-      $uri .= $args[$key] . '/';
+      $uri .= rawurlencode($args[$key]) . '/';
       unset($args[$key]);
       return TRUE;
     }
@@ -92,7 +95,7 @@ class HarnessPage extends DynamicPage
           $this->_appendURI($baseURI, 's', $queryArgs, 'test');
           if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
             $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
-            if ($queryArgs && array_key_exists('o', $queryArgs) && (0 == $queryArgs['o'])) {
+            if (! ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o']))) {
               $baseURI .= 'all/';
             }
             $this->_appendURI($baseURI, 'i', $queryArgs);

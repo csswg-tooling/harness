@@ -163,6 +163,80 @@ class DynamicPage extends Page
     }
   }
   
+  
+  /**
+   * Generate error text in HTML
+   */
+  function writeHTMLError()
+  {
+    parent::writeHTMLError();
+    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+      if (0 < count($this->mArgData)) {
+        $this->openElement('p');
+        $this->addTextContent('Args: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mArgData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+      
+      if (0 < count($this->mGetData)) {
+        $this->openElement('p');
+        $this->addTextContent('Get: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mGetData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+      
+      if (0 < count($this->mPostData)) {
+        $this->openElement('p');
+        $this->addTextContent('Post: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mPostData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+
+      if (0 < count($this->mCookieData)) {
+        $this->openElement('p');
+        $this->addTextContent('Cookie: ');
+        $this->openElement('pre', null, FALSE);
+        $this->addTextContent(print_r($this->mCookieData, TRUE));
+        $this->closeElement('pre');
+        $this->closeElement('p');
+      }
+    }
+  }
+  
+  
+  /**
+   * Generate error text in plain text
+   */
+  function writePlainTextError()
+  {
+    parent::writePlainTextError();
+
+    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+      if (0 < count($this->mArgData)) {
+        $this->_write('Args: ' . print_r($this->mArgData, TRUE) . "\n");
+      }
+      
+      if (0 < count($this->mGetData)) {
+        $this->_write('Get: ' . print_r($this->mGetData, TRUE) . "\n");
+      }
+      
+      if (0 < count($this->mPostData)) {
+        $this->_write('Post: ' . print_r($this->mPostData, TRUE) . "\n");
+      }
+
+      if (0 < count($this->mCookieData)) {
+        $this->_write('Cookie: ' . print_r($this->mCookieData, TRUE) . "\n");
+      }
+    }
+  }  
+  
+  
 }
 
 ?>
