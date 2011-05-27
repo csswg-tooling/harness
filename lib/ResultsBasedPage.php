@@ -73,15 +73,20 @@ class ResultsBasedPage extends HarnessPage
         }
       }
       
-      $engine = $this->_getData('e');
-      $engineVersion = $this->_getData('v');
-      $platform = $this->_getData('p');
-      $modified = $this->_getData('m', 'DateTime');
+      $modified         = $this->_getData('m', 'DateTime');
+      $engineName       = $this->_getData('e');
+      $engineVersion    = $this->_getData('v');
+      $browserName      = $this->_getData('b');
+      $browserVersion   = $this->_getData('bv');
+      $platformName     = $this->_getData('p');
+      $platformVersion  = $this->_getData('pv');
       
       $this->mResults = 
-        new Results($this->mTestSuite, $testCaseName, $sectionId,
-                    $engine, $engineVersion, $platform, 
-                    $modified);
+        new Results($this->mTestSuite, $testCaseName, $sectionId, 
+                    $modified,
+                    $engineName, $engineVersion, 
+                    $browserName, $browserVersion, 
+                    $platformName, $platformVersion);
     }
   }
 }

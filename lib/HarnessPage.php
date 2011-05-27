@@ -76,6 +76,9 @@ class HarnessPage extends DynamicPage
       unset ($queryArgs['u']);
     }
     if (REWRITE_ON) {
+      if (is_array($queryArgs) && (0 < count($queryArgs))) {
+        $queryArgs = self::_ConvertArgs($queryArgs, TRUE);
+      }
       switch ($baseURI) {
         case HOME_PAGE_URI:
           $baseURI = '';
@@ -128,8 +131,11 @@ class HarnessPage extends DynamicPage
           $this->_appendURI($baseURI, 'f', $queryArgs, 'filter');
           $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
           $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
-          $this->_appendURI($baseURI, 'v', $queryArgs, 'version');
+          $this->_appendURI($baseURI, 'v', $queryArgs, 'engine_version');
+          $this->_appendURI($baseURI, 'b', $queryArgs, 'browser');
+          $this->_appendURI($baseURI, 'bv', $queryArgs, 'browser_version');
           $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
+          $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
           $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
           break;
         case DETAILS_PAGE_URI:
@@ -144,8 +150,11 @@ class HarnessPage extends DynamicPage
           }
           $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
           $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
-          $this->_appendURI($baseURI, 'v', $queryArgs, 'version');
+          $this->_appendURI($baseURI, 'v', $queryArgs, 'engine_version');
+          $this->_appendURI($baseURI, 'b', $queryArgs, 'browser');
+          $this->_appendURI($baseURI, 'bv', $queryArgs, 'browser_version');
           $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
+          $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
           $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
           break;
       }

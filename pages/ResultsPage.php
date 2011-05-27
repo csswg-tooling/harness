@@ -55,15 +55,18 @@ class ResultsPage extends ResultsBasedPage
    * 's' Test Suite Name
    *
    * Optional Paramaters:
-   * 'c' Test Case Name (optional)
-   * 'g' Spec Section Id (optional)
-   * 'sec' Spec Section Name (optional)
+   * 'c' Test Case Name
+   * 'g' Spec Section Id
+   * 'sec' Spec Section Name
    * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
    * 'f' Result filter (array or bitfield)
-   * 'm' Modified date (optional, only results before date)
-   * 'e' Engine (optional, filter results for this engine)
-   * 'v' Engine Version (optional)
+   * 'm' Modified date (only results before date)
+   * 'e' Engine (filter results for this engine)
+   * 'v' Engine Version
+   * 'b' Browser (filter results for this browser)
+   * 'bv' Engine Version
    * 'p' Platform
+   * 'pv' Platform Version
    * 'o' Ordering (optional) 0 = one list, 1 = group by section
    */
   function __construct(Array $args = null) 
@@ -308,6 +311,16 @@ class ResultsPage extends ResultsBasedPage
   }
   
   
+  function _copyArgs(Array $source, Array &$destination, Array $filterKeys)
+  {
+    foreach ($filterKeys as $key) {
+      if (array_key_exists($key, $source)) {
+        $destination[$key] = $source[$key];
+      }
+    }
+  }
+  
+  
   function _generateTestCaseCell($testCaseName, $section, $hasResults, $isPrimarySection)
   {
     $attrs = null;
@@ -329,9 +342,7 @@ class ResultsPage extends ResultsBasedPage
       $args['c'] = $testCaseName;
       $args['u'] = $this->mUserAgent->getId();
       if ($hasResults) {
-        if ($this->mModified) {
-          $args['m'] = $this->mModified;
-        }
+        $this->_copyArgs($this->mGetData, $args, array('m', 'e', 'v', 'b', 'bv', 'p', 'pv'));
         $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
       }
       else {
@@ -354,9 +365,7 @@ class ResultsPage extends ResultsBasedPage
       $args['c'] = $testCaseName;
       $args['e'] = $engineName;
       $args['u'] = $this->mUserAgent->getId();
-      if ($this->mModified) {
-        $args['m'] = $this->mModified;
-      }
+      $this->_copyArgs($this->mGetData, $args, array('m', 'v', 'b', 'bv', 'p', 'pv'));
       $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
       
       $this->openElement('td', array('class' => $class), FALSE);

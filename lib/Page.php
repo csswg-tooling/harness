@@ -77,7 +77,7 @@ class Page
             if ('+00:00' == substr($value, -6)) {
               $value = substr($value, 0, -6);
               if (0 == strcasecmp('T00:00:00', substr($value, -9))) {
-                $value = substr($value, -9);
+                $value = substr($value, 0, -9);
               }
             }
           }

@@ -33,8 +33,10 @@ class Results extends DBConnection
 
 
   function __construct(TestSuite $testSuite, $testCaseName = null, $sectionId = null,
-                       $engineName = null, $engineVersion = null, $platform = null, 
-                       DateTime $modified = null)
+                       DateTime $modified = null,
+                       $engineName = null, $engineVersion = null, 
+                       $browserName = null, $browserVersion = null, 
+                       $platformName = null, $platformVersion = null)
   {
     parent::__construct();
     
@@ -170,9 +172,21 @@ class Results extends DBConnection
         $sql .= "AND `useragents`.`engine_version` = '{$engineVersion}' ";
       }
     }
-    if ($platform) {
-      $platform = $this->encode($platform, USERAGENTS_MAX_PLATFORM);
-      $sql .= "AND `useragents`.`platform` = '{$platform}' ";
+    if ($browserName) {
+      $browserName = $this->encode($browserName, USERAGENTS_MAX_BROWSER);
+      $sql .= "AND `useragents`.`browser` = '{$browserName}' ";
+      if ($browserVersion) {
+        $browserVersion = $this->encode($browserVersion, USERAGENTS_MAX_BROWSER_VERSION);
+        $sql .= "AND `useragents`.`browser_version` = '{$browserVersion}' ";
+      }
+    }
+    if ($platformName) {
+      $platformName = $this->encode($platformName, USERAGENTS_MAX_PLATFORM);
+      $sql .= "AND `useragents`.`platform` = '{$platformName}' ";
+      if ($platformVersion) {
+        $platformVersion = $this->encode($platformVersion, USERAGENTS_MAX_PLATFORM_VERSION);
+        $sql .= "AND `useragents`.`platform_version` = '{$platformVersion}' ";
+      }
     }
     $sql .= "ORDER BY `results`.`testcase_id` ";
 
