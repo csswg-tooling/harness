@@ -105,7 +105,7 @@ class SubmitPage extends HarnessPage
     
     $args['s'] = $this->mTestSuite->getName();
     $args['u'] = $this->mUserAgent->getId();
-    if (0 < $nextIndex) {
+    if (0 <= $nextIndex) {
       if ($desiredFormatName) {
         $args['f'] = $desiredFormatName;
       }
@@ -117,7 +117,6 @@ class SubmitPage extends HarnessPage
           $args['g'] = $sectionId;
         }
       }
-//      $args['r'] = $nextIndex;
       $nextTestCase = new TestCase();
       $nextTestCase->load($this->mTestSuite, null, $sectionId,
                           $this->mUserAgent, $order, $nextIndex);

@@ -37,6 +37,7 @@ class TestCasePage extends HarnessPage
   protected $mFormatName;
   protected $mDesiredFormatName;
   protected $mRefName;
+  protected $mSectionName;
   protected $mHasResults;
 
 
@@ -62,9 +63,12 @@ class TestCasePage extends HarnessPage
 
     $testCaseName = $this->_getData('c');
     $sectionId = intval($this->_getData('g'));
-    $sectionName = $this->_getData('sec');
-    if ((0 == $sectionId) && ($sectionName)) {
-      $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+    $this->mSectionName = $this->_getData('sec');
+    if ((0 == $sectionId) && ($this->mSectionName)) {
+      $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $this->mSectionName);
+    }
+    if ($sectionId) {
+      $this->mSectionName = Sections::GetSectionNameFor($this->mTestSuite, $sectionId);
     }
     
     $order = intval($this->_getData('o'));
@@ -91,6 +95,9 @@ class TestCasePage extends HarnessPage
     
     if (0 == $this->mIndex) {
       $this->mIndex = $this->mTestCase->getIndex($sectionId, $this->mUserAgent, $order);
+      if (FALSE === $this->mIndex) {  // given a testcase and a section, but test isn't in that section
+        $this->mIndex = -1;
+      }
     }
                    
     $suiteFormatNames = $this->mTestSuite->getFormatNames();
@@ -122,7 +129,7 @@ class TestCasePage extends HarnessPage
     $this->mSubmitData = $this->mGetData;
     $this->mSubmitData['c'] = $this->mTestCase->getTestCaseName();
     $this->mSubmitData['g'] = $sectionId;
-    $this->mSubmitData['sec'] = $sectionName;
+    $this->mSubmitData['sec'] = $this->mSectionName;
     $this->mSubmitData['cid'] = $this->mTestCase->getId();
     $this->mSubmitData['f'] = $this->mFormatName;
     if ($this->mDesiredFormatName) {
@@ -132,7 +139,7 @@ class TestCasePage extends HarnessPage
       $this->mSubmitData['next'] = ($this->mIndex + 1);
     }
     else {
-      $this->mSubmitData['next'] = 0;
+      $this->mSubmitData['next'] = -1;
     }
     if (isset($this->mSubmitData['ref'])) {
       unset($this->mSubmitData['ref']);
@@ -182,6 +189,16 @@ class TestCasePage extends HarnessPage
       
       $this->addStyleSheetLink($this->buildURI(sprintf(TEST_ENGINE_STYLESHEET_URI, $actualEngineName)));
     }
+  }
+
+
+  function getPageTitle()
+  {
+    $title = parent::getPageTitle();
+    if ($this->mSectionName) {
+      return "{$title} - Section {$this->mSectionName}";
+    }
+    return $title;
   }
 
 
@@ -236,7 +253,7 @@ class TestCasePage extends HarnessPage
             $this->addElement('span', array('title' => $title), $section, FALSE);
           }
           else {
-            $this->addTextContent($section);
+            $this->addTextContent($section, FALSE);
           }
           $this->closeElement('a');
         }

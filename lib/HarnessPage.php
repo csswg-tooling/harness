@@ -99,7 +99,7 @@ class HarnessPage extends DynamicPage
           if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
             $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
             if (! ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o']))) {
-              $baseURI .= 'all/';
+              $baseURI .= 'alpha/';
             }
             $this->_appendURI($baseURI, 'i', $queryArgs);
           }
