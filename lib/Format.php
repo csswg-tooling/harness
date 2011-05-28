@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 require_once("lib/DBConnection.php");
+require_once("lib/Flags.php");
 
 /**
  * Wrapper class for format data
@@ -179,11 +180,11 @@ class Format extends DBConnection
    * @param array $flagArray
    * @return bool
    */
-  function validForFlags($flagArray)
+  function validForFlags(Flags $flags)
   {
     if ($this->_isValid()) {
       $filter = $this->mInfo['filter'];
-      if (in_array($filter, $flagArray)) {
+      if ($flags->hasFlag($filter)) {
         return FALSE;
       }
       return TRUE;

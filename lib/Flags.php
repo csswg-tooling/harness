@@ -31,27 +31,39 @@ class Flags extends DBConnection
   function __construct($flagsStr, $loadData = FALSE) 
   {
     parent::__construct();
-    
-    $this->mFlags = array_flip(explode(',', $flagsStr));
-    
-    if ($loadData) {
-      $sql  = "SELECT `flag`, `description`, ";
-      $sql .= "`set_test`, `unset_test` ";
-      $sql .= "FROM `flags` ";
 
-      $r = $this->query($sql);
-      while ($flagData = $r->fetchRow()) {
-        $flag = $flagData['flag'];
-        if (array_key_exists($flag, $this->mFlags)) {
-          $this->mDescriptions[$flag] = $flagData['description'];
-          $test = $flagData['set_test'];
-        }
-        else {
-          $test = $flagData['unset_test'];
-        }
-        if ($test) {
-          $this->mTests[$flag] = $test;
-        }
+    $this->mFlags = array();
+    $flagArray = explode(',', $flagsStr);
+    foreach ($flagArray as $flag) {
+      $flag = trim($flag);
+      if ($flag) {
+        $this->mFlags[$flag] = $flag;
+      }
+    }
+    if ($loadData) {
+      $this->_loadData();
+    }
+  }
+  
+  
+  protected function _loadData()
+  {
+    $sql  = "SELECT `flag`, `description`, ";
+    $sql .= "`set_test`, `unset_test` ";
+    $sql .= "FROM `flags` ";
+
+    $r = $this->query($sql);
+    while ($flagData = $r->fetchRow()) {
+      $flag = $flagData['flag'];
+      if (array_key_exists($flag, $this->mFlags)) {
+        $this->mDescriptions[$flag] = $flagData['description'];
+        $test = $flagData['set_test'];
+      }
+      else {
+        $test = $flagData['unset_test'];
+      }
+      if ($test) {
+        $this->mTests[$flag] = $test;
       }
     }
   }
@@ -88,6 +100,31 @@ class Flags extends DBConnection
   function getTests()
   {
     return $this->mTests;
+  }
+  
+  
+  function addFlag($flag, $loadData = FALSE)
+  {
+    $this->mFlags[$flag] = $flag;
+    
+    if ($loadData) {
+      $this->_loadData();
+    }
+  }
+  
+  
+  function removeFlag($flag)
+  {
+    unset($this->mFlags[$flag]);
+    unset($this->mDescriptions[$flag]);
+    unset($this->mTests[$flag]);
+  }
+  
+  
+  function getFlagString()
+  {
+    uksort($this->mFlags, 'strnatcasecmp');
+    return implode(',', $this->mFlags);
   }
 }
 

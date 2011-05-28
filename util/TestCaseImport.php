@@ -19,6 +19,7 @@
 require_once('lib/HarnessCmdLineWorker.php');
 require_once('lib/Page.php');
 require_once('lib/Format.php');
+require_once('lib/Flags.php');
 require_once('lib/TestSuite.php');
 require_once('lib/NormalizedTest.php');
 
@@ -195,18 +196,18 @@ class TestCaseImport extends HarnessCmdLineWorker
       $assertion  = Page::Decode($assertion);
       $credits    = Page::Decode($credits);
       
-      $flagArray = $this->_explodeTrimAndFilter(',', $flagString);
+      $flags = new Flags($flagString);
       if ($references) {
-        $flagArray[] = 'reftest';
+        $flags->addFlag('reftest');
       }
-      $flagString = implode(',', $flagArray);
+      $flagString = $flags->getFlagString();
 
       $referenceArray = $this->_explodeTrimAndFilter(',', $references);
             
       $title        = $this->encode($title, TESTCASES_MAX_TITLE);
       $assertion    = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
       $credits      = $this->encode($credits, TESTCASES_MAX_CREDITS);
-      $flagString   = $this->encode($flagString);
+      $flagString   = $this->encode($flagString, TESTCASES_MAX_FLAGS);
 
       // testcases
       if (0 < $testCaseId) {  // we already have this testcase, update as needed
@@ -225,7 +226,7 @@ class TestCaseImport extends HarnessCmdLineWorker
             $matches = TRUE;
             if ($this->mNewSuitePath) {
               foreach ($formats as $format) {
-                if ($matches && $format->validForFlags($flagArray)) {
+                if ($matches && $format->validForFlags($flags)) {
                   $compared = TRUE;
                   $testPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
                   
@@ -338,24 +339,6 @@ class TestCaseImport extends HarnessCmdLineWorker
         $this->query($sql);
       }
 
-      // verify flags
-      $sql  = "SELECT `flags` ";
-      $sql .= "FROM `testcases` ";
-      $sql .= "WHERE `id` = '{$testCaseId}' ";
-      
-      $r = $this->query($sql);
-      $storedFlags = $r->fetchField(0);
-      
-      $dbFlagArray = $this->_explodeTrimAndFilter(',', $storedFlags);
-
-      $diff = array_diff($flagArray, $dbFlagArray);
-      if (0 < count($diff)) {
-        foreach ($diff as $flag) {
-          echo "Flag not stored in database: '{$flag}'\n";
-        }
-        die("Need to update database schema to support flag(s).\n");
-      }
-
       // testpages
       $sql  = "DELETE FROM `testpages` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
@@ -364,7 +347,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       $this->query($sql);
 
       foreach ($formats as $format) {
-        if ($format->validForFlags($flagArray)) {
+        if ($format->validForFlags($flags)) {
           $uri = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
           
           $formatName = $this->encode($format->getName(), TESTPAGES_MAX_FORMAT);
@@ -399,7 +382,7 @@ class TestCaseImport extends HarnessCmdLineWorker
         $referenceType = $this->encode($referenceType);
 
         foreach ($formats as $format) {
-          if ($format->validForFlags($flagArray)) {
+          if ($format->validForFlags($flags)) {
             $referenceURI = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
 
             $formatName = $this->encode($format->getName(), REFERENCES_MAX_FORMAT);

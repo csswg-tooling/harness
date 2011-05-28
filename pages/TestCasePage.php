@@ -73,9 +73,9 @@ class TestCasePage extends HarnessPage
     
     $order = intval($this->_getData('o'));
     
-    $this->mCount = 0;
+    $this->mCount = -1;
     if ($testCaseName) {
-      $this->mCount = 1;
+      $this->mCount = 0;
     }
     else {
       $testCaseName = $this->_getData('i');
@@ -117,7 +117,7 @@ class TestCasePage extends HarnessPage
       $this->mFormatName = $testFormatNames[0];
     }
     
-    if (0 == $this->mCount) {
+    if (-1 == $this->mCount) {
       if ($sectionId) {
         $this->mCount = $this->mTestCase->countCasesInSection($sectionId);
       }
@@ -208,11 +208,11 @@ class TestCasePage extends HarnessPage
     $assertion = $this->mTestCase->getAssertion();
     $specURIs = $this->mTestCase->getSpecURIs();
     
-    if ((1 < $this->mCount) || $title || $assertion || $specURIs) {
+    if ((0 < $this->mCount) || $title || $assertion || $specURIs) {
       $attrs['class'] = $class;
       $this->openElement($elementName, $attrs);
       
-      if (1 < $this->mCount) {
+      if (0 < $this->mCount) {
         $index = $this->mIndex + 1;
         $this->addTextContent("Test {$index} of {$this->mCount}" . ($title ? ':' : ''));
       }
