@@ -16,7 +16,7 @@
  * 
  ******************************************************************************/
 
-require_once('lib/CmdLineWorker.php');
+require_once('lib/HarnessCmdLineWorker.php');
 require_once('lib/TestSuite.php');
 require_once('lib/Results.php');
 require_once('lib/Result.php');
@@ -29,7 +29,7 @@ require_once('lib/User.php');
  *
  * This is meant to be run from by a periodic cron job or on the command line
  */
-class ExportResults extends CmdLineWorker
+class ExportResults extends HarnessCmdLineWorker
 {
 
   function __construct() 

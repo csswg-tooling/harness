@@ -16,7 +16,7 @@
  * 
  ******************************************************************************/
 
-require_once('lib/CmdLineWorker.php');
+require_once('lib/HarnessCmdLineWorker.php');
 require_once('lib/Page.php');
 require_once('lib/Format.php');
 require_once('lib/TestSuite.php');
@@ -27,7 +27,7 @@ require_once('lib/NormalizedTest.php');
  *
  * Safe to run multiple times to update existing tests
  */
-class TestCaseImport extends CmdLineWorker
+class TestCaseImport extends HarnessCmdLineWorker
 {  
   protected $mTestCaseRevisionInSuite;
   protected $mTestCaseRevisions;
@@ -367,7 +367,7 @@ class TestCaseImport extends CmdLineWorker
         if ($format->validForFlags($flagArray)) {
           $uri = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
           
-          $formatName = $this->encode($format->getName());
+          $formatName = $this->encode($format->getName(), TESTPAGES_MAX_FORMAT);
           $uri = $this->encode($uri, TESTPAGES_MAX_URI);
           
           $sql  = "INSERT INTO `testpages` (`testcase_id`, `format`, `uri`) ";
@@ -402,7 +402,7 @@ class TestCaseImport extends CmdLineWorker
           if ($format->validForFlags($flagArray)) {
             $referenceURI = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
 
-            $formatName = $this->encode($format->getName());
+            $formatName = $this->encode($format->getName(), REFERENCES_MAX_FORMAT);
             $referenceURI = $this->encode($referenceURI, REFERENCES_MAX_URI);
 
             $sql  = "INSERT INTO `references` ";

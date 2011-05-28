@@ -17,14 +17,14 @@
  ******************************************************************************/
  
 
-require_once("lib/CmdLineWorker.php");
+require_once("lib/HarnessCmdLineWorker.php");
 require_once("lib/UserAgent.php");
 require_once("lib/User.php");
 
 /**
  * Import results from implementation report files
  */
-class ImplementationReportImport extends CmdLineWorker
+class ImplementationReportImport extends HarnessCmdLineWorker
 {
   protected $mTestCaseRevision;
   protected $mTestCaseFlags;
@@ -159,6 +159,7 @@ class ImplementationReportImport extends CmdLineWorker
           
           $results[$testCaseId] = $result;
           $formats[$testCaseId] = $format;
+          // XXX handle multiple formats per test case
           if (0 < strlen($comment)) {
             $comments[$testCaseId] = $this->encode($comment, RESULTS_MAX_COMMENT);  // encode now to test length
           }
@@ -170,12 +171,12 @@ class ImplementationReportImport extends CmdLineWorker
     echo "Importing results\n";
     foreach ($results as $testCaseId => $result) {
           
-      $revision = $this->mTestCaseRevision[$testCaseId];
-      $format = $formats[$testCaseId];
+      $revision = $this->encode($this->mTestCaseRevision[$testCaseId], RESULTS_MAX_REVISION);
+      $format = $this->encode($formats[$testCaseId], RESULTS_MAX_FORMAT);
       
       $sql  = "INSERT INTO `results` ";
       if (array_key_exists($testCaseId, $comments)) {
-        $comment = $comments[$testCaseId];
+        $comment = $comments[$testCaseId];  // pre-encoded
         if ($modified) {
           $sql .= "(`testcase_id`, `revision`, `format`, ";
           $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";

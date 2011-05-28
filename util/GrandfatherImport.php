@@ -16,10 +16,10 @@
  * 
  ******************************************************************************/
 
-require_once("lib/CmdLineWorker.php");
+require_once("lib/HarnessCmdLineWorker.php");
   
 
-class GrandfatherImport extends CmdLineWorker
+class GrandfatherImport extends HarnessCmdLineWorker
 {  
   protected $mDiffs;
   protected $mOldTestCaseRevision;

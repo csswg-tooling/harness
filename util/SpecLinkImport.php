@@ -17,13 +17,13 @@
  ******************************************************************************/
  
 
-require_once('lib/CmdLineWorker.php');
+require_once('lib/HarnessCmdLineWorker.php');
 
 
 /**
  * Import specification links
  */
-class SpecLinkImport extends CmdLineWorker
+class SpecLinkImport extends HarnessCmdLineWorker
 {
   protected $mSpecLinkURIIds;
   protected $mSpecLinkSectionIds;

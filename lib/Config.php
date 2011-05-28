@@ -94,13 +94,17 @@ define('SPIDER_POST_PROCESS_COMMAND', '/sbin/iptables-save > /etc/firewall.conf'
 /**
  * Max field lengths for database tables
  */
+define('REFERENCES_MAX_FORMAT', 15);
 define('REFERENCES_MAX_REFERENCE', 255);
 define('REFERENCES_MAX_URI', 255);
 
+define('RESULTS_MAX_REVISION', 40);
+define('RESULTS_MAX_FORMAT', 15);
 define('RESULTS_MAX_COMMENT', 63);
 
 define('SOURCES_MAX_SOURCE', 63);
 
+define('FORMATS_MAX_FORMAT', 15);
 define('FORMATS_MAX_TITLE', 255);
 define('FORMATS_MAX_DESCRIPTION', 255);
 define('FORMATS_MAX_HOME_URI', 255);
@@ -118,6 +122,7 @@ define('TESTCASES_MAX_TITLE', 255);
 define('TESTCASES_MAX_ASSERTION', 1023);
 define('TESTCASES_MAX_CREDITS', 255); // XXX break out into table
 
+define('TESTPAGES_MAX_FORMAT', 15);
 define('TESTPAGES_MAX_URI', 255);
 
 define('REVISIONS_MAX_REVISION', 40);
@@ -143,6 +148,7 @@ define('TESTSUITES_MAX_HOME_URI', 63);
 define('TESTSUITES_MAX_SPEC_URI', 255);
 define('TESTSUITES_MAX_SPEC', 31);
 define('TESTSUITES_MAX_TITLE', 255);
+define('TESTSUITES_MAX_FORMATS', 127);
 define('TESTSUITES_MAX_CONTACT_NAME', 63);
 define('TESTSUITES_MAX_CONTACT_URI', 255);
 

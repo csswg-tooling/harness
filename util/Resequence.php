@@ -16,7 +16,7 @@
  * 
  ******************************************************************************/
 
-require_once('lib/CmdLineWorker.php');
+require_once('lib/HarnessCmdLineWorker.php');
 require_once('lib/TestSuites.php');
 require_once('lib/TestSuite.php');
 require_once('lib/Results.php');
@@ -29,7 +29,7 @@ require_once('lib/Flags.php');
  *
  * This is meant to be run from by a periodic cron job or on the command line
  */
-class Resequence extends CmdLineWorker
+class Resequence extends HarnessCmdLineWorker
 {
   protected $mTestSuites;
   protected $mEngineNames;

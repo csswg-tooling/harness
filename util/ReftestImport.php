@@ -16,9 +16,9 @@
  * 
  ******************************************************************************/
 
-require_once("lib/CmdLineWorker.php");
+require_once("lib/HarnessCmdLineWorker.php");
 
-class ReftestImport extends CmdLineWorker
+class ReftestImport extends HarnessCmdLineWorker
 {  
 
   function __construct() 

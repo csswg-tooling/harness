@@ -16,7 +16,7 @@
  * 
  ******************************************************************************/
 
-require_once('lib/CmdLineWorker.php');
+require_once('lib/HarnessCmdLineWorker.php');
 require_once('lib/TestSuite.php');
 require_once('lib/Specification.php');
 require_once('lib/Results.php');
@@ -530,7 +530,7 @@ class IR_IndexPage extends HarnessPage
  * This class generates a formal implementation report for the test suite
  *
  */
-class GenerateImplementationReport extends CmdLineWorker
+class GenerateImplementationReport extends HarnessCmdLineWorker
 {
   protected $mResults;
   protected $mUserAgents;
