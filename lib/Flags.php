@@ -33,12 +33,9 @@ class Flags extends DBConnection
     parent::__construct();
 
     $this->mFlags = array();
-    $flagArray = explode(',', $flagsStr);
+    $flagArray = $this->_explodeTrimAndFilter(',', $flagsStr);
     foreach ($flagArray as $flag) {
-      $flag = trim($flag);
-      if ($flag) {
-        $this->mFlags[$flag] = $flag;
-      }
+      $this->mFlags[$flag] = $flag;
     }
     if ($loadData) {
       $this->_loadData();

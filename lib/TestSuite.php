@@ -108,7 +108,7 @@ class TestSuite extends DBConnection
   
   function getFormatNames()
   {
-    return explode(',', $this->mInfo['formats']);
+    return $this->_explodeTrimAndFilter(',', $this->mInfo['formats']);
   }
   
   function getDescription()
@@ -143,7 +143,7 @@ class TestSuite extends DBConnection
   
   function testIsOptional(Flags $flags)
   {
-    $optionalFlags = explode(',', $this->mInfo['optional_flags']);
+    $optionalFlags = $this->_explodeTrimAndFilter(',', $this->mInfo['optional_flags']);
     
     foreach ($optionalFlags as $flag) {
       if ($flags->hasFlag($flag)) {

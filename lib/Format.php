@@ -183,9 +183,11 @@ class Format extends DBConnection
   function validForFlags(Flags $flags)
   {
     if ($this->_isValid()) {
-      $filter = $this->mInfo['filter'];
-      if ($flags->hasFlag($filter)) {
-        return FALSE;
+      $filters = $this->_explodeTrimAndFilter(',', $this->mInfo['filter']);
+      foreach ($filters as $filter) {
+        if ($flags->hasFlag($filter)) {
+          return FALSE;
+        }
       }
       return TRUE;
     }

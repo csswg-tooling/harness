@@ -136,6 +136,64 @@ class DBConnection
     return mysql_real_escape_string(trim($string), $this->mDatabaseLink);
   }
   
+  
+  /**
+   * Utility function, split a string into an array and 
+   * trim leading and trailing spaces from components
+   *
+   * @param string delimiter
+   * @param string string to split
+   * @param int|bool optional component limit count, more components will be unsplit in last entry
+   * @return array
+   */
+  protected function _explodeAndTrim($delimiter, $string, $limit = FALSE)
+  {
+    $result = array();
+    
+    if (FALSE !== $limit) {
+      $array = explode($delimiter, $string, $limit);
+    }
+    else {
+      $array = explode($delimiter, $string);
+    }
+    foreach($array as $field) {
+      $result[] = trim($field);
+    }
+    
+    return $result;
+  }
+
+
+  /**
+   * Utility function, split a string into an array and 
+   * trim leading and trailing spaces from components
+   * exclude empty components from result
+   *
+   * @param string delimiter
+   * @param string string to split
+   * @param int|bool optional component limit count, more components will be unsplit in last entry
+   * @return array
+   */
+  protected function _explodeTrimAndFilter($delimiter, $string, $limit = FALSE)
+  {
+    $result = array();
+    
+    if (FALSE !== $limit) {
+      $array = explode($delimiter, $string, $limit);
+    }
+    else {
+      $array = explode($delimiter, $string);
+    }
+    foreach($array as $field) {
+      $field = trim($field);
+      if ($field) {
+        $result[] = $field;
+      }
+    }
+    
+    return $result;
+  }
+  
 }
 
 ?>

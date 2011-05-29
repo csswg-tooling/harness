@@ -80,45 +80,6 @@ class CmdLineWorker extends DBConnection
     }
     return "{$path}{$fileName}{$extension}";
   }
-
-  
-  protected function _explodeAndTrim($delimiter, $string, $limit = FALSE)
-  {
-    $result = array();
-    
-    if (FALSE !== $limit) {
-      $array = explode($delimiter, $string, $limit);
-    }
-    else {
-      $array = explode($delimiter, $string);
-    }
-    foreach($array as $field) {
-      $result[] = trim($field);
-    }
-    
-    return $result;
-  }
-
-
-  protected function _explodeTrimAndFilter($delimiter, $string, $limit = FALSE)
-  {
-    $result = array();
-    
-    if (FALSE !== $limit) {
-      $array = explode($delimiter, $string, $limit);
-    }
-    else {
-      $array = explode($delimiter, $string);
-    }
-    foreach($array as $field) {
-      $field = trim($field);
-      if ($field) {
-        $result[] = $field;
-      }
-    }
-    
-    return $result;
-  }
 }
 
 ?>
