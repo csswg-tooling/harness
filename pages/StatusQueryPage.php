@@ -24,13 +24,19 @@ require_once('lib/Results.php');
 require_once('lib/StatusCache.php');
 
 
-class EngineResponse
+class EngineInfo
 {
   public  $title;
   public  $name;
+
+  function _getElementName()  { return 'engineinfo'; }
+}
+
+class EngineResponse
+{
+  public  $index;
   public  $passCount;
   public  $failCount;
-  public  $detailsURI;
   
   function _getElementName()  { return 'engine'; }
 }
@@ -38,8 +44,8 @@ class EngineResponse
 class SectionResponse
 {
   public  $anchorName;
+  public  $section;
   public  $testCount;
-  public  $testURI;
   public  $engines;
   
   function _getElementName()  { return 'section'; }
@@ -47,7 +53,12 @@ class SectionResponse
 
 class Response
 {
+  public  $testURI;
+  public  $resultsURI;
+  public  $detailsURI;
+  public  $rewriteURIs;
   public  $clientEngineName;
+  public  $engines;
   public  $sections;
   
   function _getElementName()  { return 'status'; }
@@ -60,6 +71,7 @@ class Response
 class StatusQueryPage extends HarnessPage
 {
   protected $mRequestValid;
+  protected $mSpecURIName;
   protected $mSectionId;
   protected $mSections;
   protected $mResults;
@@ -90,16 +102,16 @@ class StatusQueryPage extends HarnessPage
       if ($specURI) {
         $specURIParts = parse_url($specURI);
         if ('/' == substr($specURIParts['path'], -1)) {
-          $specURIName = '';
+          $this->mSpecURIName = '';
         }
         else {
-          $specURIName = basename($specURIParts['path']);
+          $this->mSpecURIName = basename($specURIParts['path']);
         }
-        if (('' == $specURIName) || (0 === stripos($specURIName, 'index.'))) {
+        if (('' == $this->mSpecURIName) || (0 === stripos($this->mSpecURIName, 'index.'))) {
           $this->mSectionId = 0;
         }
         else {
-          $this->mSectionId = $this->mSections->findSectionIdForURI($specURIName);
+          $this->mSectionId = $this->mSections->findSectionIdForURI($this->mSpecURIName);
           
           if (! $this->mSectionId) {
             trigger_error('Not a valid specification url');
@@ -180,30 +192,24 @@ class StatusQueryPage extends HarnessPage
   {
     $sectionData = $this->mSections->getSectionData($sectionId);
     $testCount = intval($sectionData['test_count']);
+    $sectionURI = $sectionData['uri'];
+    if (FALSE !== strpos($sectionURI, '#')) {
+      $fragId = substr(strstr($sectionURI, '#'), 1);
+      $sectionURI = strstr($sectionURI, '#', TRUE);
+    }
+    else {
+      $fragId = '';
+    }
 
     $results = array();
 
     if ($forceRecurse || (0 < $testCount) || (1 < $this->mSections->getSubSectionCount($sectionId))) {
-      if (FALSE !== strpos($sectionData['uri'], '#')) {
-        $fragId = substr(strstr($sectionData['uri'], '#'), 1);
-      }
-      else {
-        $fragId = '';
-      }
-      
       $testCaseIds = $this->mSections->getTestCaseIdsFor($sectionId, TRUE);
-
-      $args['s'] = $this->mTestSuite->getName();
-      if (0 < $sectionId) {
-        $args['sec'] = $sectionData['section'];
-      }
-      $args['o'] = 1;
-      $testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
 
       $sectionResponse = new SectionResponse();
       $sectionResponse->anchorName = $fragId;
+      $sectionResponse->section = $sectionData['section'];
       $sectionResponse->testCount = (($testCaseIds) ? count($testCaseIds) : 0);
-      $sectionResponse->testURI = $testURI;
       $sectionResponse->engines = array();
 
       $clientEngineName = $this->mUserAgent->getEngineName();
@@ -227,16 +233,15 @@ class StatusQueryPage extends HarnessPage
           }
         }
 
+        $index = 0;
         foreach ($this->mResults->getEngineNames() as $engineName) {
-//          $args['e'] = $engineName;
           $engineResponse = new EngineResponse();
-          $engineResponse->title = $this->mEngines[$engineName]->getTitle();
-          $engineResponse->name = $engineName;
+          $engineResponse->index = $index++;
           $engineResponse->passCount = (array_key_exists($engineName, $enginePassCounts) ? $enginePassCounts[$engineName] : 0);
           $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
-//          $engineResponse->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
-          $engineResponse->detailsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
-          $sectionResponse->engines[] = $engineResponse;
+          if (0 < ($engineResponse->passCount + $engineResponse->failCount)) {
+            $sectionResponse->engines[] = $engineResponse;
+          }
         }
       }
       
@@ -246,8 +251,13 @@ class StatusQueryPage extends HarnessPage
     $subSections = $this->mSections->getSubSectionData($sectionId);
     if ($subSections) {
       foreach ($subSections as $subSectionId => $sectionData) {
+        $subSectionURI = $sectionData['uri'];
+        if (FALSE !== strpos($subSectionURI, '#')) {
+          $subSectionURI = strstr($subSectionURI, '#', TRUE);
+        }
         $testCount = intval($sectionData['test_count']);
-        if ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId))) {
+        if (($sectionURI == $subSectionURI) && 
+            ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId)))) {
           $results = array_merge($results, $this->getResultsForSection($subSectionId));
         }
       }
@@ -259,20 +269,34 @@ class StatusQueryPage extends HarnessPage
   
   function generateResponse()
   {
-    $sections = StatusCache::GetResultsForSection($this->mTestSuite, $this->mSectionId);
+    $response = StatusCache::GetResultsForSection($this->mTestSuite, $this->mSectionId);
 
-    if (! $sections) {
+    if (! $response) {
       $this->loadResults();
       
       if ($this->mResults) {
-        $sections = $this->getResultsForSection($this->mSectionId, TRUE);
-        StatusCache::SetResultsForSection($this->mTestSuite, $this->mSectionId, $sections);
+        $response = new Response();
+        $response->engines = array();
+      
+        foreach ($this->mResults->getEngineNames() as $engineName) {
+          $engineInfo = new EngineInfo();
+          $engineInfo->title = $this->mEngines[$engineName]->getTitle();
+          $engineInfo->name = $engineName;
+          $response->engines[] = $engineInfo;
+        }
+        $response->sections = $this->getResultsForSection($this->mSectionId, TRUE);
+        StatusCache::SetResultsForSection($this->mTestSuite, $this->mSectionId, $response);
       }
     }
     
-    if ($sections) {
-      $response = new Response();
-      $response->sections = $sections;
+    if ($response) {
+      $args['s'] = $this->mTestSuite->getName();
+      $args['o'] = 1;
+
+      $response->testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
+      $response->resultsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
+      $response->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
+      $response->rewriteURIs = Config::Get('server.rewrite_urls');
       $response->clientEngineName = $this->mUserAgent->getEngineName();
       return $response;
     }

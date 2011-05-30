@@ -18,19 +18,25 @@
 /**
   Data returned from server:
   
+  response.testURI;
+  response.resultsURI;
+  response.detailsURI;
+  response.rewriteURIs;
   response.clientEngineName;
+  response.engines[];
   response.sections[];
   
   section.anchorName;
+  section.section;
   section.testCount;
-  section.testURI;
   section.engines[];
 
-  engine.title;       // human readable title
-  engine.name;        // string key for harness
+  engineInfo.title;       // human readable title
+  engineInfo.name;        // string key for harness
+  
+  engine.index;
   engine.passCount;
   engine.failCount;
-  engine.detailsURI;
 
 **/
 
@@ -43,6 +49,18 @@ var annotator = {
 
   mResponse: null,
   mClosed: false,
+  
+  buildURI: function(base, section) {
+    if (section) {
+      if (this.mResponse.rewriteURIs) {
+        return base + 'section/' + section + '/';
+      }
+      else {
+        return base + '&sec=' + section;
+      }
+    }
+    return base;
+  },
   
   removeAnnotation: function(anchorName) {
     try {
@@ -87,7 +105,7 @@ var annotator = {
         var needCount = section.testCount;
         for (index in section.engines) {
           var engine = section.engines[index];
-          if (engine.name == this.mResponse.clientEngineName) {
+          if (this.mResponse.engines[engine.index].name == this.mResponse.clientEngineName) {
             needCount = section.testCount - (engine.passCount + engine.failCount);
             break;
           }
@@ -130,7 +148,7 @@ var annotator = {
         heading.setAttribute('class', 'heading');
         
         var testLink = document.createElement('a');
-        testLink.setAttribute('href', section.testURI);
+        testLink.setAttribute('href', this.buildURI(this.mResponse.testURI, section.section));
 
         if (1 == section.testCount) {
           testLink.appendChild(document.createTextNode('1 Test'));
@@ -209,23 +227,23 @@ var annotator = {
             if (0 < resultCount) {
               var engineNode = document.createElement('span');
               engineNode.setAttribute('title', toolTip);
-              if (engine.name == this.mResponse.clientEngineName) {
+              if (this.mResponse.engines[engine.index].name == this.mResponse.clientEngineName) {
                 engineClass += ' active';
               }
-              engineNode.setAttribute('class', engine.name + ' ' + engineClass);
+              engineNode.setAttribute('class', this.mResponse.engines[engine.index].name + ' ' + engineClass);
               engineNode.setAttribute('passCount', engine.passCount);
               engineNode.setAttribute('failCount', engine.failCount);
               engineNode.setAttribute('needCount', section.testCount - resultCount);
 
               if (0 < resultCount) {
                 var detailsLink = document.createElement('a');
-                detailsLink.setAttribute('href', engine.detailsURI);
+                detailsLink.setAttribute('href', this.buildURI(this.mResponse.resultsURI, section.section));
                 
-                detailsLink.appendChild(document.createTextNode(engine.title));
+                detailsLink.appendChild(document.createTextNode(this.mResponse.engines[engine.index].title));
                 engineNode.appendChild(detailsLink);
               }
               else {
-                engineNode.appendChild(document.createTextNode(engine.title));
+                engineNode.appendChild(document.createTextNode(this.mResponse.engines[engine.index].title));
               }
               
               engines.appendChild(engineNode);
