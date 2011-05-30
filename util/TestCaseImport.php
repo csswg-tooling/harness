@@ -194,7 +194,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       }
       list ($testCasePath, $references, $title, $flagString, $links, $revision, $credits, $assertion) = explode("\t", $record);
       
-      $testCaseName = $this->_getFileName($testCasePath);
+      $testCaseName = basename($testCasePath);
       
       $testCaseId = $this->_getTestCaseId($testCaseName);
       $title      = Page::Decode($title);
@@ -384,7 +384,7 @@ class TestCaseImport extends HarnessCmdLineWorker
         else {
           $referenceType = '==';
         }
-        $referenceName = $this->_getFileName($referencePath);
+        $referenceName = basename($referencePath);
         
         $referenceName = $this->encode($referenceName, 'references.reference');
         $referenceType = $this->encode($referenceType);
