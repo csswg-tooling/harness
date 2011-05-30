@@ -39,7 +39,7 @@ class TestCase extends DBConnection
     if ($testCaseName) {
       $db = new DBConnection();
 
-      $testCaseName = $db->encode($testCaseName, TESTCASES_MAX_TESTCASE);
+      $testCaseName = $db->encode($testCaseName, 'testcases.testcase');
       
       $sql  = "SELECT `id` ";
       $sql .= "FROM `testcases` ";
@@ -150,7 +150,7 @@ class TestCase extends DBConnection
     if (null == $this->mSpecURIs) {
       $testCaseId = $this->getId();
       
-      $specName = $this->encode($this->mTestSuite->getSpecName(), SPECLINKS_MAX_SPEC);
+      $specName = $this->encode($this->mTestSuite->getSpecName(), 'speclinks.spec');
 
       $sql  = "SELECT `speclinks`.`spec`, `speclinks`.`title`, `speclinks`.`section`, `speclinks`.`uri`, ";
       $sql .= "`specifications`.`base_uri` AS `spec_uri`, ";
@@ -183,7 +183,7 @@ class TestCase extends DBConnection
    */
   function countCasesInSuite()
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     
     $sql  = "SELECT COUNT(*) AS `count` ";
     $sql .= "FROM `suitetests` ";
@@ -205,8 +205,8 @@ class TestCase extends DBConnection
 
   protected function _getSequenceEngine(UserAgent $userAgent)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), TESTSEQUENCE_MAX_TESTSUITE);
-    $engineName = $this->encode($userAgent->getEngineName(), TESTSEQUENCE_MAX_ENGINE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'testsequence.testsuite');
+    $engineName = $this->encode($userAgent->getEngineName(), 'testsequence.engine');
     
     // check if engine is sequenced
     $sql  = "SELECT * FROM `testsequence` ";
@@ -216,7 +216,7 @@ class TestCase extends DBConnection
     $r = $this->query($sql);
 
     if (0 == $r->rowCount()) {  // try magic engine name
-      $engineName = $this->encode('-no-data-', TESTSEQUENCE_MAX_ENGINE);
+      $engineName = $this->encode('-no-data-', 'testsequence.engine');
       
       $sql  = "SELECT * FROM `testsequence` ";
       $sql .= "WHERE `engine` = '{$engineName}' ";
@@ -236,7 +236,7 @@ class TestCase extends DBConnection
    */
   protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $engineName = FALSE;
     if (1 == $order) {
       $engineName = $this->_getSequenceEngine($userAgent);
@@ -287,7 +287,7 @@ class TestCase extends DBConnection
    */
   function countCasesInSection($sectionId)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $sectionId = intval($sectionId);
     
     $sql  = "SELECT COUNT(*) AS `count` ";
@@ -315,7 +315,7 @@ class TestCase extends DBConnection
    */
   protected function _selectCaseFromSection($sectionId, UserAgent $userAgent, $order, $index)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $engineName = FALSE;
     if (1 == $order) {
       $engineName = $this->_getSequenceEngine($userAgent);
@@ -369,7 +369,7 @@ class TestCase extends DBConnection
    */
   protected function _selectCaseById($testCaseId)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $testCaseId = intval($testCaseId);
     
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
@@ -402,8 +402,8 @@ class TestCase extends DBConnection
    */
   protected function _selectCaseByName($testCaseName)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $testCaseName = $this->encode($testCaseName, TESTCASES_MAX_TESTCASE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
+    $testCaseName = $this->encode($testCaseName, 'testcases.testcase');
 
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
@@ -432,7 +432,7 @@ class TestCase extends DBConnection
 
   function getIndex($sectionId, UserAgent $userAgent, $order)
   {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), TESTSEQUENCE_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'testsequence.testsuite');
     $engineName = FALSE;
     if (1 == $order) {
       $engineName = $this->_getSequenceEngine($userAgent);
@@ -489,8 +489,8 @@ class TestCase extends DBConnection
       $sql .= "(`testcase_id`, `revision`, `format`, `useragent_id`, `source_id`, `source_useragent_id`, `result`) ";
       $sql .= "VALUES (";
       $sql .= "'" . $this->getId() . "',";
-      $sql .= "'" . $this->getRevision() . "',";
-      $sql .= "'" . $this->encode($format->getName()) . "', ";
+      $sql .= "'" . $this->encode($this->getRevision(), 'results.revision') . "',";
+      $sql .= "'" . $this->encode($format->getName(), 'results.format') . "', ";
       $sql .= "'" . $userAgent->getId() . "',";
       $sql .= "'" . $user->getId() . "',";
       $sql .= "'" . $userAgent->getActualUA()->getId() . "',";

@@ -124,10 +124,10 @@ class SubmitPage extends HarnessPage
       if (0 < $order) {
         $args['o'] = $order;
       }
-      $this->mNewURI = $this->buildURI(TESTCASE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildConfigURI('page.testcase', $args);
     }
     else {
-      $this->mNewURI = $this->buildURI(SUCCESS_PAGE_URI, $args);
+      $this->mNewURI = $this->buildConfigURI('page.success', $args);
     }
   }
 

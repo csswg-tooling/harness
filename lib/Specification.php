@@ -39,10 +39,10 @@ class Specification extends DBConnection
 
     $specName = $testSuite->getSpecName();
     if ($specName) {
-      $specQuery = $this->encode($specName, TESTSUITES_MAX_TESTSUITE);
+      $specQuery = $this->encode($specName, 'specifications.spec');
       
       $sql  = "SELECT * FROM `specifications` ";
-      $sql .= "WHERE `spec` = '$specQuery' ";
+      $sql .= "WHERE `spec` = '{$specQuery}' ";
       $sql .= "LIMIT 1";
     
       $r = $this->query($sql);
@@ -100,7 +100,7 @@ class Specification extends DBConnection
 
   function getHomeURI()
   {
-    return $this->mInfo['base_uri'] . $this->mInfo['home_uri'];
+    return $this->_combinePath($this->mInfo['base_uri'], $this->mInfo['home_uri']);
   }
 
 }

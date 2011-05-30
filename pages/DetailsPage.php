@@ -99,7 +99,7 @@ class DetailsPage extends ResultsBasedPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildURI(REVIEW_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.review', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Details";
@@ -117,7 +117,7 @@ class DetailsPage extends ResultsBasedPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink($this->buildURI(REPORT_STYLESHEET_URI));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
   }
 
   function _compareResults(Result $a, Result $b)
@@ -186,7 +186,7 @@ class DetailsPage extends ResultsBasedPage
               $args['c'] = $testCaseName;
               $args['f'] = $result->getFormatName();
               $args['u'] = $this->mUserAgent->getId();
-              $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+              $uri = $this->buildConfigURI('page.testcase', $args);
               
               $this->addHyperLink($uri, $anchor, $testCaseName);
             }

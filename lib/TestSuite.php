@@ -37,7 +37,7 @@ class TestSuite extends DBConnection
     parent::__construct();
 
     if ($testSuiteName) {
-      $testSuiteQuery = $this->encode($testSuiteName, TESTSUITES_MAX_TESTSUITE);
+      $testSuiteQuery = $this->encode($testSuiteName, 'testsuites.testsuite');
       
       $sql  = "SELECT * FROM `testsuites` ";
       $sql .= "WHERE `testsuite` = '{$testSuiteQuery}' ";
@@ -89,7 +89,7 @@ class TestSuite extends DBConnection
   
   function getDateTime()
   {
-    return new DateTime($this->mInfo['date'], new DateTimeZone(SERVER_TIME_ZONE));
+    return new DateTime($this->mInfo['date'], new DateTimeZone(Config::Get('server.time_zone')));
   }
   
   function isLocked()
@@ -100,7 +100,7 @@ class TestSuite extends DBConnection
   function getLockDateTime()
   {
     if ($this->isLocked()) {
-      return new DateTime($this->mInfo['locked'], new DateTimeZone(SERVER_TIME_ZONE));
+      return new DateTime($this->mInfo['locked'], new DateTimeZone(Config::Get('server.time_zone')));
     }
     return FALSE;
   }

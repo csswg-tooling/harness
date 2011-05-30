@@ -34,8 +34,8 @@ class Sections extends DBConnection
     if ($testSuite->isValid() && $sectionName) {
       $db = new DBConnection();
 
-      $specName = $db->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
-      $sectionName = $db->encode($sectionName, SPECLINKS_MAX_SECTION);
+      $specName = $db->encode($testSuite->getSpecName(), 'speclinks.spec');
+      $sectionName = $db->encode($sectionName, 'speclinks.section');
       
       $sql  = "SELECT `id` ";
       $sql .= "FROM `speclinks` ";
@@ -57,7 +57,7 @@ class Sections extends DBConnection
     if ($testSuite->isValid() && $sectionId) {
       $db = new DBConnection();
 
-      $specName = $db->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
+      $specName = $db->encode($testSuite->getSpecName(), 'speclinks.spec');
       
       $sql  = "SELECT `section` ";
       $sql .= "FROM `speclinks` ";
@@ -78,8 +78,8 @@ class Sections extends DBConnection
   {
     parent::__construct();
 
-    $testSuiteName = $this->encode($testSuite->getName(), SUITETESTS_MAX_TESTSUITE);
-    $specName = $this->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
+    $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.testsuite');
+    $specName = $this->encode($testSuite->getSpecName(), 'speclinks.spec');
     
     $sql  = "SELECT `speclinks`.`id`, `speclinks`.`parent_id`, ";
     $sql .= "`speclinks`.`section`, `speclinks`.`title`, ";

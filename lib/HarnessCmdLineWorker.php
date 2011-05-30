@@ -48,7 +48,7 @@ class HarnessCmdLineWorker extends CmdLineWorker
     $this->mTestCaseIds = array();
     
     if ($testSuiteName) {
-      $testSuiteName = $this->encode($testSuiteName, SUITETESTS_MAX_TESTSUITE);
+      $testSuiteName = $this->encode($testSuiteName, 'suitetests.testsuite');
       
       $sql  = "SELECT * ";
       $sql .= "FROM `testcases` ";

@@ -147,14 +147,14 @@ class Resequence extends HarnessCmdLineWorker
         $this->_processTestCase($testCaseId, $engineResults, $optional, $index);
       }
       
-      $testSuiteName = $this->encode($testSuiteName, TESTSEQUENCE_MAX_TESTSUITE);
+      $testSuiteName = $this->encode($testSuiteName, 'testsequence.testsuite');
       
       foreach ($this->mEngineNames as $engineName) {
         print "Storing sequence for {$engineName}\n";
         
         $engineCounts = $this->mCounts[$engineName];
         asort($engineCounts);
-        $engineName = $this->encode($engineName, TESTSEQUENCE_MAX_ENGINE);
+        $engineName = $this->encode($engineName, 'testsequence.engine');
         $sequence = -1;
         foreach ($engineCounts as $testCaseId => $count) {
           $sequence++;

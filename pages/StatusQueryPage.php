@@ -128,7 +128,7 @@ class StatusQueryPage extends HarnessPage
       $platformVersion  = $this->_getData('pv');
       
       $this->mResults = 
-        new Results($this->mTestSuite, $testCaseName, $sectionId, 
+        new Results($this->mTestSuite, null, $this->mSectionId, 
                     $modified,
                     $engineName, $engineVersion, 
                     $browserName, $browserVersion, 
@@ -195,7 +195,7 @@ class StatusQueryPage extends HarnessPage
         $args['sec'] = $sectionData['section'];
       }
       $args['o'] = 1;
-      $testURI = $this->buildURI(TESTCASE_PAGE_URI, $args, null, TRUE);
+      $testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
 
       $sectionResponse = new SectionResponse();
       $sectionResponse->anchorName = $fragId;
@@ -232,8 +232,8 @@ class StatusQueryPage extends HarnessPage
           $engineResponse->name = $engineName;
           $engineResponse->passCount = (array_key_exists($engineName, $enginePassCounts) ? $enginePassCounts[$engineName] : 0);
           $engineResponse->failCount = (array_key_exists($engineName, $engineFailCounts) ? $engineFailCounts[$engineName] : 0);
-//          $engineResponse->detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args, null, TRUE);
-          $engineResponse->detailsURI = $this->buildURI(RESULTS_PAGE_URI, $args, null, TRUE);
+//          $engineResponse->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
+          $engineResponse->detailsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
           $sectionResponse->engines[] = $engineResponse;
           
           if ($engineName == $clientEngineName) {

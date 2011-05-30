@@ -31,7 +31,7 @@ class TestCases extends DBConnection
   {
     parent::__construct();
     
-    $testSuiteName = $this->encode($testSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.testsuite');
     
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, `testcases`.`title` ";
     $sql .= "FROM `testcases` ";

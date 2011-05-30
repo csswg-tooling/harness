@@ -61,10 +61,10 @@ class StartTestPage extends HarnessPage
     }
     
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      $this->mNewURI = $this->buildURI(TESTCASE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildConfigURI('page.testcase', $args);
     }
     else {
-      $this->mNewURI = $this->buildURI(HOME_PAGE_URI);
+      $this->mNewURI = $this->buildConfigURI('page.home');
     }
   }  
 

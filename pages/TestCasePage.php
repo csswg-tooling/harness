@@ -163,7 +163,7 @@ class TestCasePage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.testsuite', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Test Case";
@@ -181,13 +181,13 @@ class TestCasePage extends HarnessPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink($this->buildURI(TEST_STYLESHEET_URI));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.test'));
 
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
       $actualEngineName = strtolower($actualUA->getEngineName());
       
-      $this->addStyleSheetLink($this->buildURI(sprintf(TEST_ENGINE_STYLESHEET_URI, $actualEngineName)));
+      $this->addStyleSheetLink($this->buildURI(sprintf(Config::Get('uri.stylesheet.test_engine'), $actualEngineName)));
     }
   }
 
@@ -291,7 +291,7 @@ class TestCasePage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['c'] = $this->mTestCase->getTestCaseName();
       $args['u'] = $this->mUserAgent->getId();
-      $detailsURI = $this->buildURI(DETAILS_PAGE_URI, $args);
+      $detailsURI = $this->buildConfigURI('page.details', $args);
 
       $this->openElement('span', null, FALSE);
       $this->addTextContent(' (');
@@ -366,7 +366,7 @@ class TestCasePage extends HarnessPage
         else {
           $args = $this->mGetData;
           unset($args['ref']);
-          $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+          $uri = $this->buildConfigURI('page.testcase', $args);
           
           $this->openElement('span', array('class' => 'tab'));
           $this->addHyperLink($uri, null, 'Test Case');
@@ -383,7 +383,7 @@ class TestCasePage extends HarnessPage
           else {
             $args = $this->mGetData;
             $args['ref'] = $refName;
-            $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+            $uri = $this->buildConfigURI('page.testcase', $args);
             
             $this->openElement('span', array('class' => 'tab'));
             $this->addHyperLink($uri, null, "{$refType} Reference Page");
@@ -430,7 +430,7 @@ class TestCasePage extends HarnessPage
               if ($this->mRefName) {
                 $args['ref'] = $this->mRefName; 
               }
-              $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+              $uri = $this->buildConfigURI('page.testcase', $args);
 
               $this->openElement('span', array('class' => 'tab'));
               $this->addHyperLink($uri, null, $formatTitle);
@@ -488,7 +488,8 @@ class TestCasePage extends HarnessPage
           $class .= ' active';
         }
         $args['e'] = $engineName;
-        $this->addHyperLink($this->buildURI(DETAILS_PAGE_URI, $args), array('class' => $class), $engines[$engineName]->getTitle());
+        $this->addHyperLink($this->buildConfigURI('page.details', $args), 
+                            array('class' => $class), $engines[$engineName]->getTitle());
       }
       $this->closeElement('div');
     }
@@ -518,7 +519,7 @@ class TestCasePage extends HarnessPage
   
   function writeSubmitForm()
   {
-    $this->openFormElement($this->buildURI(SUBMIT_PAGE_URI), 'post', 'eval');
+    $this->openFormElement($this->buildConfigURI('page.submit'), 'post', 'eval');
     $this->openElement('p', array('class' => 'buttons'));
     $this->writeHiddenFormControls();
     
@@ -551,7 +552,7 @@ class TestCasePage extends HarnessPage
 
         $args = $this->mGetData;
         unset($args['u']);
-        $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+        $uri = $this->buildConfigURI('page.testcase', $args);
         $this->openElement('span', null, FALSE);
         $this->addTextContent('(');
         $this->addHyperLink($uri, null, "Reset");

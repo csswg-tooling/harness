@@ -12,8 +12,6 @@
  *
  ******************************************************************************/
  
-define('COMMAND_LINE', TRUE);
-
 require_once("lib/DBConnection.php");
 
 /**
@@ -24,6 +22,9 @@ class CmdLineWorker extends DBConnection
 
   function __construct() 
   {
+    Config::SetDebugMode(TRUE);
+    set_error_handler(array(&$this, 'errorHandler'));
+    
     parent::__construct();
     
   }
@@ -54,32 +55,42 @@ class CmdLineWorker extends DBConnection
   
   
   /**
-   * Get only file name part of a path (without extension)
+   * Callback function to capture PHP generated errors
    *
-   * @param string path
-   * @return string filename
+   * Use trigger_error to invoke an error condition, set errorType to:
+   *   E_USER_NOTICE - minor error due to bad client input
+   *   E_USER_WARNING - major error due to bad client input
+   *   E_USER_ERROR - problem at server (like failed sql query)
    */
-  protected function _getFileName($path)
+  function errorHandler($errorType, $errorString, $errorFile, $errorLine, $errorContext)
   {
-    $pathInfo = pathinfo($path);
+    switch ($errorType) {
+      case E_USER_NOTICE:
+      case E_NOTICE:
+        $errorType = 'NOTICE: ';
+        break;
+      case E_WARNING:
+        $errorType = 'WARNING: ';
+        break;
+      case E_USER_WARNING:
+      default:
+        $errorType = 'ERROR: ';
+    }
     
-    if (isset($pathInfo['filename'])) { // PHP 5.2+
-      return $pathInfo['filename'];
+    if (! $errorString) {
+      $errorString = 'Unknown Error';
     }
-    return basename($pathInfo['basename'], '.' . $pathInfo['extension']);
-  }
-  
-  
-  protected function _combinePath($path, $fileName, $extension = '')
-  {
-    if ((0 < strlen($path)) && ('/' != substr($path, -1, 1))) {
-      $path .= '/';
-    }
-    if ((0 < strlen($extension)) && ('.' != substr($extension, 0, 1))) {
-      $extension = '.' . $extension;
-    }
-    return "{$path}{$fileName}{$extension}";
-  }
+    
+    global $argv;
+    
+    echo "{$errorType}{$errorString}\n";
+    echo "File: {$errorFile}\n";
+    echo "Line: {$this->mErrorLine}\n";
+    echo "Context: " . print_r($this->mErrorContext, TRUE) . "\n";
+    echo "Args: " . print_r($argv, TRUE) . "\n");
+
+    die();
+  }  
 }
 
 ?>

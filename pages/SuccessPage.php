@@ -47,7 +47,7 @@ class SuccessPage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.testsuite', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Success";
@@ -64,11 +64,11 @@ class SuccessPage extends HarnessPage
                                  $this->mTestSuite->getTitle());
 
     $args['u'] = $this->mUserAgent->getId();
-    $homeURI = $this->buildURI(HOME_PAGE_URI, $args);
+    $homeURI = $this->buildConfigURI('page.home', $args);
 
     $args['s'] = $this->mTestSuite->getName();
-    $reviewURI = $this->buildURI(REVIEW_PAGE_URI, $args);
-    $enterURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+    $reviewURI = $this->buildConfigURI('page.review', $args);
+    $enterURI = $this->buildConfigURI('page.testsuite', $args);
 
     $this->openElement('p', null, FALSE);
     $this->addTextContent("You can ");

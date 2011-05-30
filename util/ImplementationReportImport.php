@@ -161,7 +161,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
           $formats[$testCaseId] = $format;
           // XXX handle multiple formats per test case
           if (0 < strlen($comment)) {
-            $comments[$testCaseId] = $this->encode($comment, RESULTS_MAX_COMMENT);  // encode now to test length
+            $comments[$testCaseId] = $this->encode($comment, 'results.comment');  // encode now to test length
           }
         }
       }
@@ -170,9 +170,10 @@ class ImplementationReportImport extends HarnessCmdLineWorker
     // import results
     echo "Importing results\n";
     foreach ($results as $testCaseId => $result) {
-          
-      $revision = $this->encode($this->mTestCaseRevision[$testCaseId], RESULTS_MAX_REVISION);
-      $format = $this->encode($formats[$testCaseId], RESULTS_MAX_FORMAT);
+
+      // XXX add code to detect revision in effect on result date
+      $revision = $this->encode($this->mTestCaseRevision[$testCaseId], 'results.revision');
+      $format = $this->encode($formats[$testCaseId], 'results.format');
       
       $sql  = "INSERT INTO `results` ";
       if (array_key_exists($testCaseId, $comments)) {

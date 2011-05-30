@@ -170,7 +170,7 @@ class DynamicPage extends Page
   function writeHTMLError()
   {
     parent::writeHTMLError();
-    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    if (Config::IsDebugMode()) {
       if (0 < count($this->mArgData)) {
         $this->openElement('p');
         $this->addTextContent('Args: ');
@@ -217,7 +217,7 @@ class DynamicPage extends Page
   {
     parent::writePlainTextError();
 
-    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    if (Config::IsDebugMode()) {
       if (0 < count($this->mArgData)) {
         $this->_write('Args: ' . print_r($this->mArgData, TRUE) . "\n");
       }

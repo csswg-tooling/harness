@@ -16,10 +16,8 @@
  * 
  ******************************************************************************/
 
-define('COMMAND_LINE', TRUE);
-
   
-require_once("lib/DBConnection.php");
+require_once("lib/CmdLineWorker.php");
 require_once("lib/UserAgent.php");
 
 
@@ -27,7 +25,7 @@ require_once("lib/UserAgent.php");
  * This class reparses the useragent string and updates the browser and 
  * engine data. Used when the useragent parsing algorithm changes.
  */
-class ReparseUA extends DBConnection
+class ReparseUA extends CmdLineWorker
 {  
   function __construct() 
   {

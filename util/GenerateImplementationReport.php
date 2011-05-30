@@ -497,7 +497,7 @@ class IR_IndexPage extends HarnessPage
     
     $this->openElement('p', null, FALSE);
     $this->addTextContent('Results were gathered from implementation reports submitted by user agent vendors as well as the general public via the ');
-    $this->addHyperlink(HARNESS_BASE_URI, null, 'W3C Conformance Test Harness');
+    $this->addHyperlink($this->buildConfigURI('page.home', null, null, TRUE), null, 'W3C Conformance Test Harness');
     $this->addTextContent('.');
     $this->closeElement('p');
     
@@ -654,8 +654,8 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       
       // copy stylesheets
       if ($outputPath) {
-        copy(BASE_STYLESHEET_URI, $this->_combinePath($outputPath, BASE_STYLESHEET_URI));
-        copy(REPORT_STYLESHEET_URI, $this->_combinePath($outputPath, REPORT_STYLESHEET_URI));
+        copy(Config::Get('uri.stylesheet.base'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.base')));
+        copy(Config::Get('uri.stylesheet.report'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.report')));
       }
     }
   }

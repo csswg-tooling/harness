@@ -121,7 +121,7 @@ class User extends DBConnection
    */
   protected function _queryByString($source) 
   {
-    $source = $this->encode($source, SOURCES_MAX_SOURCE);
+    $source = $this->encode($source, 'sources.source');
     
     $sql  = "SELECT * ";
     $sql .= "FROM `sources` ";
@@ -149,7 +149,7 @@ class User extends DBConnection
       $sql  = "INSERT INTO `sources` ";
       $sql .= "(`source`) ";
       $sql .= "VALUES (";
-      $sql .= "'" . $this->encode($this->mInfo['source'], SOURCES_MAX_SOURCE) . "' ";
+      $sql .= "'" . $this->encode($this->mInfo['source'], 'sources.source') . "' ";
       $sql .= ")";
       $r = $this->query($sql);
       $this->mInfo['id'] = $this->lastInsertId();

@@ -38,13 +38,14 @@ class DBConnection
    */
   function __construct($dbName = '', $newLink = FALSE)
   {  
-    $this->mDatabaseLink = mysql_connect(DB_HOST, DB_USER, DB_PASSWORD, $newLink);
+    $this->mDatabaseLink = mysql_connect(Config::Get('db.host'), Config::Get('db.user'), Config::Get('db.password'), $newLink);
     
     if (0 == strlen($dbName)) {
-      $dbName = DB_NAME;
+      $dbName = Config::Get('db.database');
     }
     if ($this->isConnected()) {
-      mysql_query("use `{$dbName}`;", $this->mDatabaseLink);
+      $dbName = $this->encode($dbName);
+      mysql_query("USE `{$dbName}`", $this->mDatabaseLink);
     }
   }
 
@@ -73,11 +74,8 @@ class DBConnection
   {
     $result = mysql_query($queryString, $this->mDatabaseLink);
     
-    if ((defined('DEBUG_MODE') && DEBUG_MODE) || 
-        (defined('COMMAND_LINE') && COMMAND_LINE)) {
-      if (FALSE === $result) {
-        echo ($this->getErrorString() . "\n");
-      }
+    if (FALSE === $result) {
+      Config::DebugError($this->getErrorString());
     }
     return new DBResult($result);
   }
@@ -124,13 +122,21 @@ class DBConnection
   
   /**
    * Make a string safe for SQL queries
+   *
+   * @param string String to be used in a query
+   * @param int|string  Optional maximum field length, if string, length is taken from config 'db.max.{string}'
    */
-  function encode($string, $maxLength = 0)
+  function encode($string, $maxLength = 0, $reportError = TRUE)
   {
+    if (is_string($maxLength) && Config::Get('db.max.' . $maxLength)) {
+      $maxLength = Config::Get('db.max.' . $maxLength);
+    }
     assert('is_numeric($maxLength)');
     
     if (0 < $maxLength) {
-      assert('strlen($string) <= $maxLength');
+      if ($reportError && ($maxLength < strlen($string))) {
+        Config::DebugError("'{$string}' longer than maximum allowed {$maxLength}");
+      }
       return mysql_real_escape_string(substr(trim($string), 0, $maxLength), $this->mDatabaseLink);
     }
     return mysql_real_escape_string(trim($string), $this->mDatabaseLink);
@@ -193,7 +199,42 @@ class DBConnection
     
     return $result;
   }
+
+
+  /**
+   * Get only file name part of a path (without extension)
+   *
+   * @param string path
+   * @return string filename
+   */
+  protected function _getFileName($path)
+  {
+    $pathInfo = pathinfo($path);
+    
+    if (isset($pathInfo['filename'])) { // PHP 5.2+
+      return $pathInfo['filename'];
+    }
+    return basename($pathInfo['basename'], '.' . $pathInfo['extension']);
+  }
   
+  
+  /**
+   * Combine path components
+   *
+   * @param string path
+   * @param string filename
+   * @param string extension (optional)
+   */
+  protected function _combinePath($path, $fileName, $extension = '')
+  {
+    if ((0 < strlen($path)) && ('/' != substr($path, -1, 1))) {
+      $path .= '/';
+    }
+    if ((0 < strlen($extension)) && ('.' != substr($extension, 0, 1))) {
+      $extension = '.' . $extension;
+    }
+    return "{$path}{$fileName}{$extension}";
+  }
 }
 
 ?>

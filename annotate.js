@@ -38,9 +38,9 @@
 <?php require_once('lib/Page.php'); ?>
 
 var annotator = {
-  QUERY_URI:          "<?php echo Page::_BuildURI(STATUS_QUERY_URI, null, null, TRUE); ?>",
-  STYLESHEET_URI:     "<?php echo Page::_BuildURI(ANNOTATION_STYLESHEET_URI, null, null, TRUE); ?>",
-  NEED_TEST_ICON_URI: "<?php echo Page::_BuildURI('img/please_help_32.png', null, null, TRUE); ?>",
+  QUERY_URI:          "<?php echo Page::_BuildURI(Config::Get('uri.page.status_query'), null, null, TRUE); ?>",
+  STYLESHEET_URI:     "<?php echo Page::_BuildURI(Config::Get('uri.stylesheet.annotation'), null, null, TRUE); ?>",
+  NEED_TEST_ICON_URI: "<?php echo Page::_BuildURI(Config::Get('uri.image.please_help'), null, null, TRUE); ?>",
 
   mResponse: null,
   mClosed: false,

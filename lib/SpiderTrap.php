@@ -55,7 +55,7 @@ class SpiderTrap
     }
     $args['seq'] = ++$this->mSequence;
     $args['uid'] = $largeNumber;
-    $uri = $page->_buildURI(SPIDER_TRAP_URI, $args);
+    $uri = $page->buildConfigURI('page.spider_trap', $args);
     
     $content = "{$this->mSequence}-{$largeNumber}";
     $page->addHyperLink($uri, array('class' => 'report'), $content);
@@ -81,13 +81,13 @@ class SpiderTrap
   {
     $db = $this->_getDB();
 
-    $ipAddress = $db->encode(Page::GetClientIP(), SPIDERTRAP_MAX_IP);
-    $userAgent = $db->encode($_SERVER['HTTP_USER_AGENT'], SPIDERTRAP_MAX_USER_AGENT);
-    $pageURI = $db->encode($this->mPageURI, SPIDERTRAP_MAX_URI);
+    $ipAddress = $db->encode(Page::GetClientIP(), 'spidertrap.ip');
+    $userAgent = $db->encode($_SERVER['HTTP_USER_AGENT'], 'spidertrap.user_agent', FALSE);
+    $pageURI = $db->encode($this->mPageURI, 'spidertrap.uri', FALSE);
 
     $sql  = "INSERT INTO `spidertrap` (`ip_address`, `user_agent`, `last_uri`, `visit_count`, `first_visit`) ";
     $sql .= "VALUES ('{$ipAddress}', '{$userAgent}', '{$pageURI}', '1', NOW()) ";
-    $sql .= "ON DUPLICATE KEY UPDATE `user_agent` = '{$userAgent}', `last_uri` = '{$pageURI}', `visit_count` = visit_count + 1";
+    $sql .= "ON DUPLICATE KEY UPDATE `user_agent` = '{$userAgent}', `last_uri` = '{$pageURI}', `visit_count` = `visit_count` + 1";
     
     $db->query($sql);
   }

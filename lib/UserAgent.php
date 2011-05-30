@@ -153,7 +153,7 @@ class UserAgent extends DBConnection
   {
     $sql  = "SELECT * ";
     $sql .= "FROM `useragents` ";
-    $sql .= "WHERE `useragent` = '" . $this->encode($uaString, USERAGENTS_MAX_USERAGENT) . "' ";
+    $sql .= "WHERE `useragent` = '" . $this->encode($uaString, 'useragents.useragent') . "' ";
     $sql .= "LIMIT 1 ";
 
     $r = $this->query($sql);
@@ -498,13 +498,13 @@ class UserAgent extends DBConnection
       $sql  = "INSERT INTO `useragents` ";
       $sql .= "(`useragent`, `engine`, `engine_version`, `browser`, `browser_version`, `platform`, `platform_version`) ";
       $sql .= "VALUES (";
-      $sql .= "'" . $this->encode($this->mInfo['useragent'], USERAGENTS_MAX_USERAGENT) . "', ";
-      $sql .= "'" . $this->encode($this->mInfo['engine'], USERAGENTS_MAX_ENGINE) . "', ";
-      $sql .= "'" . $this->encode($this->mInfo['engine_version'], USERAGENTS_MAX_ENGINE_VERSION) . "', ";
-      $sql .= "'" . $this->encode($this->mInfo['browser'], USERAGENTS_MAX_BROWSER) . "', ";
-      $sql .= "'" . $this->encode($this->mInfo['browser_version'], USERAGENTS_MAX_BROWSER_VERSION) . "', ";
-      $sql .= "'" . $this->encode($this->mInfo['platform'], USERAGENTS_MAX_PLATFORM) . "', ";
-      $sql .= "'" . $this->encode($this->mInfo['platform_version'], USERAGENTS_MAX_PLATFORM_VERSION) . "'";
+      $sql .= "'" . $this->encode($this->mInfo['useragent'], 'useragents.useragent') . "', ";
+      $sql .= "'" . $this->encode($this->mInfo['engine'], 'useragents.engine') . "', ";
+      $sql .= "'" . $this->encode($this->mInfo['engine_version'], 'useragents.engine_version') . "', ";
+      $sql .= "'" . $this->encode($this->mInfo['browser'], 'useragents.browser') . "', ";
+      $sql .= "'" . $this->encode($this->mInfo['browser_version'], 'useragents.browser_version') . "', ";
+      $sql .= "'" . $this->encode($this->mInfo['platform'], 'useragents.platform') . "', ";
+      $sql .= "'" . $this->encode($this->mInfo['platform_version'], 'useragents.platform_version') . "'";
       $sql .= ")";
       $r = $this->query($sql);
       $this->mInfo['id'] = $this->lastInsertId();
@@ -525,12 +525,12 @@ class UserAgent extends DBConnection
       $ua['id'] = $id;
 
       $sql  = "UPDATE `useragents` SET ";
-      $sql .= "`engine` = '" . $this->encode($ua['engine'], USERAGENTS_MAX_ENGINE) . "', ";
-      $sql .= "`engine_version` = '" . $this->encode($ua['engine_version'], USERAGENTS_MAX_ENGINE_VERSION) . "', ";
-      $sql .= "`browser` = '" . $this->encode($ua['browser'], USERAGENTS_MAX_BROWSER) . "', ";
-      $sql .= "`browser_version` = '" . $this->encode($ua['browser_version'], USERAGENTS_MAX_BROWSER_VERSION) . "', ";
-      $sql .= "`platform` = '" . $this->encode($ua['platform'], USERAGENTS_MAX_PLATFORM) . "', ";
-      $sql .= "`platform_version` = '" . $this->encode($ua['platform_version'], USERAGENTS_MAX_PLATFORM_VERSION) . "' ";
+      $sql .= "`engine` = '" . $this->encode($ua['engine'], 'useragents.engine') . "', ";
+      $sql .= "`engine_version` = '" . $this->encode($ua['engine_version'], 'useragents.engine_version') . "', ";
+      $sql .= "`browser` = '" . $this->encode($ua['browser'], 'useragents.browser') . "', ";
+      $sql .= "`browser_version` = '" . $this->encode($ua['browser_version'], 'useragents.browser_version') . "', ";
+      $sql .= "`platform` = '" . $this->encode($ua['platform'], 'useragents.platform') . "', ";
+      $sql .= "`platform_version` = '" . $this->encode($ua['platform_version'], 'useragents.platform_version') . "' ";
       $sql .= "WHERE `id` = '{$id}' ";
       $r = $this->query($sql);
 

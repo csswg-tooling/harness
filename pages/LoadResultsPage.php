@@ -78,10 +78,10 @@ class LoadResultsPage extends HarnessPage
     }
     
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      $this->mNewURI = $this->buildURI(RESULTS_PAGE_URI, $args);
+      $this->mNewURI = $this->buildConfigURI('page.results', $args);
     }
     else {
-      $this->mNewURI = $this->buildURI(HOME_PAGE_URI);
+      $this->mNewURI = $this->buildConfigURI('page.home');
     }
   }  
 

@@ -1,5 +1,4 @@
 syntax: glob
 *.xcodeproj
 *.DS_Store
-lib/DBConfig.php
-
+lib/Config.local.php

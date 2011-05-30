@@ -50,7 +50,7 @@ class Results extends DBConnection
     $this->mResults = array();
     $this->mResultCount = 0;
 
-    $testSuiteName = $this->encode($testSuite->getName(), SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.testsuite');
     $searchTestCaseId = TestCase::GetTestCaseIdFor($testCaseName);
     if ((null !== $testCaseName) && (! $searchTestCaseId)) {
       return;
@@ -160,31 +160,31 @@ class Results extends DBConnection
       $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     }
     if ($modified) {
-      $modified->setTimeZone(new DateTimeZone(SERVER_TIME_ZONE));
+      $modified->setTimeZone(new DateTimeZone(Config::Get('server.time_zone')));
       $modified = $this->encode($modified->format('Y-m-d H:i:s'));
       $sql .= "AND `results`.`modified` <= '{$modified}' ";
     }  
     if ($engineName) {
-      $engineName = $this->encode($engineName, USERAGENTS_MAX_ENGINE);
+      $engineName = $this->encode($engineName, 'useragents.engine');
       $sql .= "AND `useragents`.`engine` = '{$engineName}' ";
       if ($engineVersion) {
-        $engineVersion = $this->encode($engineVersion, USERAGENTS_MAX_ENGINE_VERSION);
+        $engineVersion = $this->encode($engineVersion, 'useragents.engine_version');
         $sql .= "AND `useragents`.`engine_version` = '{$engineVersion}' ";
       }
     }
     if ($browserName) {
-      $browserName = $this->encode($browserName, USERAGENTS_MAX_BROWSER);
+      $browserName = $this->encode($browserName, 'useragents.browser');
       $sql .= "AND `useragents`.`browser` = '{$browserName}' ";
       if ($browserVersion) {
-        $browserVersion = $this->encode($browserVersion, USERAGENTS_MAX_BROWSER_VERSION);
+        $browserVersion = $this->encode($browserVersion, 'useragents.browser_version');
         $sql .= "AND `useragents`.`browser_version` = '{$browserVersion}' ";
       }
     }
     if ($platformName) {
-      $platformName = $this->encode($platformName, USERAGENTS_MAX_PLATFORM);
+      $platformName = $this->encode($platformName, 'useragents.platform');
       $sql .= "AND `useragents`.`platform` = '{$platformName}' ";
       if ($platformVersion) {
-        $platformVersion = $this->encode($platformVersion, USERAGENTS_MAX_PLATFORM_VERSION);
+        $platformVersion = $this->encode($platformVersion, 'useragents.platform_version');
         $sql .= "AND `useragents`.`platform_version` = '{$platformVersion}' ";
       }
     }

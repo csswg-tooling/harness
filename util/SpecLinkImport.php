@@ -46,7 +46,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
 
   protected function _getSpecURI($spec)
   {
-    $spec = $this->encode($spec, SPECIFICATIONS_MAX_SPEC);
+    $spec = $this->encode($spec, 'specifications.spec');
     
     $sql  = "SELECT `base_uri` ";
     $sql .= "FROM `specifications` ";
@@ -67,7 +67,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
     $this->mSpecLinkURIs = array();
     $this->mSpecLinkTitles = array();
     
-    $spec = $this->encode($spec, SPECLINKS_MAX_SPEC);
+    $spec = $this->encode($spec, 'speclinks.spec');
     
     $sql  = "SELECT * ";
     $sql .= "FROM `speclinks` ";
@@ -154,7 +154,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
     
     $this->_loadSpecLinks($spec);
 
-    $spec = $this->encode($spec, SPECLINKS_MAX_SPEC);
+    $spec = $this->encode($spec, 'speclinks.spec');
     
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
@@ -198,7 +198,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
         if ($title != $this->_getSpecLinkTitle($specLinkId)) {
           echo "Updated section {$section}: '{$title}'\n";
 
-          $title = $this->encode($title, SPECLINKS_MAX_TITLE);
+          $title = $this->encode($title, 'speclinks.title');
 
           $sql  = "UPDATE `speclinks` ";
           $sql .= "SET `title` = '{$title}' ";
@@ -207,9 +207,9 @@ class SpecLinkImport extends HarnessCmdLineWorker
         }
       }
       else {
-        $section  = $this->encode($section, SPECLINKS_MAX_SECTION);
-        $title    = $this->encode($title, SPECLINKS_MAX_TITLE);
-        $uri      = $this->encode($uri, SPECLINKS_MAX_URI);
+        $section  = $this->encode($section, 'speclinks.section');
+        $title    = $this->encode($title, 'speclinks.title');
+        $uri      = $this->encode($uri, 'speclinks.uri');
         
         $sql  = "INSERT INTO `speclinks` ";
         $sql .= "(`parent_id`, `spec`, `section`, `title`, `uri`) ";

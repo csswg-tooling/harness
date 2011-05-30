@@ -75,7 +75,7 @@ class TestCaseImport extends HarnessCmdLineWorker
   
   protected function _loadTestCaseRevisions($testSuiteName)
   {
-    $testSuiteName = $this->encode($testSuiteName, SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($testSuiteName, 'suitetests.testsuite');
     
     $sql  = "SELECT `testcase_id`, `revision` ";
     $sql .= "FROM `suitetests` ";
@@ -113,7 +113,7 @@ class TestCaseImport extends HarnessCmdLineWorker
     $this->mSpecLinkIds = array();
     $this->mSpecLinkParentIds = array();
     
-    $spec = $this->encode($spec, SPECLINKS_MAX_SPEC);
+    $spec = $this->encode($spec, 'speclinks.spec');
     
     $sql  = "SELECT * ";
     $sql .= "FROM `speclinks` ";
@@ -169,7 +169,7 @@ class TestCaseImport extends HarnessCmdLineWorker
     
     $this->_loadSpecLinkIds($testSuite->getSpecName());
     
-    $testSuiteName = $this->encode($testSuiteName, SUITETESTS_MAX_TESTSUITE);
+    $testSuiteName = $this->encode($testSuiteName, 'suitetests.testsuite');
 
     echo "Reading source file: {$manifest}\n";
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -189,7 +189,9 @@ class TestCaseImport extends HarnessCmdLineWorker
         }
         die("ERROR: unknown format\n");
       }
-      list ($testCaseName, $references, $title, $flagString, $links, $revision, $credits, $assertion) = explode("\t", $record);
+      list ($testCasePath, $references, $title, $flagString, $links, $revision, $credits, $assertion) = explode("\t", $record);
+      
+      $testCaseName = $this->_getFileName($testCasePath);
       
       $testCaseId = $this->_getTestCaseId($testCaseName);
       $title      = Page::Decode($title);
@@ -204,10 +206,10 @@ class TestCaseImport extends HarnessCmdLineWorker
 
       $referenceArray = $this->_explodeTrimAndFilter(',', $references);
             
-      $title        = $this->encode($title, TESTCASES_MAX_TITLE);
-      $assertion    = $this->encode($assertion, TESTCASES_MAX_ASSERTION);
-      $credits      = $this->encode($credits, TESTCASES_MAX_CREDITS);
-      $flagString   = $this->encode($flagString, TESTCASES_MAX_FLAGS);
+      $title        = $this->encode($title, 'testcases.title');
+      $assertion    = $this->encode($assertion, 'testcases.assertion');
+      $credits      = $this->encode($credits, 'testcases.credits');
+      $flagString   = $this->encode($flagString, 'testcases.flags');
 
       // testcases
       if (0 < $testCaseId) {  // we already have this testcase, update as needed
@@ -260,8 +262,8 @@ class TestCaseImport extends HarnessCmdLineWorker
               $revisions = $this->mTestCaseRevisions[$testCaseId];
               $lastRevision = $revisions[count($revisions) - 1];
               
-              $revisionSql = $this->encode($revision, REVISIONS_MAX_REVISION);
-              $lastRevisionSql = $this->encode($lastRevision, REVISIONS_MAX_EQUAL_REVISION);
+              $revisionSql = $this->encode($revision, 'revisions.revision');
+              $lastRevisionSql = $this->encode($lastRevision, 'revisions.equal_revision');
               
               $sql  = "INSERT INTO `revisions` ";
               $sql .= "(`testcase_id`, `revision`, `equal_revision`, `date`) ";
@@ -276,8 +278,8 @@ class TestCaseImport extends HarnessCmdLineWorker
               for ($index = $prevRevisionIndex; $index < (count($revisions) - 1); $index++) { // if revisions between last and new, chain equality
                 echo "-- Set exising revision {$newRevision} equal to {$oldRevision}\n";
 
-                $newRevision = $this->encode($revisions[$index + 1], REVISIONS_MAX_REVISION);
-                $oldRevision = $this->encode($revisions[$index], REVISIONS_MAX_EQUAL_REVISION);
+                $newRevision = $this->encode($revisions[$index + 1], 'revisions.revision');
+                $oldRevision = $this->encode($revisions[$index], 'revisions.equal_revision');
                 
                 $sql  = "UPDATE `revisions` ";
                 $sql .= "SET `equal_revision` = '{$oldRevision}' ";
@@ -288,7 +290,7 @@ class TestCaseImport extends HarnessCmdLineWorker
               }
             }
             else {
-              $revisionSql = $this->encode($revision, REVISIONS_MAX_REVISION);
+              $revisionSql = $this->encode($revision, 'revisions.revision');
               $sql  = "INSERT INTO `revisions` ";
               $sql .= "(`testcase_id`, `revision`, `date`) ";
               $sql .= "VALUES ('{$testCaseId}', '{$revisionSql}', '{$now}') ";
@@ -316,8 +318,8 @@ class TestCaseImport extends HarnessCmdLineWorker
         }
       }
       else {
-        $testCaseNameSql = $this->encode($testCaseName, TESTCASES_MAX_TESTCASE);
-        $revisionSql = $this->encode($revision, TESTCASES_MAX_LAST_REVISION);
+        $testCaseNameSql = $this->encode($testCaseName, 'testcases.testcase');
+        $revisionSql = $this->encode($revision, 'testcases.last_revision');
         
         $sql  = "INSERT INTO `testcases` (`testcase`, `last_revision`, `title`, `flags`, `assertion`, `credits`) ";
         $sql .= "VALUES ('{$testCaseNameSql}', '{$revisionSql}', '{$title}', '{$flagString}', '{$assertion}', '{$credits}');";
@@ -348,10 +350,10 @@ class TestCaseImport extends HarnessCmdLineWorker
 
       foreach ($formats as $format) {
         if ($format->validForFlags($flags)) {
-          $uri = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+          $uri = $this->_combinePath($format->getPath(), $testCasePath, $format->getExtension());
           
-          $formatName = $this->encode($format->getName(), TESTPAGES_MAX_FORMAT);
-          $uri = $this->encode($uri, TESTPAGES_MAX_URI);
+          $formatName = $this->encode($format->getName(), 'testpages.format');
+          $uri = $this->encode($uri, 'testpages.uri');
           
           $sql  = "INSERT INTO `testpages` (`testcase_id`, `format`, `uri`) ";
           $sql .= "VALUES ('{$testCaseId}', '{$formatName}', '{$uri}') ";
@@ -378,15 +380,15 @@ class TestCaseImport extends HarnessCmdLineWorker
         }
         $referenceName = $this->_getFileName($referencePath);
         
-        $referenceName = $this->encode($referenceName, REFERENCES_MAX_REFERENCE);
+        $referenceName = $this->encode($referenceName, 'references.reference');
         $referenceType = $this->encode($referenceType);
 
         foreach ($formats as $format) {
           if ($format->validForFlags($flags)) {
             $referenceURI = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
 
-            $formatName = $this->encode($format->getName(), REFERENCES_MAX_FORMAT);
-            $referenceURI = $this->encode($referenceURI, REFERENCES_MAX_URI);
+            $formatName = $this->encode($format->getName(), 'references.format');
+            $referenceURI = $this->encode($referenceURI, 'references.uri');
 
             $sql  = "INSERT INTO `references` ";
             $sql .= "(`testcase_id`, `format`, `reference`, `uri`, `type`) ";
@@ -411,13 +413,14 @@ class TestCaseImport extends HarnessCmdLineWorker
       $usedSpecLinkIds = array();
       $sequence = -1;
       foreach ($linkArray as $specLinkURI) {
+        // XXX handle absolute spec links for links to other specs
         $sequence++;
         $specLinkId = $this->_getSpecLinkId($specLinkURI);
         
         if (FALSE === $specLinkId) {
           echo "Adding new spec link: '{$specLinkURI}'\n";
-          $specLinkURI = $this->encode($specLinkURI, SPECLINKS_MAX_URI);
-          $spec = $this->encode($testSuite->getSpecName(), SPECLINKS_MAX_SPEC);
+          $specLinkURI = $this->encode($specLinkURI, 'speclinks.uri');
+          $spec = $this->encode($testSuite->getSpecName(), 'speclinks.spec');
 
           
           $sql  = "INSERT INTO `speclinks` ";
@@ -461,7 +464,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       }
 
       // suitetests
-      $revisionSql = $this->encode($revision, SUITETESTS_MAX_REVISION);
+      $revisionSql = $this->encode($revision, 'suitetests.revision');
       $sql  = "INSERT INTO `suitetests` ";
       $sql .= "(`testsuite`, `testcase_id`, `revision`) ";
       $sql .= "VALUES ('{$testSuiteName}', '{$testCaseId}', '{$revisionSql}') ";

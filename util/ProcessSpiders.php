@@ -16,10 +16,7 @@
  * 
  ******************************************************************************/
 
-define('COMMAND_LINE', TRUE);
-  
-require_once('lib/Config.php');
-require_once('lib/DBConnection.php');
+require_once('lib/CmdLineWorker.php');
   
 /**
  * Utility script to check the spider trap and ban offenders at the firewall
@@ -27,7 +24,7 @@ require_once('lib/DBConnection.php');
  * This is meant to be run frequently from a periodic cron job
  * Once per minute or so
  */
-class ProcessSpiders extends DBConnection
+class ProcessSpiders extends CmdLineWorker
 {
   protected $mOffenders;
   protected $mBanned;
@@ -41,9 +38,9 @@ class ProcessSpiders extends DBConnection
   {
     parent::__construct();
 
-    $this->mBanThreshold  = SPIDER_BAN_THRESHOLD;
-    $this->mTestPeriod    = SPIDER_TEST_PERIOD;
-    $this->mBanPeriod     = SPIDER_BAN_PERIOD;
+    $this->mBanThreshold  = intval(Config::Get('spider.ban_threshold'));
+    $this->mTestPeriod    = intval(Config::Get('spider.test_period'));
+    $this->mBanPeriod     = intval(Config::Get('spider.ban_period'));
     
     // remove suspects under trigger count for test period
     $sql  = "DELETE FROM `spidertrap` ";
@@ -77,7 +74,7 @@ class ProcessSpiders extends DBConnection
     foreach ($this->mOffenders as $offender) {
       $ipAddress = $offender['ip_address'];
       if (($ipAddress != '::1') && ($ipAddress != '127.0.0.1')) {
-        $command = str_replace('{ip}', $ipAddress, SPIDER_BAN_COMMAND);
+        $command = str_replace('{ip}', $ipAddress, Config::Get('spider.ban_command'));
         exec($command);
         $sql = "UPDATE `spidertrap` SET `banned` = 1 WHERE `ip_address` = '{$ipAddress}' ";
         $this->query($sql);
@@ -88,7 +85,7 @@ class ProcessSpiders extends DBConnection
     foreach ($this->mBanned as $banned) {
       $ipAddress = $banned['ip_address'];
       if (($ipAddress != '::1') && ($ipAddress != '127.0.0.1')) {
-        $command = str_replace('{ip}', $ipAddress, SPIDER_RELEASE_COMMAND);
+        $command = str_replace('{ip}', $ipAddress, Config::Get('spider.release_command'));
         exec($command);
         $sql = "UPDATE `spidertrap` SET `banned` = 0, `visit_count` = 0 WHERE `ip_address` = '{$ipAddress}' ";
         $this->query($sql);
@@ -97,7 +94,10 @@ class ProcessSpiders extends DBConnection
     }
     
     if ($changedRules) {
-      exec(SPIDER_POST_PROCESS_COMMAND);
+      $postProcess = Config::Get('spider.post_process_command');
+      if ($postProcess) {
+        exec($postProcess);
+      }
     }
   }
 }

@@ -73,13 +73,13 @@ class TestSuitePage extends HarnessPage
   {
     parent::writeHeadStyle();
     
-    $this->addStyleSheetLink($this->buildURI(TESTSUITE_STYLESHEET_URI));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.testsuite'));
   }
 
 
   function writeTestSuiteForm()
   {
-    $this->openFormElement($this->buildURI(START_PAGE_URI));
+    $this->openFormElement($this->buildConfigURI('page.start'));
     $this->writeHiddenFormControls();
     $this->addElement('strong', null, "The full test suite: ");
     $this->writeOrderSelect();
@@ -116,7 +116,7 @@ class TestSuitePage extends HarnessPage
   
   function writeSectionForm($title)
   {
-    $this->openFormElement($this->buildURI(START_PAGE_URI));
+    $this->openFormElement($this->buildConfigURI('page.start'));
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeSectionSelect();
@@ -145,7 +145,7 @@ class TestSuitePage extends HarnessPage
   
   function writeTestCaseForm($title)
   {
-    $this->openFormElement($this->buildURI(START_PAGE_URI));
+    $this->openFormElement($this->buildConfigURI('page.start'));
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeTestCaseSelect();
@@ -172,7 +172,7 @@ class TestSuitePage extends HarnessPage
       $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
 
       $args = $this->mGetData;
-      $uri = $this->buildURI(SELECT_UA_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.select_ua', $args);
       
       $this->openElement('span', null, FALSE);
       $this->addTextContent('(');
@@ -187,7 +187,7 @@ class TestSuitePage extends HarnessPage
 
       $args = $this->mGetData;
       unset($args['u']);
-      $uri = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.testsuite', $args);
       $this->openElement('span', null, FALSE);
       $this->addTextContent('(');
       $this->addHyperLink($uri, null, 'Reset');

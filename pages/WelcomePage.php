@@ -50,8 +50,8 @@ class WelcomePage extends HarnessPage
         $args['s'] = $testSuite->getName();
         $args['u'] = $this->mUserAgent->getId();
 
-        $reviewURI = $this->buildURI(REVIEW_PAGE_URI, $args);
-        $enterURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+        $reviewURI = $this->buildConfigURI('page.review', $args);
+        $enterURI = $this->buildConfigURI('page.testsuite', $args);
 
         $this->openElement('dt', null, FALSE);
         $this->addHyperLink($testSuite->getHomeURI(), null, $testSuite->getTitle());

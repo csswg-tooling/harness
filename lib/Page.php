@@ -114,7 +114,7 @@ class Page
   
   /**
    * Static helper function to build URI with query string
-   * Instances of this class should use $this->buildURI instead
+   * Instances of this class should use $this->buildURI or $this->buildConfigURI instead
    * 
    * @param string base uri
    * @param array associative array of aurguments
@@ -152,16 +152,30 @@ class Page
     $abs = '';
     if ($absolute) {
       if (empty($_SERVER['HTTP_HOST'])) {
-        $abs = HARNESS_BASE_URI;
+        $abs = Config::Get('server.install_uri');
       }
       else {
-        $abs = 'http://' . $_SERVER['HTTP_HOST'];
-        if (! empty($_SERVER['PHP_SELF'])) {
-          $abs .= dirname($_SERVER['PHP_SELF']);
-          if (substr($abs, -1) != '/') {
-            $abs .= '/';
+        if (! empty($_SERVER['HTTPS'])) {
+          $abs = 'https://' . $_SERVER['HTTP_HOST'];
+          if ($_SERVER['SERVER_PORT'] != '443') {
+            $abs .= ':' . $_SERVER['SERVER_PORT'];
           }
         }
+        else {
+          $abs = 'http://' . $_SERVER['HTTP_HOST'];
+          if ($_SERVER['SERVER_PORT'] != '80') {
+            $abs .= ':' . $_SERVER['SERVER_PORT'];
+          }
+        }
+        if (empty($_SERVER['PHP_SELF'])) {
+          $abs .= parse_url(Config::Get('server.install_uri'), PHP_URL_PATH);
+        }
+        else {
+          $abs .= dirname($_SERVER['PHP_SELF']);
+        }
+      }
+      if (substr($abs, -1) != '/') {
+        $abs .= '/';
       }
     }
     
@@ -253,6 +267,25 @@ class Page
   function buildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
   {
     return self::_BuildURI($baseURI, $queryArgs, $fragId, $absolute);
+  }
+  
+  
+  /**
+   * Helper function to build URI with query string
+   * This version looks up the uri form the Config system
+   * 
+   * @param string base uri config key
+   * @param array associative array of aurguments
+   * @param string fragment identifier
+   * @return string URL encoded
+   */
+  function buildConfigURI($baseURIKey, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
+  {
+    $baseURI = Config::Get('uri.' . $baseURIKey);
+    if (! $baseURI) {
+      trigger_error('Unknown URI key', E_USER_ERROR);
+    }
+    return $this->buildURI($baseURI, $queryArgs, $fragId, $absolute);
   }
   
   
@@ -415,7 +448,7 @@ class Page
    */
   protected function _formattingOn()
   {
-    return ((0 == $this->mFormatCount) && defined('DEBUG_MODE') && DEBUG_MODE);
+    return ((0 == $this->mFormatCount) && Config::IsDebugMode());
   }
   
   
@@ -741,6 +774,9 @@ class Page
    */
   function addEmailHyperLink($address, $name = null, Array $args = null)
   {
+    if (0 === stripos($address, 'mailto:')) {
+      $address = substr($address, 7);
+    }
     $attrs['href'] = $this->obfuscate("mailto:{$address}");
     if (is_array($args) && (0 < count($args))) {
       $args = self::_ConvertArgs($args, TRUE);
@@ -1268,7 +1304,7 @@ class Page
    * Callback function to capture PHP generated errors
    *
    * Use trigger_error to invoke an error condition, set errorType to:
-   *   E_USER_NOTICE - minor error due ot bad client input
+   *   E_USER_NOTICE - minor error due to bad client input
    *   E_USER_WARNING - major error due to bad client input
    *   E_USER_ERROR - problem at server (like failed sql query)
    */
@@ -1399,7 +1435,7 @@ class Page
         $this->addElement('p', null, $this->mErrorMessage, FALSE);
       }
     }
-    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    if (Config::IsDebugMode()) {
       if ($this->mErrorFile) {
         $this->addElement('p', null, "File: {$this->mErrorFile}");
       }
@@ -1435,7 +1471,7 @@ class Page
         $this->_writeLine($this->mErrorMessage, FALSE, TRUE);
       }
     }
-    if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    if (Config::IsDebugMode()) {
       if ($this->mErrorFile) {
         $this->_write("File: {$this->mErrorFile}\n");
       }

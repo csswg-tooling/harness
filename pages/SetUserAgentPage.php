@@ -47,10 +47,10 @@ class SetUserAgentPage extends HarnessPage
     $args['u'] = $this->mUserAgent->getId();
 
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      $this->mNewURI = $this->buildURI(TESTSUITE_PAGE_URI, $args);
+      $this->mNewURI = $this->buildConfigURI('page.testsuite', $args);
     }
     else {
-      $this->mNewURI = $this->buildURI(HOME_PAGE_URI, $args);
+      $this->mNewURI = $this->buildConfigURI('page.home', $args);
     }
   }  
 

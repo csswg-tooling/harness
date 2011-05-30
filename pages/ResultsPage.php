@@ -123,7 +123,7 @@ class ResultsPage extends ResultsBasedPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildURI(REVIEW_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.review', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Results";
@@ -141,7 +141,7 @@ class ResultsPage extends ResultsBasedPage
   {  
     parent::writeHeadStyle();
 
-    $this->addStyleSheetLink($this->buildURI(REPORT_STYLESHEET_URI));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
   }
 
 
@@ -343,10 +343,10 @@ class ResultsPage extends ResultsBasedPage
       $args['u'] = $this->mUserAgent->getId();
       if ($hasResults) {
         $this->_copyArgs($this->mGetData, $args, array('m', 'e', 'v', 'b', 'bv', 'p', 'pv'));
-        $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
+        $uri = $this->buildConfigURI('page.details', $args);
       }
       else {
-        $uri = $this->buildURI(TESTCASE_PAGE_URI, $args);
+        $uri = $this->buildConfigURI('page.testcase', $args);
       }
       
       $this->addHyperLink($uri, $anchor, $testCaseName);
@@ -366,7 +366,7 @@ class ResultsPage extends ResultsBasedPage
       $args['e'] = $engineName;
       $args['u'] = $this->mUserAgent->getId();
       $this->_copyArgs($this->mGetData, $args, array('m', 'v', 'b', 'bv', 'p', 'pv'));
-      $uri = $this->buildURI(DETAILS_PAGE_URI, $args);
+      $uri = $this->buildConfigURI('page.details', $args);
       
       $this->openElement('td', array('class' => $class), FALSE);
       $this->addHyperLink($uri, null, $content, FALSE);
