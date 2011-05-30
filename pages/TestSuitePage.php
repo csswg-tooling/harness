@@ -83,6 +83,7 @@ class TestSuitePage extends HarnessPage
     $this->writeHiddenFormControls();
     $this->addElement('strong', null, "The full test suite: ");
     $this->writeOrderSelect();
+    $this->addTextContent(' ');
     $this->addInputElement('submit', null, 'Start');
     $this->closeElement('form');
   }
@@ -120,7 +121,9 @@ class TestSuitePage extends HarnessPage
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeSectionSelect();
+    $this->addTextContent(' ');
     $this->writeOrderSelect();
+    $this->addTextContent(' ');
     $this->addInputElement('submit', null, 'Start');
     $this->closeElement('form');
   }
@@ -149,6 +152,7 @@ class TestSuitePage extends HarnessPage
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeTestCaseSelect();
+    $this->addTextContent(' ');
     $this->addInputElement('submit', null, 'Start');
     $this->closeElement('form');
   }
@@ -166,7 +170,7 @@ class TestSuitePage extends HarnessPage
 
   function writeBodyContent() {
     $this->openElement('p', array('class' => 'ua'));
-    $this->addTextContent("You are about the enter test result data for the following user agent:");
+    $this->addTextContent("You are about the enter test result data for the following user agent: ");
     
     if ($this->mUserAgent->isActualUA()) {
       $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
@@ -175,7 +179,7 @@ class TestSuitePage extends HarnessPage
       $uri = $this->buildConfigURI('page.select_ua', $args);
       
       $this->openElement('span', null, FALSE);
-      $this->addTextContent('(');
+      $this->addTextContent(' (');
       $this->addHyperLink($uri, null, 'Other');
       $this->addTextContent(')');
       $this->closeElement('span');
@@ -189,7 +193,7 @@ class TestSuitePage extends HarnessPage
       unset($args['u']);
       $uri = $this->buildConfigURI('page.testsuite', $args);
       $this->openElement('span', null, FALSE);
-      $this->addTextContent('(');
+      $this->addTextContent(' (');
       $this->addHyperLink($uri, null, 'Reset');
       $this->addTextContent(')');
       $this->closeElement('span');

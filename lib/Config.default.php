@@ -43,7 +43,12 @@ Config::Set('server.install_uri', 'http://test.w3.org/harness');
 /**
  * Contact info
  */
-Config::Set('contact.uri', 'mailto:' . $_SERVER['SERVER_ADMIN']);
+if (empty($_SERVER['SERVER_ADMIN'])) {
+  Config::Set('contact.uri', 'webmaster@example.com');
+}
+else {
+  Config::Set('contact.uri', 'mailto:' . $_SERVER['SERVER_ADMIN']);
+}
 Config::Set('contact.name', 'the server administrator');
 
 

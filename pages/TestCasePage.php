@@ -214,7 +214,7 @@ class TestCasePage extends HarnessPage
       
       if (0 < $this->mCount) {
         $index = $this->mIndex + 1;
-        $this->addTextContent("Test {$index} of {$this->mCount}" . ($title ? ':' : ''));
+        $this->addTextContent("Test {$index} of {$this->mCount}" . ($title ? ': ' : ''));
       }
       if ($title) {
         if ($assertion) {
@@ -525,8 +525,11 @@ class TestCasePage extends HarnessPage
     
     $locked = $this->mTestSuite->isLocked();
     $this->addInputElement('submit', 'result', 'Pass [1]', null, array('accesskey' => '1', 'disabled' => $locked));
+    $this->addTextContent(' ');
     $this->addInputElement('submit', 'result', 'Fail [2]', null, array('accesskey' => '2', 'disabled' => $locked));
+    $this->addTextContent(' ');
     $this->addInputElement('submit', 'result', 'Cannot tell [3]', null, array('accesskey' => '3', 'disabled' => $locked));
+    $this->addTextContent(' ');
     $this->addInputElement('submit', 'result', 'Skip [4]', null, array('accesskey' => '4'));
     
     $this->closeElement('p');
@@ -554,7 +557,7 @@ class TestCasePage extends HarnessPage
         unset($args['u']);
         $uri = $this->buildConfigURI('page.testcase', $args);
         $this->openElement('span', null, FALSE);
-        $this->addTextContent('(');
+        $this->addTextContent(' (');
         $this->addHyperLink($uri, null, "Reset");
         $this->addTextContent(')');
         $this->closeElement('span');
