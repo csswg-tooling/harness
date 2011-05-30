@@ -123,7 +123,7 @@ class TestSuite extends DBConnection
 
   function getHomeURI()
   {
-    return $this->mInfo['base_uri'] . $this->mInfo['home_uri'];
+    return $this->_combinePath($this->mInfo['base_uri'], $this->mInfo['home_uri']);
   }
 
   function getSpecName()

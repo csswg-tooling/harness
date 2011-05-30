@@ -22,6 +22,7 @@ require_once('lib/Format.php');
 require_once('lib/Flags.php');
 require_once('lib/TestSuite.php');
 require_once('lib/NormalizedTest.php');
+require_once('lib/StatusCache.php');
 
 /**
  * Import test case data from manifest file
@@ -163,6 +164,8 @@ class TestCaseImport extends HarnessCmdLineWorker
     }
     $formats = Format::GetFormatsFor($testSuite);
     
+    $testsChanged = FALSE;
+    
     echo "Loading testcases\n";
     $this->_loadTestCases();
     $this->_loadTestCaseRevisions($testSuiteName);
@@ -298,6 +301,7 @@ class TestCaseImport extends HarnessCmdLineWorker
               $this->query($sql);
               
               echo "Updated {$testCaseName}:{$testCaseId} to revision {$revision}\n";
+              $testsChanged = TRUE;
             }
           }
         }
@@ -339,6 +343,7 @@ class TestCaseImport extends HarnessCmdLineWorker
         $sql .= "VALUES ('{$testCaseId}', '{$revisionSql}', '{$now}') ";
 
         $this->query($sql);
+        $testsChanged = TRUE;
       }
 
       // testpages
@@ -366,6 +371,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       $sql  = "DELETE FROM `references` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
       // XXX formats? see above
+      // XXX if test gains a reference, but is otherwise unchanged, should it rev? I think so, but the reference may have an older revision so it may not get caught by the current system
       
       $this->query($sql);
 
@@ -488,6 +494,7 @@ class TestCaseImport extends HarnessCmdLineWorker
         
         $this->query($sql);
         echo "Deactivated {$testCaseName}:{$testCaseId}\n";
+        $testsChanged = TRUE;
       }
     }
     
@@ -496,6 +503,10 @@ class TestCaseImport extends HarnessCmdLineWorker
     $sql .= "SET `date` = '{$now}' ";
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
     $this->query($sql);
+    
+    if ($testsChanged) {  // if added, removed or modified a test, flush the cache
+      StatusCache::FlushResultsForTestSuite($testSuite);
+    }
   }
 }
 

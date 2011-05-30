@@ -16,8 +16,9 @@
  * 
  ******************************************************************************/
 
-require_once("lib/DBConnection.php");
-require_once("lib/Flags.php");
+require_once('lib/DBConnection.php');
+require_once('lib/Flags.php');
+require_once('lib/StatusCache.php');
 
 
 /**
@@ -170,11 +171,34 @@ class TestCase extends DBConnection
         $specTitle  = $specLink['spec_title'];
         $title      = $specLink['title'];
         $section    = $specLink['section'];
-        $uri        = $specLink['spec_uri'] . $specLink['uri'];
+        $uri        = $this->_combinePath($specLink['spec_uri'], $specLink['uri']);
         
         $this->mSpecURIs[] = compact('spec', 'specTitle', 'title', 'section', 'uri');
       }
     }
+  }
+
+
+  function getSpecSectionIds()
+  {
+    $sectionIds = array();
+    
+    $testCaseId = $this->getId();
+    $specName = $this->encode($this->mTestSuite->getSpecName(), 'speclinks.spec');
+
+    $sql  = "SELECT `speclinks`.`id` ";
+    $sql .= "FROM `speclinks` ";
+    $sql .= "LEFT JOIN (`testlinks`, `specifications`) ";
+    $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
+    $sql .= "AND `speclinks`.`spec` = `specifications`.`spec` ";
+    $sql .= "WHERE `testlinks`.`testcase_id` = '{$testCaseId}' ";
+    $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
+    
+    $r = $this->query($sql);
+    while ($specLinkData = $r->fetchRow()) {
+      $sectionIds[] = intval($specLinkData['id']);
+    }
+    return $sectionIds;
   }
 
 
@@ -503,6 +527,12 @@ class TestCase extends DBConnection
         $msg = 'Operation Failed. We were unable to record you submission.';
         trigger_error($msg, E_USER_ERROR);
       }
+      
+      $sectionIds = $this->getSpecSectionIds();
+      foreach ($sectionIds as $sectionId) {
+        StatusCache::FlushResultsForSection($this->mTestSuite, $sectionId);
+      }
+      StatusCache::FlushResultsForSection($this->mTestSuite, 0);
     }
     return FALSE;
   }
@@ -532,7 +562,7 @@ class TestCase extends DBConnection
         $formatNames = array();
         foreach ($suiteFormatNames as $formatName) {
           if (array_key_exists(strtolower($formatName), $this->mURIs)) {
-            $formatNames[] = $formatName; // take names form test suite since we normalize names in array key
+            $formatNames[] = $formatName; // take names from test suite since we normalize names in array key
           }
         }
         return $formatNames;
@@ -547,7 +577,7 @@ class TestCase extends DBConnection
     if ($this->isValid()) {
       $formatName = strtolower($formatName);
       if ($this->_loadURIs() && array_key_exists($formatName, $this->mURIs)) {
-        return $this->mTestSuite->getBaseURI() . $this->mURIs[$formatName];
+        return $this->_combinePath($this->mTestSuite->getBaseURI(), $this->mURIs[$formatName]);
       }
     }
     return FALSE;
@@ -630,7 +660,7 @@ class TestCase extends DBConnection
         foreach ($this->mReferences as $referenceData) {
           if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
               (0 == strcasecmp($referenceData['format'], $formatName))) {
-            return $this->mTestSuite->getBaseURI() . $referenceData['uri'];
+            return $this->_combinePath($this->mTestSuite->getBaseURI(), $referenceData['uri']);
           }
         }
       }

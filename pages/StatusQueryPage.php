@@ -21,6 +21,7 @@ require_once('lib/HarnessPage.php');
 require_once('lib/Sections.php');
 require_once('lib/Engine.php');
 require_once('lib/Results.php');
+require_once('lib/StatusCache.php');
 
 
 class EngineResponse
@@ -38,7 +39,6 @@ class SectionResponse
 {
   public  $anchorName;
   public  $testCount;
-  public  $needCount;
   public  $testURI;
   public  $engines;
   
@@ -119,6 +119,8 @@ class StatusQueryPage extends HarnessPage
   function loadResults()
   {
     if (! $this->mResults) {
+      $this->mResults = new Results($this->mTestSuite, null, $this->mSectionId);
+/*  XXX at some point enable the other fields, but handle them in the cache
       $modified         = $this->_getData('m', 'DateTime');
       $engineName       = $this->_getData('e');
       $engineVersion    = $this->_getData('v');
@@ -133,6 +135,7 @@ class StatusQueryPage extends HarnessPage
                     $engineName, $engineVersion, 
                     $browserName, $browserVersion, 
                     $platformName, $platformVersion);
+*/                    
     }
   }
   
@@ -204,7 +207,6 @@ class StatusQueryPage extends HarnessPage
       $sectionResponse->engines = array();
 
       $clientEngineName = $this->mUserAgent->getEngineName();
-      $sectionResponse->needCount = $sectionResponse->testCount;
       
       if ((0 < $this->mResults->getEngineCount()) && ($testCaseIds)) {
         foreach ($this->mResults->getEngineNames() as $engineName) {
@@ -235,10 +237,6 @@ class StatusQueryPage extends HarnessPage
 //          $engineResponse->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
           $engineResponse->detailsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
           $sectionResponse->engines[] = $engineResponse;
-          
-          if ($engineName == $clientEngineName) {
-            $sectionResponse->needCount = ($sectionResponse->testCount - ($engineResponse->passCount + $engineResponse->failCount));
-          }
         }
       }
       
@@ -261,12 +259,21 @@ class StatusQueryPage extends HarnessPage
   
   function generateResponse()
   {
-    $this->loadResults();
+    $sections = StatusCache::GetResultsForSection($this->mTestSuite, $this->mSectionId);
+
+    if (! $sections) {
+      $this->loadResults();
+      
+      if ($this->mResults) {
+        $sections = $this->getResultsForSection($this->mSectionId, TRUE);
+        StatusCache::SetResultsForSection($this->mTestSuite, $this->mSectionId, $sections);
+      }
+    }
     
-    if ($this->mResults) {
+    if ($sections) {
       $response = new Response();
+      $response->sections = $sections;
       $response->clientEngineName = $this->mUserAgent->getEngineName();
-      $response->sections = $this->getResultsForSection($this->mSectionId, TRUE);
       return $response;
     }
     return null;

@@ -227,7 +227,7 @@ class DBConnection
    */
   protected function _combinePath($path, $fileName, $extension = '')
   {
-    if ((0 < strlen($path)) && ('/' != substr($path, -1, 1))) {
+    if ((0 < strlen($path)) && ('/' != substr($path, -1, 1)) && $fileName) {
       $path .= '/';
     }
     if ((0 < strlen($extension)) && ('.' != substr($extension, 0, 1))) {

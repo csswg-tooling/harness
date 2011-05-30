@@ -44,7 +44,7 @@ Config::Set('server.install_uri', 'http://test.w3.org/harness');
  * Contact info
  */
 if (empty($_SERVER['SERVER_ADMIN'])) {
-  Config::Set('contact.uri', 'webmaster@example.com');
+  Config::Set('contact.uri', 'mailto:webmaster@example.com');
 }
 else {
   Config::Set('contact.uri', 'mailto:' . $_SERVER['SERVER_ADMIN']);
@@ -107,16 +107,6 @@ Config::Set('spider.post_process_command', '/sbin/iptables-save > /etc/firewall.
 /**
  * Max field lengths for database tables
  */
-Config::Set('db.max.references.format', 15);
-Config::Set('db.max.references.reference', 255);
-Config::Set('db.max.references.uri', 255);
-
-Config::Set('db.max.results.revision', 40);
-Config::Set('db.max.results.format', 15);
-Config::Set('db.max.results.comment', 63);
-
-Config::Set('db.max.sources.source', 63);
-
 Config::Set('db.max.flags.flag', 15);
 Config::Set('db.max.flags.description', 255);
 Config::Set('db.max.flags.set_test', 255);
@@ -127,6 +117,32 @@ Config::Set('db.max.formats.title', 255);
 Config::Set('db.max.formats.description', 255);
 Config::Set('db.max.formats.home_uri', 255);
 Config::Set('db.max.formats.filter', 127);
+
+Config::Set('db.max.references.format', 15);
+Config::Set('db.max.references.reference', 255);
+Config::Set('db.max.references.uri', 255);
+
+Config::Set('db.max.results.revision', 40);
+Config::Set('db.max.results.format', 15);
+Config::Set('db.max.results.comment', 63);
+
+Config::Set('db.max.revisions.revision', 40);
+Config::Set('db.max.revisions.equal_revision', 40);
+
+Config::Set('db.max.sources.source', 63);
+
+Config::Set('db.max.specifications.spec', 31);
+Config::Set('db.max.specifications.title', 31);
+Config::Set('db.max.specifications.description', 255);
+Config::Set('db.max.specifications.base_uri', 255);
+Config::Set('db.max.specifications.home_uri', 63);
+
+Config::Set('db.max.speclinks.spec', 31);
+Config::Set('db.max.speclinks.section', 31);
+Config::Set('db.max.speclinks.title', 255);
+Config::Set('db.max.speclinks.uri', 255);
+
+Config::Set('db.max.statuscache.testsuite', 31);
 
 Config::Set('db.max.spidertrap.ip', 39);
 Config::Set('db.max.spidertrap.user_agent', 255);
@@ -144,20 +160,6 @@ Config::Set('db.max.testcases.credits', 255); // XXX break out into table
 
 Config::Set('db.max.testpages.format', 15);
 Config::Set('db.max.testpages.uri', 255);
-
-Config::Set('db.max.revisions.revision', 40);
-Config::Set('db.max.revisions.equal_revision', 40);
-
-Config::Set('db.max.specifications.spec', 31);
-Config::Set('db.max.specifications.title', 31);
-Config::Set('db.max.specifications.description', 255);
-Config::Set('db.max.specifications.base_uri', 255);
-Config::Set('db.max.specifications.home_uri', 63);
-
-Config::Set('db.max.speclinks.spec', 31);
-Config::Set('db.max.speclinks.section', 31);
-Config::Set('db.max.speclinks.title', 255);
-Config::Set('db.max.speclinks.uri', 255);
 
 Config::Set('db.max.testsequence.testsuite', 31);
 Config::Set('db.max.testsequence.engine', 15);

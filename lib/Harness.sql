@@ -149,6 +149,19 @@ CREATE TABLE IF NOT EXISTS `spidertrap` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `statuscache`
+--
+
+CREATE TABLE IF NOT EXISTS `statuscache` (
+  `testsuite` varchar(31) NOT NULL,
+  `section_id` int(10) unsigned NOT NULL,
+  `data` longblob,
+  PRIMARY KEY (`testsuite`,`section_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `suitetests`
 --
 
