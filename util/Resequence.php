@@ -65,8 +65,9 @@ class Resequence extends HarnessCmdLineWorker
       $enginePasses = FALSE;
       $engineCount  = 0;
       if ($engineResults && array_key_exists($engineName, $engineResults)) {
-        $engineCount = ((array_key_exists('count', $engineResults[$engineName])) ? $engineResults[$engineName]['count'] : 0);
+        $fail = ((array_key_exists('fail', $engineResults[$engineName])) ? $engineResults[$engineName]['fail'] : 0);
         $pass = ((array_key_exists('pass', $engineResults[$engineName])) ? $engineResults[$engineName]['pass'] : 0);
+        $engineCount = ($fail + $pass); // ignore other results for the purpose of sequencing
         if (0 < $pass) {
           $enginePasses = TRUE;
         }
