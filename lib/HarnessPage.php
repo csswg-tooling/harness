@@ -105,6 +105,7 @@ class HarnessPage extends DynamicPage
         unset($queryArgs['o']);
         $this->_appendURI($baseURI, 'ref', $queryArgs, 'ref');
         $this->_appendURI($baseURI, 'f', $queryArgs, 'format');
+        $this->_appendURI($baseURI, 'fl', $queryArgs, 'flag');
         $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
       }
       elseif (Config::Get('uri.page.success') == $baseURI) {

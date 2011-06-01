@@ -44,7 +44,8 @@ class SubmitPage extends HarnessPage
    * 'next' Index of next test, done if 0 or absent
    * 'g'    Sepc section Id
    * 'sec'  Spec section name
-   * 'o'    Order of tests is sequence table
+   * 'o'    Order of tests is by sequence table
+   * 'fl'   Filter tests by flag
    * 'u'    User Agent Id
    */
   function __construct(Array $args = null) 
@@ -117,9 +118,13 @@ class SubmitPage extends HarnessPage
           $args['g'] = $sectionId;
         }
       }
+      $flag = $this->_postData('fl');
+      if ($flag) {
+        $args['fl'] = $flag;
+      }
       $nextTestCase = new TestCase();
       $nextTestCase->load($this->mTestSuite, null, $sectionId,
-                          $this->mUserAgent, $order, $nextIndex);
+                          $this->mUserAgent, $order, $nextIndex, $flag);
       $args['i'] = $nextTestCase->getTestCaseName();
       if (0 < $order) {
         $args['o'] = $order;

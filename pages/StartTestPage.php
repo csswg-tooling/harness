@@ -53,9 +53,10 @@ class StartTestPage extends HarnessPage
       if ((0 == $sectionId) && ($sectionName)) {
         $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
       }
+      $flag = $this->_getData('fl');
       
       $testCase = new TestCase();
-      $testCase->load($this->mTestSuite, null, $sectionId, $this->mUserAgent, $order, 0);
+      $testCase->load($this->mTestSuite, null, $sectionId, $this->mUserAgent, $order, 0, $flag);
                              
       $args['i'] = $testCase->getTestCaseName();
     }

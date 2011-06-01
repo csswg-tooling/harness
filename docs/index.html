@@ -5,7 +5,7 @@
 
 <h3>Setup MySQL Database</h3>
 
-<p>Create a MySQL database for the harness. Import the file 'lib/Harness.sql' to create the needed tables. This file will also populate the `flags` and `formats` tables with some starting values taken from the CSS test suite. Feel free to edit or remove the flag and format data as appropriate.</p>
+<p>Create a MySQL database for the harness. Import the file 'lib/Harness.sql' to create the needed tables. This file will also populate the `flags` and `formats` tables with some starting values taken from the CSS test suite. Feel free to edit or remove the flag and format data as appropriate. NOTE: the flag 'reftest' has special meaning to the harness and should be left intact.</p>
 
 <p>Create a user with access to the harness database. This user requires SELECT, INSERT, UPDATE and DELETE privileges to all tables within the harness database.</p>
 
@@ -60,7 +60,9 @@
 
 <p>Test flags are meta data that describe attributes of a test case. Some affect harness behavior, such as flags for optional tests, reference tests, or flags that indicate test formats. All flag information will be displayed to users within the harness test pages.</p>
 
-<p>The initial database setup should give you the set of flags used by the CSS test suite. If your test suite uses flags not currently known to the harness, add rows to the `flags` table to define them. The fields are:</p>
+<p>The initial database setup should give you the set of flags used by the CSS test suite. If your test suite uses flags not currently known to the harness, add rows to the `flags` table to define them. You may remove any existing flags that aren't used by your test suites. NOTE: the flag 'reftest' has special meaning to the harness and should be left intact. Tests with this flag will display reference comparison UI if references are also defined. The test case import process will automatically set the 'reftest' flag for test cases that have references defined, even if it is not defined in this table.</p>
+
+<p>The fields are:</p>
 <dt>`flag`</dt><dd>Internal flag name. Keep it short and unique.</dd>
 <dt>`description`</dt><dd>Human readable description of the meaning of having the flag set. May contain HTML.</dd>
 <dt>`set_test`</dt><dd>Optional HTML to inject into harness testing page when flag is set. These tests may help identify testing pre-requisites needed at the client.</dd>
@@ -196,7 +198,7 @@
 <p>Replace {test suite} with the internal test suite name defined earlier (do not include the braces). You may optionally insert a '!' between the '#' and the test suite name to have the annotations begin in the collapsed state.</p>
 
 <h3>Other</h3>
-<p>If you really want to modify the look and feel of the harness itself, there are hooks available. To avoid conflicts with future versions of the harness, it's best to not modify any files distributed with the harness. You can specify alternate stylesheets by setting stylesheet URIs in Config.local.php. If you really want to change the UI, you can also specify alternate pages for the harness, all pages are present in the root directory. In your own pages, subclass the appropriate page generation class (found in the pages directory) and override the behavior you want to modify (perform all HTML generation using the base class methods provided). A good example is the welcome page, index.php. Avoid code changes in any of the distributed files and especially the harness subdirectories unless you are significantly altering harness functionality (in which case you should be contributing those changes back, and they should be useful to other installs).</p>
+<p>If you really want to modify the look and feel of the harness itself, there are hooks available. To avoid conflicts with future versions of the harness, it's best to not modify any files distributed with the harness. You can specify alternate stylesheets by setting stylesheet URIs in Config.local.php. If you really want to change the UI, you can also specify alternate pages for the harness, all pages are present in the root directory. In your own pages, subclass the appropriate page generation class (found in the pages directory) and override the behavior you want to modify (perform all HTML generation using the base class methods provided). You'll also need to update the destination URL in the appropriate rewrite rules in .htaccess if you have URL rewriting enabled (only those rules that have the 'L' flag). A good example is the welcome page, index.php. Avoid code changes in any of the distributed files and especially the harness subdirectories unless you are significantly altering harness functionality (in which case you should be contributing those changes back, and they should be useful to other installs).</p>
 
 
 
@@ -210,9 +212,12 @@
 	<li>Reference tests - automatic comparison of tests and references</li>
 	<li>Script tests - integration with testharness.js</li>
   </ul>
+<li>Support for multiple tests per file (leverage combo test concept)</li>
 <li>Needed Test Mode - a testing mode where only tests that do not have resutls for the current engine are presented</li>
 <li>Annotations Features</li>
   <ul>
+    <li>Add basic information about test suite, etc</li>
+    <li>Improve styling</li>
 	<li>Provide result data by browser / version</li>
 	<li>UI controls - individual collapse, ???</li>
     <li>Link to needed test mode when displaying "please test" links</li>

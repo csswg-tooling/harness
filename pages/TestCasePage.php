@@ -44,13 +44,17 @@ class TestCasePage extends HarnessPage
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
-   * 'c' Test Case Name (optional)
-   * 'g' Spec Section Id (optional)
+   *
+   * Optional URL paramaters
+   * 'c' Test Case Name - test only this test
+   * 'g' Spec Section Id
+   * 'sec' Spec Section Name
    * 'r' Index of test case
-   * 'o' Test ordering
-   * 'f' Format of test
+   * 'i' Test Case Name - find this test in the group
+   * 'o' Test ordering - 0 = alphabetical, 1 = sequenced
+   * 'f' Desired format of test
+   * 'fl' Flag - only display tests with this flag
    * 'ref' Name of reference
-   * 'm' Modified date (only results before date)
    */
   function __construct(Array $args = null) 
   {
@@ -83,10 +87,11 @@ class TestCasePage extends HarnessPage
     $this->mIndex = intval($this->_getData('r'));
     
     $formatName = $this->_getData('f');
+    $flag = $this->_getData('fl');
     
     $this->mTestCase = new TestCase();
     $this->mTestCase->load($this->mTestSuite, $testCaseName, $sectionId,
-                           $this->mUserAgent, $order, $this->mIndex);
+                           $this->mUserAgent, $order, $this->mIndex, $flag);
                            
     if (! $this->mTestCase->isValid()) {
       $msg = 'No test case identified.';
@@ -94,7 +99,7 @@ class TestCasePage extends HarnessPage
     }
     
     if (0 == $this->mIndex) {
-      $this->mIndex = $this->mTestCase->getIndex($sectionId, $this->mUserAgent, $order);
+      $this->mIndex = $this->mTestCase->getIndex($sectionId, $this->mUserAgent, $order, $flag);
       if (FALSE === $this->mIndex) {  // given a testcase and a section, but test isn't in that section
         $this->mIndex = -1;
       }
@@ -119,10 +124,10 @@ class TestCasePage extends HarnessPage
     
     if (-1 == $this->mCount) {
       if ($sectionId) {
-        $this->mCount = $this->mTestCase->countCasesInSection($sectionId);
+        $this->mCount = $this->mTestCase->countCasesInSection($sectionId, $flag);
       }
       else {
-        $this->mCount = $this->mTestCase->countCasesInSuite();
+        $this->mCount = $this->mTestCase->countCasesInSuite($flag);
       }
     }
 

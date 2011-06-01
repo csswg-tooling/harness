@@ -121,7 +121,11 @@ class Flags extends DBConnection
   function getFlagString()
   {
     uksort($this->mFlags, 'strnatcasecmp');
-    return implode(',', $this->mFlags);
+    $flagString = implode(',', $this->mFlags);
+    if ($flagString) {
+      return ",{$flagString},";
+    }
+    return '';
   }
 }
 

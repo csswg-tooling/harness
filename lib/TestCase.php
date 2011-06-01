@@ -72,7 +72,7 @@ class TestCase extends DBConnection
   }
   
   function load(TestSuite $testSuite, $testCaseName, $sectionId,
-                UserAgent $userAgent, $order, $index)
+                UserAgent $userAgent, $order, $index, $flag = null)
   {
     if ($index < 0) {
       $index = 0;
@@ -84,11 +84,11 @@ class TestCase extends DBConnection
       $this->mInfo = $this->_selectCaseByName($testCaseName);
     }
     elseif ($sectionId) { // load test from spec section
-      $this->mInfo = $this->_selectCaseFromSection($sectionId, $userAgent, $order, $index);
+      $this->mInfo = $this->_selectCaseFromSection($sectionId, $userAgent, $order, $index, $flag);
       
     }
     else { // load test from suite
-      $this->mInfo = $this->_selectCaseFromSuite($userAgent, $order, $index);
+      $this->mInfo = $this->_selectCaseFromSuite($userAgent, $order, $index, $flag);
     }
 
     if ($this->isValid()) {
@@ -205,13 +205,21 @@ class TestCase extends DBConnection
   /**
    * Count number of test cases in suite
    */
-  function countCasesInSuite()
+  function countCasesInSuite($flag = null)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     
     $sql  = "SELECT COUNT(*) AS `count` ";
     $sql .= "FROM `suitetests` ";
+    if ($flag) {
+      $sql .= "LEFT JOIN `testcases` ";
+      $sql .= "ON `suitetests`.`testcase_id` = `testcases`.`id` ";
+    }
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+    if ($flag) {
+      $flag = $this->encode($flag, 'testcases.flags');
+      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+    }
     $sql .= "LIMIT 1";
     
     $r = $this->query($sql);
@@ -258,7 +266,7 @@ class TestCase extends DBConnection
   /**
    * Load data about a test case based on index within suite
    */
-  protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index)
+  protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index, $flag = null)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $engineName = FALSE;
@@ -280,6 +288,10 @@ class TestCase extends DBConnection
     }
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
+    if ($flag) {
+      $flag = $this->encode($flag, 'testcases.flags');
+      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+    }
     if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
@@ -309,17 +321,22 @@ class TestCase extends DBConnection
   /**
    * Count number of test cases in a particular section
    */
-  function countCasesInSection($sectionId)
+  function countCasesInSection($sectionId, $flag = null)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $sectionId = intval($sectionId);
     
     $sql  = "SELECT COUNT(*) AS `count` ";
     $sql .= "FROM `suitetests` ";
-    $sql .= "LEFT JOIN `testlinks` ";
+    $sql .= "LEFT JOIN (`testlinks`, `testcases`) ";
     $sql .= "ON `suitetests`.`testcase_id` = `testlinks`.`testcase_id` ";
+    $sql .= "AND `suitetests`.`testcase_id` = `testcases`.`id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
     $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+    if ($flag) {
+      $flag = $this->encode($flag, 'testcases.flags');
+      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+    }
     $sql .= "LIMIT 1";
 
     $r = $this->query($sql);
@@ -337,7 +354,7 @@ class TestCase extends DBConnection
   /**
    * Load data about test case from section by index
    */
-  protected function _selectCaseFromSection($sectionId, UserAgent $userAgent, $order, $index)
+  protected function _selectCaseFromSection($sectionId, UserAgent $userAgent, $order, $index, $flag = null)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
     $engineName = FALSE;
@@ -361,6 +378,10 @@ class TestCase extends DBConnection
     }
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
+    if ($flag) {
+      $flag = $this->encode($flag, 'testcases.flags');
+      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+    }
     if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
@@ -454,7 +475,7 @@ class TestCase extends DBConnection
   }
 
 
-  function getIndex($sectionId, UserAgent $userAgent, $order)
+  function getIndex($sectionId, UserAgent $userAgent, $order, $flag = null)
   {
     $testSuiteName = $this->encode($this->mTestSuite->getName(), 'testsequence.testsuite');
     $engineName = FALSE;
@@ -477,6 +498,10 @@ class TestCase extends DBConnection
     }
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
+    if ($flag) {
+      $flag = $this->encode($flag, 'testcases.flags');
+      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+    }
     if ($sectionId) {
       $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     }
@@ -524,15 +549,11 @@ class TestCase extends DBConnection
       $r = $this->query($sql);
 
       if (! $r->succeeded()) {
-        $msg = 'Operation Failed. We were unable to record you submission.';
+        $msg = 'Operation Failed. We were unable to record your submission.';
         trigger_error($msg, E_USER_ERROR);
       }
       
-      $sectionIds = $this->getSpecSectionIds();
-      foreach ($sectionIds as $sectionId) {
-        StatusCache::FlushResultsForSection($this->mTestSuite, $sectionId);
-      }
-      StatusCache::FlushResultsForSection($this->mTestSuite, 0);
+      StatusCache::FlushAllResults(); // need to flush cache for all sections in all test suites that include this test, faster to flush them all
     }
     return FALSE;
   }

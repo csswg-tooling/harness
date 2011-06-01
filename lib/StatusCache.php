@@ -89,6 +89,16 @@ class StatusCache
     
     $db->query($sql);
   }
+  
+  
+  static function FlushAllResults()
+  {
+    $db = new DBConnection();
+    
+    $sql  = "TRUNCATE TABLE `statuscache` ";
+    
+    $db->query($sql);
+  }
 }  
 
 ?>
