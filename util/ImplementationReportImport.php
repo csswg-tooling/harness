@@ -245,12 +245,11 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             $sql .= "'{$result}')";  
           }
         }
-echo "Result: {$result} for {$testCaseId} format {$format} rev {$revision}\n";
-/*
+
         $r = $this->query($sql);
         if (! $r->succeeded()) {
           die("failed to store result [{$sql}]\n");
-        }*/
+        }
       }
     }
   }
