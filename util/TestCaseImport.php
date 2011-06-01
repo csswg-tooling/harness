@@ -156,6 +156,34 @@ class TestCaseImport extends HarnessCmdLineWorker
   }
   
   
+  protected function _getTestCasePath($testCaseId, Format $format)
+  {
+    $formatName = $this->encode($format->getName(), 'testpages.format');
+    
+    $sql  = "SELECT `uri` ";
+    $sql .= "FROM `testpages` ";
+    $sql .= "WHERE `testcase_id` = '$testCaseId' AND `format` = '{$formatName}' ";
+    
+    $r = $this->query($sql);
+    return $r->fetchField(0, 'uri');
+  }
+  
+  
+  protected function _getReferencePath($testCaseId, Format $format, $referenceName)
+  {
+    $formatName = $this->encode($format->getName(), 'references.format');
+    $referenceName = $this->encode($referenceName, 'references.reference');
+    
+    $sql  = "SELECT `uri` ";
+    $sql .= "FROM `references` ";
+    $sql .= "WHERE `testcase_id` = '$testCaseId' AND `format` = '{$formatName}' ";
+    $sql .= "AND `reference` = '{$referenceName}' ";
+    
+    $r = $this->query($sql);
+    return $r->fetchField(0, 'uri');
+  }
+  
+  
   function import($manifest, $testSuiteName)
   {
     $testSuite = new TestSuite($testSuiteName);
@@ -233,12 +261,11 @@ class TestCaseImport extends HarnessCmdLineWorker
               foreach ($formats as $format) {
                 if ($matches && $format->validForFlags($flags)) {
                   $compared = TRUE;
-                  $testPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+                  $newTestPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+                  $oldTestPath = $this->_getTestCasePath($testCaseId, $format);
                   
-                  // XXX use stored url path for old test
-                      
-                  $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $testPath));
-                  $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $testPath));
+                  $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $newTestPath));
+                  $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $oldTestPath));
                   
                   $matches = ($newTest->getContent() == $oldTest->getContent());
                   
@@ -248,10 +275,12 @@ class TestCaseImport extends HarnessCmdLineWorker
                       if ('!' == $referencePath[0]) {
                         $referencePath = $substr($referencePath, 1);
                       }
-                      $referencePath = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
+                      $referenceName = basename($referencePath);
+                      $newReferencePath = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
+                      $oldReferencePath = $this->_getReferencePath($testCaseId, $format, $referenceName);
 
-                      $newReference = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $referencePath));
-                      $oldReference = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $referencePath));
+                      $newReference = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $newReferencePath));
+                      $oldReference = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $oldReferencePath));
                       
                       $matches = ($newReference->getContent() == $oldReference->getContent());
                     }
@@ -346,13 +375,8 @@ class TestCaseImport extends HarnessCmdLineWorker
         $testsChanged = TRUE;
       }
 
-      // testpages
-      $sql  = "DELETE FROM `testpages` ";
-      $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
-      // XXX testcase may live in multiple suites - other suites may have more formats...
-      
-      $this->query($sql);
-
+      // testpages - update page paths for this suite's formats, leave other formats alone?
+      //           - other suites may share this test in different formats, what about overlap if path changes?
       foreach ($formats as $format) {
         if ($format->validForFlags($flags)) {
           $uri = $this->_combinePath($format->getPath(), $testCasePath, $format->getExtension());
@@ -362,19 +386,23 @@ class TestCaseImport extends HarnessCmdLineWorker
           
           $sql  = "INSERT INTO `testpages` (`testcase_id`, `format`, `uri`) ";
           $sql .= "VALUES ('{$testCaseId}', '{$formatName}', '{$uri}') ";
+          $sql .= "ON DUPLICATE KEY UPDATE `uri` = '{$uri}' ";
           
           $this->query($sql);
         }
       }
 
-      // references
-      $sql  = "DELETE FROM `references` ";
-      $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
-      // XXX formats? see above
+      // references - update references for this suite's formats - see note about testpages
+      foreach ($formats as $format) {
+        if ($format->validForFlags($flags)) {
+          $formatName = $this->encode($format->getName(), 'references.format');
+          $sql  = "DELETE FROM `references` ";
+          $sql .= "WHERE `testcase_id` = '{$testCaseId}' AND `format` = '{$formatName}' ";
+          $this->query($sql);
+        }
+      }
       // XXX if test gains a reference, but is otherwise unchanged, should it rev? I think so, but the reference may have an older revision so it may not get caught by the current system
       
-      $this->query($sql);
-
       foreach ($referenceArray as $referencePath) {
       
         if ('!' === $referencePath[0]) {
@@ -419,7 +447,6 @@ class TestCaseImport extends HarnessCmdLineWorker
       $usedSpecLinkIds = array();
       $sequence = -1;
       foreach ($linkArray as $specLinkURI) {
-        // XXX handle absolute spec links for links to other specs
         $sequence++;
         $specLinkId = $this->_getSpecLinkId($specLinkURI);
         
