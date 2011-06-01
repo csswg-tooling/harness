@@ -20,12 +20,14 @@
 require_once("lib/HarnessCmdLineWorker.php");
 require_once("lib/UserAgent.php");
 require_once("lib/User.php");
+require_once("lib/TestSuite.php");
 
 /**
  * Import results from implementation report files
  */
 class ImplementationReportImport extends HarnessCmdLineWorker
 {
+  protected $mTestSuite;
   protected $mTestCaseRevision;
   protected $mTestCaseFlags;
 
@@ -60,6 +62,10 @@ class ImplementationReportImport extends HarnessCmdLineWorker
 
   function initFor($testSuiteName)
   {
+    $this->mTestSuite = new TestSuite($testSuiteName);
+    if (! $this->mTestSuite->isValid()) {
+      die("Unknown test suite\n");
+    }
     $this->_loadTestCases($testSuiteName);
   }
 
@@ -95,6 +101,35 @@ class ImplementationReportImport extends HarnessCmdLineWorker
   }
   
   
+  function loadRevisionsOnDate($date)
+  {
+    foreach ($this->mTestCaseIds as $testCaseName => $testCaseId) {
+      $sql  = "SELECT `revision`, `date` ";
+      $sql .= "FROM `revisions` ";
+      $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+      $sql .= "ORDER BY `date` ";
+      
+      $r = $this->query($sql);
+      $revision = 0;
+      while ($revisionData = $r->fetchRow()) {
+        $revisionDate = $revisionData['date'];
+        if ($date < $revisionDate) {
+          break;
+        }
+        $revision = $revisionData['revision'];
+      }
+      if (0 == $revision) {
+        $this->mTestCaseIds[$testCaseName] = FALSE; // test did not exist on that date, forget it
+        unset($this->mTestCaseRevision[$testCaseId]);
+        unset($this->mTestCaseFlags[$testCaseId]);
+      }
+      else {
+        $this->mTestCaseRevision[$testCaseId] = $revision;
+      }
+    }
+  }
+  
+  
   function import($reportFileName, $defaultFormat, $userAgentString, $source, $modified = null)
   {
     $userAgent = new UserAgent($userAgentString);
@@ -106,7 +141,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
     $sourceId = $user->getId();
 
     $validResults = array('pass', 'fail', 'uncertain', 'na', 'invalid');
-    $validFormats = array('html4', 'xhtml1'); // XXX get from test suite
+    $validFormats = $this->mTestSuite->getFormatNames();
     
     $data = file($reportFileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
@@ -157,11 +192,9 @@ class ImplementationReportImport extends HarnessCmdLineWorker
           
           $comment = trim($comment);
           
-          $results[$testCaseId] = $result;
-          $formats[$testCaseId] = $format;
-          // XXX handle multiple formats per test case
+          $results[$testCaseId][$format] = $result;
           if (0 < strlen($comment)) {
-            $comments[$testCaseId] = $this->encode($comment, 'results.comment');  // encode now to test length
+            $comments[$testCaseId][$format] = $this->encode($comment, 'results.comment');  // encode now to test length
           }
         }
       }
@@ -169,54 +202,55 @@ class ImplementationReportImport extends HarnessCmdLineWorker
 
     // import results
     echo "Importing results\n";
-    foreach ($results as $testCaseId => $result) {
-
-      // XXX add code to detect revision in effect on result date
+    foreach ($results as $testCaseId => $formatResults) {
       $revision = $this->encode($this->mTestCaseRevision[$testCaseId], 'results.revision');
-      $format = $this->encode($formats[$testCaseId], 'results.format');
-      
-      $sql  = "INSERT INTO `results` ";
-      if (array_key_exists($testCaseId, $comments)) {
-        $comment = $comments[$testCaseId];  // pre-encoded
-        if ($modified) {
-          $sql .= "(`testcase_id`, `revision`, `format`, ";
-          $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
-          $sql .= "`result`, `comment`, `modified`) ";
-          $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
-          $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
-          $sql .= "'{$result}', '{$comment}', '{$modified}')";  
+      foreach ($formatResults as $format => $result) {
+        $format = $this->encode($format, 'results.format');
+        
+        $sql  = "INSERT INTO `results` ";
+        if (array_key_exists($testCaseId, $comments)) {
+          $comment = $comments[$testCaseId];  // pre-encoded
+          if ($modified) {
+            $sql .= "(`testcase_id`, `revision`, `format`, ";
+            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`result`, `comment`, `modified`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
+            $sql .= "'{$result}', '{$comment}', '{$modified}')";  
+          }
+          else {
+            $sql .= "(`testcase_id`, `revision`, `format`, ";
+            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`result`, `comment`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
+            $sql .= "'{$result}', '{$comment}')";  
+          }
         }
         else {
-          $sql .= "(`testcase_id`, `revision`, `format`, ";
-          $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
-          $sql .= "`result`, `comment`) ";
-          $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
-          $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
-          $sql .= "'{$result}', '{$comment}')";  
+          if ($modified) {
+            $sql .= "(`testcase_id`, `revision`, `format`, ";
+            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`result`, `modified`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
+            $sql .= "'{$result}', '{$modified}')";  
+          }
+          else {
+            $sql .= "(`testcase_id`, `revision`, `format`, ";
+            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`result`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
+            $sql .= "'{$result}')";  
+          }
         }
-      }
-      else {
-        if ($modified) {
-          $sql .= "(`testcase_id`, `revision`, `format`, ";
-          $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
-          $sql .= "`result`, `modified`) ";
-          $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
-          $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
-          $sql .= "'{$result}', '{$modified}')";  
-        }
-        else {
-          $sql .= "(`testcase_id`, `revision`, `format`, ";
-          $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
-          $sql .= "`result`) ";
-          $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
-          $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
-          $sql .= "'{$result}')";  
-        }
-      }
-
-      $r = $this->query($sql);
-      if (! $r->succeeded()) {
-        die("failed to store result [{$sql}]\n");
+echo "Result: {$result} for {$testCaseId} format {$format} rev {$revision}\n";
+/*
+        $r = $this->query($sql);
+        if (! $r->succeeded()) {
+          die("failed to store result [{$sql}]\n");
+        }*/
       }
     }
   }
@@ -224,13 +258,19 @@ class ImplementationReportImport extends HarnessCmdLineWorker
 
 $worker = new ImplementationReportImport();
 
+$testSuiteName  = 'CSS21_RC6';
+$reportFileName = 'IE9_20110323_ImplementationReport.txt';
+$defaultFormat  = 'html4';
+// XXX get from report file?
+$uaString       = 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0;)';
+$source         = 'Microsoft';
+$date           = '2011-03-23 12:00:00';
+
 $worker->initFor('CSS21_RC6');
 
 //$worker->loadRevisionInfo('testinfo.data');
+$worker->loadRevisionsOnDate($date);
 
-$worker->import('IE9_20110323_ImplementationReport.txt', 'html4',
-                'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0;)', 
-                'Microsoft', 
-                '2011-03-23 12:00:00');
+$worker->import($reportFileName, $defaultFormat, $uaString, $source, $date);
 
 ?>
