@@ -95,8 +95,8 @@ class CmdLineWorker extends DBConnection
     
     echo "{$errorType}{$errorString}\n";
     echo "File: {$errorFile}\n";
-    echo "Line: {$this->mErrorLine}\n";
-    echo "Context: " . print_r($this->mErrorContext, TRUE) . "\n";
+    echo "Line: {$errorLine}\n";
+    echo "Context: " . print_r($errorContext, TRUE) . "\n";
     echo "Args: " . print_r($argv, TRUE) . "\n";
 
     die();
