@@ -202,6 +202,22 @@ class DBConnection
 
 
   /**
+   * Get only directory part of a path (without filename)
+   *
+   * @param string path
+   * @return string directory
+   */
+  protected function _getFileDirectory($path)
+  {
+    if ('/' == substr($path, -1)) {
+      return substr($path, 0, -1);
+    }
+    $pathInfo = pathinfo($path);
+    return $pathInfo['dirname'];
+  }
+  
+  
+  /**
    * Get only file name part of a path (without extension)
    *
    * @param string path

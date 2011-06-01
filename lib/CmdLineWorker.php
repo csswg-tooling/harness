@@ -54,6 +54,16 @@ class CmdLineWorker extends DBConnection
   }
   
   
+  function copyFile($source, $destination)
+  {
+    $destPath = $this->_getFileDirectory($destination);
+    if ($destPath && (! file_exists($destPath))) {
+      mkdir($destPath, 0777, TRUE);
+    }
+    copy($source, $destination);
+  }
+  
+  
   /**
    * Callback function to capture PHP generated errors
    *

@@ -156,7 +156,7 @@ class HarnessPage extends DynamicPage
         $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
         $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
       }
-      if (! $absolute) {  // force absolute path when rewriting since our url path is not the path to this page
+      if ((! $absolute) && (! $this->mOutputFile)) {  // force absolute path when rewriting since our url path is not the path to this page
         if (empty($_SERVER['PHP_SELF'])) {
           $abs = parse_url(Config::Get('server.install_uri'), PHP_URL_PATH);
         }

@@ -42,7 +42,7 @@ class Page
   private   $mPIList;
   private   $mBufferStack;
   
-  private   $mOutputFile;
+  protected $mOutputFile;
 
 
   /**

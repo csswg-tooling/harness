@@ -654,8 +654,8 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       
       // copy stylesheets
       if ($outputPath) {
-        copy(Config::Get('uri.stylesheet.base'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.base')));
-        copy(Config::Get('uri.stylesheet.report'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.report')));
+        $this->copyFile(Config::Get('uri.stylesheet.base'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.base')));
+        $this->copyFile(Config::Get('uri.stylesheet.report'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.report')));
       }
     }
   }
