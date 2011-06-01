@@ -1,0 +1,224 @@
+<h2>Installing The Harness</h2>
+
+<p>The harness requires Apache 2.X, PHP 5.X (tested with PHP 5.3.X) and MySQL (tested with version 5.1, it will probably work with 4.X). Copy the harness code somewhere in your server's DocumentRoot and add "AllowOverride All" to the appropriate Apache config file for the harness install directory.</p>
+
+
+<h3>Setup MySQL Database</h3>
+
+<p>Create a MySQL database for the harness. Import the file 'lib/Harness.sql' to create the needed tables. This file will also populate the `flags` and `formats` tables with some starting values taken from the CSS test suite. Feel free to edit or remove the flag and format data as appropriate.</p>
+
+<p>Create a user with access to the harness database. This user requires SELECT, INSERT, UPDATE and DELETE privileges to all tables within the harness database.</p>
+
+
+<h3>Setup Local Config File</h3>
+
+<p>Copy the file lib/Config.local.example.php to Config.local.php. Place this file either in the harness/lib directory or for better security, somewhere outside the server's document root but within the PHP include path. Normally this file is inaccessible to users but it is possible that a broken server configuration may expose this file and therefore the database password.</p>
+
+<p>Edit the local config file (Config.local.php) as appropriate. Be sure to enter the appropriate database information in the db.* entries.</p>
+
+<p>Set the config options for the server's time zone (the time zone setting on the machine hosting the MySQL server), default contact info, and the harness install URI (the full URI to the harness's root). Choose whether or not to use Apache URL rewriting, if turned on in the config file, it must me also turned on in the harness's .htaccess file. This feature uses clean, path based URLs within the harness rather than query based URLs.</p>
+
+<p>Setting debug mode will result in more descriptive error messages if things go wrong.</p>
+
+<p>All other config options are best left to their defaults, but may be modified for custom installs by "those that know what they're doing". Modify at your own risk. See Config.defaults.php for a full list of configuration options. DO NOT EDIT Config.default.php, instead copy any settings you want to override into Config.local.php.</p>
+
+<h3>Setup Resequence Cronjob</h3>
+<p>Setup a cronjob to perform test sequencing as described below (see <a href='#generate_test_sequencing'>Generate Test Sequencing</a>). Optionally setup another cronjob for the <a href='#spider_trap'>spider trap</a>.</p>
+
+
+<h2>Adding A Test Suite To The Harness</h2>
+<p>The harness can handle an arbitraty number of test suites. There can be multiple test suites per specification, and the same test cases can live in multiple suites. The harness can lock given test suites to provide result snapshots at given points in time.</p>
+
+<h3>Define The Specification</h3>
+
+<p>In the `specifications` table, insert a row for your specification. The fields are:</p>
+<dt>`spec`</dt><dd>Internal spec name. This is used as a key to identify the spec, keep it short, but unique.</dd>
+<dt>`title`</dt><dd>Human readable short title for the spec.</dd>
+<dt>`description`</dt><dd>Human readable full name of the spec.</dd>
+<dt>`base_uri`</dt><dd>Base URI for the spec, do not include a filename component. All spec URIs will be relative to this base.</dd>
+<dt>`home_uri`</dt><dd>Optional path to spec home page, relative to `base_uri`.</dd>
+
+
+<h3>Import Specification Links</h3>
+
+<p>The harness needs a list of sections within your spec complete with links to each. These should be extracted from the spec's table of contents. There are example perl scripts in the CSS Test Suite to extract these links and generate the appropriate manifest file. They may need slight modification depending on the structure of your specification.</p>
+
+<p>Gather the links in a text file, one record per line, tab delimited fields. The fields are:</p>
+<dt>'uri'</dt><dd>Absolute URI (complete with anchor) to the section within the specification. The root of the URI must match the `base_uri` from the spec definition above.</dd>
+<dt>'section number'</dt><dd>Hierarchical section number, separated by '.', e.g.: '3.1.4', may be alphanumeric, e.g.: 'D.3.137'.</dd>
+<dt>'section title'</dt><dd>The title should be the section title from the spec. It may contain HTML entities but not markup.</dd>
+
+<p>Sections must be listed in the proper sequence, subsections immediately following the parent section, etc.</p>
+
+<p>Run the import script at the command line from the root of the harness install:</p>
+<code>php util/SpecLinkImport.php {manifest file name} {spec name}</code>
+
+<p>The {spec name} is the internal spec name defined in the `specifications` record.</p>
+
+
+<h3>Define Test Flags</h3>
+
+<p>Test flags are meta data that describe attributes of a test case. Some affect harness behavior, such as flags for optional tests, reference tests, or flags that indicate test formats. All flag information will be displayed to users within the harness test pages.</p>
+
+<p>The initial database setup should give you the set of flags used by the CSS test suite. If your test suite uses flags not currently known to the harness, add rows to the `flags` table to define them. The fields are:</p>
+<dt>`flag`</dt><dd>Internal flag name. Keep it short and unique.</dd>
+<dt>`description`</dt><dd>Human readable description of the meaning of having the flag set. May contain HTML.</dd>
+<dt>`set_test`</dt><dd>Optional HTML to inject into harness testing page when flag is set. These tests may help identify testing pre-requisites needed at the client.</dd>
+<dt>`unset_test`</dt><dd>Optional HTML to inject into harness testing page when flag is NOT set.</dd>
+
+
+<h3>Define Test Formats</h3>
+
+<p>The initial database setup should give you a few formats to start off with. If your test suite uses formats not currently known to the harness, add rows to the `formats` table to define them. The fields are:</p>
+<dt>`format`</dt><dd>Internal format name. Keep it short and unique. Used in harness URLs, best to keep URL friendly.</dd>
+<dt>`title`</dt><dd>Human readable format title. Keep it short.</dd>
+<dt>`description`</dt><dd>Human readable long description of the format.</dd>
+<dt>`home_uri`</dt><dd>Relative URI to the home page of the test suite in this format. Relative to the `base_uri` specified for the test suite later.</dd>
+<dt>`path`</dt><dd>Relative path to tests of this format within the test suite.</dd>
+<dt>`extension`</dt><dd>Extension used for test file in this format.</dd>
+<dt>`filter`</dt><dd>Set of test flags used to exclude tests from this format. Internal flag names separated by commas. Tests that have any of these flags will not be available in this format.</dd>
+
+
+<h3>Define the Test Suite</h3>
+
+<p>In the `testsuites` table, insert a row for your test suite, The fields are:</p>
+<dt>`testsuite`</dt><dd>Internal test suite name. Used as a key to identify the test suite. Keep it short and unique. It's also used in harness URLs, so best to keep it URL friendly (or the harness will add escapes to every URL).</dd>
+<dt>`base_uri`</dt><dd>Base URI to test pages, do not include a filename component. All test pages will be relative to this base.</dd>
+<dt>`home_uri`</dt><dd>Optional path to test suite home page, relative to 'base_uri'.</dd>
+<dt>`spec`</dt><dd>The internal spec name of the specification being tested.</dd>
+<dt>`title`</dt><dd>Human readable title of the test suite. Keep it short.</dd>
+<dt>`formats`</dt><dd>List of test formats available in the test suite. Internal format names separated by commas.</dd>
+<dt>`optional_flags`</dt><dd>List of flags that indicate a test is for optional behavior, ie, a MAY or SHOULD condition. Internal flag names separated by commas.</dd>
+<dt>`active`</dt><dd>'1' or '0'. If non-zero test suite is active in the harness UI.</dd>
+<dt>`date`</dt><dd>Today's date. This will be updated every time tests are imported to the suite.</dd>
+<dt>`locked`</dt><dd>Optional lock date. If NULL, the harness will allow results to be entered. If a date, the harness will only show results, and only results entered before date. Dates stored in the database are sever local time (the harness will convert to GMT in its UI and URIs).</dd>
+<dt>`description`</dt><dd>Human readable long description of the test suite.</dd>
+<dt>`contact_name`</dt><dd>Contact name to list on harness pages for this suite.</dd>
+<dt>`contact_uri`</dt><dd>Contact URI to list on harness pages for this suite. If a 'mailto:' URI the harness will automatically obfuscate the email address from most spam harvesters.</dd>
+
+
+<h3>Test Case Manifest File</h3>
+
+<p>Prepare a manifest file listing the full set of test cases used within a test suite along with all test case meta data relevant to the harness. See the CSS test suite build system for an example of tools that will build the manifest file.</p>
+
+<p>The file is ASCII, one record per line, with fields tab delimited. The fields of the file are:</p>
+<dt>'id'</dt><dd>Unique test case name with an optional path component, no extension.</dd>
+<dt>'references'</dt><dd>Comma separated list of test references. Optional path component, no extension.</dd>
+<dt>'title'</dt><dd>Human readable title of test. May contain HTML entities but not markup.</dd>
+<dt>'flags'</dt><dd>Comma separated list of test flags.</dd>
+<dt>'links'</dt><dd>Comma separated list of links to spec section. Relative path from the spec URI specified in the `specifications` table.</dd>
+<dt>'revision'</dt><dd>Revision id of test case. May be numeric or full changeset id. The actual value is unimportant, but must change if the test changes.</dd>
+<dt>'credits'</dt><dd>Comma separated list of test credits. May contain HTML entities but not markup. Credit format is: `name`&lt;url&gt;.</dd>
+<dt>'assertion'</dt><dd>Human readable test assertion. May contain HTML entities but not markup.</dd>
+
+<p>The test case name must be unique across all test suites in the harness (ignoring the path component and any extension, ie: foo/test.html and bar/test.xml are the same test). This is required as tests may be used within multiple test suites. If present, the path component must be consistent in all test suites the test is used in. The URL to the test page used by the harness will be: {testsuite.base_uri}/{format.path}/{test case id}.{format.extension}</p>
+
+<p>References may have a leading '!' to indicate a negative reference. The same reference may be referred to by multiple tests.</p>
+
+<p>The order of test links is significant. The first link specified indicates the 'primary' section for the test. In result reports ordered by section, the test name will be bold in its primary section.</p>
+
+<p>The revision is generally the revision id of last commit to the test file within a source control system. If a test has dependent files, ie: references, stylesheet, images, etc, the revision must be the most recent commit to either the test case or any dependent file.</p>
+
+
+<h3>Import Test Cases</h3>
+
+<p>Import the test suite manifest file with the following script run at the command line in the root of the harness install:</p>
+<code>php TestCaseImport.php {manifest file name} {test suite name} [{new path} {old path}]</code>
+
+<p>The {test suite name} is the internal test suite name defined above.</p>
+
+<p>It is safe to run this script multiple times. The import script detects if tests have already been imported into the specified test suite and adds, updates, or removes tests to match the current manifest. If tests are no longer present in a manifest, they will be removed from the current test suite, but all other data about the test will be preserved within the harness.</p>
+
+<p>If the test suite has previously been imported into the harness, but has been updated, specify the two optional directories. They need to be the base directories of the current test suite, and the previous version of the test suite. The import script will do normalized diffs of any tests that have different revisions as specified in the manifest file. The import script will update the harness's revision equivalency table so that results entered against old versions of tests that have not substantively changed will still apply. This allows changes to tests that don't impact the test to not invalidate results (e.g.: changes to test meta data, moving a test within the source repository, etc.).</p>
+
+
+<h2>Living With Your Harness</h2>
+
+<h3 id='generate_test_sequencing'>Generate Test Sequencing</h3>
+
+<p>The harness needs to periodically compute the ideal sequence to present tests in based on current result data. This is done by running the <code>php util/Resequence.php</code> script from the harness root install directory. This is generally done by a cronjob. Resequencing should be done often enough that users of the harness will be presented with relevant test sequencing, but not so frequently that test sequencing will be constantly shifting udder a user running through tests. The CSS harness currently resequences every six hours.</p>
+<p>Test Sequencing priorities testing first to achieve two passes for every test, then, for testing coverage. The order sequenced tests are presented is: 1) tests that do not have two passes, and have no results for the client engine, 2) tests that do not have two passes, and have fail results for the current engine, 3) optional tests that do not have two passes, and have no results for the clilent engine, 4) optional tests that do not have two passes, and have fail results for the current engine, 5) tests that have two or more passes, but no results for the client engine, 6) tests that have two or more passes, but fail results for the client engine, 7) optional tests that have two or more passes, but no results for the client engine, 8) optional tests that have two or more passes, but fail results for the client engine, 9) tests with pass results for the client engine, 10) tests reported as invalid. Within each group, tests are presented in alphabetical order.</p>
+
+
+<h3>Import Implementation Reports</h3>
+
+<p>If externally generated implementation reports are available, their result data may be imported into the harness. The implementation report is an ASCII file with one result per line, tab delimited fields. The fields are:</p>
+<dt>'testname'</dt><dd>Test case name with optional path component. If present, the path component must match a format path to indicate the format used for that result.</dd>
+<dt>'result'</dt><dd>One of the following values (without the quotes): 'pass', 'fail', 'uncertain', 'na', 'invalid', '?', 'skip'.</dd>
+<dt>'comment'</dt><dd>Optional comment (this entire field is optional).</dd>
+
+<p>The implementation report import script should be run from the command line. Currently it must be modified to provide the following information (a future revision will extract this data from the implementation report):</p>
+<dt>Default Format</dt><dd>The format id used for test results that don't have a format specified.</dd>
+<dt>UA String</dt><dd>The UA String for the user agent that generated the results.</dd>
+<dt>Source</dt><dd>The source of the result data, generally a person or company name.</dd>
+<dt>Date</dt><dd>The date the results were gathered.</dd>
+
+<p>The import script may also optionally load a test case manifest file. If present the manifest file will be used to determine the revision of the test used for each result, otherwise the current revision at the date entered will be used.</p>
+
+
+<h3>Export Result Data</h3>
+
+<p>You may also optionally export result data from the harness into a CSV file with the following script run in the harness root directory:</p>
+<code>php util/ExportResults.php {test suite} {output file name}</code>
+
+
+<h3>Formal Implementation Reports</h3>
+
+<p>The harness can generate a formal Implementation Report suitable for transitioning from CR to PR with the following script run in the harness root directory:</p>
+<code>php util/GenerateImplementationReport.php {test suite name} [{output path}]</code>
+
+
+<h3 id='spider_trap'>The Spider Trap</h3>
+
+<p>The harness has code to detect unwelcome web crawlers, like spam harvesters. Frequent loading of result report pages can put a significant burden on your web server as well as chew through a lot of bandwidth, especially with large test suites. The CSS harness server has seen as many as 50 concurrent web crawlers loading pages as fast as they are served. While access to report pages is generally through form submission, and therefore not visited by most crawlers, any published links to generated reports will attract spam harvesters, especially those found in online email archives.</p>
+
+<p>Use of the spider trap requires a cronjob to activate filtering rules at your firewall. If you use the spider trap be sure to add a robots.txt file to your server's root to prevent friendly crawlers from tripping the trap.</p>
+
+<p>The default Spider Trap settings are to ban spiders after two visits to the trap within 3 days. (Every page in the harness has a least two links to the spider trap.) The default ban period is 7 days. Ban settings and commands to ban and release traffic at the firewall are settable in Config.local.php. The default settings are suitable for iptables on Debian (see Config.default.php for examples). The spider post process command is run after any ban or release, it's useful for preserving current firewall rules which can then be reapplied at startup (you'll need to install your own startup script to do that if your firewall doesn't preserve rules on shutdown).</p>
+
+<p>In a frequently run cronjob (ie: once per minute or so), execute the following script in the harness root directory:</p>
+<code>php util/ProcessSpiders.php</code>
+
+<p>When setting up and testing the spider trap, be careful not to get yourself banned, as <b>all</b> traffic to the server from your IP address will be filtered at the firewall. The best way to prevent that is to create an entry for yourself (and any other known good IP addresses) with your IP address and set the value for `banned` to '-1' (other fields are informative and can be ignored). This will prevent that IP address from ever getting banned.</p>
+
+
+<h3>Re-parsing User Agent Strings</h3>
+
+<p>The harness does it's best to parse user agent strings of testers to determine the rendering engine, browser, platform and versions of all three. Due to inconsistencies in user agent strings, the parsing algorithm may need to be updated to understand anomalous input. If the algorithm is updated, the following script, run in the harness root directory, will re-parse all known user agent strings updating engine, browser and platform data. Existing result data will be applied to current user agent data.</p>
+<code>php util/ReparseUA.php</code>
+
+
+<h3>Specification Annotations</h3>
+
+<p>The harness can automatically inject test annotations into most W3C specifications. To enable this feature, add the following markup to the &lt;head&gt; of your specification:</p>
+<code>&lt;script src='{harness uri}/annotate.js#{test suite}' type='text/javascript' defer&gt;&lt;/script&gt;</code>
+
+<p>Replace {test suite} with the internal test suite name defined earlier (do not include the braces). You may optionally insert a '!' between the '#' and the test suite name to have the annotations begin in the collapsed state.</p>
+
+<h3>Other</h3>
+<p>If you really want to modify the look and feel of the harness itself, there are hooks available. To avoid conflicts with future versions of the harness, it's best to not modify any files distributed with the harness. You can specify alternate stylesheets by setting stylesheet URIs in Config.local.php. If you really want to change the UI, you can also specify alternate pages for the harness, all pages are present in the root directory. In your own pages, subclass the appropriate page generation class (found in the pages directory) and override the behavior you want to modify (perform all HTML generation using the base class methods provided). A good example is the welcome page, index.php. Avoid code changes in any of the distributed files and especially the harness subdirectories unless you are significantly altering harness functionality (in which case you should be contributing those changes back, and they should be useful to other installs).</p>
+
+
+
+<h2>Future Improvements</h2>
+<p>The harness is a work in progress, the following features are planned to be added at a future date (not necessarily in order):</p>
+
+<ul>
+<li>Reference Sets - Some tests have multiple pass conditions, we need to allow multiple references for either condition.</li>
+<li>Automatic Testing</li>
+  <ul>
+	<li>Reference tests - automatic comparison of tests and references</li>
+	<li>Script tests - integration with testharness.js</li>
+  </ul>
+<li>Needed Test Mode - a testing mode where only tests that do not have resutls for the current engine are presented</li>
+<li>Annotations Features</li>
+  <ul>
+	<li>Provide result data by browser / version</li>
+	<li>UI controls - individual collapse, ???</li>
+    <li>Link to needed test mode when displaying "please test" links</li>
+  </ul>
+<li>Admin interface - provide a web interface for common administration tasks, like setting up test suites and specifications</li>
+<li>User Login - allow tracking of results per user, not just ip, allow user to review/edit their submitted results</li>
+<li>UI to declare a test invalid</li>
+<li>Test Credits - Factor test credits info into it's own table, display credits on testing page</li>
+<li>Preserve test scroll position when switching between references and formats</li>
