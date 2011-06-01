@@ -60,12 +60,8 @@ h1, h2, h3, h4 {
   padding-bottom: 0px;
   border-bottom-width: 2px;
 }
-.results .pass {
-  background-color: #8F8;
-}
-.results .pass.fail,
-.results .pass.uncertain {
-  background-color: #BFB;
+.results .uncertain {
+  background-color: yellow;
 }
 .results .fail {
   background-color: #F66;
@@ -73,10 +69,17 @@ h1, h2, h3, h4 {
 .results .fail.uncertain {
   background-color: #FAA;
 }
-.results .uncertain {
-  background-color: yellow;
+.results .pass {
+  background-color: #8F8;
 }
-.results .invalid {
+.results .pass.fail,
+.results .pass.uncertain {
+  background-color: #BFB;
+}
+.results .invalid,
+.results .pass.invalid,
+.results .fail.invalid,
+.results .uncertain.invalid {
   background-color: #AAA;
 }
 
