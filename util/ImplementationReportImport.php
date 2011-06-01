@@ -21,6 +21,7 @@ require_once("lib/HarnessCmdLineWorker.php");
 require_once("lib/UserAgent.php");
 require_once("lib/User.php");
 require_once("lib/TestSuite.php");
+require_once("lib/StatusCache.php");
 
 /**
  * Import results from implementation report files
@@ -245,30 +246,32 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             $sql .= "'{$result}')";  
           }
         }
-
+        // XXX add preview mode
+//      echo "Result: {$result} for {$testCaseId} format {$format} rev {$revision}\n";
         $r = $this->query($sql);
         if (! $r->succeeded()) {
           die("failed to store result [{$sql}]\n");
         }
       }
     }
+    StatusCache::FlushResultsForTestSuite($this->mTestSuite);
   }
 }
 
 $worker = new ImplementationReportImport();
 
 $testSuiteName  = 'CSS21_RC6';
-$reportFileName = 'IE9_20110323_ImplementationReport.txt';
+$reportFileName = 'WebToPDF_implementation_report.txt';
 $defaultFormat  = 'html4';
 // XXX get from report file?
-$uaString       = 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0;)';
-$source         = 'Microsoft';
-$date           = '2011-03-23 12:00:00';
+$uaString       = 'Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/2.0.1.0 WebToPDF.NET/2.0.1.0';
+$source         = 'TallComponents';
+$date           = '2011-04-11 03:00:00';
 
 $worker->initFor('CSS21_RC6');
 
-//$worker->loadRevisionInfo('testinfo.data');
-$worker->loadRevisionsOnDate($date);
+$worker->loadRevisionInfo('testinfo.data');
+//$worker->loadRevisionsOnDate($date);
 
 $worker->import($reportFileName, $defaultFormat, $uaString, $source, $date);
 
