@@ -217,8 +217,15 @@ class TestCase extends DBConnection
     }
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
     if ($flag) {
+      if ('!' === $flag[0]) {
+        $flag = substr($flag, 1);
+        $compare = 'NOT LIKE';
+      }
+      else {
+        $compare = 'LIKE';
+      }
       $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
     }
     $sql .= "LIMIT 1";
     
@@ -289,8 +296,15 @@ class TestCase extends DBConnection
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
     if ($flag) {
+      if ('!' === $flag[0]) {
+        $flag = substr($flag, 1);
+        $compare = 'NOT LIKE';
+      }
+      else {
+        $compare = 'LIKE';
+      }
       $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
     }
     if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
@@ -334,8 +348,15 @@ class TestCase extends DBConnection
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
     $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     if ($flag) {
+      if ('!' === $flag[0]) {
+        $flag = substr($flag, 1);
+        $compare = 'NOT LIKE';
+      }
+      else {
+        $compare = 'LIKE';
+      }
       $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
     }
     $sql .= "LIMIT 1";
 
@@ -379,8 +400,15 @@ class TestCase extends DBConnection
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
     if ($flag) {
+      if ('!' === $flag[0]) {
+        $flag = substr($flag, 1);
+        $compare = 'NOT LIKE';
+      }
+      else {
+        $compare = 'LIKE';
+      }
       $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
     }
     if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
@@ -499,8 +527,15 @@ class TestCase extends DBConnection
     $sql .= ") ";
     $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
     if ($flag) {
+      if ('!' === $flag[0]) {
+        $flag = substr($flag, 1);
+        $compare = 'NOT LIKE';
+      }
+      else {
+        $compare = 'LIKE';
+      }
       $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` LIKE '%,{$flag},%' ";
+      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
     }
     if ($sectionId) {
       $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
