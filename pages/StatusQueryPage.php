@@ -21,6 +21,7 @@ require_once('lib/HarnessPage.php');
 require_once('lib/Sections.php');
 require_once('lib/Engine.php');
 require_once('lib/Results.php');
+require_once('lib/Specification.php');
 require_once('lib/StatusCache.php');
 
 
@@ -51,13 +52,20 @@ class SectionResponse
   function _getElementName()  { return 'section'; }
 }
 
-class Response
+class InfoResponse
 {
   public  $testURI;
   public  $resultsURI;
   public  $detailsURI;
   public  $rewriteURIs;
   public  $clientEngineName;
+  
+  function _getElementName()  { return 'info'; }
+}
+
+class Response
+{
+  public  $info;
   public  $engines;
   public  $sections;
   
@@ -71,7 +79,6 @@ class Response
 class StatusQueryPage extends HarnessPage
 {
   protected $mRequestValid;
-  protected $mSpecURIName;
   protected $mSectionId;
   protected $mSections;
   protected $mResults;
@@ -100,18 +107,16 @@ class StatusQueryPage extends HarnessPage
       $specURI = $this->_getData('x');
       
       if ($specURI) {
-        $specURIParts = parse_url($specURI);
-        if ('/' == substr($specURIParts['path'], -1)) {
-          $this->mSpecURIName = '';
-        }
-        else {
-          $this->mSpecURIName = basename($specURIParts['path']);
-        }
-        if (('' == $this->mSpecURIName) || (0 === stripos($this->mSpecURIName, 'index.'))) {
+        $specURIName = $this->_getURIFile($specURI);
+        $spec = new Specification($this->mTestSuite);
+        $specHomeURI = $this->_getURIFile($spec->getHomeURI());
+        if (('' == $specURIName) || 
+            ($specHomeURI == $specURIName) || 
+            (('' == $specHomeURI) && (0 === stripos($specURIName, 'index.')))) {
           $this->mSectionId = 0;
         }
         else {
-          $this->mSectionId = $this->mSections->findSectionIdForURI($this->mSpecURIName);
+          $this->mSectionId = $this->mSections->findSectionIdForURI($specURIName);
           
           if (! $this->mSectionId) {
             trigger_error('Not a valid specification url');
@@ -119,6 +124,16 @@ class StatusQueryPage extends HarnessPage
         }
       }
     }
+  }
+  
+  
+  protected function _getURIFile($uri)
+  {
+    $uriParts = parse_url($uri);
+    if ('/' == substr($uriParts['path'], -1)) {
+      return '';
+    }
+    return basename($uriParts['path']);
   }
   
   
@@ -290,14 +305,18 @@ class StatusQueryPage extends HarnessPage
     }
     
     if ($response) {
+      $info = new InfoResponse();
+
       $args['s'] = $this->mTestSuite->getName();
       $args['o'] = 1;
-
-      $response->testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
-      $response->resultsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
-      $response->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
-      $response->rewriteURIs = Config::Get('server.rewrite_urls');
-      $response->clientEngineName = $this->mUserAgent->getEngineName();
+      
+      $info->testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
+      $info->resultsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
+      $info->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
+      $info->rewriteURIs = Config::Get('server.rewrite_urls');
+      $info->clientEngineName = $this->mUserAgent->getEngineName();
+      
+      $response->info = $info;
       return $response;
     }
     return null;

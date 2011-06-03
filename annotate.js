@@ -18,13 +18,15 @@
 /**
   Data returned from server:
   
-  response.testURI;
-  response.resultsURI;
-  response.detailsURI;
-  response.rewriteURIs;
-  response.clientEngineName;
+  response.info;
   response.engines[];
   response.sections[];
+
+  info.testURI;
+  info.resultsURI;
+  info.detailsURI;
+  info.rewriteURIs;
+  info.clientEngineName;
   
   section.anchorName;
   section.section;
@@ -52,7 +54,7 @@ var annotator = {
   
   buildURI: function(base, section) {
     if (section) {
-      if (this.mResponse.rewriteURIs) {
+      if (this.mResponse.info.rewriteURIs) {
         return base + 'section/' + section + '/';
       }
       else {
@@ -105,7 +107,7 @@ var annotator = {
         var needCount = section.testCount;
         for (index in section.engines) {
           var engine = section.engines[index];
-          if (this.mResponse.engines[engine.index].name == this.mResponse.clientEngineName) {
+          if (this.mResponse.engines[engine.index].name == this.mResponse.info.clientEngineName) {
             needCount = section.testCount - (engine.passCount + engine.failCount);
             break;
           }
@@ -148,7 +150,7 @@ var annotator = {
         heading.setAttribute('class', 'heading');
         
         var testLink = document.createElement('a');
-        testLink.setAttribute('href', this.buildURI(this.mResponse.testURI, section.section));
+        testLink.setAttribute('href', this.buildURI(this.mResponse.info.testURI, section.section));
 
         if (1 == section.testCount) {
           testLink.appendChild(document.createTextNode('1 Test'));
@@ -227,7 +229,7 @@ var annotator = {
             if (0 < resultCount) {
               var engineNode = document.createElement('span');
               engineNode.setAttribute('title', toolTip);
-              if (this.mResponse.engines[engine.index].name == this.mResponse.clientEngineName) {
+              if (this.mResponse.engines[engine.index].name == this.mResponse.info.clientEngineName) {
                 engineClass += ' active';
               }
               engineNode.setAttribute('class', this.mResponse.engines[engine.index].name + ' ' + engineClass);
@@ -237,7 +239,7 @@ var annotator = {
 
               if (0 < resultCount) {
                 var detailsLink = document.createElement('a');
-                detailsLink.setAttribute('href', this.buildURI(this.mResponse.resultsURI, section.section));
+                detailsLink.setAttribute('href', this.buildURI(this.mResponse.info.resultsURI, section.section));
                 
                 detailsLink.appendChild(document.createTextNode(this.mResponse.engines[engine.index].title));
                 engineNode.appendChild(detailsLink);
