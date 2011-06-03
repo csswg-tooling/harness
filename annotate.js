@@ -22,14 +22,17 @@
   response.engines[];
   response.sections[];
 
+  info.annotationTitle;
   info.testSuiteTitle;
   info.testSuiteDescription;
   info.testSuiteDate;
+  info.testSuiteLocked;
   info.testURI;
   info.resultsURI;
   info.detailsURI;
   info.rewriteURIs;
   info.clientEngineName;
+  info.isIndexPage;
   
   section.anchorName;
   section.section;
@@ -132,6 +135,7 @@ var annotator = {
         annotation.setAttribute('testCount', section.testCount);
         annotation.setAttribute('needCount', needCount);
 
+        // disclosure control
         if (first) {
           var disclosure = document.createElement('div');
           disclosure.setAttribute('class', 'disclosureBox');
@@ -139,6 +143,7 @@ var annotator = {
           annotation.appendChild(disclosure);
         }
         
+        // close box
         var closeBox = document.createElement('div');
         closeBox.setAttribute('class', 'closeBox');
         if (first) {
@@ -149,6 +154,17 @@ var annotator = {
         }
         annotation.appendChild(closeBox);
         
+        // Test suite info
+        if ((! this.mClosed) && first && this.mResponse.info.isIndexPage && this.mResponse.info.annotationTitle) {
+          var title = document.createElement('div');
+          title.setAttribute('class', 'title');
+          
+          title.innerHTML = this.mResponse.info.annotationTitle;
+          
+          annotation.appendChild(title);
+        }
+        
+        // Test count heading
         var heading = document.createElement('div');
         heading.setAttribute('class', 'heading');
         
@@ -161,7 +177,9 @@ var annotator = {
         else {
           testLink.appendChild(document.createTextNode(section.testCount + ' Tests'));
         }
-        if ((! this.mClosed) && (0 < needCount)) {
+        
+        // Testing needed text
+        if ((! this.mClosed) && (! this.mResponse.info.testSuiteLocked) && (0 < needCount)) {
           var image = document.createElement('img');
           image.setAttribute('src', this.NEED_TEST_ICON_URI);
           image.setAttribute('class', 'need');
@@ -180,6 +198,7 @@ var annotator = {
         heading.appendChild(testLink);
         annotation.appendChild(heading);
 
+        // Engine result data
         if (! this.mClosed) {
           var engines = document.createElement('div');
           engines.setAttribute('class', 'engines');

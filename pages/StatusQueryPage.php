@@ -54,14 +54,17 @@ class SectionResponse
 
 class InfoResponse
 {
+  public  $annotationTitle;
   public  $testSuiteTitle;
   public  $testSuiteDescription;
   public  $testSuiteDate;
+  public  $testSuiteLocked;
   public  $testURI;
   public  $resultsURI;
   public  $detailsURI;
   public  $rewriteURIs;
   public  $clientEngineName;
+  public  $isIndexPage;
   
   function _getElementName()  { return 'info'; }
 }
@@ -314,9 +317,11 @@ class StatusQueryPage extends HarnessPage
     if ($response) {
       $info = new InfoResponse();
       
+      $info->annotationTitle = $this->mTestSuite->getAnnotationTitle();
       $info->testSuiteTitle = $this->mTestSuite->getTitle();
       $info->testSuiteDescription = $this->mTestSuite->getDescription();
       $info->testSuiteDate = $this->mTestSuite->getDateTime()->format(DateTime::W3C);
+      $info->testSuiteLocked = (FALSE !== $this->mTestSuite->getLockDateTime());
 
       $args['s'] = $this->mTestSuite->getName();
       $args['o'] = 1;
@@ -326,6 +331,7 @@ class StatusQueryPage extends HarnessPage
       $info->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
       $info->rewriteURIs = Config::Get('server.rewrite_urls');
       $info->clientEngineName = $this->mUserAgent->getEngineName();
+      $info->isIndexPage = (0 == $this->mSectionId);
       
       $response->info = $info;
       return $response;

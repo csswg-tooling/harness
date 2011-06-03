@@ -247,7 +247,8 @@ CREATE TABLE IF NOT EXISTS `testsuites` (
   `active` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `locked` timestamp NULL DEFAULT NULL,
-  `description` longtext,
+  `description` text,
+  `annotation_title` text,
   `contact_name` varchar(63) DEFAULT NULL,
   `contact_uri` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`testsuite`)

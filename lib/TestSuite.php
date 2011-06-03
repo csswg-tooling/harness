@@ -116,6 +116,11 @@ class TestSuite extends DBConnection
     return $this->mInfo['description'];
   }
   
+  function getAnnotationTitle()
+  {
+    return $this->mInfo['annotation_title'];
+  }
+  
   function getBaseURI()
   {
     return $this->mInfo['base_uri'];

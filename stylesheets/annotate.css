@@ -80,9 +80,21 @@ div.annotation div.closeBox:hover {
   background: #888 url(../img/close_light.png) no-repeat center;
 }
 
+div.annotation div.title {
+  font-size: 10pt;
+  margin-left: 14px;
+  margin-right: 14px;
+  margin-bottom: .25em;
+}
+
 div.annotation div.heading {
   margin-left: 14px;
   margin-right: 14px;
+}
+
+div.annotation div.title + div.heading {
+  margin-left: 0px;
+  margin-right: 0px;
 }
 
 div.annotation div.heading span {
