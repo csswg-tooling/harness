@@ -54,6 +54,9 @@ class SectionResponse
 
 class InfoResponse
 {
+  public  $testSuiteTitle;
+  public  $testSuiteDescription;
+  public  $testSuiteDate;
   public  $testURI;
   public  $resultsURI;
   public  $detailsURI;
@@ -107,9 +110,9 @@ class StatusQueryPage extends HarnessPage
       $specURI = $this->_getData('x');
       
       if ($specURI) {
-        $specURIName = $this->_getURIFile($specURI);
+        $specURIName = $this->_getURIFileName($specURI);
         $spec = new Specification($this->mTestSuite);
-        $specHomeURI = $this->_getURIFile($spec->getHomeURI());
+        $specHomeURI = $this->_getURIFileName($spec->getHomeURI());
         if (('' == $specURIName) || 
             ($specHomeURI == $specURIName) || 
             (('' == $specHomeURI) && (0 === stripos($specURIName, 'index.')))) {
@@ -127,13 +130,17 @@ class StatusQueryPage extends HarnessPage
   }
   
   
-  protected function _getURIFile($uri)
+  protected function _getURIFileName($uri)
   {
     $uriParts = parse_url($uri);
     if ('/' == substr($uriParts['path'], -1)) {
       return '';
     }
-    return basename($uriParts['path']);
+    $fileName = basename($uriParts['path']);
+    if (FALSE !== strpos($fileName, '#')) {
+      $fileName = strstr($fileName, '#', TRUE);
+    }
+    return $fileName;
   }
   
   
@@ -306,6 +313,10 @@ class StatusQueryPage extends HarnessPage
     
     if ($response) {
       $info = new InfoResponse();
+      
+      $info->testSuiteTitle = $this->mTestSuite->getTitle();
+      $info->testSuiteDescription = $this->mTestSuite->getDescription();
+      $info->testSuiteDate = $this->mTestSuite->getDateTime()->format(DateTime::W3C);
 
       $args['s'] = $this->mTestSuite->getName();
       $args['o'] = 1;

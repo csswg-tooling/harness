@@ -22,6 +22,9 @@
   response.engines[];
   response.sections[];
 
+  info.testSuiteTitle;
+  info.testSuiteDescription;
+  info.testSuiteDate;
   info.testURI;
   info.resultsURI;
   info.detailsURI;
