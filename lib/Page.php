@@ -150,7 +150,7 @@ class Page
     }
     
     $abs = '';
-    if ($absolute) {
+    if ($absolute && (null === parse_url($baseURI, PHP_URL_SCHEME))) {
       if (empty($_SERVER['HTTP_HOST'])) {
         $abs = Config::Get('server.install_uri');
       }
