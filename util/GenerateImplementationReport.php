@@ -26,6 +26,7 @@ require_once('pages/DetailsPage.php');
 
 
 define('UA_THRESHOLD', 10);
+define('INCLUDE_ID', FALSE);
   
 /**
  * Class for generating simplified results table
@@ -77,8 +78,10 @@ class IR_ResultsPage extends ResultsPage
   {
     $this->writeLedgend();
 
-    $this->addElement('hr');
-    $this->addElement('address', null, '$Id$');
+    if (INCLUDE_ID) {
+      $this->addElement('hr');
+      $this->addElement('address', null, '$Id$');
+    }
   }
 }
   
@@ -129,8 +132,10 @@ class IR_DetailsPage extends DetailsPage
   {
     $this->writeLedgend();
 
-    $this->addElement('hr');
-    $this->addElement('address', null, '$Id$');
+    if (INCLUDE_ID) {
+      $this->addElement('hr');
+      $this->addElement('address', null, '$Id$');
+    }
   }
 }
 
@@ -209,8 +214,10 @@ class IR_UserAgentPage extends ResultsBasedPage
   
   function writeBodyFooter()
   {
-    $this->addElement('hr');
-    $this->addElement('address', null, '$Id$');
+    if (INCLUDE_ID) {
+      $this->addElement('hr');
+      $this->addElement('address', null, '$Id$');
+    }
   }
 }
 
@@ -218,6 +225,7 @@ class IR_UserAgentPage extends ResultsBasedPage
 class IR_IndexPage extends HarnessPage
 {
   protected $mSpec;
+  protected $mSpecStatus;
   protected $mUserAgents;
   protected $mStats;
   protected $mEngineNames;
@@ -228,6 +236,7 @@ class IR_IndexPage extends HarnessPage
     
     $this->mSpiderTrap = null;
     $this->mSpec = new Specification($this->mTestSuite);
+    $this->mSpecStatus = 'DEV';
   }
   
   
@@ -235,6 +244,13 @@ class IR_IndexPage extends HarnessPage
   {
     $this->mUserAgents = $userAgents;
     $this->mUserAgentResultCounts = $userAgentResultCounts;
+  }
+  
+  function setSpecStatus($specStatus)
+  {
+    if ($specStatus) {
+      $this->mSpecStatus = $specStatus;
+    }
   }
   
   function setStats(Array $stats)
@@ -358,16 +374,30 @@ class IR_IndexPage extends HarnessPage
   {
     extract($this->mStats);
     
+    $now = new DateTime('now', new DateTimeZone(Config::Get('server.time_zone')));
+    
     $totalCount = $testCount + $optionalCount;
     $formats = Format::GetFormatsFor($this->mTestSuite);
 
     $this->addElement('h2', array('id' => 'intro'), 'Introduction');
     
-    $this->openElement('p');
-    $this->addTextContent('This report was prepared to document the passing of the Candidate Recommendation exit criteria for the ');
-    $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
-    $this->addTextContent(" ({$this->mSpec->getTitle()}) specification.");
-    $this->closeElement('p');
+    if ('CR' == $this->mSpecStatus) {
+      $this->openElement('p');
+      $this->addTextContent('This report was prepared to document the passing of the Candidate Recommendation exit criteria for the ');
+      $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
+      $this->addTextContent(" ({$this->mSpec->getTitle()}) specification.");
+      $this->closeElement('p');
+    }
+    else {
+      $this->openElement('p', null, FALSE);
+      $this->addTextContent('This report was prepared to document the current implementation status of the ');
+      $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
+      $this->addTextContent(" ({$this->mSpec->getTitle()}) specification as of {$now->format('j F Y')}");
+      $this->addTextContent(' and is based on current test results available in the ');
+      $this->addHyperlink($this->buildConfigURI('page.home', null, null, TRUE), null, 'W3C Conformance Test Harness');
+      $this->addTextContent('.');
+      $this->closeElement('p');
+    }
 
     $this->addElement('h2', array('id' => 'impls'), 'Implementations');
     
@@ -520,8 +550,10 @@ class IR_IndexPage extends HarnessPage
   
   function writeBodyFooter()
   {
-    $this->addElement('hr');
-    $this->addElement('address', null, '$Id$');
+    if (INCLUDE_ID) {
+      $this->addElement('hr');
+      $this->addElement('address', null, '$Id$');
+    }
   }  
 }
 
@@ -544,7 +576,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
   
   function usage()
   {
-    echo "USAGE: php GenerateImplementationReport.php testsuite [output path]\n";
+    echo "USAGE: php GenerateImplementationReport.php testsuite [output path] [CR|DEV]\n";
   }
   
   
@@ -594,7 +626,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
    * Generate implementation report pages
    *
    */
-  function generate($testSuiteName, $outputPath)
+  function generate($testSuiteName, $outputPath, $specStatus)
   {
     $testSuite = new TestSuite($testSuiteName);
     if ($outputPath) {
@@ -628,6 +660,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       echo "Generating index page\n";
       
       $indexPage = new IR_IndexPage($args);
+      $indexPage->setSpecStatus($specStatus);
       $indexPage->setStats($resultsPage->getStats());
       $indexPage->setEngineNames($this->mResults->getEngineNames());
       $indexPage->setUserAgents($this->mUserAgents, $this->mUserAgentResultCounts);
@@ -665,9 +698,10 @@ $worker = new GenerateImplementationReport();
 
 $testSuiteName  = $worker->_getArg(1);
 $outputPath     = $worker->_getArg(2);
+$specStatus     = $worker->_getArg(3);
 
 if ($testSuiteName) {
-  $worker->generate($testSuiteName, $outputPath);
+  $worker->generate($testSuiteName, $outputPath, $specStatus);
 }
 else {
   $worker->usage();
