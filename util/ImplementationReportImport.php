@@ -21,6 +21,8 @@ require_once("lib/HarnessCmdLineWorker.php");
 require_once("lib/UserAgent.php");
 require_once("lib/User.php");
 require_once("lib/TestSuite.php");
+require_once('lib/Format.php');
+require_once('lib/Flags.php');
 require_once("lib/StatusCache.php");
 
 /**
@@ -48,7 +50,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
     $flagString = $testCaseData['flags'];
     
     $this->mTestCaseRevision[$testCaseId] = $revision;
-    $this->mTestCaseFlags[$testCaseId] = $flagString;
+    $this->mTestCaseFlags[$testCaseId] = new Flags($flagString);
   }
 
 
@@ -143,6 +145,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
 
     $validResults = array('pass', 'fail', 'uncertain', 'na', 'invalid');
     $validFormats = $this->mTestSuite->getFormatNames();
+    $formats = Format::GetFormatsFor($this->mTestSuite);
     
     $data = file($reportFileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
@@ -164,6 +167,27 @@ class ImplementationReportImport extends HarnessCmdLineWorker
         list ($testCasePath, $result, $comment) = explode("\t", $record . "\t\t");
         
         if ($testCasePath && $result) {
+          $testCaseName = trim($this->_getFileName($testCasePath));
+          $testCaseId = $this->_getTestCaseId($testCaseName);
+          
+          if (! $testCaseId) {
+            die("Unknown test case: '{$testCaseName}'\n");
+          }
+          
+          $formatName = pathinfo($testCasePath, PATHINFO_DIRNAME);
+          if ((! $formatName) || ('.' == $formatName)) {
+            $formatName = $defaultFormat;
+          }
+          if (! in_array($formatName, $validFormats)) {
+            die("Invalid format: '{$formatName}'\n");
+          }
+          else {
+            $format = $formats[$formatName];
+            if (! $format->validForFlags($this->mTestCaseFlags[$testCaseId])) {
+              die("Bad format: '{$formatName}' for test case: '{$testCaseName}'\n");
+            }
+          }
+          
           $result = strtolower(trim($result));
           if ('?' == $result) {
             $result = 'uncertain';
@@ -176,26 +200,11 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             die("Invalid result: '{$result}'\n");
           }
         
-          $format = pathinfo($testCasePath, PATHINFO_DIRNAME);
-          if ((! $format) || ('.' == $format)) {
-            $format = $defaultFormat;
-          }
-          if (! in_array($format, $validFormats)) {
-            die("Invalid format: '{$format}'\n");
-          }
-          
-          $testCaseName = trim($this->_getFileName($testCasePath));
-          $testCaseId = $this->_getTestCaseId($testCaseName);
-          
-          if (! $testCaseId) {
-            die("Unknown test case: '{$testCaseName}'.\n");
-          }
-          
           $comment = trim($comment);
           
-          $results[$testCaseId][$format] = $result;
+          $results[$testCaseId][$formatName] = $result;
           if (0 < strlen($comment)) {
-            $comments[$testCaseId][$format] = $this->encode($comment, 'results.comment');  // encode now to test length
+            $comments[$testCaseId][$formatName] = $this->encode($comment, 'results.comment');  // encode now to test length
           }
         }
       }
@@ -205,8 +214,8 @@ class ImplementationReportImport extends HarnessCmdLineWorker
     echo "Importing results\n";
     foreach ($results as $testCaseId => $formatResults) {
       $revision = $this->encode($this->mTestCaseRevision[$testCaseId], 'results.revision');
-      foreach ($formatResults as $format => $result) {
-        $format = $this->encode($format, 'results.format');
+      foreach ($formatResults as $formatName => $result) {
+        $formatName = $this->encode($formatName, 'results.format');
         
         $sql  = "INSERT INTO `results` ";
         if (array_key_exists($testCaseId, $comments)) {
@@ -215,7 +224,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             $sql .= "(`testcase_id`, `revision`, `format`, ";
             $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
             $sql .= "`result`, `comment`, `modified`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
             $sql .= "'{$result}', '{$comment}', '{$modified}')";  
           }
@@ -223,7 +232,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             $sql .= "(`testcase_id`, `revision`, `format`, ";
             $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
             $sql .= "`result`, `comment`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
             $sql .= "'{$result}', '{$comment}')";  
           }
@@ -233,7 +242,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             $sql .= "(`testcase_id`, `revision`, `format`, ";
             $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
             $sql .= "`result`, `modified`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
             $sql .= "'{$result}', '{$modified}')";  
           }
@@ -241,13 +250,13 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             $sql .= "(`testcase_id`, `revision`, `format`, ";
             $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
             $sql .= "`result`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$format}', ";
+            $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
             $sql .= "'{$result}')";  
           }
         }
         // XXX add preview mode
-//      echo "Result: {$result} for {$testCaseId} format {$format} rev {$revision}\n";
+        echo "Result: {$result} for {$testCaseId} format {$formatName} rev {$revision}\n";
         $r = $this->query($sql);
         if (! $r->succeeded()) {
           die("failed to store result [{$sql}]\n");
@@ -261,16 +270,16 @@ class ImplementationReportImport extends HarnessCmdLineWorker
 $worker = new ImplementationReportImport();
 
 $testSuiteName  = 'CSS21_RC6';
-$reportFileName = 'WebToPDF_implementation_report.txt';
+$reportFileName = 'implementation-report-20110323-IE9RTM-Win7.txt';
 $defaultFormat  = 'html4';
 // XXX get from report file?
-$uaString       = 'Mozilla/5.0 (compatible; MSIE 8.0) TallComponents/1.0 WebToPDF/2.0.1.0 WebToPDF.NET/2.0.1.0';
-$source         = 'TallComponents';
-$date           = '2011-04-11 03:00:00';
+$uaString       = 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; Zune 4.7; MS-RTC LM 8; InfoPath.3) Version: 9.0.8112.16421';
+$source         = 'Microsoft';
+$date           = '2011-06-09 12:00:00';
 
-$worker->initFor('CSS21_RC6');
+$worker->initFor($testSuiteName);
 
-$worker->loadRevisionInfo('testinfo.data');
+//$worker->loadRevisionInfo('testinfo.data');
 //$worker->loadRevisionsOnDate($date);
 
 $worker->import($reportFileName, $defaultFormat, $uaString, $source, $date);
