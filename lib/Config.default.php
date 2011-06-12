@@ -83,7 +83,7 @@ Config::Set('uri.stylesheet.testsuite', 'stylesheets/testsuite.css');
 /**
  * Image URIs used within the harness
  */
-Config::Set('uri.image.please_help', 'img/please_help_32.png');
+Config::Set('uri.image.please_help', 'img/please_help_12.png');
 
 
 /**
