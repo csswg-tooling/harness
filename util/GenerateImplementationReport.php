@@ -407,13 +407,24 @@ class IR_IndexPage extends HarnessPage
 
     $this->addElement('h2', array('id' => 'impls'), 'Implementations');
     
-    $browserCountText = $this->numberToText($this->countBrowsers());
-    $engineCountText = $this->numberToText(count($this->mEngineNames));
     $osCount = $this->countPlatforms();
     
     $this->openElement('p');
     $osText = ((1 < $osCount) ? " across " . $this->numberToText($osCount) . " operating systems" : '');
-    $this->addTextContent(ucfirst("{$browserCountText} user agents, built from {$engineCountText} rendering implementations, were tested{$osText}."));
+    if (1 < count($this->mEngineNames)) {
+      $engineCountText = $this->numberToText(count($this->mEngineNames));
+      $engineText = ", built from {$engineCountText} rendering implementations,";
+    }
+    else {
+      $engineText = '';
+    }
+    if (1 != $this->countBrowsers()) {
+      $browserCountText = $this->numberToText($this->countBrowsers());
+      $this->addTextContent(ucfirst("{$browserCountText} user agents{$engineText} were tested{$osText}."));
+    }
+    else {
+      $this->addTextContent("One user agent{$engineText} was tested{$osText}.");
+    }
     $this->closeElement('p');
     if (count($this->mUserAgents, COUNT_RECURSIVE) <= UA_THRESHOLD) {
       $this->openElement('ul');
