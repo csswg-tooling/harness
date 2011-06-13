@@ -301,12 +301,18 @@ class IR_IndexPage extends HarnessPage
   }
   
   
-  function numberToText($number)
+  function numberToText($number, $recursing = FALSE)
   {
     $numbers = array('zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
                      'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen');
     $tens = array('', 'ten', 'twenty', 'thirty', 'fourty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety');
     $zillions = array(1000000000 => 'billion', 1000000 => 'million', 1000 => 'thousand');
+    
+    $number = intval($number);
+    
+    if ((! $recursing) && (0 == $number)) {
+      return $numbers[0];
+    }
     
     $text = '';
     if ($number < 0) {
@@ -316,7 +322,7 @@ class IR_IndexPage extends HarnessPage
     
     foreach ($zillions as $value => $name) {
       if ($value <= $number) {
-        $text .= $this->numberToText(intval($number / $value)) . ' ' . $name . ' ';
+        $text .= $this->numberToText(intval($number / $value), TRUE) . ' ' . $name . ' ';
         $number = $number % $value;
       }
     }
