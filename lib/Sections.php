@@ -42,7 +42,7 @@ class Sections extends DBConnection
       $sql .= "WHERE `spec` = '{$specName}' AND `section` = '{$sectionName}' ";
       
       $r = $db->query($sql);
-      $sectionId = intval($r->fetchField(0, 'id'));
+      $sectionId = intval($r->fetchField(0));
       
       if ($sectionId) {
         return $sectionId;
@@ -64,7 +64,7 @@ class Sections extends DBConnection
       $sql .= "WHERE `spec` = '{$specName}' AND `id` = '{$sectionId}' ";
       
       $r = $db->query($sql);
-      $sectionName = $r->fetchField(0, 'section');
+      $sectionName = $r->fetchField(0);
       
       if ($sectionName) {
         return $sectionName;

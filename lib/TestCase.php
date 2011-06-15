@@ -47,7 +47,7 @@ class TestCase extends DBConnection
       $sql .= "WHERE `testcase` = '{$testCaseName}' ";
       
       $r = $db->query($sql);
-      $testCaseId = intval($r->fetchField(0, 'id'));
+      $testCaseId = intval($r->fetchField(0));
       
       if ($testCaseId) {
         return $testCaseId;
@@ -231,14 +231,14 @@ class TestCase extends DBConnection
     
     $r = $this->query($sql);
     
-    $count = $r->fetchField(0, 'count');
+    $count = $r->fetchField(0);
     
     if (FALSE === $count) {
       $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_WARNING);
     }
 
-    return $count;
+    return intval($count);
   }
 
 
@@ -362,14 +362,14 @@ class TestCase extends DBConnection
 
     $r = $this->query($sql);
     
-    $count = $r->fetchField(0, 'count');
+    $count = $r->fetchField(0);
     
     if (FALSE === $count) {
       $msg = 'Unable to access information about test cases.';
       trigger_error($msg, E_USER_ERROR);
     }
 
-    return $count;
+    return intval($count);
   }
 
   /**

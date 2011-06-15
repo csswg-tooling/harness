@@ -37,7 +37,7 @@ class StatusCache
     $sql .= "FROM `statuscache` ";
     $sql .= "WHERE `testsuite` = '{$testSuiteName}' AND `section_id` = '{$sectionId}' ";
     $r = $db->query($sql);
-    $dataString = $r->fetchField(0, 'data');
+    $dataString = $r->fetchField(0);
     
     if ($dataString) {
       $data = json_decode($dataString);

@@ -53,7 +53,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
     $sql .= "WHERE `spec` = '{$spec}' ";
 
     $r = $this->query($sql);
-    $specURI = $r->fetchField(0, 'base_uri');
+    $specURI = $r->fetchField(0);
     
     return $specURI;
   }

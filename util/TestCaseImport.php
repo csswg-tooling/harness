@@ -165,7 +165,7 @@ class TestCaseImport extends HarnessCmdLineWorker
     $sql .= "WHERE `testcase_id` = '$testCaseId' AND `format` = '{$formatName}' ";
     
     $r = $this->query($sql);
-    return $r->fetchField(0, 'uri');
+    return $r->fetchField(0);
   }
   
   
@@ -180,7 +180,7 @@ class TestCaseImport extends HarnessCmdLineWorker
     $sql .= "AND `reference` = '{$referenceName}' ";
     
     $r = $this->query($sql);
-    return $r->fetchField(0, 'uri');
+    return $r->fetchField(0);
   }
   
   
