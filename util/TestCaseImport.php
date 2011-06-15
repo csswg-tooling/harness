@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 require_once('lib/HarnessCmdLineWorker.php');
-require_once('lib/Page.php');
+require_once('core/Page.php');
 require_once('lib/Format.php');
 require_once('lib/Flags.php');
 require_once('lib/TestSuite.php');
