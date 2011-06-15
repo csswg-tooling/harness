@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `specifications` (
   `base_uri` varchar(255) DEFAULT NULL,
   `home_uri` varchar(63) DEFAULT NULL,
   PRIMARY KEY (`spec`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -156,8 +156,9 @@ CREATE TABLE IF NOT EXISTS `statuscache` (
   `testsuite` varchar(31) NOT NULL,
   `section_id` int(10) unsigned NOT NULL,
   `data` longblob,
+  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`testsuite`,`section_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 

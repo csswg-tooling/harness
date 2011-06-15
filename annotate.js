@@ -180,10 +180,11 @@ var annotator = {
         
         // Testing needed text
         if ((! this.mClosed) && (! this.mResponse.info.testSuiteLocked) && (0 < needCount)) {
+          var untested = document.createElement('span');
           var image = document.createElement('img');
           image.setAttribute('src', this.NEED_TEST_ICON_URI);
           image.setAttribute('class', 'need');
-          testLink.appendChild(image);
+          untested.appendChild(image);
 
           if (1 == needCount) {
             testLink.setAttribute('title', '1 test needs results from your client, please click here to run test');
@@ -191,7 +192,6 @@ var annotator = {
           else {
             testLink.setAttribute('title', needCount + ' tests need results from your client, please click here to run tests');
           }
-          var untested = document.createElement('span');
           untested.appendChild(document.createTextNode(' ' + needCount + '\u00A0untested, please\u00A0test'));
           testLink.appendChild(untested);
         }
