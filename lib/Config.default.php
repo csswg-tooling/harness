@@ -102,7 +102,7 @@ Config::Set('spidertrap.test_period', 3);
 Config::Set('spidertrap.ban_period', 7);
 Config::Set('spidertrap.command.ban', '/sbin/iptables -I INPUT -s {IPv4} -j DROP ; /sbin/ip6tables -I INPUT -s {IPv6} -j DROP');
 Config::Set('spidertrap.command.release', '/sbin/iptables --delete INPUT -s {IPv4} -j DROP ; /sbin/ip6tables --delete INPUT -s {IPv6} -j DROP');
-Config::Set('spidertrap.command.post_process', '/sbin/iptables-save > /etc/firewall.conf ; /sbin/iptables-save > /etc/firewall6.conf');
+Config::Set('spidertrap.command.post_process', '/sbin/iptables-save > /etc/firewall.conf ; /sbin/ip6tables-save > /etc/firewall6.conf');
 
 
 /**
