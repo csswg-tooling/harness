@@ -17,7 +17,7 @@
  ******************************************************************************/
 
   
-require_once("lib/CmdLineWorker.php");
+require_once("core/CmdLineWorker.php");
 require_once("lib/UserAgent.php");
 
 

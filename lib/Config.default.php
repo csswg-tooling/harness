@@ -96,12 +96,13 @@ Config::Set('uri.image.please_help', 'img/please_help_32.png');
  * Shell commands to ban & release spiders
  * Post process command to run after ban/release
  */
-Config::Set('spider.ban_threshold', 2);
-Config::Set('spider.test_period', 3);
-Config::Set('spider.ban_period', 7);
-Config::Set('spider.ban_command', '/sbin/iptables -I INPUT -s {ip} -j DROP');
-Config::Set('spider.release_command', '/sbin/iptables --delete INPUT -s {ip} -j DROP');
-Config::Set('spider.post_process_command', '/sbin/iptables-save > /etc/firewall.conf');
+Config::Set('db.database.spidertrap', '');
+Config::Set('spidertrap.ban_threshold', 2);
+Config::Set('spidertrap.test_period', 3);
+Config::Set('spidertrap.ban_period', 7);
+Config::Set('spidertrap.command.ban', '/sbin/iptables -I INPUT -s {IPv4} -j DROP');  // XXX add ip6tables command for ipv6 addresses
+Config::Set('spidertrap.command.release', '/sbin/iptables --delete INPUT -s {IPv4} -j DROP');
+Config::Set('spidertrap.command.post_process', '/sbin/iptables-save > /etc/firewall.conf');
 
 
 /**
@@ -144,7 +145,7 @@ Config::Set('db.max.speclinks.uri', 255);
 
 Config::Set('db.max.statuscache.testsuite', 31);
 
-Config::Set('db.max.spidertrap.ip', 39);
+Config::Set('db.max.spidertrap.ip_address', 39);
 Config::Set('db.max.spidertrap.user_agent', 255);
 Config::Set('db.max.spidertrap.uri', 255);
 

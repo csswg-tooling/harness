@@ -179,7 +179,9 @@
 <p>The default Spider Trap settings are to ban spiders after two visits to the trap within 3 days. (Every page in the harness has a least two links to the spider trap.) The default ban period is 7 days. Ban settings and commands to ban and release traffic at the firewall are settable in Config.local.php. The default settings are suitable for iptables on Debian (see Config.default.php for examples). The spider post process command is run after any ban or release, it's useful for preserving current firewall rules which can then be reapplied at startup (you'll need to install your own startup script to do that if your firewall doesn't preserve rules on shutdown).</p>
 
 <p>In a frequently run cronjob (ie: once per minute or so), execute the following script in the harness root directory:</p>
-<code>php util/ProcessSpiders.php</code>
+<code>php core/ProcessSpiders.php</code>
+
+<p>It is also possible to select a different database for the spider trap to store its information in (so that data may be shared with other installs), set 'db.database.spidertrap' in Config.local.php. If using a different database, the harness DB user must have access to the `spidertrap` table in that DB. If sharing a database, you need only run the ProcessSpiders.php script for a single install.</p>
 
 <p>When setting up and testing the spider trap, be careful not to get yourself banned, as <b>all</b> traffic to the server from your IP address will be filtered at the firewall. The best way to prevent that is to create an entry for yourself (and any other known good IP addresses) with your IP address and set the value for `banned` to '-1' (other fields are informative and can be ignored). This will prevent that IP address from ever getting banned.</p>
 

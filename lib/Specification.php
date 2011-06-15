@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 
-require_once('lib/DBConnection.php');
+require_once('core/DBConnection.php');
 require_once('lib/TestSuite.php');
 
 /**

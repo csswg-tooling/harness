@@ -48,7 +48,7 @@
 
 **/
 
-<?php require_once('lib/Page.php'); ?>
+<?php require_once('core/Page.php'); ?>
 
 var annotator = {
   QUERY_URI:          "<?php echo Page::_BuildURI(Config::Get('uri.page.status_query'), null, null, TRUE); ?>",

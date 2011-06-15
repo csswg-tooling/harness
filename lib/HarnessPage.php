@@ -16,8 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("lib/DynamicPage.php");
-require_once("lib/SpiderTrap.php");
+require_once('core/DynamicPage.php');
+require_once('core/SpiderTrap.php');
 require_once("lib/TestSuite.php");
 require_once("lib/UserAgent.php");
 require_once("lib/User.php");

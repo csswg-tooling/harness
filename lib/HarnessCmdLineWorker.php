@@ -16,7 +16,7 @@
  * 
  ******************************************************************************/
  
-require_once("lib/CmdLineWorker.php");
+require_once('core/CmdLineWorker.php');
 
 /**
  * Common utility functions for harness command line worker classes

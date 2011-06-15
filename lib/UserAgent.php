@@ -16,7 +16,7 @@
  * 
  ******************************************************************************/
 
-require_once("lib/DBConnection.php");
+require_once('core/DBConnection.php');
 
 /**
  * Wrapper class for information about a particular User Agent 
