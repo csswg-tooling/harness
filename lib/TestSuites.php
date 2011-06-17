@@ -54,6 +54,20 @@ class TestSuites extends DBConnection
     return 0;
   }
   
+
+  function getLockedCount()
+  {
+    $count = 0;
+    if ($this->mTestSuites) {
+      foreach ($this->mTestSuites as $testSuite) {
+        if ($testSuite->isLocked()) {
+          $count++;
+        }
+      }
+    }
+    return $count;
+  }
+  
   
   function getTestSuites()
   {

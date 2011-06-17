@@ -37,50 +37,61 @@ class WelcomePage extends HarnessPage
   }
   
   
-  function writeTestSuites()
+  function writeTestSuites($showUnlocked = TRUE, $showLocked = TRUE)
   {
     $testSuites = $this->mTestSuites->getTestSuites();
     
     if ($testSuites) {
       $this->openElement('dl');
 
-      foreach($testSuites as $testSuite) {
+      foreach ($testSuites as $testSuite) {
+        if (($testSuite->isLocked() && $showLocked) || 
+            ((! $testSuite->isLocked()) && $showUnlocked)) {
+          unset($args);
+          $args['s'] = $testSuite->getName();
+          $args['u'] = $this->mUserAgent->getId();
 
-        unset($args);
-        $args['s'] = $testSuite->getName();
-        $args['u'] = $this->mUserAgent->getId();
+          $reviewURI = $this->buildConfigURI('page.review', $args);
 
-        $reviewURI = $this->buildConfigURI('page.review', $args);
-        $enterURI = $this->buildConfigURI('page.testsuite', $args);
+          $this->openElement('dt', null, FALSE);
+          $this->addHyperLink($testSuite->getHomeURI(), null, $testSuite->getTitle());
+          $this->addTextContent(' (');
+          if (! $testSuite->isLocked()) {
+            $enterURI = $this->buildConfigURI('page.testsuite', $args);
+            $this->addHyperLink($enterURI, null, "Enter Data");
+            $this->addTextContent(', ');
+          }
+          $this->addHyperLink($reviewURI, null, "Review Results");
+          $this->addTextContent(')');
+          $this->closeElement('dt');
 
-        $this->openElement('dt', null, FALSE);
-        $this->addHyperLink($testSuite->getHomeURI(), null, $testSuite->getTitle());
-        $this->addTextContent(' (');
-        if (! $testSuite->isLocked()) {
-          $this->addHyperLink($enterURI, null, "Enter Data");
-          $this->addTextContent(', ');
+          $this->addElement('dd', null, $testSuite->getDescription());
         }
-        $this->addHyperLink($reviewURI, null, "Review Results");
-        $this->addTextContent(')');
-        $this->closeElement('dt');
-
-        $this->addElement('dd', null, $testSuite->getDescription());
       }
       $this->closeElement('dl');
-    }
-    else {
-      $this->addElement('p', null, "** No Test Suites Defined. **");
     }
   }
   
 
   function writeBodyContent()
   {
-    $this->addElement('p', null, "Currently, you can provide test data or review " .
-                                 "the testing results for the following test suites:");
+    if (0 < $this->mTestSuites->getCount()) {
 
-    $this->writeTestSuites();
+      if (0 < ($this->mTestSuites->getCount() - $this->mTestSuites->getLockedCount())) {
+        $this->addElement('p', null, "You can provide test data or review " .
+                                     "the testing results for the following test suites:");
 
+        $this->writeTestSuites(TRUE, FALSE);
+      }
+      if (0 < $this->mTestSuites->getLockedCount()) {
+        $this->addElement('p', null, "You can review the testing results for the following locked test suites:");
+
+        $this->writeTestSuites(FALSE, TRUE);
+      }
+    }
+    else {
+      $this->addElement('p', null, "** No Test Suites Defined. **");
+    }
   }
   
   
