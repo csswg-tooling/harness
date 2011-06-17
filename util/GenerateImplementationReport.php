@@ -47,6 +47,7 @@ class IR_ResultsPage extends ResultsPage
   {
     return array('testCount' => $this->mTestCaseRequiredCount, 
                  'passCount' => $this->mTestCaseRequiredPassCount,
+                 'invalidCount' => $this->mTestCaseInvalidCount,
                  'optionalCount' => $this->mTestCaseOptionalCount,
                  'optionalPassCount' => $this->mTestCaseOptionalPassCount);
   }
@@ -382,7 +383,7 @@ class IR_IndexPage extends HarnessPage
     
     $now = new DateTime('now', new DateTimeZone(Config::Get('server.time_zone')));
     
-    $totalCount = $testCount + $optionalCount;
+    $totalCount = $testCount + $optionalCount + $invalidCount;
     $formats = Format::GetFormatsFor($this->mTestSuite);
 
     $this->addElement('h2', array('id' => 'intro'), 'Introduction');
@@ -463,11 +464,16 @@ class IR_IndexPage extends HarnessPage
     $this->addHyperlink($this->mTestSuite->getHomeURI(), null, $this->mTestSuite->getDateTime()->format('j F Y'));
     $this->addTextContent(" revision of the {$this->mSpec->getTitle()} test suite was used.");
     if (1 == $totalCount) {
-      if (0 == $optionalCount) {
-        $this->addTextContent(' The test suite consists of 1 test.');
+      if (0 == $invalidCount) {
+        if (0 == $optionalCount) {
+          $this->addTextContent(' The test suite consists of 1 test.');
+        }
+        else {
+          $this->addTextContent(' The test suite consists of 1 test, which tests for optional behavior.');
+        }
       }
       else {
-        $this->addTextContent(' The test suite consists of 1 test, which tests for optional behavior.');
+        $this->addTextContent(' The test suite consists of 1 test, which is considered invalid.');
       }
     }
     else {
@@ -482,7 +488,24 @@ class IR_IndexPage extends HarnessPage
       else {
         $optionalText = '';
       }
-      $this->addTextContent(" The test suite consists of {$totalCount} tests{$optionalText}.");
+      if (0 < $invalidCount) {
+        if (0 < $optionalCount) {
+          $join = ', and';
+        }
+        else {
+          $join = ',';
+        }
+        if (1 == $invalidCount) {
+          $invalidText = "{$join} 1 of which is considered invalid";
+        }
+        else {
+          $invalidText = "{$join} {$invalidCount} of which are considered invalid";
+        }
+      }
+      else {
+        $invalidText = '';
+      }
+      $this->addTextContent(" The test suite consists of {$totalCount} tests{$optionalText}{$invalidText}.");
     }
     $this->closeElement('p');
 
@@ -500,46 +523,52 @@ class IR_IndexPage extends HarnessPage
 
     $this->addElement('h2', array('id' => 'results'), 'Results');
    
-    if (1 == $testCount) {
-      if (0 < $passCount) {
-        $this->addElement('p', null, 'In summary, the results show that the test was passed by at least two of the tested implementations.');
-      }
-      else {
-        $this->addElement('p', null, 'In summary, the results show that the test was not passed by at least two of the tested implementations.');
-      }
+    if (0 == $testCount) {
+      $this->addElement('p', null, 'No valid tests are present in this test suite.');
     }
     else {
-      $testCountText = (($passCount == $testCount) ? "all {$testCount}" : "{$passCount} of {$testCount}");
-      if (0 < $optionalCount) {
-        $requiredText = ' for required behavior';
-        if (0 < $optionalPassCount) {
-          if (1 == $optionalCount) {
-            $optionalText = ' In addition, the 1 test for optional behavior was passed by at least two of the tested implementations.';
-          }
-          else {
-            if ($optionalPassCount == $optionalCount) {
-              if (2 == $optionalCount) {
-                $optionalCountText = 'both';
-              }
-              else {
-                $optionalCountText = "all {$optionalCount}";
-              }
+      if (1 == $testCount) {
+        if (0 < $passCount) {
+          $this->addElement('p', null, 'In summary, the results show that the test was passed by at least two of the tested implementations.');
+        }
+        else {
+          $this->addElement('p', null, 'In summary, the results show that the test was not passed by at least two of the tested implementations.');
+        }
+      }
+      else {
+        $validTestText = ((0 < $invalidCount) ? ' valid' : '');
+        $testCountText = (($passCount == $testCount) ? "all {$testCount}{$validTestText}" : "{$passCount} of {$testCount}{$validTestText}");
+        if (0 < $optionalCount) {
+          $requiredText = ' for required behavior';
+          if (0 < $optionalPassCount) {
+            if (1 == $optionalCount) {
+              $optionalText = ' In addition, the 1 test for optional behavior was passed by at least two of the tested implementations.';
             }
             else {
-              $optionalCountText = "{$optionalPassCount} of {$optionalCount}";
+              if ($optionalPassCount == $optionalCount) {
+                if (2 == $optionalCount) {
+                  $optionalCountText = 'both';
+                }
+                else {
+                  $optionalCountText = "all {$optionalCount}";
+                }
+              }
+              else {
+                $optionalCountText = "{$optionalPassCount} of {$optionalCount}";
+              }
+              $optionalText = " In addition, {$optionalCountText} tests for optional behavior were passed by at least two of the tested implementations.";
             }
-            $optionalText = " In addition, {$optionalCountText} tests for optional behavior were passed by at least two of the tested implementations.";
+          }
+          else {
+            $optionalText = ' No tests for optional behavior were passed by at least two of the tested implementations.';
           }
         }
         else {
-          $optionalText = ' No tests for optional behavior were passed by at least two of the tested implementations.';
+          $requiredText = '';
+          $optionalText = '';
         }
+        $this->addElement('p', null, "In summary, the results show that {$testCountText} tests{$requiredText} were passed by at least two of the tested implementations.{$optionalText}");
       }
-      else {
-        $requiredText = '';
-        $optionalText = '';
-      }
-      $this->addElement('p', null, "In summary, the results show that {$testCountText} tests{$requiredText} were passed by at least two of the tested implementations.{$optionalText}");
     }
     
     $this->openElement('p', null, FALSE);
