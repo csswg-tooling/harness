@@ -166,7 +166,13 @@ class DetailsPage extends ResultsBasedPage
             $sourceId = $result->getSourceId();
             if ($sourceId) {
               $user = $this->mUsers[$sourceId];
-              $source = $user->getName();
+              $source = $user->getFullName();
+              if (! $source) {
+                $ipAddress = $user->getIPAddress();
+                if ($ipAddress->isValid()) {
+                  $source = $ipAddress->getIPv6String();
+                }
+              }
             }
             else {
               $source = '';

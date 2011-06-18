@@ -119,6 +119,8 @@ Config::Set('db.max.formats.description', 255);
 Config::Set('db.max.formats.home_uri', 255);
 Config::Set('db.max.formats.filter', 127);
 
+Config::Set('db.max.groups.group', 63);
+
 Config::Set('db.max.references.format', 15);
 Config::Set('db.max.references.reference', 255);
 Config::Set('db.max.references.uri', 255);
@@ -129,8 +131,6 @@ Config::Set('db.max.results.comment', 63);
 
 Config::Set('db.max.revisions.revision', 40);
 Config::Set('db.max.revisions.equal_revision', 40);
-
-Config::Set('db.max.sources.source', 63);
 
 Config::Set('db.max.specifications.spec', 31);
 Config::Set('db.max.specifications.title', 31);
@@ -183,5 +183,12 @@ Config::Set('db.max.useragents.browser', 31);
 Config::Set('db.max.useragents.browser_version', 15);
 Config::Set('db.max.useragents.platform', 31);
 Config::Set('db.max.useragents.platform_version', 31);
+
+Config::Set('db.max.users.user', 31);
+Config::Set('db.max.users.password', 63);
+Config::Set('db.max.users.full_name', 255);
+Config::Set('db.max.users.email', 255);
+Config::Set('db.max.users.ip_address', 39);
+
 
 ?>

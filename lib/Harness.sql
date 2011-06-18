@@ -37,6 +37,18 @@ CREATE TABLE IF NOT EXISTS `formats` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `groups`
+--
+
+CREATE TABLE IF NOT EXISTS `groups` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `group` varchar(63) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `references`
 --
 
@@ -273,6 +285,33 @@ CREATE TABLE IF NOT EXISTS `useragents` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user` varchar(31) NOT NULL DEFAULT '',
+  `password` varchar(63) NOT NULL DEFAULT '',
+  `full_name` varchar(255) NOT NULL DEFAULT '',
+  `email` varchar(255) NOT NULL DEFAULT '',
+  `ip_address` varchar(39) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_groups`
+--
+
+CREATE TABLE IF NOT EXISTS `user_groups` (
+  `user_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `group_id` int(11) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`user_id`,`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 -- --------------------------------------------------------

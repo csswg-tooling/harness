@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 require_once('core/DBConnection.php');
-require_once('core/Page.php');
+require_once('core/IPAddress.php');
 
 /**
  * Wrapper class for information about a particular User Agent 
@@ -35,10 +35,10 @@ class User extends DBConnection
     $users = array();
     
     $sql  = "SELECT * ";
-    $sql .= "FROM `sources` ";
+    $sql .= "FROM `users` ";
     $sql .= "ORDER BY `id` ";
 
-    $db = new DBConnection();
+    $db = new DBConnection('users');
     $r = $db->query($sql);
 
     while ($data = $r->fetchRow()) {
@@ -57,7 +57,7 @@ class User extends DBConnection
    */
   function __construct($data = FALSE) 
   {
-    parent::__construct();
+    parent::__construct('users');
     
     if ($data) {
       if (is_integer($data)) {
@@ -67,7 +67,14 @@ class User extends DBConnection
         $this->mInfo = $this->_queryByString($data);
         
         if (! $this->mInfo) {
-          $this->mInfo['source'] = $data;
+          $this->mInfo['user'] = $data;
+        }
+      }
+      elseif (is_object($data) && is_a($data, 'IPAddress')) {
+        $this->mInfo = $this->_queryByIPAddress($data);
+
+        if (! $this->mInfo) {
+          $this->mInfo['ip_address'] = $data->getIPv6String();
         }
       }
       elseif (is_array($data)) {
@@ -76,13 +83,9 @@ class User extends DBConnection
     }
     
     if (! isset($this->mInfo)) {  // passed a valid source id or string
-      $ipAddress = Page::GetClientIP();
+      $ipAddress = IPAddress::GetClientIP();
       
-      $this->mInfo = $this->_queryByString($ipAddress);
-      
-      if (! $this->mInfo) {
-        $this->mInfo['source'] = $ipAddress;
-      }
+      $this->mInfo = $this->_queryByIPAddress($ipAddress);
     }
   }
 
@@ -97,7 +100,7 @@ class User extends DBConnection
   {
     $id = intval($id);
     $sql  = "SELECT * ";
-    $sql .= "FROM `sources` ";
+    $sql .= "FROM `users` ";
     $sql .= "WHERE id = '{$id}' ";
     $sql .= "LIMIT 1";
 
@@ -119,13 +122,40 @@ class User extends DBConnection
    * @param string $source Source String
    * @return array
    */
-  protected function _queryByString($source) 
+  protected function _queryByString($userName) 
   {
-    $source = $this->encode($source, 'sources.source');
+    $userName = $this->encode($userName, 'users.user');
     
     $sql  = "SELECT * ";
-    $sql .= "FROM `sources` ";
-    $sql .= "WHERE `source` = '{$source}' ";
+    $sql .= "FROM `users` ";
+    $sql .= "WHERE `user` = '{$userName}' ";
+    $sql .= "LIMIT 1 ";
+
+    $r = $this->query($sql);
+
+    if ($r->succeeded()) {
+      $data = $r->fetchRow();
+      if ($data) {
+        return $data;
+      }
+    }
+    return null;
+  }
+
+
+  /**
+   * Lookup user info by IP address
+   *
+   * @param IPAddress $ipAddress IP Address
+   * @return array
+   */
+  protected function _queryByIPAddress(IPAddress $ipAddress) 
+  {
+    $ipString = $this->encode($ipAddress->getIPv6String(), 'users.ip_address');
+    
+    $sql  = "SELECT * ";
+    $sql .= "FROM `users` ";
+    $sql .= "WHERE `ip_address` = '{$ipString}' ";
     $sql .= "LIMIT 1 ";
 
     $r = $this->query($sql);
@@ -145,12 +175,12 @@ class User extends DBConnection
    */
   function update()
   {
-    if ((! isset($this->mInfo['id'])) && (isset($this->mInfo['source']))) {
-      $sql  = "INSERT INTO `sources` ";
-      $sql .= "(`source`) ";
-      $sql .= "VALUES (";
-      $sql .= "'" . $this->encode($this->mInfo['source'], 'sources.source') . "' ";
-      $sql .= ")";
+    if ((! isset($this->mInfo['id'])) && (isset($this->mInfo['ip_address']))) {
+      $ipString = $this->encode($this->mInfo['ip_address'], 'users.ip_address');
+      
+      $sql  = "INSERT INTO `users` ";
+      $sql .= "(`ip_address`) ";
+      $sql .= "VALUES ('{$ipString}')";
       $r = $this->query($sql);
       $this->mInfo['id'] = $this->lastInsertId();
     }
@@ -164,7 +194,17 @@ class User extends DBConnection
 
   function getName()
   {
-    return $this->mInfo['source'];
+    return $this->mInfo['user'];
+  }
+  
+  function getFullName()
+  {
+    return $this->mInfo['full_name'];
+  }
+  
+  function getIPAddress()
+  {
+    return new IPAddress($this->mInfo['ip_address']);
   }
 
 }
