@@ -27,9 +27,9 @@ class HarnessCmdLineWorker extends CmdLineWorker
   protected $mReferences;
 
 
-  function __construct() 
+  function __construct($databaseName = FALSE) 
   {
-    parent::__construct();
+    parent::__construct($databaseName);
     
   }
 
