@@ -170,7 +170,7 @@ class DetailsPage extends ResultsBasedPage
               if (! $source) {
                 $ipAddress = $user->getIPAddress();
                 if ($ipAddress->isValid()) {
-                  $source = $ipAddress->getIPv6String();
+                  $source = (($ipAddress->isIPv6()) ? $ipAddress->getIPv6String() : $ipAddress->getIPv4String());
                 }
               }
             }

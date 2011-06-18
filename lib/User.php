@@ -86,6 +86,9 @@ class User extends DBConnection
       $ipAddress = IPAddress::GetClientIP();
       
       $this->mInfo = $this->_queryByIPAddress($ipAddress);
+      if (! $this->mInfo) {
+        $this->mInfo['ip_address'] = $ipAddress->getIPv6String();
+      }
     }
   }
 
