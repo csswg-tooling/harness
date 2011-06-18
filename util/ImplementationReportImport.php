@@ -19,7 +19,7 @@
 
 require_once("lib/HarnessCmdLineWorker.php");
 require_once("lib/UserAgent.php");
-require_once("lib/User.php");
+require_once('core/User.php');
 require_once("lib/TestSuite.php");
 require_once('lib/Format.php');
 require_once('lib/Flags.php');

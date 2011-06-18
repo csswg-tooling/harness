@@ -87,6 +87,12 @@ Config::Set('uri.image.please_help', 'img/please_help_12.png');
 
 
 /**
+ * User configuration
+ */
+Config::Set('user.crypt_method', 'smd5'); // may be one of: 'smd5', 'apr1', 'md5', 'sha1', 'ssha', 'crypt', 'mysql', 'my411', 'kmd5'
+
+
+/**
  * Spider trap config
  *
  * URI to use for spider trap

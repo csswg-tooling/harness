@@ -22,7 +22,7 @@ require_once('lib/Results.php');
 require_once('lib/Result.php');
 require_once('lib/Format.php');
 require_once('lib/UserAgent.php');
-require_once('lib/User.php');
+require_once('core/User.php');
 
 /**
  * This class exports the results database into a csv file
