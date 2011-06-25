@@ -17,14 +17,8 @@
  ******************************************************************************/
 
 
-require_once("pages/SpiderTrapPage.php");
+require_once('core/Page.php');
 
-/**
- * This file provides a hook to override the Spider Trap Page
- * to alter any output as desired
- */
- 
-$page = new SpiderTrapPage();
-$page->write();
+Page::RunPage('SpiderTrapPage');
   
 ?>

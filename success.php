@@ -16,15 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/SuccessPage.php");
+require_once('core/Page.php');
 
-
-/**
- * This file provides a hook to override the Success Page
- * to alter any output as desired
- */
- 
-$page = new SuccessPage();
-$page->write();
+Page::RunPage('SuccessPage');
 
 ?>

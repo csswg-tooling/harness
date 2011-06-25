@@ -16,62 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/WelcomePage.php");
+require_once('core/Page.php');
 
-/**
- * Override welcome page to provide CSS specific info
- */
-class CSSWelcomePage extends WelcomePage
-{  
-  function __construct() 
-  {
-    parent::__construct();
-
-  }  
-  
-  
-  function writeBodyHeader()
-  {
-    parent::writeBodyHeader();
-
-    $this->addElement('p', null, "This is a development version of a test harness for conducting CSS conformance testing.");
-
-    $this->openElement('p', null, FALSE);
-    $this->addTextContent("More information about the CSS Conformance Test Suites can be found on the ");
-    $this->addHyperLink('http://wiki.csswg.org/test', null, "CSS Working Group Wiki");
-    $this->addTextContent('.');
-    $this->closeElement('p');
-
-    $this->addElement('hr');
-  }
-
-  function writeBodyContent()
-  {
-    parent::writeBodyContent();
-
-    $this->addElement('p', null, "Please make sure your client is configured to:");
-    $this->openElement('ul');
-    $this->addElement('li', null, "Default black text on a white background.");
-    $this->addElement('li', null, "No minimum font size.");
-    $this->addElement('li', null, "Print background colors and images.");
-    $this->closeElement('ul');
-
-    $this->openElement('p', null, FALSE);
-    $this->addElement('strong', null, "Note");
-    $this->addTextContent(" that ");
-    $this->addElement('em', null, "many");
-    $this->addTextContent(" of the tests require the ");
-    $this->addHyperLink('http://www.w3.org/Style/CSS/Test/Fonts/Ahem/', null, "Ahem font to be installed");
-    $this->addTextContent(". Some of the font-related tests also require ");
-    $this->addHyperLink('http://www.w3.org/Style/CSS/Test/Fonts/Overview', null, "special fonts");
-    $this->addTextContent(". Without the proper fonts installed, results are of no value.");
-    $this->closeElement('p');
-
-    $this->addElement('p', null, "Some tests have additional requirements, which will be noted by the harness interface.");
-  }
-}
-
-$page = new CSSWelcomePage();
-$page->write();
+Page::RunPage('WelcomePage');
 
 ?>

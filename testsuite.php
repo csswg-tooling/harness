@@ -16,15 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/TestSuitePage.php");
+require_once("core/Page.php");
 
-/**
- * This file provides a hook to override the Test Suite Page
- * to alter any output as desired
- */
- 
-
-$page = new TestSuitePage();
-$page->write();
+Page::RunPage('TestSuitePage');
 
 ?>

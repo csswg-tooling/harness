@@ -22,7 +22,7 @@
  * Example minimum local configuration file
  *
  * Edit values as appropriate for your install and save file as Config.local.php
- * somewhere in your PHP include path (or in the harness/lib directory)
+ * somewhere in your PHP include path (or in the harness/local directory)
  */
  
 //Config::SetDebugMode(TRUE);

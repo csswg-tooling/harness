@@ -17,14 +17,8 @@
  ******************************************************************************/
 
 
-require_once('pages/LoadResultsPage.php');
+require_once('core/Page.php');
 
-/**
- * This file provides a hook to override the load results page
- * to alter any output as desired
- */
-
-$page = new LoadResultsPage();
-$page->write();
+Page::RunPage('LoadResultsPage');
 
 ?>

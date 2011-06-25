@@ -16,15 +16,8 @@
  * 
  ******************************************************************************/
 
+require_once('core/Page.php');
 
-require_once('pages/StartTestPage.php');
-
-/**
- * This file provides a hook to override the start page
- * to alter any output as desired
- */
-
-$page = new StartTestPage();
-$page->write();
+Page::RunPage('StartTestPage');
 
 ?>

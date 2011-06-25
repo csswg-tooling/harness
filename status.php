@@ -16,15 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/StatusQueryPage.php");
+require_once('core/Page.php');
 
-
-/**
- * This file provides a hook to override the status query page
- * to alter any output as desired
- */
- 
-$page = new StatusQueryPage();
-$page->write();
+Page::RunPage('StatusQueryPage');
 
 ?>

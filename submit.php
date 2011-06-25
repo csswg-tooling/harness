@@ -16,15 +16,8 @@
  * 
  ******************************************************************************/
 
+require_once('core/Page.php');
 
-require_once('pages/SubmitPage.php');
-
-/**
- * This file provides a hook to override the Submit Page
- * to alter any output as desired
- */
-
-$page = new SubmitPage();
-$page->write();
+Page::RunPage('SubmitPage');
 
 ?>

@@ -16,14 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/ReviewPage.php");
+require_once('core/Page.php');
 
-/**
- * This file provides a hook to override the Review Page
- * to alter any output as desired
- */
- 
-$page = new ReviewPage();
-$page->write();
+Page::RunPage('ReviewPage');
 
 ?>

@@ -16,14 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/DetailsPage.php");
+require_once('core/Page.php');
 
-/**
- * This file provides a hook to override the Details Page
- * to alter any output as desired
- */
- 
-$page = new DetailsPage();
-$page->write();
+Page::RunPage('DetailsPage');
 
 ?>

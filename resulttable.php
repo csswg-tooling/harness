@@ -16,15 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once("pages/ResultsPage.php");
+require_once('core/Page.php');
 
-
-/**
- * This file provides a hook to override the Results Page
- * to alter any output as desired
- */
- 
-$page = new ResultsPage();
-$page->write();
+Page::RunPage('ResultsPage');
 
 ?>
