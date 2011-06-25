@@ -1,7 +1,5 @@
 Options +MultiViews
 
-php_value include_path ".:./local/"
-
 AddType application/javascript .js
 AddHandler application/x-httpd-php .js
 
