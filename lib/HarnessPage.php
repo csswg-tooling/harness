@@ -42,25 +42,9 @@ class HarnessPage extends DynamicPage
     
     $this->mTestSuite = $this->_requestData('s', 'TestSuite');
     $this->mUserAgent = new UserAgent(intval($this->_requestData('u')));
-    $this->mUser = new User();
+    $this->mUser = new User(null, $this->_cookieData('uid'), $this->_cookieData('key'));
   }  
   
-  
-  /**
-   * Hellper functon for building path URIs form query args
-   */
-  protected function _appendURI(&$uri, $key, &$args, $path = null)
-  {
-    if ($args && array_key_exists($key, $args)) {
-      if ($path) {
-        $uri .= $path . '/';
-      }
-      $uri .= rawurlencode($args[$key]) . '/';
-      unset($args[$key]);
-      return TRUE;
-    }
-    return FALSE;
-  }
   
   /**
    * Helper function to build URI with query string
@@ -75,102 +59,90 @@ class HarnessPage extends DynamicPage
     if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
       unset ($queryArgs['u']);
     }
-    if (Config::Get('server.rewrite_urls')) {
-      if (is_array($queryArgs) && (0 < count($queryArgs))) {
-        $queryArgs = self::_ConvertArgs($queryArgs, TRUE);
-      }
-      if (Config::Get('uri.page.home') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      elseif (Config::Get('uri.page.testsuite') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'suite');
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      elseif (Config::Get('uri.page.select_ua') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'agent');
-      }
-      elseif (Config::Get('uri.page.testcase') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'test');
-        if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
-          $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
-          if (! ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o']))) {
-            $baseURI .= 'alpha/';
-          }
-          $this->_appendURI($baseURI, 'i', $queryArgs);
-        }
-        unset($queryArgs['o']);
-        $this->_appendURI($baseURI, 'ref', $queryArgs, 'ref');
-        $this->_appendURI($baseURI, 'f', $queryArgs, 'format');
-        $this->_appendURI($baseURI, 'fl', $queryArgs, 'flag');
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      elseif (Config::Get('uri.page.success') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'done');
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      elseif (Config::Get('uri.page.review') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'review');
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      elseif (Config::Get('uri.page.results') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'results');
-        if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
-          $baseURI .= 'grouped/';
-        }
-        unset($queryArgs['o']);
-        if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
-          $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
-        }
-        $this->_appendURI($baseURI, 'f', $queryArgs, 'filter');
-        $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
-        $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
-        $this->_appendURI($baseURI, 'v', $queryArgs, 'engine_version');
-        $this->_appendURI($baseURI, 'b', $queryArgs, 'browser');
-        $this->_appendURI($baseURI, 'bv', $queryArgs, 'browser_version');
-        $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
-        $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      elseif (Config::Get('uri.page.details') == $baseURI) {
-        $baseURI = '';
-        $this->_appendURI($baseURI, 's', $queryArgs, 'details');
-        if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
-          $baseURI .= 'grouped/';
-        }
-        unset($queryArgs['o']);
-        if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
-          $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
-        }
-        $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
-        $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
-        $this->_appendURI($baseURI, 'v', $queryArgs, 'engine_version');
-        $this->_appendURI($baseURI, 'b', $queryArgs, 'browser');
-        $this->_appendURI($baseURI, 'bv', $queryArgs, 'browser_version');
-        $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
-        $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
-        $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
-      }
-      if ((! $absolute) && (! $this->mOutputFile)) {  // force absolute path when rewriting since our url path is not the path to this page
-        if (empty($_SERVER['PHP_SELF'])) {
-          $abs = parse_url(Config::Get('server.install_uri'), PHP_URL_PATH);
-        }
-        else {
-          $abs = dirname($_SERVER['PHP_SELF']);
-        }
-        if (substr($abs, -1) != '/') {
-          $abs .= '/';
-        }
-        $baseURI = $abs . $baseURI;
-      }
-    }
     return parent::buildURI($baseURI, $queryArgs, $fragId, $absolute);
+  }
+
+
+  protected function _rewriteURI($baseURI, Array &$queryArgs = null) {
+    if (Config::Get('uri.page.home') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    elseif (Config::Get('uri.page.testsuite') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'suite');
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    elseif (Config::Get('uri.page.select_ua') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'agent');
+    }
+    elseif (Config::Get('uri.page.testcase') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'test');
+      if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
+        $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
+        if (! ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o']))) {
+          $baseURI .= 'alpha/';
+        }
+        $this->_appendURI($baseURI, 'i', $queryArgs);
+      }
+      unset($queryArgs['o']);
+      $this->_appendURI($baseURI, 'ref', $queryArgs, 'ref');
+      $this->_appendURI($baseURI, 'f', $queryArgs, 'format');
+      $this->_appendURI($baseURI, 'fl', $queryArgs, 'flag');
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    elseif (Config::Get('uri.page.success') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'done');
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    elseif (Config::Get('uri.page.review') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'review');
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    elseif (Config::Get('uri.page.results') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'results');
+      if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
+        $baseURI .= 'grouped/';
+      }
+      unset($queryArgs['o']);
+      if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
+        $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
+      }
+      $this->_appendURI($baseURI, 'f', $queryArgs, 'filter');
+      $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
+      $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
+      $this->_appendURI($baseURI, 'v', $queryArgs, 'engine_version');
+      $this->_appendURI($baseURI, 'b', $queryArgs, 'browser');
+      $this->_appendURI($baseURI, 'bv', $queryArgs, 'browser_version');
+      $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
+      $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    elseif (Config::Get('uri.page.details') == $baseURI) {
+      $baseURI = '';
+      $this->_appendURI($baseURI, 's', $queryArgs, 'details');
+      if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
+        $baseURI .= 'grouped/';
+      }
+      unset($queryArgs['o']);
+      if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
+        $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
+      }
+      $this->_appendURI($baseURI, 'm', $queryArgs, 'date');
+      $this->_appendURI($baseURI, 'e', $queryArgs, 'engine');
+      $this->_appendURI($baseURI, 'v', $queryArgs, 'engine_version');
+      $this->_appendURI($baseURI, 'b', $queryArgs, 'browser');
+      $this->_appendURI($baseURI, 'bv', $queryArgs, 'browser_version');
+      $this->_appendURI($baseURI, 'p', $queryArgs, 'platform');
+      $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
+      $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
+    }
+    return $baseURI;
   }
 
 
