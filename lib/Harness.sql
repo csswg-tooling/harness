@@ -298,6 +298,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `full_name` varchar(255) NOT NULL DEFAULT '',
   `email` varchar(255) NOT NULL DEFAULT '',
   `ip_address` varchar(39) DEFAULT NULL,
+  `active` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
