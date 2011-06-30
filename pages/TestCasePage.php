@@ -192,7 +192,7 @@ class TestCasePage extends HarnessPage
       $actualUA = $this->mUserAgent->getActualUA();
       $actualEngineName = strtolower($actualUA->getEngineName());
       
-      $this->addStyleSheetLink($this->buildURI(sprintf(Config::Get('uri.stylesheet.test_engine'), $actualEngineName)));
+      $this->addStyleSheetLink($this->buildURI(sprintf(Config::Get('uri.stylesheet', 'test_engine'), $actualEngineName)));
     }
   }
 

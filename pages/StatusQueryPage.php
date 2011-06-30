@@ -329,7 +329,7 @@ class StatusQueryPage extends HarnessPage
       $info->testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
       $info->resultsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
       $info->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
-      $info->rewriteURIs = Config::Get('server.rewrite_urls');
+      $info->rewriteURIs = Config::Get('server', 'rewrite_urls');
       $info->clientEngineName = $this->mUserAgent->getEngineName();
       $info->isIndexPage = (0 == $this->mSectionId);
       

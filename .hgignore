@@ -2,3 +2,4 @@ syntax: glob
 *.xcodeproj
 *.DS_Store
 local/*.local.php
+local/*.local.ini

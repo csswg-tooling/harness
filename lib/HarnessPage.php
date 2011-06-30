@@ -64,20 +64,20 @@ class HarnessPage extends DynamicPage
 
 
   protected function _rewriteURI($baseURI, Array &$queryArgs = null) {
-    if (Config::Get('uri.page.home') == $baseURI) {
+    if (Config::Get('uri.page', 'home') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
     }
-    elseif (Config::Get('uri.page.testsuite') == $baseURI) {
+    elseif (Config::Get('uri.page', 'testsuite') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'suite');
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
     }
-    elseif (Config::Get('uri.page.select_ua') == $baseURI) {
+    elseif (Config::Get('uri.page', 'select_ua') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'agent');
     }
-    elseif (Config::Get('uri.page.testcase') == $baseURI) {
+    elseif (Config::Get('uri.page', 'testcase') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'test');
       if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
@@ -93,17 +93,17 @@ class HarnessPage extends DynamicPage
       $this->_appendURI($baseURI, 'fl', $queryArgs, 'flag');
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
     }
-    elseif (Config::Get('uri.page.success') == $baseURI) {
+    elseif (Config::Get('uri.page', 'success') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'done');
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
     }
-    elseif (Config::Get('uri.page.review') == $baseURI) {
+    elseif (Config::Get('uri.page', 'review') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'review');
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
     }
-    elseif (Config::Get('uri.page.results') == $baseURI) {
+    elseif (Config::Get('uri.page', 'results') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'results');
       if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
@@ -123,7 +123,7 @@ class HarnessPage extends DynamicPage
       $this->_appendURI($baseURI, 'pv', $queryArgs, 'platform_version');
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
     }
-    elseif (Config::Get('uri.page.details') == $baseURI) {
+    elseif (Config::Get('uri.page', 'details') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'details');
       if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
@@ -300,10 +300,13 @@ class HarnessPage extends DynamicPage
     }
     
     if (! $contactName) {
-      $contactName = Config::Get('contact.name');
+      $contactName = Config::Get('contact', 'name');
     }
     if (! $contactURI) {
-      $contactURI = Config::Get('contact.uri');
+      $contactURI = Config::Get('contact', 'uri');
+      if ((! $contactURI) && isset($_SERVER['SERVER_ADMIN'])) {
+        $contactURI = 'mailto:' . $_SERVER['SERVER_ADMIN'];
+      }
     }
   
     $this->addElement('hr');

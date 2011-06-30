@@ -381,7 +381,7 @@ class IR_IndexPage extends HarnessPage
   {
     extract($this->mStats);
     
-    $now = new DateTime('now', new DateTimeZone(Config::Get('server.time_zone')));
+    $now = new DateTime('now', new DateTimeZone(Config::Get('server', 'time_zone')));
     
     $totalCount = $testCount + $optionalCount + $invalidCount;
     $formats = Format::GetFormatsFor($this->mTestSuite);
@@ -733,8 +733,8 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       
       // copy stylesheets
       if ($outputPath) {
-        $this->copyFile(Config::Get('uri.stylesheet.base'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.base')));
-        $this->copyFile(Config::Get('uri.stylesheet.report'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet.report')));
+        $this->copyFile(Config::Get('uri.stylesheet', 'base'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet', 'base')));
+        $this->copyFile(Config::Get('uri.stylesheet', 'report'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet', 'report')));
       }
     }
   }

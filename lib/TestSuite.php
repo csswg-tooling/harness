@@ -89,7 +89,7 @@ class TestSuite extends DBConnection
   
   function getDateTime()
   {
-    return new DateTime($this->mInfo['date'], new DateTimeZone(Config::Get('server.time_zone')));
+    return new DateTime($this->mInfo['date'], new DateTimeZone(Config::Get('server', 'time_zone')));
   }
   
   function isLocked()
@@ -100,7 +100,7 @@ class TestSuite extends DBConnection
   function getLockDateTime()
   {
     if ($this->isLocked()) {
-      return new DateTime($this->mInfo['locked'], new DateTimeZone(Config::Get('server.time_zone')));
+      return new DateTime($this->mInfo['locked'], new DateTimeZone(Config::Get('server', 'time_zone')));
     }
     return FALSE;
   }

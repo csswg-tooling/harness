@@ -148,7 +148,7 @@ class Result extends DBConnection
   function getDateTime()
   {
     if ($this->isValid()) {
-      return new DateTime($this->mInfo['modified'], new DateTimeZone(Config::Get('server.time_zone')));
+      return new DateTime($this->mInfo['modified'], new DateTimeZone(Config::Get('server', 'time_zone')));
     }
     return FALSE;
   }

@@ -160,7 +160,7 @@ class Results extends DBConnection
       $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
     }
     if ($modified) {
-      $modified->setTimeZone(new DateTimeZone(Config::Get('server.time_zone')));
+      $modified->setTimeZone(new DateTimeZone(Config::Get('server', 'time_zone')));
       $modified = $this->encode($modified->format('Y-m-d H:i:s'));
       $sql .= "AND `results`.`modified` <= '{$modified}' ";
     }  
