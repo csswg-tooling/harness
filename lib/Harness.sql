@@ -293,14 +293,16 @@ CREATE TABLE IF NOT EXISTS `useragents` (
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user` varchar(31) NOT NULL DEFAULT '',
-  `password` varchar(63) NOT NULL DEFAULT '',
-  `full_name` varchar(255) NOT NULL DEFAULT '',
-  `email` varchar(255) NOT NULL DEFAULT '',
+  `user` varchar(31) DEFAULT NULL,
+  `password` varchar(63) DEFAULT NULL,
+  `full_name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
   `ip_address` varchar(39) DEFAULT NULL,
   `active` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`id`),
+  KEY `user` (`user`),
+  KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
