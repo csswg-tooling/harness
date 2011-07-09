@@ -89,15 +89,15 @@ class Results extends DBConnection
     $sql  = "SELECT DISTINCT `testcases`.`id`, `testcases`.`testcase`, ";
     $sql .= "`testcases`.`flags`, `suitetests`.`revision` ";
     $sql .= "FROM `testcases` ";
-    $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
+    $sql .= "LEFT JOIN (`suitetests`, `speclinks`) ";
     $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
+    $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
     if ($searchTestCaseId) {
       $sql .= "AND `testcases`.`id` = '{$searchTestCaseId}' ";
     }
     elseif ($sectionId) {
-      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
     }
     $sql .= "ORDER BY `testcases`.`testcase` ";
 
@@ -146,10 +146,10 @@ class Results extends DBConnection
     $sql  = "SELECT DISTINCT `results`.`id`, `results`.`testcase_id`, ";
     $sql .= "`results`.`revision`, `results`.`result`,  ";
     $sql .= "`useragents`.`engine` ";
-    $sql .= "FROM `results` INNER JOIN (`useragents`, `suitetests`, `testlinks`) ";
+    $sql .= "FROM `results` INNER JOIN (`useragents`, `suitetests`, `speclinks`) ";
     $sql .= "ON `results`.`useragent_id` = `useragents`.`id` ";
     $sql .= "AND `results`.`testcase_id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `results`.`testcase_id` = `testlinks`.`testcase_id` ";
+    $sql .= "AND `results`.`testcase_id` = `speclinks`.`testcase_id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
     $sql .= "AND `results`.`ignore` = '0' ";
     $sql .= "AND `results`.`result` != 'na' ";
@@ -157,7 +157,7 @@ class Results extends DBConnection
       $sql .= "AND `results`.`testcase_id` = '{$searchTestCaseId}' ";
     }
     elseif ($sectionId) {
-      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
     }
     if ($modified) {
       $modified->setTimeZone(new DateTimeZone(Config::Get('server', 'time_zone')));

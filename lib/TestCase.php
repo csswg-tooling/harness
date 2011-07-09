@@ -151,27 +151,27 @@ class TestCase extends DBConnection
     if (null == $this->mSpecURIs) {
       $testCaseId = $this->getId();
       
-      $specName = $this->encode($this->mTestSuite->getSpecName(), 'speclinks.spec');
+      $specName = $this->encode($this->mTestSuite->getSpecName(), 'sections.spec');
 
-      $sql  = "SELECT `speclinks`.`spec`, `speclinks`.`title`, `speclinks`.`section`, `speclinks`.`uri`, ";
+      $sql  = "SELECT `sections`.`spec`, `sections`.`title`, `sections`.`section`, `sections`.`uri`, ";
       $sql .= "`specifications`.`base_uri` AS `spec_uri`, ";
       $sql .= "`specifications`.`title` AS `spec_title` ";
-      $sql .= "FROM `speclinks` ";
-      $sql .= "LEFT JOIN (`testlinks`, `specifications`) ";
-      $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
-      $sql .= "AND `speclinks`.`spec` = `specifications`.`spec` ";
-      $sql .= "WHERE `testlinks`.`testcase_id` = '{$testCaseId}' ";
-      $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
-      $sql .= "AND `testlinks`.`group` = 0 ";
-      $sql .= "ORDER BY `testlinks`.`sequence` ";
+      $sql .= "FROM `sections` ";
+      $sql .= "LEFT JOIN (`speclinks`, `specifications`) ";
+      $sql .= "ON `sections`.`id` = `speclinks`.`section_id` ";
+      $sql .= "AND `sections`.`spec` = `specifications`.`spec` ";
+      $sql .= "WHERE `speclinks`.`testcase_id` = '{$testCaseId}' ";
+      $sql .= "AND `sections`.`spec` = '{$specName}' ";
+      $sql .= "AND `speclinks`.`group` = 0 ";
+      $sql .= "ORDER BY `speclinks`.`sequence` ";
       
       $r = $this->query($sql);
-      while ($specLink = $r->fetchRow()) {
-        $spec       = $specLink['spec'];
-        $specTitle  = $specLink['spec_title'];
-        $title      = $specLink['title'];
-        $section    = $specLink['section'];
-        $uri        = $this->_combinePath($specLink['spec_uri'], $specLink['uri']);
+      while ($sectionData = $r->fetchRow()) {
+        $spec       = $sectionData['spec'];
+        $specTitle  = $sectionData['spec_title'];
+        $title      = $sectionData['title'];
+        $section    = $sectionData['section'];
+        $uri        = $this->_combinePath($sectionData['spec_uri'], $sectionData['uri']);
         
         $this->mSpecURIs[] = compact('spec', 'specTitle', 'title', 'section', 'uri');
       }
@@ -184,19 +184,19 @@ class TestCase extends DBConnection
     $sectionIds = array();
     
     $testCaseId = $this->getId();
-    $specName = $this->encode($this->mTestSuite->getSpecName(), 'speclinks.spec');
+    $specName = $this->encode($this->mTestSuite->getSpecName(), 'sections.spec');
 
-    $sql  = "SELECT `speclinks`.`id` ";
-    $sql .= "FROM `speclinks` ";
-    $sql .= "LEFT JOIN (`testlinks`, `specifications`) ";
-    $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
-    $sql .= "AND `speclinks`.`spec` = `specifications`.`spec` ";
-    $sql .= "WHERE `testlinks`.`testcase_id` = '{$testCaseId}' ";
-    $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
+    $sql  = "SELECT `sections`.`id` ";
+    $sql .= "FROM `sections` ";
+    $sql .= "LEFT JOIN (`speclinks`, `specifications`) ";
+    $sql .= "ON `sections`.`id` = `speclinks`.`section_id` ";
+    $sql .= "AND `sections`.`spec` = `specifications`.`spec` ";
+    $sql .= "WHERE `speclinks`.`testcase_id` = '{$testCaseId}' ";
+    $sql .= "AND `sections`.`spec` = '{$specName}' ";
     
     $r = $this->query($sql);
-    while ($specLinkData = $r->fetchRow()) {
-      $sectionIds[] = intval($specLinkData['id']);
+    while ($sectionData = $r->fetchRow()) {
+      $sectionIds[] = intval($sectionData['id']);
     }
     return $sectionIds;
   }
@@ -342,11 +342,11 @@ class TestCase extends DBConnection
     
     $sql  = "SELECT COUNT(*) AS `count` ";
     $sql .= "FROM `suitetests` ";
-    $sql .= "LEFT JOIN (`testlinks`, `testcases`) ";
-    $sql .= "ON `suitetests`.`testcase_id` = `testlinks`.`testcase_id` ";
+    $sql .= "LEFT JOIN (`speclinks`, `testcases`) ";
+    $sql .= "ON `suitetests`.`testcase_id` = `speclinks`.`testcase_id` ";
     $sql .= "AND `suitetests`.`testcase_id` = `testcases`.`id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+    $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
     if ($flag) {
       if ('!' === $flag[0]) {
         $flag = substr($flag, 1);
@@ -391,9 +391,9 @@ class TestCase extends DBConnection
     $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
     $sql .= "`suitetests`.`revision` ";
     $sql .= "FROM (`testcases` ";
-    $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
+    $sql .= "LEFT JOIN (`suitetests`, `speclinks`) ";
     $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
+    $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
     if ($engineName) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
     }
@@ -414,7 +414,7 @@ class TestCase extends DBConnection
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
       $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
     }
-    $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+    $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
     $sql .= ") GROUP BY `id` ";
     if ($engineName) {
       $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
@@ -519,7 +519,7 @@ class TestCase extends DBConnection
     $sql .= "FROM (`testcases` ";
     $sql .= "LEFT JOIN `suitetests` ON `testcases`.`id` = `suitetests`.`testcase_id` ";
     if ($sectionId) {
-      $sql .= "LEFT JOIN `testlinks`ON `testcases`.`id` = `testlinks`.`testcase_id` ";
+      $sql .= "LEFT JOIN `speclinks`ON `testcases`.`id` = `speclinks`.`testcase_id` ";
     }
     if ($engineName) {
       $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
@@ -538,7 +538,7 @@ class TestCase extends DBConnection
       $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
     }
     if ($sectionId) {
-      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
     }
     if ($engineName) {
       $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";

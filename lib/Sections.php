@@ -34,11 +34,11 @@ class Sections extends DBConnection
     if ($testSuite->isValid() && $sectionName) {
       $db = new DBConnection();
 
-      $specName = $db->encode($testSuite->getSpecName(), 'speclinks.spec');
-      $sectionName = $db->encode($sectionName, 'speclinks.section');
+      $specName = $db->encode($testSuite->getSpecName(), 'sections.spec');
+      $sectionName = $db->encode($sectionName, 'sections.section');
       
       $sql  = "SELECT `id` ";
-      $sql .= "FROM `speclinks` ";
+      $sql .= "FROM `sections` ";
       $sql .= "WHERE `spec` = '{$specName}' AND `section` = '{$sectionName}' ";
       
       $r = $db->query($sql);
@@ -57,10 +57,10 @@ class Sections extends DBConnection
     if ($testSuite->isValid() && $sectionId) {
       $db = new DBConnection();
 
-      $specName = $db->encode($testSuite->getSpecName(), 'speclinks.spec');
+      $specName = $db->encode($testSuite->getSpecName(), 'sections.spec');
       
       $sql  = "SELECT `section` ";
-      $sql .= "FROM `speclinks` ";
+      $sql .= "FROM `sections` ";
       $sql .= "WHERE `spec` = '{$specName}' AND `id` = '{$sectionId}' ";
       
       $r = $db->query($sql);
@@ -79,20 +79,20 @@ class Sections extends DBConnection
     parent::__construct();
 
     $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.testsuite');
-    $specName = $this->encode($testSuite->getSpecName(), 'speclinks.spec');
+    $specName = $this->encode($testSuite->getSpecName(), 'sections.spec');
     
-    $sql  = "SELECT `speclinks`.`id`, `speclinks`.`parent_id`, ";
-    $sql .= "`speclinks`.`section`, `speclinks`.`title`, ";
-    $sql .= "`speclinks`.`uri`, ";
-    $sql .= "SUM(IF(`testlinks`.`group`=0,1,0)) as `test_count` ";
-    $sql .= "FROM `speclinks` ";
-    $sql .= "LEFT JOIN (`testlinks`, `suitetests`) ";
-    $sql .= "ON `speclinks`.`id` = `testlinks`.`speclink_id` ";
-    $sql .= "AND `testlinks`.`testcase_id` = `suitetests`.`testcase_id` ";
+    $sql  = "SELECT `sections`.`id`, `sections`.`parent_id`, ";
+    $sql .= "`sections`.`section`, `sections`.`title`, ";
+    $sql .= "`sections`.`uri`, ";
+    $sql .= "SUM(IF(`speclinks`.`group`=0,1,0)) as `test_count` ";
+    $sql .= "FROM `sections` ";
+    $sql .= "LEFT JOIN (`speclinks`, `suitetests`) ";
+    $sql .= "ON `sections`.`id` = `speclinks`.`section_id` ";
+    $sql .= "AND `speclinks`.`testcase_id` = `suitetests`.`testcase_id` ";
     $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
-    $sql .= "GROUP BY `speclinks`.`id` ";
-    $sql .= "ORDER BY `speclinks`.`id` ";
+    $sql .= "AND `sections`.`spec` = '{$specName}' ";
+    $sql .= "GROUP BY `sections`.`id` ";
+    $sql .= "ORDER BY `sections`.`id` ";
     
     $r = $this->query($sql);
     
@@ -113,22 +113,22 @@ class Sections extends DBConnection
     }
     
     if ($loadTestCaseIds) {
-      $sql  = "SELECT `testcases`.`id`, `testlinks`.`speclink_id`, ";
-      $sql .= "`testlinks`.`sequence` ";
+      $sql  = "SELECT `testcases`.`id`, `speclinks`.`section_id`, ";
+      $sql .= "`speclinks`.`sequence` ";
       $sql .= "FROM `testcases` ";
-      $sql .= "LEFT JOIN (`suitetests`, `testlinks`, `speclinks`) ";
+      $sql .= "LEFT JOIN (`suitetests`, `speclinks`, `sections`) ";
       $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-      $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
-      $sql .= "AND `speclinks`.`id` = `testlinks`.`speclink_id` ";
+      $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
+      $sql .= "AND `sections`.`id` = `speclinks`.`section_id` ";
       $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-      $sql .= "AND `testlinks`.`group` = 0 ";
-      $sql .= "AND `speclinks`.`spec` = '{$specName}' ";
+      $sql .= "AND `speclinks`.`group` = 0 ";
+      $sql .= "AND `sections`.`spec` = '{$specName}' ";
       $sql .= "ORDER BY `testcases`.`testcase` ";
 
       $r = $this->query($sql);
       
       while ($testCaseData = $r->fetchRow()) {
-        $sectionId = intval($testCaseData['speclink_id']);
+        $sectionId = intval($testCaseData['section_id']);
         $testCaseId = intval($testCaseData['id']);
         $this->mTestCaseIds[$sectionId][] = $testCaseId;
         if (0 == intval($testCaseData['sequence'])) {

@@ -36,13 +36,13 @@ class TestCases extends DBConnection
     $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, `testcases`.`title` ";
     $sql .= "FROM `testcases` ";
     if (0 < $sectionId) {
-      $sql .= "LEFT JOIN (`suitetests`, `testlinks`) ";
+      $sql .= "LEFT JOIN (`suitetests`, `speclinks`) ";
       $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-      $sql .= "AND `testcases`.`id` = `testlinks`.`testcase_id` ";
+      $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
       $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-      $sql .= "AND `testlinks`.`speclink_id` = '{$sectionId}' ";
+      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
       if (! $group) {
-        $sql .= "AND `testlinks`.`group` = 0 ";
+        $sql .= "AND `speclinks`.`group` = 0 ";
       }
     }
     else {

@@ -33,8 +33,8 @@ class TestCaseImport extends HarnessCmdLineWorker
 {  
   protected $mTestCaseRevisionInSuite;
   protected $mTestCaseRevisions;
-  protected $mSpecLinkIds;
-  protected $mSpecLinkParentIds;
+  protected $mSectionIds;
+  protected $mSectionParentIds;
   protected $mTestCaseIsActive;
   protected $mNewSuitePath;
   protected $mOldSuitePath;
@@ -109,48 +109,48 @@ class TestCaseImport extends HarnessCmdLineWorker
   }
   
   
-  protected function _loadSpecLinkIds($spec)
+  protected function _loadSectionIds($spec)
   {
-    $this->mSpecLinkIds = array();
-    $this->mSpecLinkParentIds = array();
+    $this->mSectionIds = array();
+    $this->mSectionParentIds = array();
     
-    $spec = $this->encode($spec, 'speclinks.spec');
+    $spec = $this->encode($spec, 'sections.spec');
     
     $sql  = "SELECT * ";
-    $sql .= "FROM `speclinks` ";
+    $sql .= "FROM `sections` ";
     $sql .= "WHERE `spec` = '{$spec}' ";
     
     $r = $this->query($sql);
-    while ($specLinkData = $r->fetchRow()) {
-      $specLinkId = intval($specLinkData['id']);
-      $parentId   = intval($specLinkData['parent_id']);
-      $uri        = $specLinkData['uri'];
+    while ($sectionData = $r->fetchRow()) {
+      $sectionId  = intval($sectionData['id']);
+      $parentId   = intval($sectionData['parent_id']);
+      $uri        = $sectionData['uri'];
       
-      $this->mSpecLinkIds[$uri] = $specLinkId;
-      $this->mSpecLinkParentIds[$specLinkId] = $parentId;
+      $this->mSectionIds[$uri] = $sectionId;
+      $this->mSectionParentIds[$sectionId] = $parentId;
     }
   }
   
   
-  protected function _addSpecLink($specLinkId, $specLinkURI)
+  protected function _addSection($sectionId, $sectionURI)
   {
-    $this->mSpecLinkIds[$specLinkURI] = $specLinkId;
+    $this->mSectionIds[$sectionURI] = $sectionId;
   }
   
   
-  protected function _getSpecLinkId($specURI)
+  protected function _getSectionId($specURI)
   {
-    if (array_key_exists($specURI, $this->mSpecLinkIds)) {
-      return $this->mSpecLinkIds[$specURI];
+    if (array_key_exists($specURI, $this->mSectionIds)) {
+      return $this->mSectionIds[$specURI];
     }
     return FALSE;
   }
   
   
-  protected function _getSpecLinkParentId($specLinkId)
+  protected function _getSectionParentId($sectionId)
   {
-    if (array_key_exists($specLinkId, $this->mSpecLinkParentIds)) {
-      return $this->mSpecLinkParentIds[$specLinkId];
+    if (array_key_exists($sectionId, $this->mSectionParentIds)) {
+      return $this->mSectionParentIds[$sectionId];
     }
     return FALSE;
   }
@@ -198,7 +198,7 @@ class TestCaseImport extends HarnessCmdLineWorker
     $this->_loadTestCases();
     $this->_loadTestCaseRevisions($testSuiteName);
     
-    $this->_loadSpecLinkIds($testSuite->getSpecName());
+    $this->_loadSectionIds($testSuite->getSpecName());
     
     $testSuiteName = $this->encode($testSuiteName, 'suitetests.testsuite');
 
@@ -434,7 +434,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       }
 
       // update links
-      $sql  = "DELETE FROM `testlinks` ";
+      $sql  = "DELETE FROM `speclinks` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
       // XXX only delete links for spec tested from this suite
       
@@ -444,51 +444,51 @@ class TestCaseImport extends HarnessCmdLineWorker
       if (0 == count($linkArray)) {
         $this->_warning("Test {$testCaseName} does not have any spec links");
       }
-      $usedSpecLinkIds = array();
+      $usedSectionIds = array();
       $sequence = -1;
-      foreach ($linkArray as $specLinkURI) {
+      foreach ($linkArray as $sectionURI) {
         $sequence++;
-        $specLinkId = $this->_getSpecLinkId($specLinkURI);
+        $sectionId = $this->_getSectionId($sectionURI);
         
-        if (FALSE === $specLinkId) {
-          echo "Adding new spec link: '{$specLinkURI}'\n";
-          $specLinkURI = $this->encode($specLinkURI, 'speclinks.uri');
-          $spec = $this->encode($testSuite->getSpecName(), 'speclinks.spec');
+        if (FALSE === $sectionId) {
+          echo "Adding new spec link: '{$sectionURI}'\n";
+          $sectionURI = $this->encode($sectionURI, 'sections.uri');
+          $spec = $this->encode($testSuite->getSpecName(), 'sections.spec');
 
           
-          $sql  = "INSERT INTO `speclinks` ";
+          $sql  = "INSERT INTO `sections` ";
           $sql .= "(`spec`, `uri`) ";
-          $sql .= "VALUES ('{$spec}', '{$specLinkURI}') ";
+          $sql .= "VALUES ('{$spec}', '{$sectionURI}') ";
           
           $this->query($sql);
         
-          $specLinkId = $this->lastInsertId();
-          $this->_addSpecLink($specLinkId, $specLinkURI);
+          $sectionId = $this->lastInsertId();
+          $this->_addSection($sectionId, $sectionURI);
         }
         
-        $sql  = "INSERT INTO `testlinks` ";
-        $sql .= "(`testcase_id`, `speclink_id`, `sequence`, `group`) ";
-        $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', '{$sequence}', 0) ";
+        $sql  = "INSERT INTO `speclinks` ";
+        $sql .= "(`testcase_id`, `section_id`, `sequence`, `group`) ";
+        $sql .= "VALUES ('{$testCaseId}', '{$sectionId}', '{$sequence}', 0) ";
         
         $this->query($sql);
         
-        $usedSpecLinkIds[$specLinkId] = TRUE;
+        $usedSectionIds[$sectionId] = TRUE;
       }
       
       // add parent spec links for grouping
       $sequence = -1;
-      foreach ($linkArray as $specLinkURI) {
+      foreach ($linkArray as $sectionURI) {
         $sequence++;
-        $specLinkId = $this->_getSpecLinkId($specLinkURI);
+        $sectionId = $this->_getSectionId($sectionURI);
         
-        while ($specLinkId = $this->_getSpecLinkParentId($specLinkId)) {
-          if (! isset($usedSpecLinkIds[$specLinkId])) {
-            $sql  = "INSERT INTO `testlinks` ";
-            $sql .= "(`testcase_id`, `speclink_id`, `sequence`, `group`) ";
-            $sql .= "VALUES ('{$testCaseId}', '{$specLinkId}', '{$sequence}', 1) ";
+        while ($sectionId = $this->_getSectionParentId($sectionId)) {
+          if (! isset($usedSectionIds[$sectionId])) {
+            $sql  = "INSERT INTO `speclinks` ";
+            $sql .= "(`testcase_id`, `section_id`, `sequence`, `group`) ";
+            $sql .= "VALUES ('{$testCaseId}', '{$sectionId}', '{$sequence}', 1) ";
             
             $this->query($sql);
-            $usedSpecLinkIds[$specLinkId] = TRUE;
+            $usedSectionIds[$sectionId] = TRUE;
           }
           else {
             break;

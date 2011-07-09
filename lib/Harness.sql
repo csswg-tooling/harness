@@ -101,12 +101,16 @@ CREATE TABLE IF NOT EXISTS `revisions` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sources`
+-- Table structure for table `sections`
 --
 
-CREATE TABLE IF NOT EXISTS `sources` (
+CREATE TABLE IF NOT EXISTS `sections` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `source` varchar(63) DEFAULT NULL,
+  `parent_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `spec` varchar(31) DEFAULT NULL,
+  `section` varchar(31) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `uri` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
@@ -132,14 +136,12 @@ CREATE TABLE IF NOT EXISTS `specifications` (
 --
 
 CREATE TABLE IF NOT EXISTS `speclinks` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `parent_id` int(11) unsigned NOT NULL DEFAULT '0',
-  `spec` varchar(31) DEFAULT NULL,
-  `section` varchar(31) DEFAULT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `uri` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+  `testcase_id` int(11) unsigned NOT NULL,
+  `section_id` int(11) unsigned NOT NULL,
+  `sequence` int(11) unsigned NOT NULL DEFAULT '0',
+  `group` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`testcase_id`,`section_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -201,20 +203,6 @@ CREATE TABLE IF NOT EXISTS `testcases` (
   `credits` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `testlinks`
---
-
-CREATE TABLE IF NOT EXISTS `testlinks` (
-  `testcase_id` int(11) unsigned NOT NULL,
-  `speclink_id` int(11) unsigned NOT NULL,
-  `sequence` int(11) unsigned NOT NULL DEFAULT '0',
-  `group` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`testcase_id`,`speclink_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 

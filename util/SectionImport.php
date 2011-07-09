@@ -21,15 +21,15 @@ require_once('lib/HarnessCmdLineWorker.php');
 
 
 /**
- * Import specification links
+ * Import specification sections
  */
-class SpecLinkImport extends HarnessCmdLineWorker
+class SectionImport extends HarnessCmdLineWorker
 {
-  protected $mSpecLinkURIIds;
-  protected $mSpecLinkSectionIds;
-  protected $mSpecLinkParentIds;
-  protected $mSpecLinkURIs;
-  protected $mSpecLinkTitles;
+  protected $mSectionURIIds;
+  protected $mSectionIds;
+  protected $mSectionParentIds;
+  protected $mSectionURIs;
+  protected $mSectionTitles;
 
 
   function __construct() 
@@ -40,7 +40,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
 
   function usage()
   {
-    echo "USAGE: php SpecLinkImport.php manifestFile spec\n";
+    echo "USAGE: php SectionImport.php manifestFile spec\n";
   }
 
 
@@ -59,73 +59,73 @@ class SpecLinkImport extends HarnessCmdLineWorker
   }
   
   
-  protected function _loadSpecLinks($spec)
+  protected function _loadSections($spec)
   {
-    $this->mSpecLinkURIIds = array();
-    $this->mSpecLinkSectionIds = array();
-    $this->mSpecLinkParentIds = array();
-    $this->mSpecLinkURIs = array();
-    $this->mSpecLinkTitles = array();
+    $this->mSectionURIIds = array();
+    $this->mSectionIds = array();
+    $this->mSectionParentIds = array();
+    $this->mSectionURIs = array();
+    $this->mSectionTitles = array();
     
-    $spec = $this->encode($spec, 'speclinks.spec');
+    $spec = $this->encode($spec, 'sections.spec');
     
     $sql  = "SELECT * ";
-    $sql .= "FROM `speclinks` ";
+    $sql .= "FROM `sections` ";
     $sql .= "WHERE `spec` = '{$spec}' ";
     $r = $this->query($sql);
 
-    while ($specLinkData = $r->fetchRow()) {
-      $specLinkId = intval($specLinkData['id']);
-      $parentId   = intval($specLinkData['parent_id']);
-      $section    = $specLinkData['section'];
-      $title      = $specLinkData['title'];
-      $uri        = $specLinkData['uri'];
+    while ($sectionData = $r->fetchRow()) {
+      $sectionId  = intval($sectionData['id']);
+      $parentId   = intval($sectionData['parent_id']);
+      $section    = $sectionData['section'];
+      $title      = $sectionData['title'];
+      $uri        = $sectionData['uri'];
       
-      $this->_addSpecLink($specLinkId, $parentId, $section, $title, $uri);
+      $this->_addSection($sectionId, $parentId, $section, $title, $uri);
     }
   }
   
   
-  protected function _getSpecLinkId($specURI)
+  protected function _getSectionURIId($specURI)
   {
-    if (array_key_exists($specURI, $this->mSpecLinkURIIds)) {
-      return $this->mSpecLinkURIIds[$specURI];
-    }
-    return FALSE;
-  }
-  
-  protected function _getSpecLinkParentId($specLinkId)
-  {
-    if (array_key_exists($specLinkId, $this->mSpecLinkParentIds)) {
-      return $this->mSpecLinkParentIds[$specLinkId];
+    if (array_key_exists($specURI, $this->mSectionURIIds)) {
+      return $this->mSectionURIIds[$specURI];
     }
     return FALSE;
   }
   
-  protected function _getSpecLinkSectionId($section)
+  protected function _getSectionParentId($sectionId)
   {
-    if (array_key_exists($section, $this->mSpecLinkSectionIds)) {
-      return $this->mSpecLinkSectionIds[$section];
+    if (array_key_exists($sectionId, $this->mSectionParentIds)) {
+      return $this->mSectionParentIds[$sectionId];
     }
     return FALSE;
   }
   
-  protected function _getSpecLinkTitle($specLinkId)
+  protected function _getSectionId($section)
   {
-    if (array_key_exists($specLinkId, $this->mSpecLinkTitles)) {
-      return $this->mSpecLinkTitles[$specLinkId];
+    if (array_key_exists($section, $this->mSectionIds)) {
+      return $this->mSectionIds[$section];
+    }
+    return FALSE;
+  }
+  
+  protected function _getSectionTitle($sectionId)
+  {
+    if (array_key_exists($sectionId, $this->mSectionTitles)) {
+      return $this->mSectionTitles[$sectionId];
     }
     return FALSE;
   }
   
   
-  protected function _addSpecLink($specLinkId, $parentId, $section, $title, $uri)
+  protected function _addSection($sectionId, $parentId, $section, $title, $uri)
   {
-    $this->mSpecLinkURIIds[$uri] = $specLinkId;
-    $this->mSpecLinkSectionIds[$section] = $specLinkId;
-    $this->mSpecLinkParentIds[$specLinkId] = $parentId;
-    $this->mSpecLinkTitles[$specLinkId] = $title;
-    $this->mSpecLinkURIs[$specLinkId] = $uri;
+    $this->mSectionURIIds[$uri] = $sectionId;
+    $this->mSectionIds[$section] = $sectionId;
+    $this->mSectionParentIds[$sectionId] = $parentId;
+    $this->mSectionTitles[$sectionId] = $title;
+    $this->mSectionURIs[$sectionId] = $uri;
   }
   
   
@@ -152,9 +152,9 @@ class SpecLinkImport extends HarnessCmdLineWorker
       exit;
     }
     
-    $this->_loadSpecLinks($spec);
+    $this->_loadSections($spec);
 
-    $spec = $this->encode($spec, 'speclinks.spec');
+    $spec = $this->encode($spec, 'sections.spec');
     
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
@@ -171,11 +171,11 @@ class SpecLinkImport extends HarnessCmdLineWorker
       
       $title = html_entity_decode($title, ENT_QUOTES, 'UTF-8');
 
-      $specLinkId = $this->_getSpecLinkId($uri);
+      $sectionId = $this->_getSectionURIId($uri);
 
       $parentSection = $this->_getParentSection($section);
       if ($parentSection) {
-        $parentId = $this->_getSpecLinkSectionId($parentSection);
+        $parentId = $this->_getSectionId($parentSection);
         if (! $parentId) {
           echo "ERROR: Unknown parent section '{$parentSection}' for '{$section}'\n";
           exit;
@@ -185,40 +185,40 @@ class SpecLinkImport extends HarnessCmdLineWorker
         $parentId = 0;
       }
       
-      if ($specLinkId) {
-        if ($parentId != $this->_getSpecLinkParentId($specLinkId)) {
+      if ($sectionId) {
+        if ($parentId != $this->_getSectionParentId($sectionId)) {
           echo "ERROR: Spec link parent id changed, need to remap test links\n";
           exit;
         }
-        if ($specLinkId != $this->_getSpecLinkSectionId($section)) {
+        if ($sectionId != $this->_getSectionId($section)) {
           echo "ERROR: Spec link section id changed, need to remap test links\n";
           exit;
         }
         
-        if ($title != $this->_getSpecLinkTitle($specLinkId)) {
+        if ($title != $this->_getSectionTitle($sectionId)) {
           echo "Updated section {$section}: '{$title}'\n";
 
-          $title = $this->encode($title, 'speclinks.title');
+          $title = $this->encode($title, 'sections.title');
 
-          $sql  = "UPDATE `speclinks` ";
+          $sql  = "UPDATE `sections` ";
           $sql .= "SET `title` = '{$title}' ";
-          $sql .= "WHERE `id` = '{$specLinkId}' ";
+          $sql .= "WHERE `id` = '{$sectionId}' ";
           $this->query($sql);
         }
       }
       else {
-        $section  = $this->encode($section, 'speclinks.section');
-        $title    = $this->encode($title, 'speclinks.title');
-        $uri      = $this->encode($uri, 'speclinks.uri');
+        $section  = $this->encode($section, 'sections.section');
+        $title    = $this->encode($title, 'sections.title');
+        $uri      = $this->encode($uri, 'sections.uri');
         
-        $sql  = "INSERT INTO `speclinks` ";
+        $sql  = "INSERT INTO `sections` ";
         $sql .= "(`parent_id`, `spec`, `section`, `title`, `uri`) ";
         $sql .= "VALUES ('{$parentId}', '{$spec}', '{$section}', '{$title}', '{$uri}')";
         $this->query($sql);
         
-        $specLinkId = $this->lastInsertId();
+        $sectionId = $this->lastInsertId();
         
-        $this->_addSpecLink($specLinkId, $parentId, $section, $title, $uri);
+        $this->_addSection($sectionId, $parentId, $section, $title, $uri);
         
         echo "Added section {$section}: {$uri}\n";
       }
@@ -226,7 +226,7 @@ class SpecLinkImport extends HarnessCmdLineWorker
   }
 }
 
-$worker = new SpecLinkImport();
+$worker = new SectionImport();
 
 $manifestPath = $worker->_getArg(1);
 $specName     = $worker->_getArg(2);
