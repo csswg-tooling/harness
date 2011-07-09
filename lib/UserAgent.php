@@ -459,7 +459,8 @@ class UserAgent extends DBConnection
       if (0 === stripos($browser, 'Firefox')) {
         $engine = 'Gecko';
       }
-      if (0 === stripos($browser, 'Uzbl')) {
+      if ((0 === stripos($browser, 'Uzbl')) || 
+          (0 === stripos($browser, 'Nook'))) {
         $engine = 'WebKit';
       }
     }
