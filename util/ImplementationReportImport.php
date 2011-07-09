@@ -157,7 +157,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
     $count = 0;
     foreach ($data as $record) {
       $record = trim($record);
-      if (0 !== strpos($record, '#')) { // comment
+      if (0 !== strpos($record, '#')) { // full line comment, ignore
         if (0 == $count++) {
           if ("testname\tresult" == substr($record, 0, 15)) {
             continue;
@@ -186,6 +186,12 @@ class ImplementationReportImport extends HarnessCmdLineWorker
             if (! $format->validForFlags($this->mTestCaseFlags[$testCaseId])) {
               die("Bad format: '{$formatName}' for test case: '{$testCaseName}'\n");
             }
+          }
+          
+          $resultParts = array();
+          if (preg_match('/([^#]+)\s#\s(.+)/', $result, $resultParts) { // # hash comment after result (with surrounding whitespace) is comment field
+            $result = $resultParts[1];
+            $comment = $resultParts[2];
           }
           
           $result = strtolower(trim($result));
