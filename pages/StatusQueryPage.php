@@ -30,6 +30,13 @@ class EngineInfo
   public  $title;
   public  $name;
 
+  function __construct($other = null)
+  {
+    if ($other) {
+      $this->title = $other->title;
+      $this->name = $other->name;
+    }
+  }
   function _getElementName()  { return 'engineinfo'; }
 }
 
@@ -39,6 +46,14 @@ class EngineResponse
   public  $passCount;
   public  $failCount;
   
+  function __construct($other = null)
+  {
+    if ($other) {
+      $this->index = $other->index;
+      $this->passCount = $other->passCount;
+      $this->failCount = $other->failCount;
+    }
+  }
   function _getElementName()  { return 'engine'; }
 }
 
@@ -49,6 +64,18 @@ class SectionResponse
   public  $testCount;
   public  $engines;
   
+  function __construct($other = null)
+  {
+    if ($other) {
+      $this->anchorName = $other->anchorName;
+      $this->section = $other->section;
+      $this->testCount = $other->testCount;
+      $this->engines = array();
+      foreach ($other->engines as $engineResponse) {
+        $this->engines[] = new EngineResponse($engineResponse);
+      }
+    }
+  }
   function _getElementName()  { return 'section'; }
 }
 
@@ -75,6 +102,20 @@ class Response
   public  $engines;
   public  $sections;
   
+  function __construct($other = null)
+  {
+    if ($other) {
+      $this->info = $other->info;
+      $this->engines = array();
+      foreach ($other->engines as $engineInfo) {
+        $this->engines[] = new EngineInfo($engineInfo);
+      }
+      $this->sections = array();
+      foreach ($other->sections as $sectionResponse) {
+        $this->sections[] = new SectionResponse($sectionResponse);
+      }
+    }
+  }
   function _getElementName()  { return 'status'; }
 }
 
@@ -355,6 +396,9 @@ class StatusQueryPage extends HarnessPage
     $response = null;
     if ($this->mRequestValid) {
       $response = $this->generateResponse();
+      if (! ($response instanceof Response)) {
+        $response = new Response($response);  // the status cache doesn't preserve the class, convert it so xml export works
+      }
     }
     
     $this->addPI('xml', array('version' => '1.0', 'encoding' => $this->mEncoding));
