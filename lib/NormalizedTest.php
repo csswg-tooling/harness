@@ -155,9 +155,13 @@ class NormalizedTest
   {
     $this->_strip('<title', '', '</title>', '<==remove==>');
     $this->_strip('<meta ', 'name="assert"', '>', '<==remove==>');
+    $this->_strip('<meta ', "name='assert'", '>', '<==remove==>');
     $this->_strip('<link ', 'rel="help"', '>', '<==remove==>');
+    $this->_strip('<link ', "rel='help'", '>', '<==remove==>');
     $this->_strip('<link ', 'rel="author"', '>', '<==remove==>');
+    $this->_strip('<link ', "rel='author'", '>', '<==remove==>');
     $this->_strip('<link ', 'rel="reference"', '>', '<==remove==>');
+    $this->_strip('<link ', 'rel="not-reference"', '>', '<==remove==>');
     $this->_sortAttributes('meta');
 
     $search = array("ahem",

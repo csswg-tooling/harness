@@ -273,7 +273,7 @@ class TestCaseImport extends HarnessCmdLineWorker
                   foreach ($referenceArray as $referencePath) {
                     if ($matches) {
                       if ('!' == $referencePath[0]) {
-                        $referencePath = $substr($referencePath, 1);
+                        $referencePath = substr($referencePath, 1);
                       }
                       $referenceName = basename($referencePath);
                       $newReferencePath = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
