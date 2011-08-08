@@ -1,3 +1,11 @@
+<?php 
+
+require_once('core/Page.php'); 
+
+header('Content-Type: application/javascript; charset=utf-8');
+
+?>
+
 /*******************************************************************************
  *
  *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 
@@ -47,8 +55,6 @@
   engine.failCount;
 
 **/
-
-<?php require_once('core/Page.php'); ?>
 
 var annotator = {
   QUERY_URI:          "<?php echo Page::_BuildURI(Config::Get('uri.page', 'status_query'), null, null, TRUE); ?>",
