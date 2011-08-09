@@ -2,10 +2,10 @@
 
 require_once('core/Page.php'); 
 
+// manually generate proper content type header, because using the PHP processor confuses Apache
 header('Content-Type: application/javascript; charset=utf-8');
 
 ?>
-
 /*******************************************************************************
  *
  *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 

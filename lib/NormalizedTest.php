@@ -160,8 +160,8 @@ class NormalizedTest
     $this->_strip('<link ', "rel='help'", '>', '<==remove==>');
     $this->_strip('<link ', 'rel="author"', '>', '<==remove==>');
     $this->_strip('<link ', "rel='author'", '>', '<==remove==>');
-    $this->_strip('<link ', 'rel="reference"', '>', '<==remove==>');
-    $this->_strip('<link ', 'rel="not-reference"', '>', '<==remove==>');
+//    $this->_strip('<link ', 'rel="match"', '>', '<==remove==>');
+//    $this->_strip('<link ', 'rel="mismatch"', '>', '<==remove==>');
     $this->_sortAttributes('meta');
 
     $search = array("ahem",
