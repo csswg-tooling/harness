@@ -18,6 +18,24 @@
 
 require_once("core/DBConnection.php");
 
+/**
+ * Sorting callback helper
+ */
+class SectionSorter
+{
+  protected $mSections;
+  
+  function __construct($sections)
+  {
+    $this->mSections = $sections;
+  }
+  
+  function compare($a, $b)
+  {
+    return strnatcasecmp($this->mSections[$a]['section'], $this->mSections[$b]['section']);
+  }
+};
+
 
 /**
  * Encapsulate data about test groups
@@ -73,7 +91,7 @@ class Sections extends DBConnection
     return FALSE;
   }
   
-  
+
   function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE)
   {
     parent::__construct();
@@ -110,6 +128,12 @@ class Sections extends DBConnection
       $sectionData['test_count'] = intval($sectionData['test_count']);
 
       $this->mSections[$parentId][$id] = $sectionData;
+    }
+    
+    foreach ($this->mSections as $parentId => $subSections) {
+      $sorter = new SectionSorter($subSections);
+      uksort($subSections, array($sorter, 'compare'));
+      $this->mSections[$parentId] = $subSections;
     }
     
     if ($loadTestCaseIds) {

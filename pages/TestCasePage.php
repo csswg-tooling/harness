@@ -316,7 +316,7 @@ class TestCasePage extends HarnessPage
       $attrs['class'] = $class;
       $this->openElement($elementName, $attrs);
       foreach ($flagDescriptions as $flag => $description) {
-        $this->addElement('span', null, $description, FALSE);
+        $this->addElement('span', null, $description . ' ', FALSE);
       }
       $this->closeElement($elementName);
     }
