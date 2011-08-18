@@ -82,9 +82,7 @@ class HarnessPage extends DynamicPage
       $this->_appendURI($baseURI, 's', $queryArgs, 'test');
       if (! $this->_appendURI($baseURI, 'c', $queryArgs, 'single')) {
         $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
-        if (! ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o']))) {
-          $baseURI .= 'alpha/';
-        }
+        $this->_appendURIBool($baseURI, 'o', $queryArgs, 'alpha', 0);
         $this->_appendURI($baseURI, 'i', $queryArgs);
       }
       unset($queryArgs['o']);
@@ -106,10 +104,7 @@ class HarnessPage extends DynamicPage
     elseif (Config::Get('uri.page', 'results') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'results');
-      if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
-        $baseURI .= 'grouped/';
-      }
-      unset($queryArgs['o']);
+      $this->_appendURIBool($baseURI, 'o', $queryArgs, 'grouped');
       if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
         $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
       }
@@ -126,10 +121,7 @@ class HarnessPage extends DynamicPage
     elseif (Config::Get('uri.page', 'details') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 's', $queryArgs, 'details');
-      if ($queryArgs && array_key_exists('o', $queryArgs) && (1 == $queryArgs['o'])) {
-        $baseURI .= 'grouped/';
-      }
-      unset($queryArgs['o']);
+      $this->_appendURIBool($baseURI, 'o', $queryArgs, 'grouped');
       if (! $this->_appendURI($baseURI, 'c', $queryArgs)) {
         $this->_appendURI($baseURI, 'sec', $queryArgs, 'section');
       }
