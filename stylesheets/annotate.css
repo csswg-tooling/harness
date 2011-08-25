@@ -48,7 +48,7 @@ div.annotation div.disclosureBox {
   left: 3px;
   width: 12px;
   height: 12px;
-  border: thin none #444;
+  border: thin solid transparent;
   border-radius: 4px;
   background: url(../img/open_dark.png) no-repeat center;
 }
@@ -57,7 +57,7 @@ div.annotation.closed div.disclosureBox {
 }
 
 div.annotation div.disclosureBox:hover {
-  border-style: solid;
+  border-color: #444;
   background: #888 url(../img/open_light.png) no-repeat center;
 }
 div.annotation.closed div.disclosureBox:hover {

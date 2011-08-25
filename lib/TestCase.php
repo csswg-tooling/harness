@@ -219,7 +219,7 @@ class TestCase extends DBConnection
     if ($flag) {
       if ('!' === $flag[0]) {
         $flag = substr($flag, 1);
-        $compare = 'NOT LIKE';
+        $compare = 'IS NULL OR `flags` NOT LIKE';
       }
       else {
         $compare = 'LIKE';
@@ -298,7 +298,7 @@ class TestCase extends DBConnection
     if ($flag) {
       if ('!' === $flag[0]) {
         $flag = substr($flag, 1);
-        $compare = 'NOT LIKE';
+        $compare = 'IS NULL OR `flags` NOT LIKE';
       }
       else {
         $compare = 'LIKE';
@@ -350,7 +350,7 @@ class TestCase extends DBConnection
     if ($flag) {
       if ('!' === $flag[0]) {
         $flag = substr($flag, 1);
-        $compare = 'NOT LIKE';
+        $compare = 'IS NULL OR `flags` NOT LIKE';
       }
       else {
         $compare = 'LIKE';
@@ -402,7 +402,7 @@ class TestCase extends DBConnection
     if ($flag) {
       if ('!' === $flag[0]) {
         $flag = substr($flag, 1);
-        $compare = 'NOT LIKE';
+        $compare = 'IS NULL OR `flags` NOT LIKE';
       }
       else {
         $compare = 'LIKE';
@@ -529,7 +529,7 @@ class TestCase extends DBConnection
     if ($flag) {
       if ('!' === $flag[0]) {
         $flag = substr($flag, 1);
-        $compare = 'NOT LIKE';
+        $compare = 'IS NULL OR `flags` NOT LIKE';
       }
       else {
         $compare = 'LIKE';

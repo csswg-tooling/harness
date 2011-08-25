@@ -19,8 +19,8 @@
 require_once('core/DynamicPage.php');
 require_once('core/SpiderTrap.php');
 require_once('core/User.php');
-require_once("lib/TestSuite.php");
-require_once("lib/UserAgent.php");
+require_once('lib/TestSuite.php');
+require_once('lib/UserAgent.php');
 
 /**
  * Provide functionality specific to test harness pages
