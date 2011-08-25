@@ -284,11 +284,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   `user` varchar(31) DEFAULT NULL,
   `password` varchar(63) DEFAULT NULL,
   `full_name` varchar(255) DEFAULT NULL,
+  `alt_name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
+  `uri` varchar(255) DEFAULT NULL,
   `ip_address` varchar(39) DEFAULT NULL,
   `active` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `user` (`user`),
+  KEY `full_name` (`full_name`),
+  KEY `alt_name` (`alt_name`),
   KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
