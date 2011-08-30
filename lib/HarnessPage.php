@@ -54,16 +54,16 @@ class HarnessPage extends DynamicPage
    * @param string fragment identifier
    * @return string URL encoded
    */
-  function buildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
+  function buildURI($baseURI, Array $queryArgs = null, $fragId = null, $absolute = FALSE, $secure = FALSE)
   {
     if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
       unset ($queryArgs['u']);
     }
-    return parent::buildURI($baseURI, $queryArgs, $fragId, $absolute);
+    return parent::buildURI($baseURI, $queryArgs, $fragId, $absolute, $secure);
   }
 
 
-  protected function _rewriteURI($baseURI, Array &$queryArgs = null) {
+  protected function _rewriteURI($baseURI, Array &$queryArgs = null, &$secure = FALSE) {
     if (Config::Get('uri.page', 'home') == $baseURI) {
       $baseURI = '';
       $this->_appendURI($baseURI, 'u', $queryArgs, 'ua');
