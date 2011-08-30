@@ -17,13 +17,13 @@
  ******************************************************************************/
  
 
-require_once('lib/HarnessCmdLineWorker.php');
+require_once('core/CmdLineWorker.php');
 
 
 /**
  * Import specification sections
  */
-class SectionImport extends HarnessCmdLineWorker
+class SectionImport extends CmdLineWorker
 {
   protected $mSectionURIIds;
   protected $mSectionIds;
@@ -143,7 +143,7 @@ class SectionImport extends HarnessCmdLineWorker
   
   function import($manifest, $spec)
   {
-    echo "Importing spec links from: '{$manifest}' for {$spec}\n";
+    echo "Importing sections from: '{$manifest}' for {$spec}\n";
     
     $specURI = $this->_getSpecURI($spec);
     
@@ -165,7 +165,7 @@ class SectionImport extends HarnessCmdLineWorker
         $uri = substr($uri, strlen($specURI));
       }
       else {
-        echo "ERROR: Spec link does not match base URI: {$uri}\n";
+        echo "ERROR: Section URI does not match base URI: {$uri}\n";
         exit;
       }
       
@@ -187,11 +187,11 @@ class SectionImport extends HarnessCmdLineWorker
       
       if ($sectionId) {
         if ($parentId != $this->_getSectionParentId($sectionId)) {
-          echo "ERROR: Spec link parent id changed, need to remap test links\n";
+          echo "ERROR: Section parent id changed, need to remap test links\n";
           exit;
         }
         if ($sectionId != $this->_getSectionId($section)) {
-          echo "ERROR: Spec link section id changed, need to remap test links\n";
+          echo "ERROR: Section id changed, need to remap test links\n";
           exit;
         }
         
