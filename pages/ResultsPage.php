@@ -571,14 +571,33 @@ class ResultsPage extends ResultsBasedPage
   {
     $this->loadResults();
     
+    $this->resetStats();
+    
     if ($this->mResults->getResultCount()) {
-      $this->resetStats();    
-      
       $this->writeResultTable();
       
       $this->writeSummary();
     }
     else {
+      $testCases = $this->mResults->getTestCases();
+      foreach ($testCases as $testCaseData) {
+        $flags = new Flags($testCaseData['flags']);
+        $optional = $this->mTestSuite->testIsOptional($flags);
+        if ($optional) {
+          $this->mTestCaseOptionalCount++;
+        }
+        else {
+          $this->mTestCaseRequiredCount++;
+        }
+      }
+
+      $this->mTestCaseNeededCount = $this->mTestCaseRequiredCount;
+      $this->mTestCaseNeedMoreResults = $this->mTestCaseNeededCount;
+      
+      foreach ($this->mResults->getEngineNames() as $engineName) {
+        $this->mTestCaseEngineNeededCount[$engineName] = $this->mTestCaseNeededCount;
+      }
+
       $this->addElement('p', null, "No results entered matching this query.");
     }
   }
