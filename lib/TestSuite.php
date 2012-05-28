@@ -108,7 +108,7 @@ class TestSuite extends DBConnection
   
   function getFormatNames()
   {
-    return $this->_explodeTrimAndFilter(',', $this->mInfo['formats']);
+    return $this->_ExplodeTrimAndFilter(',', $this->mInfo['formats']);
   }
   
   function getDescription()
@@ -128,7 +128,7 @@ class TestSuite extends DBConnection
 
   function getHomeURI()
   {
-    return $this->_combinePath($this->mInfo['base_uri'], $this->mInfo['home_uri']);
+    return $this->_CombinePath($this->mInfo['base_uri'], $this->mInfo['home_uri']);
   }
 
   function getSpecName()
@@ -148,7 +148,7 @@ class TestSuite extends DBConnection
   
   function testIsOptional(Flags $flags)
   {
-    $optionalFlags = $this->_explodeTrimAndFilter(',', $this->mInfo['optional_flags']);
+    $optionalFlags = $this->_ExplodeTrimAndFilter(',', $this->mInfo['optional_flags']);
     
     foreach ($optionalFlags as $flag) {
       if ($flags->hasFlag($flag)) {

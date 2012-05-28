@@ -697,7 +697,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       
       $resultsPage = new IR_ResultsPage($args);
       $resultsPage->setResults($this->mResults);
-      $resultsPage->write($this->_combinePath($outputPath, 'results.html'));
+      $resultsPage->write($this->_CombinePath($outputPath, 'results.html'));
       
       echo "Finding User Agents\n";
 
@@ -710,7 +710,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       $indexPage->setStats($resultsPage->getStats());
       $indexPage->setEngineNames($this->mResults->getEngineNames());
       $indexPage->setUserAgents($this->mUserAgents, $this->mUserAgentResultCounts);
-      $indexPage->write($this->_combinePath($outputPath, 'index.html'));
+      $indexPage->write($this->_CombinePath($outputPath, 'index.html'));
 
       if (UA_THRESHOLD < count($this->mUserAgents, COUNT_RECURSIVE)) {
         echo "Generating User Agent page\n";
@@ -718,7 +718,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
         $uaPage = new IR_UserAgentPage($args);
         $uaPage->setResults($this->mResults);
         $uaPage->setUserAgents($this->mUserAgents, $this->mUserAgentResultCounts);
-        $uaPage->write($this->_combinePath($outputPath, 'useragents.html'));
+        $uaPage->write($this->_CombinePath($outputPath, 'useragents.html'));
       }
 
       $engineNames = $this->mResults->getEngineNames();
@@ -728,13 +728,13 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
         $args['e'] = $engineName;
         $detailsPage = new IR_DetailsPage($args);
         $detailsPage->setResults($this->mResults);
-        $detailsPage->write($this->_combinePath($outputPath, strtolower("details_{$engineName}.html")));
+        $detailsPage->write($this->_CombinePath($outputPath, strtolower("details_{$engineName}.html")));
       }
       
       // copy stylesheets
       if ($outputPath) {
-        $this->copyFile(Config::Get('uri.stylesheet', 'base'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet', 'base')));
-        $this->copyFile(Config::Get('uri.stylesheet', 'report'), $this->_combinePath($outputPath, Config::Get('uri.stylesheet', 'report')));
+        $this->copyFile(Config::Get('uri.stylesheet', 'base'), $this->_CombinePath($outputPath, Config::Get('uri.stylesheet', 'base')));
+        $this->copyFile(Config::Get('uri.stylesheet', 'report'), $this->_CombinePath($outputPath, Config::Get('uri.stylesheet', 'report')));
       }
     }
   }

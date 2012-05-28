@@ -235,7 +235,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       }
       $flagString = $flags->getFlagString();
 
-      $referenceArray = $this->_explodeTrimAndFilter(',', $references);
+      $referenceArray = $this->_ExplodeTrimAndFilter(',', $references);
             
       $title        = $this->encode($title, 'testcases.title');
       $assertion    = $this->encode($assertion, 'testcases.assertion');
@@ -261,11 +261,11 @@ class TestCaseImport extends HarnessCmdLineWorker
               foreach ($formats as $format) {
                 if ($matches && $format->validForFlags($flags)) {
                   $compared = TRUE;
-                  $newTestPath = $this->_combinePath($format->getPath(), $testCaseName, $format->getExtension());
+                  $newTestPath = $this->_CombinePath($format->getPath(), $testCaseName, $format->getExtension());
                   $oldTestPath = $this->_getTestCasePath($testCaseId, $format);
                   
-                  $newTest = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $newTestPath));
-                  $oldTest = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $oldTestPath));
+                  $newTest = new NormalizedTest($this->_CombinePath($this->mNewSuitePath, $newTestPath));
+                  $oldTest = new NormalizedTest($this->_CombinePath($this->mOldSuitePath, $oldTestPath));
                   
                   $matches = ($newTest->getContent() == $oldTest->getContent());
                   
@@ -276,11 +276,11 @@ class TestCaseImport extends HarnessCmdLineWorker
                         $referencePath = substr($referencePath, 1);
                       }
                       $referenceName = basename($referencePath);
-                      $newReferencePath = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
+                      $newReferencePath = $this->_CombinePath($format->getPath(), $referencePath, $format->getExtension());
                       $oldReferencePath = $this->_getReferencePath($testCaseId, $format, $referenceName);
 
-                      $newReference = new NormalizedTest($this->_combinePath($this->mNewSuitePath, $newReferencePath));
-                      $oldReference = new NormalizedTest($this->_combinePath($this->mOldSuitePath, $oldReferencePath));
+                      $newReference = new NormalizedTest($this->_CombinePath($this->mNewSuitePath, $newReferencePath));
+                      $oldReference = new NormalizedTest($this->_CombinePath($this->mOldSuitePath, $oldReferencePath));
                       
                       $matches = ($newReference->getContent() == $oldReference->getContent());
                     }
@@ -379,7 +379,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       //           - other suites may share this test in different formats, what about overlap if path changes?
       foreach ($formats as $format) {
         if ($format->validForFlags($flags)) {
-          $uri = $this->_combinePath($format->getPath(), $testCasePath, $format->getExtension());
+          $uri = $this->_CombinePath($format->getPath(), $testCasePath, $format->getExtension());
           
           $formatName = $this->encode($format->getName(), 'testpages.format');
           $uri = $this->encode($uri, 'testpages.uri');
@@ -419,7 +419,7 @@ class TestCaseImport extends HarnessCmdLineWorker
 
         foreach ($formats as $format) {
           if ($format->validForFlags($flags)) {
-            $referenceURI = $this->_combinePath($format->getPath(), $referencePath, $format->getExtension());
+            $referenceURI = $this->_CombinePath($format->getPath(), $referencePath, $format->getExtension());
 
             $formatName = $this->encode($format->getName(), 'references.format');
             $referenceURI = $this->encode($referenceURI, 'references.uri');
@@ -440,7 +440,7 @@ class TestCaseImport extends HarnessCmdLineWorker
       
       $this->query($sql);
       
-      $linkArray = $this->_explodeTrimAndFilter(',', $links);
+      $linkArray = $this->_ExplodeTrimAndFilter(',', $links);
       if (0 == count($linkArray)) {
         $this->_warning("Test {$testCaseName} does not have any spec links");
       }

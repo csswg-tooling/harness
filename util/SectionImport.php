@@ -159,7 +159,7 @@ class SectionImport extends CmdLineWorker
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
     foreach ($data as $record) {
-      list ($uri, $section, $title) = $this->_explodeAndTrim("\t", $record, 3);
+      list ($uri, $section, $title) = $this->_ExplodeAndTrim("\t", $record, 3);
       
       if ($specURI == substr($uri, 0, strlen($specURI))) {
         $uri = substr($uri, strlen($specURI));

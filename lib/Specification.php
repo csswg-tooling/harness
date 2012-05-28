@@ -100,7 +100,7 @@ class Specification extends DBConnection
 
   function getHomeURI()
   {
-    return $this->_combinePath($this->mInfo['base_uri'], $this->mInfo['home_uri']);
+    return $this->_CombinePath($this->mInfo['base_uri'], $this->mInfo['home_uri']);
   }
 
 }

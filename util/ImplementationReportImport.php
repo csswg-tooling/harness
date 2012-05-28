@@ -167,7 +167,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
         list ($testCasePath, $result, $comment) = explode("\t", $record . "\t\t");
         
         if ($testCasePath && $result) {
-          $testCaseName = trim($this->_getFileName($testCasePath));
+          $testCaseName = trim($this->_GetFileName($testCasePath));
           $testCaseId = $this->_getTestCaseId($testCaseName);
           
           if (! $testCaseId) {

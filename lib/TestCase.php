@@ -171,7 +171,7 @@ class TestCase extends DBConnection
         $specTitle  = $sectionData['spec_title'];
         $title      = $sectionData['title'];
         $section    = $sectionData['section'];
-        $uri        = $this->_combinePath($sectionData['spec_uri'], $sectionData['uri']);
+        $uri        = $this->_CombinePath($sectionData['spec_uri'], $sectionData['uri']);
         
         $this->mSpecURIs[] = compact('spec', 'specTitle', 'title', 'section', 'uri');
       }
@@ -633,7 +633,7 @@ class TestCase extends DBConnection
     if ($this->isValid()) {
       $formatName = strtolower($formatName);
       if ($this->_loadURIs() && array_key_exists($formatName, $this->mURIs)) {
-        return $this->_combinePath($this->mTestSuite->getBaseURI(), $this->mURIs[$formatName]);
+        return $this->_CombinePath($this->mTestSuite->getBaseURI(), $this->mURIs[$formatName]);
       }
     }
     return FALSE;
@@ -716,7 +716,7 @@ class TestCase extends DBConnection
         foreach ($this->mReferences as $referenceData) {
           if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
               (0 == strcasecmp($referenceData['format'], $formatName))) {
-            return $this->_combinePath($this->mTestSuite->getBaseURI(), $referenceData['uri']);
+            return $this->_CombinePath($this->mTestSuite->getBaseURI(), $referenceData['uri']);
           }
         }
       }
