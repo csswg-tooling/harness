@@ -300,49 +300,8 @@ class IR_IndexPage extends HarnessPage
     $this->addTextContent($this->getPageTitle());
     $this->closeElement('h1');
   }
-  
-  
-  function numberToText($number, $recursing = FALSE)
-  {
-    $numbers = array('zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-                     'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen');
-    $tens = array('', 'ten', 'twenty', 'thirty', 'fourty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety');
-    $zillions = array(1000000000 => 'billion', 1000000 => 'million', 1000 => 'thousand');
-    
-    $number = intval($number);
-    
-    if ((! $recursing) && (0 == $number)) {
-      return $numbers[0];
-    }
-    
-    $text = '';
-    if ($number < 0) {
-      $text = 'negative ';
-      $number = abs($number);
-    }
-    
-    foreach ($zillions as $value => $name) {
-      if ($value <= $number) {
-        $text .= $this->numberToText(intval($number / $value), TRUE) . ' ' . $name . ' ';
-        $number = $number % $value;
-      }
-    }
-    if (99 < $number) {
-      $text .= $numbers[intval($number / 100)] . ' hundred ';
-      $number = $number % 100;
-    }
-    if (19 < $number) {
-      $text .= $tens[intval($number / 10)] . ' ';
-      $number = $number % 10;
-    }
-    if ((0 < $number) || ($text = '')) {
-      $text .= $numbers[$number];
-    }
-    
-    return rtrim($text);
-  }
-  
-  
+
+
   function countBrowsers()
   {
     $browserNames = array();
@@ -411,16 +370,16 @@ class IR_IndexPage extends HarnessPage
     $osCount = $this->countPlatforms();
     
     $this->openElement('p');
-    $osText = ((1 < $osCount) ? " across " . $this->numberToText($osCount) . " operating systems" : '');
+    $osText = ((1 < $osCount) ? " across " . $this->_NumberToText($osCount) . " operating systems" : '');
     if (1 < count($this->mEngineNames)) {
-      $engineCountText = $this->numberToText(count($this->mEngineNames));
+      $engineCountText = $this->_NumberToText(count($this->mEngineNames));
       $engineText = ", built from {$engineCountText} rendering implementations,";
     }
     else {
       $engineText = '';
     }
     if (1 != $this->countBrowsers()) {
-      $browserCountText = $this->numberToText($this->countBrowsers());
+      $browserCountText = $this->_NumberToText($this->countBrowsers());
       $this->addTextContent(ucfirst("{$browserCountText} user agents{$engineText} were tested{$osText}."));
     }
     else {
