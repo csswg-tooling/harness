@@ -401,7 +401,7 @@ class StatusQueryPage extends HarnessPage
       }
     }
     
-    $this->addPI('xml', array('version' => '1.0', 'encoding' => $this->mEncoding));
+    $this->addPI('xml', array('version' => '1.0', 'encoding' => $this->mCharset));
     $this->xmlEncode('status', $response);
   }
   
