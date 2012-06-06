@@ -86,7 +86,7 @@ class NormalizedTest
   
   protected function _parseAttributes($attrString)
   {
-    $attrs = null;
+    $attrs = array();
     
     $length = strlen($attrString);
     $start = 0;
@@ -100,7 +100,18 @@ class NormalizedTest
         }
       }
       elseif (' ' == $attrString[$index]) {
-        $attrs[] = substr($attrString, $start, $index - $start);
+        $attr = trim(substr($attrString, $start, $index - $start));
+        if ('' != $attr) {
+          $equals = strpos($attr, '=');
+          if (FALSE === $equals) {
+            $attrs[$attr] = TRUE;
+          }
+          else {
+            $name = trim(substr($attr, 0, $equals));
+            $value = trim(substr($attr, ($equals + 1)), "'\" \t\0\x0B\r\n");
+            $attrs[$name] = $value;
+          }
+        }
         while (($index < ($length - 1)) && (' ' == $attrString[$index + 1])) {
           $index++;
         }
@@ -110,11 +121,38 @@ class NormalizedTest
     if ($start < $index) {
       $attr = trim(substr($attrString, $start, $index - $start));
       if ('' != $attr) {
-        $attrs[] = $attr;
+        $equals = strpos($attr, '=');
+        if (FALSE === $equals) {
+          $attrs[$attr] = TRUE;
+        }
+        else {
+          $name = trim(substr($attr, 0, $equals));
+          $value = trim(substr($attr, ($equals + 1)), "'\" \t\0\x0B\r\n");
+          $attrs[$name] = $value;
+        }
       }
     }
     
     return $attrs;
+  }
+  
+  protected function _attributesToString(Array $attributes)
+  {
+    $attrs = array();
+    foreach ($attributes as $name => $value) {
+      if (is_string($value)) {
+        if (FALSE === strpos($value, '"')) {
+          $attrs[] = $name . '="' . $value . '"';
+        }
+        else {
+          $attrs[] = $name . "='" . $value . "'";
+        }
+      }
+      else {
+        $attrs[] = $name;
+      }
+    }
+    return implode(' ', $attrs);
   }
   
   
@@ -143,13 +181,55 @@ class NormalizedTest
       $attrStart = $start + strlen($search);
       $attrString = trim(substr($this->mContent, $attrStart, $end - $attrStart));
       $attributes = $this->_parseAttributes($attrString);
-      sort($attributes, SORT_STRING);
-      $attrString = implode(' ', $attributes);
+      ksort($attributes);
+      $attrString = $this->_attributesToString($attributes);
       $this->mContent = substr($this->mContent, 0, $attrStart) . $attrString . substr($this->mContent, $end);
       
     } while (1);
   }
 
+
+  protected function _stripPath($element, Array $withAttr, $pathAttr)
+  {
+    $index = 0;
+    do {
+      $search = "<{$element} ";
+      $start = stripos($this->mContent, $search, $index);
+      if (FALSE === $start) {
+        return;
+      }
+      $end = stripos($this->mContent, '/>', $start + strlen($search));
+      if (FALSE === $end) {
+        $end = stripos($this->mContent, '>', $start + strlen($search));
+        if (FALSE === $end) {
+          $this->_warning("end '>' not found for <{$element}");
+          return;
+        }
+        $index = $end + 1;
+      }
+      else {
+        $index = $end + 2;
+      }
+      
+      $attrStart = $start + strlen($search);
+      $attrString = trim(substr($this->mContent, $attrStart, $end - $attrStart));
+      $attributes = $this->_parseAttributes($attrString);
+      
+      if (array_key_exists($pathAttr, $attributes)) {
+        foreach ($withAttr as $name => $value) {
+          if (array_key_exists($name, $attributes) && (0 == strcasecmp($attributes[$name], $value))) {
+            $attributes[$pathAttr] = basename($attributes[$pathAttr]);
+            break;
+          }
+        }
+      }
+      
+//      ksort($attributes);
+      $attrString = $this->_attributesToString($attributes);
+      $this->mContent = substr($this->mContent, 0, $attrStart) . $attrString . substr($this->mContent, $end);
+      
+    } while (1);
+  }
   
   protected function _normalize() 
   {
@@ -160,8 +240,8 @@ class NormalizedTest
     $this->_strip('<link ', "rel='help'", '>', '<==remove==>');
     $this->_strip('<link ', 'rel="author"', '>', '<==remove==>');
     $this->_strip('<link ', "rel='author'", '>', '<==remove==>');
-//    $this->_strip('<link ', 'rel="match"', '>', '<==remove==>');
-//    $this->_strip('<link ', 'rel="mismatch"', '>', '<==remove==>');
+    $this->_stripPath('link', array('rel' => 'match'), 'href');
+    $this->_stripPath('link', array('rel' => 'mismatch'), 'href');
     $this->_sortAttributes('meta');
 
     $search = array("ahem",
