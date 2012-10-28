@@ -42,7 +42,15 @@ class HarnessPage extends DynamicPage
     
     $this->mTestSuite = $this->_requestData('s', 'TestSuite');
     $this->mUserAgent = new UserAgent(intval($this->_requestData('u')));
-    $this->mUser = new User(null, $this->_cookieData('uid'), $this->_cookieData('key'));
+
+    if (FALSE !== $this->_requestData('logout')) {
+      $httpUserName = null;
+      if (array_key_exists('PHP_AUTH_USER', $_SERVER)) {  // if HTTP authentication is on, use that
+        $httpUserName = $_SERVER['PHP_AUTH_USER'];
+      }
+      $this->mUser = new User($httpUserName, null, $this->_cookieData('uid'), $this->_cookieData('key'));
+      $this->mUser->didAccess();
+    }
   }  
   
   
