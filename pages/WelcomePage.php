@@ -29,9 +29,14 @@ class WelcomePage extends HarnessPage
   protected $mTestSuites;
 
 
-  function __construct(Array $args = null) 
+  static function GetPageKey()
   {
-    parent::__construct($args);
+    return 'home';
+  }
+
+  function __construct(Array $args = null, Array $pathComponents = null) 
+  {
+    parent::__construct($args, $pathComponents);
 
     $this->mTestSuites = new TestSuites();
   }
@@ -51,13 +56,13 @@ class WelcomePage extends HarnessPage
           $args['s'] = $testSuite->getName();
           $args['u'] = $this->mUserAgent->getId();
 
-          $reviewURI = $this->buildConfigURI('page.review', $args);
+          $reviewURI = $this->buildPageURI('review', $args);
 
           $this->openElement('dt', null, FALSE);
           $this->addHyperLink($testSuite->getHomeURI(), null, $testSuite->getTitle());
           $this->addTextContent(' (');
           if (! $testSuite->isLocked()) {
-            $enterURI = $this->buildConfigURI('page.testsuite', $args);
+            $enterURI = $this->buildPageURI('testsuite', $args);
             $this->addHyperLink($enterURI, null, "Enter Data");
             $this->addTextContent(', ');
           }

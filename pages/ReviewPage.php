@@ -30,11 +30,18 @@ class ReviewPage extends HarnessPage
 {  
   protected $mSections;
   protected $mTestCases;
+  
+  protected $mResultsURI;
 
 
-  function __construct(Array $args = null) 
+  static function GetPageKey()
   {
-    parent::__construct($args);
+    return 'review';
+  }
+
+  function __construct(Array $args = null, Array $pathComponents = null) 
+  {
+    parent::__construct($args, $pathComponents);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -50,7 +57,42 @@ class ReviewPage extends HarnessPage
       $this->mSubmitData['u'] = $this->mUserAgent->getId();
     }
     
-  }  
+    $this->mResultsURI = null;
+    if ('Go' == $this->_postData('action')) {
+      $args['s'] = $this->mTestSuite->getName();
+      $args['c'] = $this->_postData('c');
+      $args['sec'] = $this->_postData('sec');
+
+      if ($this->_postData('t')) {
+        $type = intval($this->_postData('t'));
+        switch ($type) {
+          case 0: unset($args['sec']); // whole suite
+          case 1: unset($args['c']);   // test group
+                  break;
+          case 2: unset($args['sec']);      // individual test case
+                  break;         
+        }
+      }
+
+      $filter = $this->_postData('f');
+      if (is_array($filter)) {
+        $filterValue = 0;
+        foreach ($filter as $value) {
+          $filterValue = $filterValue | intval($value);
+        }
+        $args['f'] = $filterValue;
+      }
+      $args['o'] = $this->_postData('o');
+      
+      $this->mResultsURI = $this->buildPageURI('results', $args);
+    }
+    
+  }
+  
+  function getRedirectURI()
+  {
+    return $this->mResultsURI;
+  }
   
   function getPageTitle()
   {
@@ -157,8 +199,8 @@ class ReviewPage extends HarnessPage
     $this->addTextContent("You can choose to review:");
     $this->closeElement('p');
     
-    $this->openFormElement($this->buildConfigURI(Config::Get('server', 'rewrite_urls') ? 'page.load_results' : 'page.results'), 
-                           'get', 'result_form', array('onSubmit' => 'return filterTypes();'));
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()),
+                           'post', 'result_form', array('onSubmit' => 'return filterTypes();'));
 
     $this->openElement('p');
     
@@ -223,7 +265,7 @@ class ReviewPage extends HarnessPage
         
     $this->closeElement('p');
 
-    $this->addInputElement('submit', null, 'Go');
+    $this->addInputElement('submit', 'action', 'Go', 'submit');
 
     $this->closeElement('form');
 

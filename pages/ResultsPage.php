@@ -50,6 +50,11 @@ class ResultsPage extends ResultsBasedPage
   protected $mTestCaseEnginePassCount;        // number of passes per engine
   protected $mTestCaseEngineResultCount;      // number of results per engine
 
+  static function GetPageKey()
+  {
+    return 'results';
+  }
+
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
@@ -69,9 +74,9 @@ class ResultsPage extends ResultsBasedPage
    * 'pv' Platform Version
    * 'o' Ordering (optional) 0 = one list, 1 = group by section
    */
-  function __construct(Array $args = null) 
+  function __construct(Array $args = null, Array $pathComponents = null) 
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -123,7 +128,7 @@ class ResultsPage extends ResultsBasedPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildConfigURI('page.review', $args);
+      $uri = $this->buildPageURI('review', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Results";
@@ -342,11 +347,11 @@ class ResultsPage extends ResultsBasedPage
       $args['c'] = $testCaseName;
       $args['u'] = $this->mUserAgent->getId();
       if ($hasResults) {
-        $this->_copyArgs($this->mGetData, $args, array('m', 'e', 'v', 'b', 'bv', 'p', 'pv'));
-        $uri = $this->buildConfigURI('page.details', $args);
+        $this->_copyArgs($this->_urlData(), $args, array('m', 'e', 'v', 'b', 'bv', 'p', 'pv'));
+        $uri = $this->buildPageURI('details', $args);
       }
       else {
-        $uri = $this->buildConfigURI('page.testcase', $args);
+        $uri = $this->buildPageURI('testcase', $args);
       }
       
       $this->addHyperLink($uri, $anchor, $testCaseName);
@@ -365,8 +370,8 @@ class ResultsPage extends ResultsBasedPage
       $args['c'] = $testCaseName;
       $args['e'] = $engineName;
       $args['u'] = $this->mUserAgent->getId();
-      $this->_copyArgs($this->mGetData, $args, array('m', 'v', 'b', 'bv', 'p', 'pv'));
-      $uri = $this->buildConfigURI('page.details', $args);
+      $this->_copyArgs($this->_urlData(), $args, array('m', 'v', 'b', 'bv', 'p', 'pv'));
+      $uri = $this->buildPageURI('details', $args);
       
       $this->openElement('td', array('class' => $class), FALSE);
       $this->addHyperLink($uri, null, $content, FALSE);

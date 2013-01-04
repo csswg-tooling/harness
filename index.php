@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2013 Hewlett-Packard Development Company, L.P. 
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -16,8 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once('core/Page.php');
+require_once('lib/HarnessPage.php');
 
-Page::RunPage('WelcomePage');
+HarnessPage::RunPage();
 
 ?>

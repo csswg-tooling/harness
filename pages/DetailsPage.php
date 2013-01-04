@@ -42,6 +42,11 @@ class DetailsPage extends ResultsBasedPage
   protected $mOrdering;
 
 
+  static function GetPageKey()
+  {
+    return 'details';
+  }
+
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
@@ -58,9 +63,9 @@ class DetailsPage extends ResultsBasedPage
    * 'p' Platform
    * 'o' Ordering (optional)
    */
-  function __construct(Array $args = null) 
+  function __construct(Array $args = null, Array $pathComponents = null) 
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -99,7 +104,7 @@ class DetailsPage extends ResultsBasedPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildConfigURI('page.review', $args);
+      $uri = $this->buildPageURI('review', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Details";
@@ -192,7 +197,7 @@ class DetailsPage extends ResultsBasedPage
               $args['c'] = $testCaseName;
               $args['f'] = $result->getFormatName();
               $args['u'] = $this->mUserAgent->getId();
-              $uri = $this->buildConfigURI('page.testcase', $args);
+              $uri = $this->buildPageURI('testcase', $args);
               
               $this->addHyperLink($uri, $anchor, $testCaseName);
             }

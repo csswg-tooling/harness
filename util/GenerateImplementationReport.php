@@ -34,9 +34,9 @@ define('INCLUDE_ID', FALSE);
 class IR_ResultsPage extends ResultsPage
 {
   
-  function __construct(Array $args = null)
+  function __construct(Array $args = null, Array $pathComponents = null)
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
     
     $this->mDisplayLinks = FALSE;
     $this->mSpiderTrap = null;
@@ -93,9 +93,9 @@ class IR_ResultsPage extends ResultsPage
 class IR_DetailsPage extends DetailsPage
 {
   
-  function __construct(Array $args = null)
+  function __construct(Array $args = null, Array $pathComponents = null)
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
     
     $this->mDisplayLinks = FALSE;
     $this->mSpiderTrap = null;
@@ -146,9 +146,9 @@ class IR_UserAgentPage extends ResultsBasedPage
   protected $mUserAgents;
   protected $mUserAgentResultCounts;
   
-  function __construct(Array $args = null)
+  function __construct(Array $args = null, Array $pathComponents = null)
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
 
     $this->mSpiderTrap = null;
   }
@@ -231,9 +231,9 @@ class IR_IndexPage extends HarnessPage
   protected $mStats;
   protected $mEngineNames;
   
-  function __construct(Array $args = null)
+  function __construct(Array $args = null, Array $pathComponents = null)
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
     
     $this->mSpiderTrap = null;
     $this->mSpec = new Specification($this->mTestSuite);
@@ -360,7 +360,7 @@ class IR_IndexPage extends HarnessPage
       $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
       $this->addTextContent(" ({$this->mSpec->getTitle()}) specification as of {$now->format('j F Y')}");
       $this->addTextContent(' and is based on current test results available in the ');
-      $this->addHyperlink($this->buildConfigURI('page.home', null, null, TRUE), null, 'W3C Conformance Test Harness');
+      $this->addHyperlink($this->buildPageURI('home', null, null, TRUE), null, 'W3C Conformance Test Harness');
       $this->addTextContent('.');
       $this->closeElement('p');
     }
@@ -532,7 +532,7 @@ class IR_IndexPage extends HarnessPage
     
     $this->openElement('p', null, FALSE);
     $this->addTextContent('Results were gathered from implementation reports submitted by user agent vendors as well as the general public via the ');
-    $this->addHyperlink($this->buildConfigURI('page.home', null, null, TRUE), null, 'W3C Conformance Test Harness');
+    $this->addHyperlink($this->buildPageURI('home', null, null, TRUE), null, 'W3C Conformance Test Harness');
     $this->addTextContent('.');
     $this->closeElement('p');
     

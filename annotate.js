@@ -38,7 +38,6 @@ header('Content-Type: application/javascript; charset=utf-8');
   info.testURI;
   info.resultsURI;
   info.detailsURI;
-  info.rewriteURIs;
   info.clientEngineName;
   info.isIndexPage;
   
@@ -57,7 +56,7 @@ header('Content-Type: application/javascript; charset=utf-8');
 **/
 
 var annotator = {
-  QUERY_URI:          "<?php echo Page::_BuildConfigURI('page.status_query', null, null, TRUE); ?>",
+  QUERY_URI:          "<?php echo Page::_BuildPageURI('status_query', null, null, TRUE); ?>",
   STYLESHEET_URI:     "<?php echo Page::_BuildConfigURI('stylesheet.annotation', null, null, TRUE); ?>",
   NEED_TEST_ICON_URI: "<?php echo Page::_BuildConfigURI('image.please_help', null, null, TRUE); ?>",
 
@@ -66,12 +65,7 @@ var annotator = {
   
   buildURI: function(base, section) {
     if (section) {
-      if (this.mResponse.info.rewriteURIs) {
-        return base + 'section/' + section + '/';
-      }
-      else {
-        return base + '&sec=' + section;
-      }
+      return base + 'section/' + section + '/';
     }
     return base;
   },

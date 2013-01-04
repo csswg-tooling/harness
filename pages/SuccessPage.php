@@ -27,9 +27,14 @@ require_once("lib/TestSuites.php");
 class SuccessPage extends HarnessPage
 {
 
-  function __construct(Array $args = null) 
+  static function GetPageKey()
   {
-    parent::__construct($args);
+    return 'success';
+  }
+
+  function __construct(Array $args = null, Array $pathComponents = null)
+  {
+    parent::__construct($args, $pathComponents);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -47,7 +52,7 @@ class SuccessPage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildConfigURI('page.testsuite', $args);
+      $uri = $this->buildPageURI('testsuite', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Success";
@@ -64,11 +69,11 @@ class SuccessPage extends HarnessPage
                                  $this->mTestSuite->getTitle());
 
     $args['u'] = $this->mUserAgent->getId();
-    $homeURI = $this->buildConfigURI('page.home', $args);
+    $homeURI = $this->buildPageURI('home', $args);
 
     $args['s'] = $this->mTestSuite->getName();
-    $reviewURI = $this->buildConfigURI('page.review', $args);
-    $enterURI = $this->buildConfigURI('page.testsuite', $args);
+    $reviewURI = $this->buildPageURI('review', $args);
+    $enterURI = $this->buildPageURI('testsuite', $args);
 
     $this->openElement('p', null, FALSE);
     $this->addTextContent("You can ");

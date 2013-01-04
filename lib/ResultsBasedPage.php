@@ -41,9 +41,9 @@ class ResultsBasedPage extends HarnessPage
    * 'v' Engine Version (optional)
    * 'p' Platform
    */
-  function __construct(Array $args = null) 
+  function __construct(Array $args = null, Array $pathComponents = null) 
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
     
   }
   

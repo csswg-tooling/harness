@@ -22,6 +22,7 @@ require_once("lib/TestSuite.php");
 require_once("lib/UserAgent.php");
 require_once("lib/Sections.php");
 require_once("lib/TestCases.php");
+require_once("lib/TestCase.php");
 
 
 /**
@@ -31,11 +32,18 @@ class TestSuitePage extends HarnessPage
 {  
   protected $mSections;
   protected $mTestCases;
+  
+  protected $mRedirectURI;
 
-
-  function __construct(Array $args = null) 
+  static function GetPageKey()
   {
-    parent::__construct($args);
+    return 'testsuite';
+  }
+
+
+  function __construct(Array $args = null, Array $pathComponents = null) 
+  {
+    parent::__construct($args, $pathComponents);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -50,7 +58,41 @@ class TestSuitePage extends HarnessPage
     if (! $this->mUserAgent->isActualUA()) {
       $this->mSubmitData['u'] = $this->mUserAgent->getId();
     }
+    
+    $this->mRedirectURI = null;
+    if ('Start' == $this->_postData('action')) {
+      $args['s'] = $this->mTestSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+      $args['fl'] = $this->_requestData('fl');
+
+      if ($this->_postData('c')) {
+        $args['c'] = $this->_postData('c');
+      }
+      else { // find first test in suite or section
+        $order = $this->_postData('o');
+        $sectionName = $this->_postData('sec');
+        $sectionId = 0;
+        if ($sectionName) {
+          $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
+        }
+        $flag = $this->_postData('fl');
+        
+        $testCase = new TestCase();
+        $testCase->load($this->mTestSuite, null, $sectionId, $this->mUserAgent, $order, 0, $flag);
+                               
+        $args['i'] = $testCase->getTestCaseName();
+        $args['sec'] = $this->_postData('sec');
+        $args['o'] = $this->_postData('o');
+      }
+      
+      $this->mRedirectURI = $this->buildPageURI('testcase', $args);
+    }
   }  
+  
+  function getRedirectURI()
+  {
+    return $this->mRedirectURI;
+  }
   
   
   function getNavURIs()
@@ -79,12 +121,12 @@ class TestSuitePage extends HarnessPage
 
   function writeTestSuiteForm()
   {
-    $this->openFormElement($this->buildConfigURI('page.start'));
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
     $this->writeHiddenFormControls();
     $this->addElement('strong', null, "The full test suite: ");
     $this->writeOrderSelect();
     $this->addTextContent(' ');
-    $this->addInputElement('submit', null, 'Start');
+    $this->addInputElement('submit', 'action', 'Start');
     $this->closeElement('form');
   }
   
@@ -117,14 +159,14 @@ class TestSuitePage extends HarnessPage
   
   function writeSectionForm($title)
   {
-    $this->openFormElement($this->buildConfigURI('page.start'));
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeSectionSelect();
     $this->addTextContent(' ');
     $this->writeOrderSelect();
     $this->addTextContent(' ');
-    $this->addInputElement('submit', null, 'Start');
+    $this->addInputElement('submit', 'action', 'Start');
     $this->closeElement('form');
   }
   
@@ -148,12 +190,12 @@ class TestSuitePage extends HarnessPage
   
   function writeTestCaseForm($title)
   {
-    $this->openFormElement($this->buildConfigURI('page.start'));
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeTestCaseSelect();
     $this->addTextContent(' ');
-    $this->addInputElement('submit', null, 'Start');
+    $this->addInputElement('submit', 'action', 'Start');
     $this->closeElement('form');
   }
 
@@ -175,8 +217,8 @@ class TestSuitePage extends HarnessPage
     if ($this->mUserAgent->isActualUA()) {
       $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
 
-      $args = $this->mGetData;
-      $uri = $this->buildConfigURI('page.select_ua', $args);
+      $args = $this->_urlData();
+      $uri = $this->buildPageURI('select_ua', $args);
       
       $this->openElement('span', null, FALSE);
       $this->addTextContent(' (');
@@ -189,9 +231,9 @@ class TestSuitePage extends HarnessPage
                             array('class' => 'other'), 
                             $this->mUserAgent->getDescription());
 
-      $args = $this->mGetData;
+      $args = $this->_urlData();
       unset($args['u']);
-      $uri = $this->buildConfigURI('page.testsuite', $args);
+      $uri = $this->buildPageURI('testsuite', $args);
       $this->openElement('span', null, FALSE);
       $this->addTextContent(' (');
       $this->addHyperLink($uri, null, 'Reset');

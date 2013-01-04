@@ -22,25 +22,292 @@ require_once('core/User.php');
 require_once('lib/TestSuite.php');
 require_once('lib/UserAgent.php');
 
+
+class HarnessURIConverter extends URIConverter
+{
+  /**
+   * Convert a rewritten URI path back into baseURI and args array
+   * Subclasses override to handle specific pages
+   */
+  function pathToArgs(Array &$components, Array &$queryArgs)
+  {
+    $pageKey = null;
+
+    $base = array_shift($components);
+    switch ($base) {
+      case null:
+        $pageKey = 'home';
+        break;
+        
+      case 'ua':
+        $pageKey = 'home';
+        $this->_addQueryArg($queryArgs, 'u', $components);
+        break;
+
+      case 'suite':
+        $pageKey = 'testsuite';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        if ('ua' == array_shift($components)) {
+          $this->_addQueryArg($queryArgs, 'u', $components);
+        }
+        break;
+        
+      case 'agent':
+        $pageKey = 'select_ua';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        break;
+        
+      case 'test':
+        $pageKey = 'testcase';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        $queryArgs['o'] = 1;
+        $next = array_shift($components);
+        if ('single' == $next) {
+          $this->_addQueryArg($queryArgs, 'c', $components);
+        }
+        else {
+          if ('section' == $next) {
+            $this->_addQueryArg($queryArgs, 'sec', $components);
+            $next = array_shift($components);
+          }
+          if (('alpha' == $next) || ('all' == $next)) {
+            $queryArgs['o'] = 0;
+            $next = array_shift($components);
+          }
+          $queryArgs['i'] = $next;
+        }
+        while ($key = array_shift($components)) {
+          switch ($key) {
+            case 'ref':     $this->_addQueryArg($queryArgs, 'ref', $components); break;
+            case 'format':  $this->_addQueryArg($queryArgs, 'f', $components); break;
+            case 'flag':    $this->_addQueryArg($queryArgs, 'fl', $components); break;
+            case 'ua':      $this->_addQueryArg($queryArgs, 'u', $components); break;
+          }
+        }
+        break;
+        
+      case 'done':
+        $pageKey = 'success';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        if ('ua' == array_shift($components)) {
+          $this->_addQueryArg($queryArgs, 'u', $components);
+        }
+        break;
+        
+      case 'review':
+        $pageKey = 'review';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        if ('ua' == array_shift($components)) {
+          $this->_addQueryArg($queryArgs, 'u', $components);
+        }
+        break;
+        
+      case 'results':
+        $pageKey = 'results';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        $next = array_shift($components);
+        if ('grouped' == $next) {
+          $queryArgs['o'] = 1;
+          $next = array_shift($components);
+        }
+        if ('section' == $next) {
+          $this->_addQueryArg($queryArgs, 'sec', $components);
+        }
+        else {
+          array_unshift($components, $next);
+        }
+        while ($key = array_shift($components)) {
+          switch ($key) {
+            case 'filter':            $this->_addQueryArg($queryArgs, 'f', $components); break;
+            case 'date':              $this->_addQueryArg($queryArgs, 'm', $components); break;
+            case 'engine':            $this->_addQueryArg($queryArgs, 'e', $components); break;
+            case 'engine_version':    $this->_addQueryArg($queryArgs, 'v', $components); break;
+            case 'browser':           $this->_addQueryArg($queryArgs, 'b', $components); break;
+            case 'browser_version':   $this->_addQueryArg($queryArgs, 'bv', $components); break;
+            case 'platform':          $this->_addQueryArg($queryArgs, 'p', $components); break;
+            case 'platform_version':  $this->_addQueryArg($queryArgs, 'pv', $components); break;
+            case 'ua':                $this->_addQueryArg($queryArgs, 'u', $components); break;
+            default: $queryArgs['c'] = $key;
+          }
+        }
+        break;
+    
+      case 'details':
+        $pageKey = 'details';
+        $this->_addQueryArg($queryArgs, 's', $components);
+        $next = array_shift($components);
+        if ('grouped' == $next) {
+          $queryArgs['o'] = 1;
+          $next = array_shift($components);
+        }
+        if ('section' == $next) {
+          $this->_addQueryArg($queryArgs, 'sec', $components);
+        }
+        else {
+          array_unshift($components, $next);
+        }
+        while ($key = array_shift($components)) {
+          switch ($key) {
+            case 'date':              $this->_addQueryArg($queryArgs, 'm', $components); break;
+            case 'engine':            $this->_addQueryArg($queryArgs, 'e', $components); break;
+            case 'engine_version':    $this->_addQueryArg($queryArgs, 'v', $components); break;
+            case 'browser':           $this->_addQueryArg($queryArgs, 'b', $components); break;
+            case 'browser_version':   $this->_addQueryArg($queryArgs, 'bv', $components); break;
+            case 'platform':          $this->_addQueryArg($queryArgs, 'p', $components); break;
+            case 'platform_version':  $this->_addQueryArg($queryArgs, 'pv', $components); break;
+            case 'ua':                $this->_addQueryArg($queryArgs, 'u', $components); break;
+            default: $queryArgs['c'] = $key;
+          }
+        }
+        break;
+        
+      case 'status':
+        $pageKey = 'status_query';
+        break;
+        
+      case 'report':
+        $pageKey = 'spider_trap';
+        break;
+
+      default:
+        array_unshift($components, $base);
+    }
+
+    return $pageKey;
+  }
+
+  /**
+   * Convert query arguments to URI path when rewriting is on
+   * Subclasses override to handle specific pages
+   *
+   * @param string base uri
+   * @param array associative array of aurguments
+   * @return string uri
+   */
+  function argsToPath($pageKey, Array &$queryArgs = null) {
+    $uriPath = '';
+    
+    $keys = explode('.', $pageKey);
+    switch (array_shift($keys)) {
+      case '':
+      case 'home':
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+        
+      case 'testsuite':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'suite');
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+        
+      case 'select_ua':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'agent');
+        break;
+        
+      case 'testcase':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'test');
+        if (! $this->_appendURI($uriPath, 'c', $queryArgs, 'single')) {
+          $this->_appendURI($uriPath, 'sec', $queryArgs, 'section');
+          $this->_appendURIBool($uriPath, 'o', $queryArgs, 'alpha', 0);
+          $this->_appendURI($uriPath, 'i', $queryArgs);
+        }
+        unset($queryArgs['o']);
+        $this->_appendURI($uriPath, 'ref', $queryArgs, 'ref');
+        $this->_appendURI($uriPath, 'f', $queryArgs, 'format');
+        $this->_appendURI($uriPath, 'fl', $queryArgs, 'flag');
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+        
+      case 'success':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'done');
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+  
+      case 'review':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'review');
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+        
+      case 'results':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'results');
+        $this->_appendURIBool($uriPath, 'o', $queryArgs, 'grouped');
+        if (! $this->_appendURI($uriPath, 'c', $queryArgs)) {
+          $this->_appendURI($uriPath, 'sec', $queryArgs, 'section');
+        }
+        $this->_appendURI($uriPath, 'f', $queryArgs, 'filter');
+        $this->_appendURI($uriPath, 'm', $queryArgs, 'date');
+        $this->_appendURI($uriPath, 'e', $queryArgs, 'engine');
+        $this->_appendURI($uriPath, 'v', $queryArgs, 'engine_version');
+        $this->_appendURI($uriPath, 'b', $queryArgs, 'browser');
+        $this->_appendURI($uriPath, 'bv', $queryArgs, 'browser_version');
+        $this->_appendURI($uriPath, 'p', $queryArgs, 'platform');
+        $this->_appendURI($uriPath, 'pv', $queryArgs, 'platform_version');
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+        
+      case 'details':
+        $this->_appendURI($uriPath, 's', $queryArgs, 'details');
+        $this->_appendURIBool($uriPath, 'o', $queryArgs, 'grouped');
+        if (! $this->_appendURI($uriPath, 'c', $queryArgs)) {
+          $this->_appendURI($uriPath, 'sec', $queryArgs, 'section');
+        }
+        $this->_appendURI($uriPath, 'm', $queryArgs, 'date');
+        $this->_appendURI($uriPath, 'e', $queryArgs, 'engine');
+        $this->_appendURI($uriPath, 'v', $queryArgs, 'engine_version');
+        $this->_appendURI($uriPath, 'b', $queryArgs, 'browser');
+        $this->_appendURI($uriPath, 'bv', $queryArgs, 'browser_version');
+        $this->_appendURI($uriPath, 'p', $queryArgs, 'platform');
+        $this->_appendURI($uriPath, 'pv', $queryArgs, 'platform_version');
+        $this->_appendURI($uriPath, 'u', $queryArgs, 'ua');
+        break;
+        
+      case 'status_query':
+        $uriPath .= 'status/';
+        break;
+        
+      case 'spider_trap':
+        $uriPath .= 'report/';
+        break;
+        
+      default:
+        trigger_error('Unknown page key');
+    }
+
+    return $uriPath;
+  }
+}
+
+
 /**
  * Provide functionality specific to test harness pages
  */
 class HarnessPage extends DynamicPage
 {
+  protected static  $gURIConverter = null;
+  
   protected $mSpiderTrap;
   
   protected $mTestSuite;
   protected $mUserAgent;
   protected $mUser;
 
-
-  function __construct(Array $args = null)
+  
+  static function GetURIConverter()
   {
-    parent::__construct($args);
+    if (! static::$gURIConverter) {
+      static::$gURIConverter = new HarnessURIConverter();
+    }
+    return static::$gURIConverter;
+  }
+
+
+  function __construct(Array $args = null, Array $pathComponents = null)
+  {
+    parent::__construct($args, $pathComponents);
     
     $this->mSpiderTrap = new SpiderTrap();
     
     $this->mTestSuite = $this->_requestData('s', 'TestSuite');
+
     $this->mUserAgent = new UserAgent(intval($this->_requestData('u')));
 
     if (FALSE !== $this->_requestData('logout')) {
@@ -71,6 +338,22 @@ class HarnessPage extends DynamicPage
   }
 
   /**
+   * Helper function to build URI to page within system
+   *
+   * @param string page config key
+   * @param array associative array of aurguments
+   * @param string fragment identifier
+   * @return string URL encoded
+   */
+  function buildPageURI($pageKey, Array $queryArgs = null, $fragId = null, $absolute = FALSE)
+  {
+    if ($this->mUserAgent->isActualUA()) {  // XXX also work with UA cookies here
+      unset ($queryArgs['u']);
+    }
+    return parent::buildPageURI($pageKey, $queryArgs, $fragId, $absolute);
+  }
+
+  /**
    * Helper function to build URI with query string
    * This version looks up the uri from the Config system
    * 
@@ -85,219 +368,6 @@ class HarnessPage extends DynamicPage
       unset ($queryArgs['u']);
     }
     return parent::buildConfigURI($baseURIKey, $queryArgs, $fragId, $absolute);
-  }
-
-
-  /**
-   * Convert a rewritten URI path back into baseURI and args array
-   * Subclasses override to handle specific pages
-   */
-  protected static function _ConvertURIPathToArgs(Array $components, Array &$queryArgs)
-  {
-    $base = array_shift($components);
-    switch ($base) {
-      case 'ua':
-        $baseURI = Config::Get('uri.page', 'home');
-        static::_AddQueryArg($queryArgs, 'u', $components);
-        break;
-
-      case 'suite':
-        $baseURI = Config::Get('uri.page', 'testsuite');
-        static::_AddQueryArg($queryArgs, 's', $components);
-        if ('ua' == array_shift($components)) {
-          static::_AddQueryArg($queryArgs, 'u', $components);
-        }
-        break;
-        
-      case 'agent':
-        $baseURI = Config::Get('uri.page', 'select_ua');
-        static::_AddQueryArg($queryArgs, 'u', $components);
-        break;
-        
-      case 'test':
-        $baseURI = Config::Get('uri.page', 'testcase');
-        static::_AddQueryArg($queryArgs, 's', $components);
-        $queryArgs['o'] = 1;
-        $next = array_shift($components);
-        if ('single' == $next) {
-          static::_AddQueryArg($queryArgs, 'c', $components);
-        }
-        else {
-          if ('section' == $next) {
-            static::_AddQueryArg($queryArgs, 'sec', $components);
-            $next = array_shift($components);
-          }
-          if (('alpha' == $next) || ('all' == $next)) {
-            $queryArgs['o'] = 0;
-            $next = array_shift($components);
-          }
-          $queryArgs['i'] = $next;
-        }
-        while ($key = array_shift($components)) {
-          switch ($key) {
-            case 'ref':     static::_AddQueryArg($queryArgs, 'ref', $components); break;
-            case 'format':  static::_AddQueryArg($queryArgs, 'f', $components); break;
-            case 'flag':    static::_AddQueryArg($queryArgs, 'fl', $components); break;
-            case 'ua':      static::_AddQueryArg($queryArgs, 'u', $components); break;
-          }
-        }
-        break;
-        
-      case 'done':
-        $baseURI = Config::Get('uri.page', 'success');
-        static::_AddQueryArg($queryArgs, 's', $components);
-        if ('ua' == array_shift($components)) {
-          static::_AddQueryArg($queryArgs, 'u', $components);
-        }
-        break;
-        
-      case 'review':
-        $baseURI = Config::Get('uri.page', 'review');
-        static::_AddQueryArg($queryArgs, 's', $components);
-        if ('ua' == array_shift($components)) {
-          static::_AddQueryArg($queryArgs, 'u', $components);
-        }
-        break;
-        
-      case 'results':
-        $baseURI = Config::Get('uri.page', 'results');
-        static::_AddQueryArg($queryArgs, 's', $components);
-        $next = array_shift($components);
-        if ('grouped' == $next) {
-          $queryArgs['o'] = 1;
-          $next = array_shift($components);
-        }
-        if ('section' == $next) {
-          static::_AddQueryArg($queryArgs, 'sec', $components);
-        }
-        else {
-          array_unshift($componentes, $next);
-        }
-        while ($key = array_shift($components)) {
-          switch ($key) {
-            case 'filter':            static::_AddQueryArg($queryArgs, 'f', $components); break;
-            case 'date':              static::_AddQueryArg($queryArgs, 'm', $components); break;
-            case 'engine':            static::_AddQueryArg($queryArgs, 'e', $components); break;
-            case 'engine_version':    static::_AddQueryArg($queryArgs, 'v', $components); break;
-            case 'browser':           static::_AddQueryArg($queryArgs, 'b', $components); break;
-            case 'browser_version':   static::_AddQueryArg($queryArgs, 'bv', $components); break;
-            case 'platform':          static::_AddQueryArg($queryArgs, 'p', $components); break;
-            case 'platform_version':  static::_AddQueryArg($queryArgs, 'pv', $components); break;
-            case 'ua':                static::_AddQueryArg($queryArgs, 'u', $components); break;
-            default: $queryArgs['c'] = $key;
-          }
-        }
-        break;
-    
-      case 'details':
-        $baseURI = Config::Get('uri.page', 'details');
-        static::_AddQueryArg($queryArgs, 's', $components);
-        $next = array_shift($components);
-        if ('grouped' == $next) {
-          $queryArgs['o'] = 1;
-          $next = array_shift($components);
-        }
-        if ('section' == $next) {
-          static::_AddQueryArg($queryArgs, 'sec', $components);
-        }
-        else {
-          array_unshift($componentes, $next);
-        }
-        while ($key = array_shift($components)) {
-          switch ($key) {
-            case 'date':              static::_AddQueryArg($queryArgs, 'm', $components); break;
-            case 'engine':            static::_AddQueryArg($queryArgs, 'e', $components); break;
-            case 'engine_version':    static::_AddQueryArg($queryArgs, 'v', $components); break;
-            case 'browser':           static::_AddQueryArg($queryArgs, 'b', $components); break;
-            case 'browser_version':   static::_AddQueryArg($queryArgs, 'bv', $components); break;
-            case 'platform':          static::_AddQueryArg($queryArgs, 'p', $components); break;
-            case 'platform_version':  static::_AddQueryArg($queryArgs, 'pv', $components); break;
-            case 'ua':                static::_AddQueryArg($queryArgs, 'u', $components); break;
-            default: $queryArgs['c'] = $key;
-          }
-        }
-        break;
-    }
-    
-    return $baseURI;
-  }
-
-  /**
-   * Convert query arguments to URI path when rewriting is on
-   * Subclasses override to handle specific pages
-   *
-   * @param string base uri
-   * @param array associative array of aurguments
-   * @return string uri
-   */
-  protected static function _ConvertURIArgsToPath($baseURI, Array &$queryArgs = null) {
-    $uriPath = '';
-    if (('' == $baseURI) || (Config::Get('uri.page', 'home') == $baseURI)) {
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    elseif (Config::Get('uri.page', 'testsuite') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'suite');
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    elseif (Config::Get('uri.page', 'select_ua') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'agent');
-    }
-    elseif (Config::Get('uri.page', 'testcase') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'test');
-      if (! static::_AppendURI($uriPath, 'c', $queryArgs, 'single')) {
-        static::_AppendURI($uriPath, 'sec', $queryArgs, 'section');
-        static::_AppendURIBool($uriPath, 'o', $queryArgs, 'alpha', 0);
-        static::_AppendURI($uriPath, 'i', $queryArgs);
-      }
-      unset($queryArgs['o']);
-      static::_AppendURI($uriPath, 'ref', $queryArgs, 'ref');
-      static::_AppendURI($uriPath, 'f', $queryArgs, 'format');
-      static::_AppendURI($uriPath, 'fl', $queryArgs, 'flag');
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    elseif (Config::Get('uri.page', 'success') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'done');
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    elseif (Config::Get('uri.page', 'review') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'review');
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    elseif (Config::Get('uri.page', 'results') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'results');
-      static::_AppendURIBool($uriPath, 'o', $queryArgs, 'grouped');
-      if (! static::_AppendURI($uriPath, 'c', $queryArgs)) {
-        static::_AppendURI($uriPath, 'sec', $queryArgs, 'section');
-      }
-      static::_AppendURI($uriPath, 'f', $queryArgs, 'filter');
-      static::_AppendURI($uriPath, 'm', $queryArgs, 'date');
-      static::_AppendURI($uriPath, 'e', $queryArgs, 'engine');
-      static::_AppendURI($uriPath, 'v', $queryArgs, 'engine_version');
-      static::_AppendURI($uriPath, 'b', $queryArgs, 'browser');
-      static::_AppendURI($uriPath, 'bv', $queryArgs, 'browser_version');
-      static::_AppendURI($uriPath, 'p', $queryArgs, 'platform');
-      static::_AppendURI($uriPath, 'pv', $queryArgs, 'platform_version');
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    elseif (Config::Get('uri.page', 'details') == $baseURI) {
-      static::_AppendURI($uriPath, 's', $queryArgs, 'details');
-      static::_AppendURIBool($uriPath, 'o', $queryArgs, 'grouped');
-      if (! static::_AppendURI($uriPath, 'c', $queryArgs)) {
-        static::_AppendURI($uriPath, 'sec', $queryArgs, 'section');
-      }
-      static::_AppendURI($uriPath, 'm', $queryArgs, 'date');
-      static::_AppendURI($uriPath, 'e', $queryArgs, 'engine');
-      static::_AppendURI($uriPath, 'v', $queryArgs, 'engine_version');
-      static::_AppendURI($uriPath, 'b', $queryArgs, 'browser');
-      static::_AppendURI($uriPath, 'bv', $queryArgs, 'browser_version');
-      static::_AppendURI($uriPath, 'p', $queryArgs, 'platform');
-      static::_AppendURI($uriPath, 'pv', $queryArgs, 'platform_version');
-      static::_AppendURI($uriPath, 'u', $queryArgs, 'ua');
-    }
-    else {
-      $uriPath = $baseURI;
-    }
-    return $uriPath;
   }
 
 
@@ -320,7 +390,7 @@ class HarnessPage extends DynamicPage
     $args['u'] = $this->mUserAgent->getId();
     
     $title = "Home";
-    $uri = $this->buildConfigURI('page.home', $args);
+    $uri = $this->buildPageURI('home', $args);
 
     return array(compact('title', 'uri'));
   }

@@ -26,9 +26,16 @@ require_once("lib/HarnessPage.php");
  */
 class SpiderTrapPage extends HarnessPage
 {  
-  function __construct(Array $args = null) 
+
+  static function GetPageKey()
   {
-    parent::__construct($args);
+    return 'spider_trap';
+  }
+
+
+  function __construct(Array $args = null, Array $pathComponents = null)
+  {
+    parent::__construct($args, $pathComponents);
     
     $this->mSpiderTrap->recordVisit();
   }

@@ -41,6 +41,11 @@ class TestCasePage extends HarnessPage
   protected $mHasResults;
 
 
+  static function GetPageKey()
+  {
+    return 'testcase';
+  }
+
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
@@ -56,9 +61,9 @@ class TestCasePage extends HarnessPage
    * 'fl' Flag - only display tests with this flag
    * 'ref' Name of reference
    */
-  function __construct(Array $args = null) 
+  function __construct(Array $args = null, Array $pathComponents = null) 
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
 
     if (! $this->mTestSuite) {
       $msg = 'No test suite identified.';
@@ -131,7 +136,7 @@ class TestCasePage extends HarnessPage
       }
     }
 
-    $this->mSubmitData = $this->mGetData;
+    $this->mSubmitData = $this->_urlData();
     $this->mSubmitData['c'] = $this->mTestCase->getTestCaseName();
     $this->mSubmitData['g'] = $sectionId;
     $this->mSubmitData['sec'] = $this->mSectionName;
@@ -156,8 +161,65 @@ class TestCasePage extends HarnessPage
     }
     
     $this->mHasResults = FALSE;
+    
+    $this->mRedirectURI = null;
+    if ($result = $this->_postData('result')) {
+      switch (strtolower(substr($result, 0, 4))) {
+        case 'pass':
+          $result = 'pass';
+          break;
+        case 'fail':
+          $result = 'fail';
+          break;
+        case 'cann':
+          $result = 'uncertain';
+          break;
+        case 'skip':
+          $result = null;
+          break;
+        default:
+          $msg = 'Invalid response submitted.';
+          trigger_error($msg, E_USER_WARNING);
+      }
+      if ($result && (! $this->mTestSuite->isLocked())) {
+        $this->mUser->update();
+        $format = new Format($this->mFormatName);
+        $this->mTestCase->submitResult($this->mUserAgent, $this->mUser, $format, $result);
+      }
+    
+      $nextIndex = $this->_postData('next');
+      
+      $args['s'] = $this->mTestSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+      if (0 <= $nextIndex) {
+        if ($this->mDesiredFormatName) {
+          $args['f'] = $this->mDesiredFormatName;
+        }
+        if ($this->mSectionName) {
+          $args['sec'] = $this->mSectionName;
+        }
+        $args['fl'] = $this->_postData('fl');
+
+        $nextTestCase = new TestCase();
+        $nextTestCase->load($this->mTestSuite, null, $sectionId,
+                            $this->mUserAgent, $order, $nextIndex, $flag);
+        $args['i'] = $nextTestCase->getTestCaseName();
+        if (0 < $order) {
+          $args['o'] = $order;
+        }
+      
+        $this->mRedirectURI = $this->buildPageURI('testcase', $args);
+      }
+      else {
+        $this->mRedirectURI = $this->buildPageURI('success', $args);
+      }
+    }
   }
   
+  function getRedirectURI()
+  {
+    return $this->mRedirectURI;
+  }
   
   function getNavURIs()
   {
@@ -168,7 +230,7 @@ class TestCasePage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildConfigURI('page.testsuite', $args);
+      $uri = $this->buildPageURI('testsuite', $args);
       $uris[] = compact('title', 'uri');
       
       $title = "Test Case";
@@ -296,7 +358,7 @@ class TestCasePage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['c'] = $this->mTestCase->getTestCaseName();
       $args['u'] = $this->mUserAgent->getId();
-      $detailsURI = $this->buildConfigURI('page.details', $args);
+      $detailsURI = $this->buildPageURI('details', $args);
 
       $this->openElement('span', null, FALSE);
       $this->addTextContent(' (');
@@ -369,9 +431,9 @@ class TestCasePage extends HarnessPage
           $this->closeElement('span');
         }
         else {
-          $args = $this->mGetData;
+          $args = $this->_urlData();
           unset($args['ref']);
-          $uri = $this->buildConfigURI('page.testcase', $args);
+          $uri = $this->buildPageURI('testcase', $args);
           
           $this->openElement('span', array('class' => 'tab'));
           $this->addHyperLink($uri, null, 'Test Case');
@@ -386,9 +448,9 @@ class TestCasePage extends HarnessPage
             $this->closeElement('span');
           }
           else {
-            $args = $this->mGetData;
+            $args = $this->_urlData();
             $args['ref'] = $refName;
-            $uri = $this->buildConfigURI('page.testcase', $args);
+            $uri = $this->buildPageURI('testcase', $args);
             
             $this->openElement('span', array('class' => 'tab'));
             $this->addHyperLink($uri, null, "{$refType} Reference Page");
@@ -430,12 +492,12 @@ class TestCasePage extends HarnessPage
           }
           else {
             if (Format::FormatNameInArray($formatName, $testFormatNames)) {
-              $args = $this->mGetData;
+              $args = $this->_urlData();
               $args['f'] = $formatName;
               if ($this->mRefName) {
                 $args['ref'] = $this->mRefName; 
               }
-              $uri = $this->buildConfigURI('page.testcase', $args);
+              $uri = $this->buildPageURI('testcase', $args);
 
               $this->openElement('span', array('class' => 'tab'));
               $this->addHyperLink($uri, null, $formatTitle);
@@ -493,7 +555,7 @@ class TestCasePage extends HarnessPage
           $class .= ' active';
         }
         $args['e'] = $engineName;
-        $this->addHyperLink($this->buildConfigURI('page.details', $args), 
+        $this->addHyperLink($this->buildPageURI('details', $args),
                             array('class' => $class), $engines[$engineName]->getTitle());
       }
       $this->closeElement('div');
@@ -524,7 +586,7 @@ class TestCasePage extends HarnessPage
   
   function writeSubmitForm()
   {
-    $this->openFormElement($this->buildConfigURI('page.submit'), 'post', 'eval');
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post', 'eval');
     $this->openElement('p', array('class' => 'buttons'));
     $this->writeHiddenFormControls();
     
@@ -558,9 +620,9 @@ class TestCasePage extends HarnessPage
         $this->addTextContent("Entering results for: ");
         $this->addAbbrElement($uaString, array('class' => 'other'), $description);
 
-        $args = $this->mGetData;
+        $args = $this->_urlData();
         unset($args['u']);
-        $uri = $this->buildConfigURI('page.testcase', $args);
+        $uri = $this->buildPageURI('testcase', $args);
         $this->openElement('span', null, FALSE);
         $this->addTextContent(' (');
         $this->addHyperLink($uri, null, "Reset");

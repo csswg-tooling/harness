@@ -89,7 +89,6 @@ class InfoResponse
   public  $testURI;
   public  $resultsURI;
   public  $detailsURI;
-  public  $rewriteURIs;
   public  $clientEngineName;
   public  $isIndexPage;
   
@@ -132,6 +131,11 @@ class StatusQueryPage extends HarnessPage
   protected $mEngines;
   
   
+  static function GetPageKey()
+  {
+    return 'status_query';
+  }
+
   /**
    * Expected URL paramaters:
    * 's' Test Suite Name
@@ -141,9 +145,9 @@ class StatusQueryPage extends HarnessPage
    * 'v' Engine Version (optional)
    * 'p' Platform
    */
-  function __construct(Array $args = null) 
+  function __construct(Array $args = null, Array $pathComponents = null) 
   {
-    parent::__construct($args);
+    parent::__construct($args, $pathComponents);
     
     $this->mResultValid = FALSE;
     
@@ -367,10 +371,9 @@ class StatusQueryPage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['o'] = 1;
       
-      $info->testURI = $this->buildConfigURI('page.testcase', $args, null, TRUE);
-      $info->resultsURI = $this->buildConfigURI('page.results', $args, null, TRUE);
-      $info->detailsURI = $this->buildConfigURI('page.details', $args, null, TRUE);
-      $info->rewriteURIs = Config::Get('server', 'rewrite_urls');
+      $info->testURI = $this->buildPageURI('testcase', $args, null, TRUE);
+      $info->resultsURI = $this->buildPageURI('results', $args, null, TRUE);
+      $info->detailsURI = $this->buildPageURI('details', $args, null, TRUE);
       $info->clientEngineName = $this->mUserAgent->getEngineName();
       $info->isIndexPage = (0 == $this->mSectionId);
       

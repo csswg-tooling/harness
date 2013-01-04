@@ -24,17 +24,45 @@ require_once('lib/UserAgent.php');
  * A page to select a different user agent for entering test results
  */
 class SelectUserAgentPage extends HarnessPage
-{  
+{
+  protected $mRedirectURI;
+  
 
-  function __construct(Array $args = null) 
+  static function GetPageKey()
   {
-    parent::__construct($args);
+    return 'select_ua';
+  }
+
+
+  function __construct(Array $args = null, Array $pathComponents = null)
+  {
+    parent::__construct($args, $pathComponents);
     
-    $this->mSubmitData = $this->mGetData;
+    $this->mSubmitData = $this->_urlData();
     unset($this->mSubmitData['u']);
 
+    $this->mRedirectURI = null;
+    
+    if ($action = $this->_postData('action')) {
+      if ('Enter' == $action) {
+        $uaString = $this->_postData('ua');
+        if ($uaString) {
+          $this->mUserAgent = new UserAgent($uaString);
+          $this->mUserAgent->update();
+        }
+      }
+      
+      $args['s'] = $this->mTestSuite->getName();
+      $args['u'] = $this->mUserAgent->getId();
+
+      $this->mRedirectURI = $this->buildPageURI('testsuite', $args);
+    }
   }  
 
+  function getRedirectURI()
+  {
+    return $this->mRedirectURI;
+  }
 
   function getNavURIs()
   {
@@ -45,7 +73,7 @@ class SelectUserAgentPage extends HarnessPage
       $args['s'] = $this->mTestSuite->getName();
       $args['u'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildConfigURI('page.testsuite', $args);
+      $uri = $this->buildPageURI('testsuite', $args);
       $uris[] = compact('title', 'uri');
     }
       
@@ -128,7 +156,7 @@ class SelectUserAgentPage extends HarnessPage
                         "You may select from one of the following known user agents, " .
                         "or enter a custom user agent string below:");
 
-      $this->openFormElement($this->buildConfigURI('page.set_ua'));
+      $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
       $this->writeHiddenFormControls();
 
       $attrs['size'] = 10;
@@ -151,7 +179,7 @@ class SelectUserAgentPage extends HarnessPage
       $this->closeElement('select');
 
       $this->addTextContent(' ');
-      $this->addInputElement('submit', null, 'Select');
+      $this->addInputElement('submit', 'action', 'Select');
       
       $this->closeElement('form');
     }
@@ -160,7 +188,7 @@ class SelectUserAgentPage extends HarnessPage
     }
 
     $this->openElement('p');
-    $this->openFormElement($this->buildConfigURI('page.set_ua'), 'post');
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
     $this->writeHiddenFormControls();
     $this->addLabelElement('uatext', 'Custom User Agent String: ');
     $this->addInputElement('text', 'ua', null, 'uatext', array('size' => 80));
@@ -168,10 +196,10 @@ class SelectUserAgentPage extends HarnessPage
     $this->addInputElement('submit', 'action', 'Enter');
     $this->closeElement('form');
 
-    $this->openFormElement($this->buildConfigURI('page.set_ua'));
+    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
     $this->writeHiddenFormControls();
     $this->addTextContent(' ');
-    $this->addInputElement('submit', null, 'Cancel');
+    $this->addInputElement('submit', 'action', 'Cancel');
     $this->closeElement('form');
     $this->closeElement('p');
   }
