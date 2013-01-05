@@ -1,6 +1,6 @@
 <?php 
 
-require_once('core/Page.php'); 
+require_once('lib/HarnessPage.php'); 
 
 // manually generate proper content type header, because using the PHP processor confuses Apache
 header('Content-Type: application/javascript; charset=utf-8');
@@ -56,9 +56,9 @@ header('Content-Type: application/javascript; charset=utf-8');
 **/
 
 var annotator = {
-  QUERY_URI:          "<?php echo Page::_BuildPageURI('status_query', null, null, TRUE); ?>",
-  STYLESHEET_URI:     "<?php echo Page::_BuildConfigURI('stylesheet.annotation', null, null, TRUE); ?>",
-  NEED_TEST_ICON_URI: "<?php echo Page::_BuildConfigURI('image.please_help', null, null, TRUE); ?>",
+  QUERY_URI:          "<?php echo HarnessPage::_BuildPageURI('status_query', null, null, TRUE); ?>",
+  STYLESHEET_URI:     "<?php echo HarnessPage::_BuildConfigURI('stylesheet.annotation', null, null, TRUE); ?>",
+  NEED_TEST_ICON_URI: "<?php echo HarnessPage::_BuildConfigURI('image.please_help', null, null, TRUE); ?>",
 
   mResponse: null,
   mClosed: false,
@@ -381,7 +381,6 @@ var annotator = {
         document.getElementsByTagName('head')[0].appendChild(styleSheet)
 
         var statusURI = this.QUERY_URI + '?s=' + encodeURIComponent(testSuiteName) + '&x=' + encodeURIComponent(document.URL);
-        
         if (window.XDomainRequest) {  // The IE way...
           var xdr = new XDomainRequest();
           if (xdr) {

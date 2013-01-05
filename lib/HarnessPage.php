@@ -184,7 +184,7 @@ class HarnessURIConverter extends URIConverter
    * @param array associative array of aurguments
    * @return string uri
    */
-  function argsToPath($pageKey, Array &$queryArgs = null) {
+  function argsToPath($pageKey, Array &$queryArgs) {
     $uriPath = '';
     
     $keys = explode('.', $pageKey);
