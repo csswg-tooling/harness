@@ -123,7 +123,7 @@ class ReviewPage extends HarnessPage
     $script .= "  resultForm.sec.disabled = false;\n";
     $script .= "  resultForm.c.disabled = false;\n";
     $script .= "  resultForm.o.disabled = false;\n";
-    $script .= "}\n";
+    $script .= "};\n";
     $script .= "function filterTypes() {\n";
     $script .= "  var resultForm = document.getElementById('result_form');";
     $script .= "  if (resultForm.t[0].checked) {\n";
