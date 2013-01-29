@@ -63,7 +63,7 @@ class ReviewPage extends HarnessPage
       $args['c'] = $this->_postData('c');
       $args['sec'] = $this->_postData('sec');
 
-      if ($this->_postData('t')) {
+      if (null !== $this->_postData('t')) {
         $type = intval($this->_postData('t'));
         switch ($type) {
           case 0: unset($args['sec']); // whole suite
@@ -113,39 +113,6 @@ class ReviewPage extends HarnessPage
   }
 
 
-  /**
-   * Generate <script> element
-   */
-  function writeHeadScript()
-  {
-    $script  = "onunload=function() {\n";
-    $script .= "  var resultForm = document.getElementById('result_form');";
-    $script .= "  resultForm.sec.disabled = false;\n";
-    $script .= "  resultForm.c.disabled = false;\n";
-    $script .= "  resultForm.o.disabled = false;\n";
-    $script .= "};\n";
-    $script .= "function filterTypes() {\n";
-    $script .= "  var resultForm = document.getElementById('result_form');";
-    $script .= "  if (resultForm.t[0].checked) {\n";
-    $script .= "    resultForm.sec.disabled = true;\n";
-    $script .= "    resultForm.c.disabled = true;\n";
-    $script .= "  }\n";
-    $script .= "  if (resultForm.t[1].checked) {\n";
-    $script .= "    resultForm.sec.disabled = false;\n";
-    $script .= "    resultForm.c.disabled = true;\n";
-    $script .= "  }\n";
-    $script .= "  if (resultForm.t[2].checked) {\n";
-    $script .= "    resultForm.sec.disabled = true;\n";
-    $script .= "    resultForm.c.disabled = false;\n";
-    $script .= "    resultForm.o.disabled = true;\n";
-    $script .= "  }\n";
-    $script .= "  return true;\n";
-    $script .= "}\n";
-
-    $this->addScriptElement($script);
-  }
-  
-  
   function writeSectionOptions($parentId = 0)
   {
     $data = $this->mSections->getSubSectionData($parentId);
