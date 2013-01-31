@@ -183,6 +183,7 @@ class TestCasePage extends HarnessPage
       }
       if ($result && (! $this->mTestSuite->isLocked())) {
         $this->mUser->update();
+        $this->mUserAgent->update();
         $format = new Format($this->mFormatName);
         $this->mTestCase->submitResult($this->mUserAgent, $this->mUser, $format, $result);
       }
