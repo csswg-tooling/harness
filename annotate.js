@@ -56,9 +56,9 @@ header('Content-Type: application/javascript; charset=utf-8');
 **/
 
 var annotator = {
-  QUERY_URI:          "<?php echo HarnessPage::_BuildPageURI('status_query', null, null, TRUE); ?>",
-  STYLESHEET_URI:     "<?php echo HarnessPage::_BuildConfigURI('stylesheet.annotation', null, null, TRUE); ?>",
-  NEED_TEST_ICON_URI: "<?php echo HarnessPage::_BuildConfigURI('image.please_help', null, null, TRUE); ?>",
+  QUERY_URI:          "<?php echo HarnessPage::ExternalPageURI('status_query'); ?>",
+  STYLESHEET_URI:     "<?php echo HarnessPage::ExternalConfigURI('stylesheet.annotation'); ?>",
+  NEED_TEST_ICON_URI: "<?php echo HarnessPage::ExternalConfigURI('image.please_help'); ?>",
 
   mResponse: null,
   mClosed: false,

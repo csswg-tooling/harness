@@ -299,6 +299,15 @@ class HarnessPage extends DynamicPage
     return static::$gURIConverter;
   }
 
+  static function ExternalPageURI($baseURI)
+  {
+    return self::_MatchURIConnectionSecurity(self::_BuildPageURI($baseURI, null, null, TRUE));
+  }
+  
+  static function ExternalConfigURI($pageKey)
+  {
+    return self::_MatchURIConnectionSecurity(self::_BuildConfigURI($pageKey, null, null, TRUE));
+  }
 
   function __construct(Array $args = null, Array $pathComponents = null)
   {
