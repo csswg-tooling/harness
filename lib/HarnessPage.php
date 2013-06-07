@@ -74,7 +74,12 @@ class HarnessURIConverter extends URIConverter
             $queryArgs['o'] = 0;
             $next = array_shift($components);
           }
-          $queryArgs['i'] = $next;
+          if (('ref' == $next) || ('format' == $next) || ('flag' == $next) || ('ua' == $next)) {
+            array_unshift($components, $next);
+          }
+          else {
+            $queryArgs['i'] = $next;
+          }
         }
         while ($key = array_shift($components)) {
           switch ($key) {
