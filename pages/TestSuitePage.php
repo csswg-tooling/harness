@@ -243,7 +243,7 @@ class TestSuitePage extends HarnessPage
     $this->closeElement('p');
 
     $this->addElement('p', null, 
-                      "The {$this->mTestSuite->getTitle()} test suite contains {$this->mTestCases->getCount()} test cases. " .
+                      "The {$this->mTestSuite->getTitle()} contains {$this->mTestCases->getCount()} test cases. " .
                       "You can stop running tests at any time without causing trouble.");
 
     $this->addElement('p', null, "You can test:");
