@@ -233,6 +233,8 @@ class NormalizedTest
   
   protected function _normalize() 
   {
+    $this->_strip('<!DOCTYPE', '', '>', '<==remove==>');
+    $this->_strip('<!--', '', '-->', '<==remove==>');
     $this->_strip('<title', '', '</title>', '<==remove==>');
     $this->_strip('<meta ', 'name="assert"', '>', '<==remove==>');
     $this->_strip('<meta ', "name='assert'", '>', '<==remove==>');
@@ -244,7 +246,9 @@ class NormalizedTest
     $this->_stripPath('link', array('rel' => 'mismatch'), 'href');
     $this->_sortAttributes('meta');
 
-    $search = array("ahem",
+    $search = array("ahem",   // XXX use regex for w*<==remove==>{|}
+                    "          <==remove==>\r\n",
+                    "          <==remove==>\n",
                     "        <==remove==>\r\n",
                     "        <==remove==>\n",
                     "      <==remove==>\r\n",
@@ -255,6 +259,8 @@ class NormalizedTest
                     "  <==remove==>\n",
                     "<==remove==>\r\n",
                     "<==remove==>\n",
+                    "\t\t\t<==remove==>\r\n",
+                    "\t\t\t<==remove==>\n",
                     "\t\t<==remove==>\r\n",
                     "\t\t<==remove==>\n",
                     "\t<==remove==>\r\n",

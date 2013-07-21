@@ -40,7 +40,7 @@ class TestSuite extends DBConnection
       $testSuiteQuery = $this->encode($testSuiteName, 'testsuites.testsuite');
       
       $sql  = "SELECT * FROM `testsuites` ";
-      $sql .= "WHERE `testsuite` = '{$testSuiteQuery}' ";
+      $sql .= "WHERE `testsuite` = '{$testSuiteQuery}' OR `alt_name` = '{$testSuiteQuery}' ";
       $sql .= "LIMIT 1";
     
       $r = $this->query($sql);
