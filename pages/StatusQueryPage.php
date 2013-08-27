@@ -225,24 +225,9 @@ class StatusQueryPage extends HarnessPage
   protected function _determineContentType($filePath = null)
   {
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
-      // XXX check for origin header to restrict to w3.org servers...
-      
-      if (array_key_exists('HTTP_ACCEPT', $_SERVER)) {
-        $accept = $_SERVER['HTTP_ACCEPT'];
-        
-        if (FALSE !== stripos($accept, 'application/json')) {
-          $this->mRequestValid = TRUE;
-          return 'application/json';
-        }
-        if (FALSE !== stripos($accept, 'application/xml')) {
-          $this->mRequestValid = TRUE;
-          return 'application/xml';
-        }
-      }
-      if ('trident' == $this->mUserAgent->getEngineName()) {  // IE8 can't send proper accept headers
-        $this->mRequestValid = TRUE;
-        return 'application/json';
-      }
+      // XXX check for origin header to restrict to w3.org servers...?
+
+      return array('type' => 'application', 'structure' => 'json');
     }
     return parent::_determineContentType($filePath);
   }
