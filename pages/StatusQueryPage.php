@@ -174,6 +174,7 @@ class StatusQueryPage extends HarnessPage
           }
         }
       }
+      $this->mRequestValid = TRUE;
     }
   }
   
