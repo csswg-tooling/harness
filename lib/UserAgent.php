@@ -220,6 +220,7 @@ class UserAgent extends DBConnection
   protected function _explodeUAString($uaString)
   {
     $uaString = str_replace(') (', '; ', $uaString);  // collapse sequential comments (from Uzbl browser)
+    $uaString = str_replace(')(', '; ', $uaString);  // collapse sequential comments (from Panasonic TV)
     
     $index = -1;
     $count = strlen($uaString);
@@ -311,13 +312,13 @@ class UserAgent extends DBConnection
    * Determine Browser, Browser Version, Engine, Engine Version and Platform
    * from User Agent string
    */
-  protected function _parseUAString($uaString) 
+  protected function _parseUAString($uaString)
   {
     $result['id'] = null;
     $result['useragent'] = $uaString;
     
     $uaData = $this->_explodeUAString($uaString);
-    
+
     $browser = '';
     $browserVersion = '';
     $engine = '';
@@ -349,6 +350,12 @@ class UserAgent extends DBConnection
               $engineVersion = $version;
             }
             $engine = $product;
+            $browser = 'Internet Explorer';
+          }
+          if (0 === stripos($commentChunk, 'rv:')) {
+            if ('Internet Explorer' == $browser) {
+              $browserVersion = substr($commentChunk, 3);
+            }
           }
           if (0 === stripos($commentChunk, 'Konqueror')) {
             $product = $this->_splitUAProductVersion($commentChunk);
@@ -410,8 +417,10 @@ class UserAgent extends DBConnection
           (0 === stripos($product, 'Prince')) ||
           (0 === stripos($product, 'Trident')) ||
           (0 === stripos($product, 'WebToPDF'))) {
-        $engine = $product;
-        $engineVersion = $version;
+        if ((! $engine) || ($engine == $product)) {
+          $engine = $product;
+          $engineVersion = $version;
+        }
       }
       if ('' == $browser) {
         if ((0 === stripos($product, 'Firefox')) ||
@@ -439,7 +448,7 @@ class UserAgent extends DBConnection
         $browserVersion = $version;
       }
     }
-    
+
     // no browser yet, take last product
     if ('' == $browser) {
       if ('mobile' == strtolower($product)) {
