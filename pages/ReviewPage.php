@@ -166,7 +166,7 @@ class ReviewPage extends HarnessPage
     $this->addTextContent("You can choose to review:");
     $this->closeElement('p');
     
-    $this->openFormElement($this->buildPageURI(null, $this->_urlData()),
+    $this->openFormElement($this->buildPageURI(null, $this->_uriData()),
                            'post', 'result_form', array('onSubmit' => 'return filterTypes();'));
 
     $this->openElement('p');

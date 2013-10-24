@@ -136,7 +136,7 @@ class TestCasePage extends HarnessPage
       }
     }
 
-    $this->mSubmitData = $this->_urlData();
+    $this->mSubmitData = $this->_uriData();
     $this->mSubmitData['c'] = $this->mTestCase->getTestCaseName();
     $this->mSubmitData['g'] = $sectionId;
     $this->mSubmitData['sec'] = $this->mSectionName;
@@ -432,7 +432,7 @@ class TestCasePage extends HarnessPage
           $this->closeElement('span');
         }
         else {
-          $args = $this->_urlData();
+          $args = $this->_uriData();
           unset($args['ref']);
           $uri = $this->buildPageURI('testcase', $args);
           
@@ -449,7 +449,7 @@ class TestCasePage extends HarnessPage
             $this->closeElement('span');
           }
           else {
-            $args = $this->_urlData();
+            $args = $this->_uriData();
             $args['ref'] = $refName;
             $uri = $this->buildPageURI('testcase', $args);
             
@@ -493,7 +493,7 @@ class TestCasePage extends HarnessPage
           }
           else {
             if (Format::FormatNameInArray($formatName, $testFormatNames)) {
-              $args = $this->_urlData();
+              $args = $this->_uriData();
               $args['f'] = $formatName;
               if ($this->mRefName) {
                 $args['ref'] = $this->mRefName; 
@@ -587,7 +587,7 @@ class TestCasePage extends HarnessPage
   
   function writeSubmitForm()
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post', 'eval');
+    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post', 'eval');
     $this->openElement('p', array('class' => 'buttons'));
     $this->writeHiddenFormControls();
     
@@ -621,7 +621,7 @@ class TestCasePage extends HarnessPage
         $this->addTextContent("Entering results for: ");
         $this->addAbbrElement($uaString, array('class' => 'other'), $description);
 
-        $args = $this->_urlData();
+        $args = $this->_uriData();
         unset($args['u']);
         $uri = $this->buildPageURI('testcase', $args);
         $this->openElement('span', null, FALSE);

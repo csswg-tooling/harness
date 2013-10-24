@@ -347,7 +347,7 @@ class ResultsPage extends ResultsBasedPage
       $args['c'] = $testCaseName;
       $args['u'] = $this->mUserAgent->getId();
       if ($hasResults) {
-        $this->_copyArgs($this->_urlData(), $args, array('m', 'e', 'v', 'b', 'bv', 'p', 'pv'));
+        $this->_copyArgs($this->_uriData(), $args, array('m', 'e', 'v', 'b', 'bv', 'p', 'pv'));
         $uri = $this->buildPageURI('details', $args);
       }
       else {
@@ -370,7 +370,7 @@ class ResultsPage extends ResultsBasedPage
       $args['c'] = $testCaseName;
       $args['e'] = $engineName;
       $args['u'] = $this->mUserAgent->getId();
-      $this->_copyArgs($this->_urlData(), $args, array('m', 'v', 'b', 'bv', 'p', 'pv'));
+      $this->_copyArgs($this->_uriData(), $args, array('m', 'v', 'b', 'bv', 'p', 'pv'));
       $uri = $this->buildPageURI('details', $args);
       
       $this->openElement('td', array('class' => $class), FALSE);

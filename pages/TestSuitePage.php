@@ -121,7 +121,7 @@ class TestSuitePage extends HarnessPage
 
   function writeTestSuiteForm()
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
+    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post');
     $this->writeHiddenFormControls();
     $this->addElement('strong', null, "The full test suite: ");
     $this->writeOrderSelect();
@@ -159,7 +159,7 @@ class TestSuitePage extends HarnessPage
   
   function writeSectionForm($title)
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
+    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post');
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeSectionSelect();
@@ -190,7 +190,7 @@ class TestSuitePage extends HarnessPage
   
   function writeTestCaseForm($title)
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_urlData()), 'post');
+    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post');
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeTestCaseSelect();
@@ -217,7 +217,7 @@ class TestSuitePage extends HarnessPage
     if ($this->mUserAgent->isActualUA()) {
       $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
 
-      $args = $this->_urlData();
+      $args = $this->_uriData();
       $uri = $this->buildPageURI('select_ua', $args);
       
       $this->openElement('span', null, FALSE);
@@ -231,7 +231,7 @@ class TestSuitePage extends HarnessPage
                             array('class' => 'other'), 
                             $this->mUserAgent->getDescription());
 
-      $args = $this->_urlData();
+      $args = $this->_uriData();
       unset($args['u']);
       $uri = $this->buildPageURI('testsuite', $args);
       $this->openElement('span', null, FALSE);
