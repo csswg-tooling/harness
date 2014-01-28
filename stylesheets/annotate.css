@@ -32,6 +32,7 @@ div.annotation {
   margin: 0 0 0.5em 1em;
   position: relative;
   min-height: 14px;
+  z-index: 1;
 }
 
 div.annotation.need {
