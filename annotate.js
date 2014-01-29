@@ -59,6 +59,10 @@ var annotator = {
   QUERY_URI:          "<?php echo HarnessPage::ExternalPageURI('status_query'); ?>",
   STYLESHEET_URI:     "<?php echo HarnessPage::ExternalConfigURI('stylesheet.annotation'); ?>",
   NEED_TEST_ICON_URI: "<?php echo HarnessPage::ExternalConfigURI('image.please_help'); ?>",
+  ENGINE_LOGOS: { 'gecko': "<?php  echo HarnessPage::ExternalConfigURI('image.gecko'); ?>",
+                  'presto': "<?php  echo HarnessPage::ExternalConfigURI('image.presto'); ?>",
+                  'trident': "<?php  echo HarnessPage::ExternalConfigURI('image.trident'); ?>",
+                  'webkit': "<?php  echo HarnessPage::ExternalConfigURI('image.webkit'); ?>" },
 
   mResponse: null,
   mClosed: false,
@@ -100,6 +104,52 @@ var annotator = {
     this.addAnnotations();
   },
   
+  toggleDetails: function(domEvent) {
+    var engineNode = domEvent.target;
+    while (engineNode && ('SPAN' != engineNode.tagName.toUpperCase())) {
+      engineNode = engineNode.parentNode;
+    }
+    var engineIndex = engineNode.getAttribute('data-engineIndex');
+    var annotation = engineNode.parentNode.parentNode;
+    var details = annotation.lastChild;
+    
+    if (engineIndex == details.getAttribute('data-engineIndex')) {
+      details.setAttribute('class', 'details');
+      details.removeAttribute('data-engineIndex');
+    }
+    else {
+      details.setAttribute('data-engineIndex', engineIndex);
+      
+      var engine = this.mResponse.engines[engineIndex];
+      var section = annotation.getAttribute('data-section');
+
+      var detailsEngine = details.firstChild;
+      var detailsLink = detailsEngine.lastChild;
+     
+      detailsEngine.firstChild.textContent = engine.title + ' ';
+      detailsLink.setAttribute('href', this.buildURI(this.mResponse.info.resultsURI, section));
+      
+      var meter = details.lastChild;
+      var numbers = meter.firstChild;
+      var passBar = numbers.nextSibling;
+      var failBar = passBar.nextSibling;
+      var needBar = failBar.nextSibling;
+      numbers.textContent = engineNode.getAttribute('title');
+      
+      var passCount = parseInt(engineNode.getAttribute('data-passCount'), 10);
+      var failCount = parseInt(engineNode.getAttribute('data-failCount'), 10);
+      var needCount = parseInt(engineNode.getAttribute('data-needCount'), 10);
+      var total = passCount + failCount + needCount;
+
+      passBar.setAttribute('style', 'width: ' + ((passCount / total) * 100.0) + '%');
+      failBar.setAttribute('style', 'width: ' + ((failCount / total) * 100.0) + '%');
+      needBar.setAttribute('style', 'width: ' + ((needCount / total) * 100.0) + '%');
+      
+      details.setAttribute('class', 'details open');
+    }
+    
+  },
+  
   addAnnotationTo: function(anchorElement, section, first) {
     try {
       var headings = {'h1':'', 'h2':'', 'h3':'', 'h4':'', 'h5':'', 'h6':'',
@@ -132,20 +182,23 @@ var annotator = {
           annotationClass += ' closed';
         }
         annotation.setAttribute('class', annotationClass);
-        annotation.setAttribute('testCount', section.testCount);
-        annotation.setAttribute('needCount', needCount);
+        if (section.section) {
+          annotation.setAttribute('data-section', section.section);
+        }
+        annotation.setAttribute('data-testCount', section.testCount);
+        annotation.setAttribute('data-needCount', needCount);
 
         // disclosure control
         if (first) {
           var disclosure = document.createElement('div');
-          disclosure.setAttribute('class', 'disclosureBox');
+          disclosure.setAttribute('class', 'disclosure button');
           disclosure.setAttribute('onclick', 'annotator.toggleAnnotations()');
           annotation.appendChild(disclosure);
         }
         
         // close box
         var closeBox = document.createElement('div');
-        closeBox.setAttribute('class', 'closeBox');
+        closeBox.setAttribute('class', 'close button');
         if (first) {
           closeBox.setAttribute('onclick', 'annotator.removeAllAnnotations()');
         }
@@ -200,8 +253,10 @@ var annotator = {
 
         // Engine result data
         if (! this.mClosed) {
-          var engines = document.createElement('div');
-          engines.setAttribute('class', 'engines');
+          var majorEngines = document.createElement('div');
+          var minorEngines = document.createElement('div');
+          majorEngines.setAttribute('class', 'engines');
+          minorEngines.setAttribute('class', 'engines');
           
           for (index in section.engines) {
             var engine = section.engines[index];
@@ -217,7 +272,7 @@ var annotator = {
               else {
                 if (engine.failCount == section.testCount) {
                   toolTip = 'All tests fail';
-                  engineClass = 'fail';
+                  engineClass = 'epic-fail';
                 }
                 else {
                   if (0 < engine.passCount) {
@@ -235,11 +290,19 @@ var annotator = {
                     }
                     toolTip += (section.testCount - resultCount) + ' untested';
                   }
-                  if ((resultCount / section.testCount) < 0.95) {
+                  if ((resultCount / section.testCount) < 0.90) {
                     engineClass = 'untested';
                   }
                   else {
-                    engineClass = 'p' + Math.round((engine.passCount / section.testCount) * 10.0) + '0';
+                    switch (Math.round((engine.passCount / section.testCount) * 10.0)) {
+                      case 10:
+                      case 9: engineClass = 'almost-pass';  break;
+                      case 8: engineClass = 'slightly-buggy'; break;
+                      case 7: engineClass = 'buggy'; break;
+                      case 6: engineClass = 'very-buggy'; break;
+                      case 5: engineClass = 'fail'; break;
+                      default: engineClass = 'epic-fail'; break;
+                    }
                   }
                 }
               }
@@ -254,27 +317,55 @@ var annotator = {
               if (this.mResponse.engines[engine.index].name == this.mResponse.info.clientEngineName) {
                 engineClass += ' active';
               }
-              engineNode.setAttribute('class', this.mResponse.engines[engine.index].name + ' ' + engineClass);
-              engineNode.setAttribute('passCount', engine.passCount);
-              engineNode.setAttribute('failCount', engine.failCount);
-              engineNode.setAttribute('needCount', section.testCount - resultCount);
+              engineNode.setAttribute('tabindex', '0');
+              engineNode.setAttribute('data-engineIndex', engine.index);
+              engineNode.setAttribute('data-passCount', engine.passCount);
+              engineNode.setAttribute('data-failCount', engine.failCount);
+              engineNode.setAttribute('data-needCount', section.testCount - resultCount);
+              engineNode.onclick = function(domEvent) { annotator.toggleDetails(domEvent); };
 
-              if (0 < resultCount) {
-                var detailsLink = document.createElement('a');
-                detailsLink.setAttribute('href', this.buildURI(this.mResponse.info.resultsURI, section.section));
-                
-                detailsLink.appendChild(document.createTextNode(this.mResponse.engines[engine.index].title));
-                engineNode.appendChild(detailsLink);
+              if (this.mResponse.engines[engine.index].name in this.ENGINE_LOGOS) {
+                engineClass += ' major';
+                var logo = document.createElement('img');
+                logo.setAttribute('src', this.ENGINE_LOGOS[this.mResponse.engines[engine.index].name]);
+                engineNode.appendChild(logo);
+                majorEngines.appendChild(engineNode);
+                majorEngines.appendChild(document.createTextNode(' '));
               }
               else {
                 engineNode.appendChild(document.createTextNode(this.mResponse.engines[engine.index].title));
+                minorEngines.appendChild(engineNode);
+                minorEngines.appendChild(document.createTextNode(' '));
               }
-              
-              engines.appendChild(engineNode);
-              engines.appendChild(document.createTextNode(' '));
+
+              engineNode.setAttribute('class', this.mResponse.engines[engine.index].name + ' ' + engineClass);
             }
           }
-          annotation.appendChild(engines);
+          annotation.appendChild(majorEngines);
+          annotation.appendChild(minorEngines);
+          
+          var details = document.createElement('div');
+          details.setAttribute('class', 'details');
+          
+          var engineName = document.createElement('div');
+          engineName.setAttribute('class', 'engine');
+          engineName.appendChild(document.createTextNode('engine '));
+          
+          var detailsLink = document.createElement('a');
+          detailsLink.appendChild(document.createTextNode('test details'));
+          engineName.appendChild(detailsLink);
+          details.appendChild(engineName);
+          
+          var meter = document.createElement('div');
+          meter.setAttribute('class', 'meter');
+          for (barClass in { 'numbers': '', 'pass': '', 'epic-fail': '', 'untested': '' }) {
+            var bar = document.createElement('span');
+            bar.setAttribute('class', barClass);
+            meter.appendChild(bar);
+          }
+          details.appendChild(meter);
+          
+          annotation.appendChild(details);
         }
         
         targetElement.insertBefore(annotation, targetElement.firstChild);
