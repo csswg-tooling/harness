@@ -29,7 +29,7 @@ class HarnessCmdLineWorker extends CmdLineWorker
 
   function __construct($databaseName = FALSE) 
   {
-    parent::__construct($databaseName);
+    parent::__construct();
     
   }
 
