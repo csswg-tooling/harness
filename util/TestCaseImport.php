@@ -205,7 +205,7 @@ class TestCaseImport extends HarnessCmdLineWorker
     echo "Reading source file: {$manifest}\n";
     $data = file($manifest, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     
-    if ((! $data) || (count($data) < 2)) {
+    if ((! $data) || (count($data) < 1)) {
       die("missing or empty manifest file\n");
     }
     
