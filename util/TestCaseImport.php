@@ -520,6 +520,12 @@ class TestCaseImport extends HarnessCmdLineWorker
         $sql .= "AND `testcase_id` = '{$testCaseId}' ";
         
         $this->query($sql);
+
+        $sql  = "DELETE FROM `testsequence` ";
+        $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+        $sql .= "AND `testcase_id` = '{$testCaseId}' ";
+        $this->query($sql);
+
         echo "Deactivated {$testCaseName}:{$testCaseId}\n";
         $testsChanged = TRUE;
       }
