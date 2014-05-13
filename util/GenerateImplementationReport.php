@@ -633,18 +633,19 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
    */
   function generate($testSuiteName, $outputPath, $specStatus)
   {
-    $testSuite = new TestSuite($testSuiteName);
-    if ($outputPath) {
-      if (! file_exists($outputPath)) {
-        mkdir($outputPath, 0777, TRUE);
-      }
-    }
-    else {
-      $outputPath = '';
-    }
+    $testSuite = @new TestSuite($testSuiteName);
     
     if ($testSuite->isValid()) {
       
+      if ($outputPath) {
+        if (! file_exists($outputPath)) {
+          mkdir($outputPath, 0777, TRUE);
+        }
+      }
+      else {
+        $outputPath = '';
+      }
+
       echo "Loading results for {$testSuiteName}\n";
       
       $this->mResults = new Results($testSuite);
@@ -695,6 +696,9 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
         $this->copyFile(Config::Get('uri.stylesheet', 'base'), $this->_CombinePath($outputPath, Config::Get('uri.stylesheet', 'base')));
         $this->copyFile(Config::Get('uri.stylesheet', 'report'), $this->_CombinePath($outputPath, Config::Get('uri.stylesheet', 'report')));
       }
+    }
+    else {
+      echo "Unknown test suite\n";
     }
   }
 }

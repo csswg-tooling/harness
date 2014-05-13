@@ -59,7 +59,7 @@ class ExportResults extends HarnessCmdLineWorker
    */
   function export($testSuiteName, $outPath)
   {
-    $testSuite = new TestSuite($testSuiteName);
+    $testSuite = @new TestSuite($testSuiteName);
     
     if ($testSuite->isValid()) {
     
@@ -117,6 +117,9 @@ class ExportResults extends HarnessCmdLineWorker
         
         fclose($outFile);
       }
+    }
+    else {
+      echo "Unknown test suite\n";
     }
   }
 }

@@ -186,8 +186,9 @@ class TestCaseImport extends HarnessCmdLineWorker
   
   function import($manifest, $testSuiteName)
   {
-    $testSuite = new TestSuite($testSuiteName);
+    $testSuite = @new TestSuite($testSuiteName);
     if (! $testSuite->isValid()) {
+      echo "Unknown test suite\n";
       exit;
     }
     $formats = Format::GetFormatsFor($testSuite);
