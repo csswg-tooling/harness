@@ -31,7 +31,7 @@ function setupPage()
     var p = system.createElement('p');
     var label = system.createElement('label', { 'for': 'auto_submit_button' }, 'Automatically submit results when possible');
     var submitButton = system.createElement('input', { 'type': 'checkbox', 'id': 'auto_submit_button', 'name': 'auto', 'value': 1 });
-    submitButton.onclick = function (domEvent) { setAutoSubmit(domEvent.target.checked); }
+    submitButton.onclick = function (domEvent) { setAutoSubmit(domEvent.target.checked); };
     
     p.appendChild(submitButton);
     p.appendChild(label);

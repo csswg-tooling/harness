@@ -198,7 +198,7 @@ function setupPage()
     skipButton.parentNode.appendChild(document.createTextNode(' '));
     var label = system.createElement('label', { 'for': 'auto_submit_button' }, 'Auto Submit');
     var submitButton = system.createElement('input', { 'type': 'checkbox', 'id': 'auto_submit_button', 'name': 'auto', 'value': 1 });
-    submitButton.onclick = function (domEvent) { setAutoSubmit(domEvent.target.checked); }
+    submitButton.onclick = function (domEvent) { setAutoSubmit(domEvent.target.checked); };
     
     skipButton.parentNode.appendChild(label);
     skipButton.parentNode.appendChild(submitButton);
