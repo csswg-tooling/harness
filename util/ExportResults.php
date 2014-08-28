@@ -80,7 +80,7 @@ class ExportResults extends HarnessCmdLineWorker
       if ($outFile) {
         fwrite($outFile, "testcase,result,format,date,source,engine,useragent\n");
         
-        $formats = $testSuite->getFormats();
+        $formats = TestFormat::GetAllFormats();
         $userAgents = UserAgent::GetAllUserAgents();
         $users = User::GetAllUsers();
 

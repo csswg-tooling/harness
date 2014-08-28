@@ -112,7 +112,7 @@ class HarnessPage extends SystemPage
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
       return $this->mTestSuite->getTitle();
     }
-    return "W3C Conformance Test Harness";
+    return parent::getPageTitle();
   }
   
   
