@@ -26,25 +26,47 @@ require_once('lib/Sections.php');
  * Class for generating the page of result data
  */
 class ResultsBasedPage extends HarnessPage
-{  
+{
+  protected $mTestCase;
+  protected $mSpec;
+  protected $mSection;
+  protected $mModifiedDateTime;
+  protected $mEngineName;
+  protected $mEngineVersion;
+  protected $mBrowserName;
+  protected $mBrowserVersion;
+  protected $mPlatformName;
+  protected $mPlatformVersion;
   protected $mResults;
   
   /**
    * Expected URL paramaters:
-   * 's' Test Suite Name
-   * 'c' Test Case Name
-   * 'g' Spec Section Id (optional)
-   * 'sec' Spec Section Name (optional)
-   * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
-   * 'm' Modified date (optional, only results before date)
-   * 'e' Engine (optional, filter results for this engine)
-   * 'v' Engine Version (optional)
-   * 'p' Platform
+   * 'suite' Test Suite Name
+   *
+   * Optional URL paramaters
+   * 'testcase' Test Case Name - test only this test
+   * 'spec' Specification
+   * 'section' Spec Section Name
+   * 'index' Test Case Name - find this test in the group
+   * 'type' Report type (override 'testcase' & 'section', 0 = entire suite, 1 = group, 2 = one test)
+   * 'modified' Modified date (optional, only results before date)
+   * 'engine' Engine (optional, filter results for this engine)
+   * 'version' Engine Version (optional)
+   * 'platform' Platform
    */
-  function __construct(Array $args = null, Array $pathComponents = null) 
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
-    
+    parent::_initPage();
+   
+    $this->mModifiedDateTime = $this->_getData('modified', 'DateTime');
+    $this->mEngineName       = $this->_getData('engine');
+    $this->mEngineVersion    = $this->_getData('version');
+    $this->mBrowserName      = $this->_getData('browser');
+    $this->mBrowserVersion   = $this->_getData('browser_version');
+    $this->mPlatformName     = $this->_getData('platform');
+    $this->mPlatformVersion  = $this->_getData('platform_version');
+
+    set_time_limit(3600);
   }
   
   
@@ -56,37 +78,39 @@ class ResultsBasedPage extends HarnessPage
   
   function loadResults()
   {
-    if (! $this->mResults) {
-      $testCaseName = $this->_getData('c');
-      $sectionId = intval($this->_getData('g'));
-      $sectionName = $this->_getData('sec');
-      if ((0 == $sectionId) && ($sectionName)) {
-        $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
-      }
-      
-      if ($this->_getData('t')) {
-        $type = intval($this->_getData('t'));
+    if ($this->mTestSuite && $this->mTestSuite->isValid() && (! $this->mResults)) {
+      $testCaseName = $this->_getData('testcase');
+      $specName = $this->_getData('spec');
+      $sectionName = $this->_getData('section');
+      if ($this->_getData('type')) {
+        $type = intval($this->_getData('type'));
         switch ($type) {
-          case 0: $sectionId = 0;         // whole suite
+          case 0: $specName = null;       // whole suite
           case 1: $testCaseName = null;   // test group
           case 2: break;                  // individual test case
         }
       }
       
-      $modified         = $this->_getData('m', 'DateTime');
-      $engineName       = $this->_getData('e');
-      $engineVersion    = $this->_getData('v');
-      $browserName      = $this->_getData('b');
-      $browserVersion   = $this->_getData('bv');
-      $platformName     = $this->_getData('p');
-      $platformVersion  = $this->_getData('pv');
-      
-      $this->mResults = 
-        new Results($this->mTestSuite, $testCaseName, $sectionId, 
-                    $modified,
-                    $engineName, $engineVersion, 
-                    $browserName, $browserVersion, 
-                    $platformName, $platformVersion);
+      if ($testCaseName) {
+        $this->mTestCase = TestCase::GetTestCase($this->mTestSuite, $testCaseName);
+      }
+      if ($specName) {
+        $this->mSpec = Specification::GetSpecificationByName($specName);
+      }
+      if ($sectionName) {
+        if (! $this->mSpec) {
+          $this->mSpec = reset($this->mTestSuite->getSpecifications());
+        }
+        $this->mSection = SpecificationAnchor::GetSectionFor($this->mSpec, $sectionName);
+      }
+
+      $this->mResults =
+        new Results($this->mTestSuite, $this->mTestCase,
+                    $this->mSpec, $this->mSection,
+                    $this->mModifiedDateTime,
+                    $this->mEngineName, $this->mEngineVersion,
+                    $this->mBrowserName, $this->mBrowserVersion,
+                    $this->mPlatformName, $this->mPlatformVersion);
     }
   }
 }

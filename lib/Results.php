@@ -16,23 +16,32 @@
  * 
  ******************************************************************************/
 
-require_once('core/DBConnection.php');
+require_once('lib/HarnessDB.php');
+
 require_once('lib/TestCase.php');
+require_once('lib/TestCases.php');
+
+require_once('modules/testsuite/TestSuite.php');
+
+require_once('modules/useragent/Engine.php');
+require_once('modules/useragent/UserAgentDB.php');
+
 
 /**
  * Gather and report test results per engine, computing CR Exit Criteria
  *
  */
-class Results extends DBConnection
+class Results extends HarnessDBConnection
 {
-  protected $mEngineNames;
+  protected $mEngines;
   protected $mTestCases;
   protected $mComponentTestIds;
   protected $mResults;
   protected $mResultCount;
 
 
-  function __construct(TestSuite $testSuite, $testCaseName = null, $sectionId = null,
+  function __construct(TestSuite $testSuite, TestCase $testCase = null,
+                       Specification $spec = null, SpecificationAnchor $anchor = null,
                        DateTime $modified = null,
                        $engineName = null, $engineVersion = null, 
                        $browserName = null, $browserVersion = null, 
@@ -40,34 +49,22 @@ class Results extends DBConnection
   {
     parent::__construct();
     
-    if ((! $modified) && $testSuite->isLocked()) {
+    if ((! $modified) && $testSuite->getLockDateTime()) {
       $modified = $testSuite->getLockDateTime();
     }
     
-    $this->mEngineNames = array();
+    $this->mEngines = array();
     $this->mTestCases = array();
-    $this->mComponentTestIds = array();
+    $this->mComponentTests = array();
     $this->mResults = array();
     $this->mResultCount = 0;
 
-    $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.testsuite');
-    $searchTestCaseId = TestCase::GetTestCaseIdFor($testCaseName);
-    if ((null !== $testCaseName) && (! $searchTestCaseId)) {
-      return;
-    }
+    $testSuiteName = $this->encode($testSuite->getName(), 'suite_tests.test_suite');
+    $searchTestCaseId = ($testCase ? $testCase->getId() : null);
+    
+    $userAgentDB = UserAgentDBConnection::GetDBName();
 
-    // load engine list
-    $sql  = "SELECT DISTINCT `engine` ";
-    $sql .= "FROM `useragents` ";
-    $sql .= "WHERE `engine` != '' ";
-    $sql .= "ORDER BY `engine`";
-    
-    $r = $this->query($sql);
-    
-    $engineNames = array();
-    while ($dbEngine = $r->fetchRow()) {
-      $engineNames[] = strtolower($dbEngine['engine']);
-    }
+    $engines = Engine::GetAllEngines();
 
     // load revision equivalencies
     $sql  = "SELECT `testcase_id`, `revision`, `equal_revision` ";
@@ -84,30 +81,19 @@ class Results extends DBConnection
       
       $testCaseEqualRevisions[$testCaseId][$revision] = $equalRevision;
     }
-
-    // load testcases
-    $sql  = "SELECT DISTINCT `testcases`.`id`, `testcases`.`testcase`, ";
-    $sql .= "`testcases`.`flags`, `suitetests`.`revision` ";
-    $sql .= "FROM `testcases` ";
-    $sql .= "LEFT JOIN (`suitetests`, `speclinks`) ";
-    $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
-    $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    if ($searchTestCaseId) {
-      $sql .= "AND `testcases`.`id` = '{$searchTestCaseId}' ";
+    
+    if ($testCase) {
+      $this->mTestCases[$testCase->getId()] = $testCase;
     }
-    elseif ($sectionId) {
-      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
+    else {
+      $testCases = new TestCases($testSuite, $spec, $anchor);
+      $this->mTestCases = $testCases->getTestCases();
     }
-    $sql .= "ORDER BY `testcases`.`testcase` ";
-
-    $r = $this->query($sql);
+    
     
     $currentComboId = 0;
-    while ($testCaseData = $r->fetchRow()) {
-      $testCaseId = intval($testCaseData['id']);
-      $revision   = $testCaseData['revision'];
-      
+    foreach ($this->mTestCases as $testCaseId => $testCase) {
+      $revision = $testCase->getRevision();
       $testCaseRevisions[$testCaseId][$revision] = TRUE;
 
       // find equal revisions 
@@ -121,16 +107,16 @@ class Results extends DBConnection
       }
       
       // look for combo/component relationship
-      $flags = new Flags($testCaseData['flags']);
+      $flags = $testCase->getFlags();
       if ($flags->hasFlag('combo')) {
         $currentComboId = $testCaseId;
-        $currentComboName = $testCaseData['testcase'];
+        $currentComboName = $testCase->getName();
       }
       else {
         if ($currentComboId) {
-          $testCaseName = $testCaseData['testcase'];
+          $testCaseName = $testCase->getName();
           if (substr($testCaseName, 0, strlen($currentComboName)) == $currentComboName) {
-            $this->mComponentTestIds[$currentComboId][] = $testCaseId;
+            $this->mComponentTests[$currentComboId][] = $testCase;
           }
           else {
             $currentComboId = 0;
@@ -138,58 +124,62 @@ class Results extends DBConnection
           }
         }
       }
-    
-      $this->mTestCases[$testCaseId] = $testCaseData;
     }
     
     // load results
     $sql  = "SELECT DISTINCT `results`.`id`, `results`.`testcase_id`, ";
-    $sql .= "`results`.`revision`, `results`.`result`,  ";
-    $sql .= "`useragents`.`engine` ";
-    $sql .= "FROM `results` INNER JOIN (`useragents`, `suitetests`, `speclinks`) ";
-    $sql .= "ON `results`.`useragent_id` = `useragents`.`id` ";
-    $sql .= "AND `results`.`testcase_id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `results`.`testcase_id` = `speclinks`.`testcase_id` ";
-    $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `results`.`ignore` = '0' ";
-    $sql .= "AND `results`.`result` != 'na' ";
+    $sql .= "  `results`.`revision`, `results`.`result`,  ";
+    $sql .= "  `{$userAgentDB}`.`user_agents`.`engine` ";
+    $sql .= "FROM `results` ";
+    $sql .= "INNER JOIN (`{$userAgentDB}`.`user_agents`, `suite_tests`, `test_spec_links`) ";
+    $sql .= "  ON `results`.`user_agent_id` = `{$userAgentDB}`.`user_agents`.`id` ";
+    $sql .= "  AND `results`.`testcase_id` = `suite_tests`.`testcase_id` ";
+    $sql .= "  AND `results`.`testcase_id` = `test_spec_links`.`testcase_id` ";
+    $sql .= "WHERE `suite_tests`.`test_suite` = '{$testSuiteName}' ";
+    $sql .= "  AND `results`.`ignore` = '0' ";
+    $sql .= "  AND `results`.`result` != 'na' ";
     if ($searchTestCaseId) {
-      $sql .= "AND `results`.`testcase_id` = '{$searchTestCaseId}' ";
+      $sql .= "  AND `results`.`testcase_id` = '{$searchTestCaseId}' ";
     }
-    elseif ($sectionId) {
-      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
+    elseif ($spec) {
+      $specName = $this->encode($spec->getName(), 'test_spec_links.spec');
+      $sql .= "  AND `test_spec_links`.`spec` = '{$specName}' ";
+      if ($anchor) {
+        $parentName = $this->encode($anchor->getParentName(), 'test_spec_links.parent_name');
+        $anchorName = $this->encode($anchor->getName(), 'test_spec_links.anchor_name');
+        $sql .= "  AND `test_spec_links`.`parent_name` = '{$parentName}' ";
+        $sql .= "  AND `test_spec_links`.`anchor_name` = '{$anchorName}' ";
+      }
     }
     if ($modified) {
-      $modified->setTimeZone(new DateTimeZone(Config::Get('server', 'time_zone')));
-      $modified = $this->encode($modified->format('Y-m-d H:i:s'));
-      $sql .= "AND `results`.`modified` <= '{$modified}' ";
+      $modified = $this->encodeDateTime($modified);
+      $sql .= "  AND `results`.`modified` <= '{$modified}' ";
     }  
     if ($engineName) {
-      $engineName = $this->encode($engineName, 'useragents.engine');
-      $sql .= "AND `useragents`.`engine` = '{$engineName}' ";
+      $engineName = $this->encode($engineName, 'user_agents.engine');
+      $sql .= "  AND `{$userAgentDB}`.`user_agents`.`engine` = '{$engineName}' ";
       if ($engineVersion) {
-        $engineVersion = $this->encode($engineVersion, 'useragents.engine_version');
-        $sql .= "AND `useragents`.`engine_version` = '{$engineVersion}' ";
+        $engineVersion = $this->encode($engineVersion, 'user_agents.engine_version');
+        $sql .= "  AND `{$userAgentDB}`.`user_agents`.`engine_version` = '{$engineVersion}' ";
       }
     }
     if ($browserName) {
-      $browserName = $this->encode($browserName, 'useragents.browser');
-      $sql .= "AND `useragents`.`browser` = '{$browserName}' ";
+      $browserName = $this->encode($browserName, 'user_agents.browser');
+      $sql .= "  AND `{$userAgentDB}`.`user_agents`.`browser` = '{$browserName}' ";
       if ($browserVersion) {
-        $browserVersion = $this->encode($browserVersion, 'useragents.browser_version');
-        $sql .= "AND `useragents`.`browser_version` = '{$browserVersion}' ";
+        $browserVersion = $this->encode($browserVersion, 'user_agents.browser_version');
+        $sql .= "  AND `{$userAgentDB}`.`user_agents`.`browser_version` = '{$browserVersion}' ";
       }
     }
     if ($platformName) {
-      $platformName = $this->encode($platformName, 'useragents.platform');
-      $sql .= "AND `useragents`.`platform` = '{$platformName}' ";
+      $platformName = $this->encode($platformName, 'user_agents.platform');
+      $sql .= "  AND `{$userAgentDB}`.`user_agents`.`platform` = '{$platformName}' ";
       if ($platformVersion) {
-        $platformVersion = $this->encode($platformVersion, 'useragents.platform_version');
-        $sql .= "AND `useragents`.`platform_version` = '{$platformVersion}' ";
+        $platformVersion = $this->encode($platformVersion, 'user_agents.platform_version');
+        $sql .= "  AND `{$userAgentDB}`.`user_agents`.`platform_version` = '{$platformVersion}' ";
       }
     }
     $sql .= "ORDER BY `results`.`testcase_id` ";
-
     $r = $this->query($sql);
 
     $engineResults = array();
@@ -209,9 +199,9 @@ class Results extends DBConnection
       }
     }
     
-    foreach ($engineNames as $engineName) {
+    foreach ($engines as $engineName => $engine) {
       if (array_key_exists($engineName, $engineResults)) {
-        $this->mEngineNames[] = $engineName;
+        $this->mEngines[$engineName] = $engine;
       }
     }
   }
@@ -219,15 +209,12 @@ class Results extends DBConnection
   
   function getEngineCount()
   {
-    if ($this->mEngineNames) {
-      return count($this->mEngineNames);
-    }
-    return 0;
+    return count($this->mEngines);
   }
   
-  function getEngineNames()
+  function getEngines()
   {
-    return $this->mEngineNames;
+    return $this->mEngines;
   }
 
 
@@ -242,12 +229,6 @@ class Results extends DBConnection
   function getTestCases()
   {
     return $this->mTestCases;
-  }
-  
-  
-  function getTestCaseData($testCaseId)
-  {
-    return $this->mTestCases[$testCaseId];
   }
   
   function getTestCaseCount()
@@ -273,8 +254,9 @@ class Results extends DBConnection
    * @param int $testCaseId
    * @return array of result keyed by engine,resultId
    */
-  function getResultsFor($testCaseId)
+  function getResultsFor(TestCase $testCase)
   {
+    $testCaseId = $testCase->getId();
     if (array_key_exists($testCaseId, $this->mResults)) {
       return $this->mResults[$testCaseId];
     }
@@ -290,11 +272,12 @@ class Results extends DBConnection
    * @param int $testCaseId
    * @return array of result counts keyed by engine,result
    */
-  function getResultCountsFor($testCaseId)
+  function getResultCountsFor(TestCase $testCase)
   {
+    $testCaseId = $testCase->getId();
     if (array_key_exists($testCaseId, $this->mResults)) {
       $engineResults = array();
-      foreach ($this->mEngineNames as $engineName) {
+      foreach ($this->mEngines as $engineName => $engine) {
         $engineResults[$engineName]['count'] = 0;
         $engineResults[$engineName]['pass'] = 0;
         $engineResults[$engineName]['fail'] = 0;
@@ -322,10 +305,11 @@ class Results extends DBConnection
    * @param int test case id
    * @return array|FALSE array of component test ids
    */
-  function getComponentTestsFor($testCaseId)
+  function getComponentTestsFor(TestCase $testCase)
   {
-    if (array_key_exists($testCaseId, $this->mComponentTestIds)) {
-      return $this->mComponentTestIds[$testCaseId];
+    $testCaseId = $testCase->getId();
+    if (array_key_exists($testCaseId, $this->mComponentTests)) {
+      return $this->mComponentTests[$testCaseId];
     }
     return FALSE;
   }

@@ -17,13 +17,15 @@
  ******************************************************************************/
 
 require_once('lib/HarnessCmdLineWorker.php');
-require_once('lib/TestSuite.php');
-require_once('lib/Specification.php');
 require_once('lib/Results.php');
-require_once('lib/Engine.php');
 require_once('pages/ResultsPage.php');
 require_once('pages/DetailsPage.php');
 
+
+require_once('modules/testsuite/TestSuite.php');
+require_once('modules/testsuite/TestFormat.php');
+require_once('modules/specification/Specification.php');
+require_once('modules/useragent/Engine.php');
 
 define('UA_THRESHOLD', 10);
 define('INCLUDE_ID', FALSE);
@@ -34,15 +36,25 @@ define('INCLUDE_ID', FALSE);
 class IR_ResultsPage extends ResultsPage
 {
   
-  function __construct(Array $args = null, Array $pathComponents = null)
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
     
     $this->mDisplayLinks = FALSE;
     $this->mSpiderTrap = null;
   }
   
   
+  function writeHeadStyle()
+  {
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.base'));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
+    
+//    $this->addStyleSheetLink('http://www.w3.org/StyleSheets/activity.css');
+    $this->addStyleElement('li:hover { background: #FFC; }');
+  }
+
+
   function getStats()
   {
     return array('testCount' => $this->mTestCaseRequiredCount, 
@@ -65,9 +77,9 @@ class IR_ResultsPage extends ResultsPage
   }
   
   
-  function _generateResultCell($testCaseName, $engineName, $class, $section, $content)
+  function _generateResultCell(TestCase $testCase, $engineName, $class, $section, $content)
   {
-    $uri = "details_{$engineName}.html#" . (($section) ? "s{$section}_{$testCaseName}" : $testCaseName);
+    $uri = "details_{$engineName}.html#" . (($section) ? "s{$section->getName()}_{$testCase->getName()}" : $testCase->getName());
     
     $this->openElement('td', array('class' => $class), FALSE);
     $this->addHyperLink($uri, null, $content, FALSE);
@@ -75,15 +87,6 @@ class IR_ResultsPage extends ResultsPage
   }
   
   
-  function writeBodyFooter()
-  {
-    $this->writeLedgend();
-
-    if (INCLUDE_ID) {
-      $this->addElement('hr');
-      $this->addElement('address', null, '$Id$');
-    }
-  }
 }
   
 
@@ -93,18 +96,28 @@ class IR_ResultsPage extends ResultsPage
 class IR_DetailsPage extends DetailsPage
 {
   
-  function __construct(Array $args = null, Array $pathComponents = null)
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
     
     $this->mDisplayLinks = FALSE;
     $this->mSpiderTrap = null;
   }
   
   
+  function writeHeadStyle()
+  {
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.base'));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
+    
+//    $this->addStyleSheetLink('http://www.w3.org/StyleSheets/activity.css');
+    $this->addStyleElement('li:hover { background: #FFC; }');
+  }
+
+
   function getPageTitle()
   {
-    $engineName = $this->_getData('e');
+    $engineName = $this->_getData('engine');
     
     $title = parent::getPageTitle();
     if ($engineName) {
@@ -129,15 +142,6 @@ class IR_DetailsPage extends DetailsPage
   }
   
   
-  function writeBodyFooter()
-  {
-    $this->writeLedgend();
-
-    if (INCLUDE_ID) {
-      $this->addElement('hr');
-      $this->addElement('address', null, '$Id$');
-    }
-  }
 }
 
   
@@ -146,14 +150,24 @@ class IR_UserAgentPage extends ResultsBasedPage
   protected $mUserAgents;
   protected $mUserAgentResultCounts;
   
-  function __construct(Array $args = null, Array $pathComponents = null)
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
 
     $this->mSpiderTrap = null;
   }
   
   
+  function writeHeadStyle()
+  {
+//    $this->addStyleSheetLink('http://www.w3.org/StyleSheets/activity.css');
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.base'));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
+    
+    $this->addStyleElement('li:hover { background: #FFC; }');
+  }
+
+
   function setUserAgents($userAgents, $userAgentResultCounts)
   {
     $this->mUserAgents = $userAgents;
@@ -229,14 +243,13 @@ class IR_IndexPage extends HarnessPage
   protected $mSpecStatus;
   protected $mUserAgents;
   protected $mStats;
-  protected $mEngineNames;
+  protected $mEngines;
   
-  function __construct(Array $args = null, Array $pathComponents = null)
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
     
     $this->mSpiderTrap = null;
-    $this->mSpec = new Specification($this->mTestSuite);
     $this->mSpecStatus = 'DEV';
   }
   
@@ -254,14 +267,19 @@ class IR_IndexPage extends HarnessPage
     }
   }
   
+  function setSpec(Specification $spec)
+  {
+    $this->mSpec = $spec;
+  }
+  
   function setStats(Array $stats)
   {
     $this->mStats = $stats;
   }
   
-  function setEngineNames(Array $engineNames)
+  function setEngines(Array $engines)
   {
-    $this->mEngineNames = $engineNames;
+    $this->mEngines = $engines;
   }
   
   function getPageTitle()
@@ -274,9 +292,10 @@ class IR_IndexPage extends HarnessPage
   
   function writeHeadStyle()
   {
-    parent::writeHeadStyle();
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.base'));
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
     
-    $this->addStyleSheetLink('http://www.w3.org/StyleSheets/activity.css');
+//    $this->addStyleSheetLink('http://www.w3.org/StyleSheets/activity.css');
     $this->addStyleElement('li:hover { background: #FFC; }');
   }
 
@@ -343,21 +362,21 @@ class IR_IndexPage extends HarnessPage
     $now = new DateTime('now', new DateTimeZone(Config::Get('server', 'time_zone')));
     
     $totalCount = $testCount + $optionalCount + $invalidCount;
-    $formats = Format::GetFormatsFor($this->mTestSuite);
+    $formats = $this->mTestSuite->getFormats(); 
 
     $this->addElement('h2', array('id' => 'intro'), 'Introduction');
     
     if ('CR' == $this->mSpecStatus) {
       $this->openElement('p');
       $this->addTextContent('This report was prepared to document the passing of the Candidate Recommendation exit criteria for the ');
-      $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
+      $this->addHyperlink($this->mSpec->getFullHomeURI(), null, $this->mSpec->getDescription());
       $this->addTextContent(" ({$this->mSpec->getTitle()}) specification.");
       $this->closeElement('p');
     }
     else {
       $this->openElement('p', null, FALSE);
       $this->addTextContent('This report was prepared to document the current implementation status of the ');
-      $this->addHyperlink($this->mSpec->getHomeURI(), null, $this->mSpec->getDescription());
+      $this->addHyperlink($this->mSpec->getFullHomeURI(), null, $this->mSpec->getDescription());
       $this->addTextContent(" ({$this->mSpec->getTitle()}) specification as of {$now->format('j F Y')}");
       $this->addTextContent(' and is based on current test results available in the ');
       $this->addHyperlink($this->buildPageURI('home', null, null, TRUE), null, 'W3C Conformance Test Harness');
@@ -371,8 +390,8 @@ class IR_IndexPage extends HarnessPage
     
     $this->openElement('p');
     $osText = ((1 < $osCount) ? " across " . $this->_NumberToText($osCount) . " operating systems" : '');
-    if (1 < count($this->mEngineNames)) {
-      $engineCountText = $this->_NumberToText(count($this->mEngineNames));
+    if (1 < count($this->mEngines)) {
+      $engineCountText = $this->_NumberToText(count($this->mEngines));
       $engineText = ", built from {$engineCountText} rendering implementations,";
     }
     else {
@@ -420,7 +439,7 @@ class IR_IndexPage extends HarnessPage
     
     $this->openElement('p', null, FALSE);
     $this->addTextContent('The ');
-    $this->addHyperlink($this->mTestSuite->getHomeURI(), null, $this->mTestSuite->getDateTime()->format('j F Y'));
+    $this->addHyperlink($this->mTestSuite->getURI(), null, $this->mTestSuite->getBuildDateTime()->format('j F Y'));
     $this->addTextContent(" revision of the {$this->mSpec->getTitle()} test suite was used.");
     if (1 == $totalCount) {
       if (0 == $invalidCount) {
@@ -473,7 +492,7 @@ class IR_IndexPage extends HarnessPage
       $this->openElement('ul');
       foreach ($formats as $format) {
         $this->openElement('li');
-        $this->addHyperlink($this->mTestSuite->getBaseURI() . $format->getHomeURI(), null, $format->getDescription());
+        $this->addHyperlink($this->mTestSuite->getURI() . $format->getHomeURI(), null, $format->getDescription());
         $this->closeElement('li');
       }
       $this->closeElement('ul');
@@ -542,8 +561,7 @@ class IR_IndexPage extends HarnessPage
     $this->closeElement('li');
     $this->addElement('li', null, 'Detailed results for each rendering implementation');
     $this->openElement('ul');
-    foreach ($this->mEngineNames as $engineName) {
-      $engine = new Engine($engineName);
+    foreach ($this->mEngines as $engineName => $engine) {
       $this->openElement('li');
       $this->addHyperlink(strtolower("details_{$engineName}.html"), null, $engine->getTitle());
       $this->closeElement('li');
@@ -581,7 +599,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
   
   function usage()
   {
-    echo "USAGE: php GenerateImplementationReport.php testsuite [output path] [CR|DEV]\n";
+    echo "USAGE: php GenerateImplementationReport.php testsuite [output path] [CR|DEV] [spec name]\n";
   }
   
   
@@ -593,8 +611,8 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
     $userAgentIds = array();
     
     $testCases = $this->mResults->getTestCases();
-    foreach ($testCases as $testCaseId => $testCaseData) {
-      $engineResults = $this->mResults->getResultsFor($testCaseId);
+    foreach ($testCases as $testCaseId => $testCase) {
+      $engineResults = $this->mResults->getResultsFor($testCase);
       
       if ($engineResults) {
         foreach ($engineResults as $engineName => $engineResultData) {
@@ -615,7 +633,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
     
     $allUserAgents = UserAgent::GetAllUserAgents();
     
-    foreach ($this->mResults->getEngineNames() as $engineName) {
+    foreach ($this->mResults->getEngines() as $engineName => $engine) {
       if (array_key_exists($engineName, $userAgentIds)) {
         $engineUserAgentIds = $userAgentIds[$engineName];
         foreach ($engineUserAgentIds as $userAgentId => $bool) {
@@ -631,7 +649,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
    * Generate implementation report pages
    *
    */
-  function generate($testSuiteName, $outputPath, $specStatus)
+  function generate($testSuiteName, $outputPath, $specStatus, $specName)
   {
     $testSuite = @new TestSuite($testSuiteName);
     
@@ -648,10 +666,19 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
 
       echo "Loading results for {$testSuiteName}\n";
       
-      $this->mResults = new Results($testSuite);
+      $spec = null;
+      if ($specName) {
+        $spec = Specification::GetSpecificationByName($specName);
+      }
+      if (! $spec) {
+        $spec = reset($testSuite->getSpecifications());
+      }
       
-      $args['s'] = $testSuiteName;
-      $args['o'] = 1; // section ordering
+      $this->mResults = new Results($testSuite, null, $spec);
+      
+      $args['suite'] = $testSuiteName;
+      $args['order'] = 1; // section ordering
+      $args['spec'] = $spec->getName();
       
       echo "Generating results page\n";
       
@@ -667,8 +694,9 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
       
       $indexPage = new IR_IndexPage($args);
       $indexPage->setSpecStatus($specStatus);
+      $indexPage->setSpec($spec);
       $indexPage->setStats($resultsPage->getStats());
-      $indexPage->setEngineNames($this->mResults->getEngineNames());
+      $indexPage->setEngines($this->mResults->getEngines());
       $indexPage->setUserAgents($this->mUserAgents, $this->mUserAgentResultCounts);
       $indexPage->write($this->_CombinePath($outputPath, 'index.html'));
 
@@ -681,11 +709,11 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
         $uaPage->write($this->_CombinePath($outputPath, 'useragents.html'));
       }
 
-      $engineNames = $this->mResults->getEngineNames();
-      foreach ($engineNames as $engineName) {
+      $engines = $this->mResults->getEngines();
+      foreach ($engines as $engineName => $engine) {
         echo "Generating details page for {$engineName}\n";
         
-        $args['e'] = $engineName;
+        $args['engine'] = $engineName;
         $detailsPage = new IR_DetailsPage($args);
         $detailsPage->setResults($this->mResults);
         $detailsPage->write($this->_CombinePath($outputPath, strtolower("details_{$engineName}.html")));
@@ -708,9 +736,10 @@ $worker = new GenerateImplementationReport();
 $testSuiteName  = $worker->_getArg(1);
 $outputPath     = $worker->_getArg(2);
 $specStatus     = $worker->_getArg(3);
+$specName       = $worker->_getArg(4);
 
 if ($testSuiteName) {
-  $worker->generate($testSuiteName, $outputPath, $specStatus);
+  $worker->generate($testSuiteName, $outputPath, $specStatus, $specName);
 }
 else {
   $worker->usage();

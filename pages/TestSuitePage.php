@@ -18,11 +18,12 @@
 
 
 require_once("lib/HarnessPage.php");
-require_once("lib/TestSuite.php");
-require_once("lib/UserAgent.php");
 require_once("lib/Sections.php");
 require_once("lib/TestCases.php");
 require_once("lib/TestCase.php");
+
+require_once("modules/testsuite/TestSuite.php");
+require_once("modules/useragent/UserAgent.php");
 
 
 /**
@@ -33,65 +34,63 @@ class TestSuitePage extends HarnessPage
   protected $mSections;
   protected $mTestCases;
   
-  protected $mRedirectURI;
-
   static function GetPageKey()
   {
     return 'testsuite';
   }
 
 
-  function __construct(Array $args = null, Array $pathComponents = null) 
+  protected function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
 
-    if (! $this->mTestSuite) {
-      $msg = 'No test suite identified.';
-      trigger_error($msg, E_USER_WARNING);
-    }
+    if ($this->mTestSuite) {
+      $this->mSections = new Sections($this->mTestSuite);
 
-    $this->mSections = new Sections($this->mTestSuite);
+      $spec = null;
+      $section = null;
+      if ($this->_postData('spec')) {
+        $spec = Specification::GetSpecificationByName($this->_postData('spec'));
+      }
+      if ($this->_postData('section')) {
+        if (! $spec) {
+          $spec = reset($this->mTestSuite->getSpecifications());
+        }
+        $section = SpecificationAnchor::GetSectionFor($spec, $this->_postData('section'));
+      }
+      $flag = $this->_postData('flag');
+      $orderAgent = ($this->_postData('order') ? $this->mUserAgent : null);
+      $this->mTestCases = new TestCases($this->mTestSuite, $spec, $section, TRUE, $flag, $orderAgent);
 
-    $this->mTestCases = new TestCases($this->mTestSuite);
-
-    $this->mSubmitData['s'] = $this->mTestSuite->getName();
-    if (! $this->mUserAgent->isActualUA()) {
-      $this->mSubmitData['u'] = $this->mUserAgent->getId();
+      $this->mSubmitData['suite'] = $this->mTestSuite->getName();
     }
     
-    $this->mRedirectURI = null;
-    if ('Start' == $this->_postData('action')) {
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
-      $args['fl'] = $this->_requestData('fl');
-
-      if ($this->_postData('c')) {
-        $args['c'] = $this->_postData('c');
-      }
-      else { // find first test in suite or section
-        $order = $this->_postData('o');
-        $sectionName = $this->_postData('sec');
-        $sectionId = 0;
-        if ($sectionName) {
-          $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
-        }
-        $flag = $this->_postData('fl');
-        
-        $testCase = new TestCase();
-        $testCase->load($this->mTestSuite, null, $sectionId, $this->mUserAgent, $order, 0, $flag);
-                               
-        $args['i'] = $testCase->getTestCaseName();
-        $args['sec'] = $this->_postData('sec');
-        $args['o'] = $this->_postData('o');
-      }
-      
-      $this->mRedirectURI = $this->buildPageURI('testcase', $args);
+    if (! $this->mUserAgent->isActualUA()) {
+      $this->mSubmitData['ua'] = $this->mUserAgent->getId();
     }
-  }  
+    
+  }
   
   function getRedirectURI()
   {
-    return $this->mRedirectURI;
+    if ('Start' == $this->_postData('action')) {
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
+      $args['flag'] = $this->_requestData('flag');
+
+      if ($this->_postData('testcase')) {
+        $args['testcase'] = $this->_postData('testcase');
+      }
+      else {
+        $args['spec'] = $this->_postData('spec');
+        $args['section'] = $this->_postData('section');
+        $args['order'] = $this->_postData('order');
+        $args['index'] = $this->mTestCases->getFirstTestCase()->getName();
+      }
+      
+      return $this->buildPageURI('testcase', $args);
+    }
+    return null;
   }
   
   
@@ -100,7 +99,7 @@ class TestSuitePage extends HarnessPage
     $uris = parent::getNavURIs();
     
     if ($this->mTestSuite) {
-      $title = "Enter Data";
+      $title = "Run Tests";
       $uri = '';
       $uris[] = compact('title', 'uri');
     }
@@ -119,9 +118,16 @@ class TestSuitePage extends HarnessPage
   }
 
 
+  function writeHeadScript()
+  {
+    parent::writeHeadScript();
+    
+    $this->addScriptElementInline(Config::Get('uri.script', 'testsuite'), 'text/javascript', null, null);
+  }
+
   function writeTestSuiteForm()
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post');
+    $this->openFormElement('', 'post');
     $this->writeHiddenFormControls();
     $this->addElement('strong', null, "The full test suite: ");
     $this->writeOrderSelect();
@@ -131,66 +137,82 @@ class TestSuitePage extends HarnessPage
   }
   
   
-  function writeSectionOptions($parentId = 0)
+  function writeSectionOptions(Specification $spec, SpecificationAnchor $parent = null)
   {
-    $data = $this->mSections->getSubSectionData($parentId);
-    foreach ($data as $sectionData) {
-      $id = $sectionData['id'];
-      $sectionName = $sectionData['section'];
-      $testCount = $sectionData['test_count'];
-      $subSectionCount = $this->mSections->getSubSectionCount($id);
+    $sections = $this->mSections->getSubSections($spec, $parent);
+    foreach ($sections as $section) {
+      $sectionName = $section->getName();
+      $testCount = $section->getLinkCount();
+      $subSectionCount = $this->mSections->getSubSectionCount($spec, $section);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
-        $this->addOptionElement($sectionName, null, "{$sectionName}: {$sectionData['title']}");
+        $this->addOptionElement($sectionName, null, "{$sectionName}: {$section->getTitle()}");
       }
       if (0 < $subSectionCount) {
-        $this->writeSectionOptions($id);
+        $this->writeSectionOptions($spec, $section);
       }
     }
   }
 
 
-  function writeSectionSelect()
+  function writeSectionSelect(Specification $spec)
   {
-    $this->openSelectElement('sec', array('style' => 'width: 25em'));
-    $this->writeSectionOptions();
+    $this->openSelectElement('section', array('style' => 'width: 25em'));
+    $this->writeSectionOptions($spec);
     $this->closeElement('select');
   }
   
   
   function writeSectionForm($title)
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post');
-    $this->writeHiddenFormControls();
     $this->addTextContent($title);
-    $this->writeSectionSelect();
-    $this->addTextContent(' ');
-    $this->writeOrderSelect();
-    $this->addTextContent(' ');
-    $this->addInputElement('submit', 'action', 'Start');
-    $this->closeElement('form');
+    $specs = $this->mSections->getSpecifications();
+    foreach ($specs as $specName => $spec) {
+      if (1 < count($specs)) {
+        $this->openElement('p');
+        $this->addTextContent($spec->getTitle());
+        $this->mSubmitData['spec'] = $specName;
+      }
+      $this->openFormElement('', 'post');
+      $this->writeHiddenFormControls();
+      $this->writeSectionSelect($spec);
+      $this->addTextContent(' ');
+      $this->writeOrderSelect();
+      $this->addTextContent(' ');
+      $this->addInputElement('submit', 'action', 'Start');
+      $this->closeElement('form');
+      if (1 < count($specs)) {
+        $this->closeElement('p');
+      }
+    }
   }
   
 
   function writeTestCaseSelect()
   {
-    $testCases = $this->mTestCases->getTestCaseData();
+    $testCases = $this->mTestCases->getTestCases();
     
-    $this->openSelectElement('c', array('style' => 'width: 25em'));
+    if (1 < count($testCases)) {
+      $this->openSelectElement('testcase', array('style' => 'width: 25em'));
 
-    foreach ($testCases as $testCaseData) {
-      $testCaseName = $testCaseData['testcase'];
-      
-      $this->addOptionElement($testCaseName, null,
-                              "{$testCaseName}: {$testCaseData['title']}");
+      foreach ($testCases as $testCase) {
+        $testCaseName = $testCase->getName();
+        
+        $this->addOptionElement($testCaseName, null,
+                                "{$testCaseName}: {$testCase->getTitle()}");
+      }
+
+      $this->closeElement('select');
     }
-
-    $this->closeElement('select');
+    else {
+      $testCase = reset($testCases);
+      $this->addTextContent("{$testCase->getName()}: {$testCase->getTitle()}");
+    }
   }
   
   
   function writeTestCaseForm($title)
   {
-    $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post');
+    $this->openFormElement('', 'post');
     $this->writeHiddenFormControls();
     $this->addTextContent($title);
     $this->writeTestCaseSelect();
@@ -202,7 +224,7 @@ class TestSuitePage extends HarnessPage
 
   function writeOrderSelect()
   {
-    $this->openSelectElement('o');
+    $this->openSelectElement('order');
 
     $this->addOptionElement(1, array('selected' => TRUE), 'in most needed order');
     $this->addOptionElement(0, null, 'in alphabetical order');
@@ -210,9 +232,11 @@ class TestSuitePage extends HarnessPage
     $this->closeElement('select');
   }
 
-  function writeBodyContent() {
+
+  function writeUASelect()
+  {
     $this->openElement('p', array('class' => 'ua'));
-    $this->addTextContent("You are about the enter test result data for the following user agent: ");
+    $this->addTextContent("You are about run tests for the following user agent: ");
     
     if ($this->mUserAgent->isActualUA()) {
       $this->addAbbrElement($this->mUserAgent->getUAString(), null, $this->mUserAgent->getDescription());
@@ -222,7 +246,7 @@ class TestSuitePage extends HarnessPage
       
       $this->openElement('span', null, FALSE);
       $this->addTextContent(' (');
-      $this->addHyperLink($uri, null, 'Other');
+      $this->addHyperLink($uri, null, 'Change');
       $this->addTextContent(')');
       $this->closeElement('span');
     }
@@ -232,7 +256,7 @@ class TestSuitePage extends HarnessPage
                             $this->mUserAgent->getDescription());
 
       $args = $this->_uriData();
-      unset($args['u']);
+      unset($args['ua']);
       $uri = $this->buildPageURI('testsuite', $args);
       $this->openElement('span', null, FALSE);
       $this->addTextContent(' (');
@@ -241,30 +265,46 @@ class TestSuitePage extends HarnessPage
       $this->closeElement('span');
     }
     $this->closeElement('p');
+  }
+  
+  function writeTestControls()
+  {
+    if (1 < $this->mTestCases->getCount()) {
+      $this->addElement('p', null,
+                        "The {$this->mTestSuite->getTitle()} contains {$this->mTestCases->getCount()} test cases. " .
+                        "You can stop running tests at any time without causing trouble.");
 
-    $this->addElement('p', null, 
-                      "The {$this->mTestSuite->getTitle()} contains {$this->mTestCases->getCount()} test cases. " .
-                      "You can stop running tests at any time without causing trouble.");
-
-    $this->addElement('p', null, "You can test:");
-    $this->openElement('ul');
-    
-    $this->openElement('li');
-    $this->writeTestSuiteForm();
-    $this->closeElement('li');
-    
-    if (0 < $this->mSections->getSubSectionCount()) {
+      $this->addElement('p', null, "You can test:");
+      $this->openElement('ul');
+      
       $this->openElement('li');
-      $this->writeSectionForm("A section of the specification: ");
+      $this->writeTestSuiteForm();
       $this->closeElement('li');
+      
+      if (0 < count($this->mSections->getSpecifications())) {
+        $this->openElement('li');
+        $this->writeSectionForm("A section of the specification: ");
+        $this->closeElement('li');
+      }
+
+      $this->openElement('li');
+      $this->writeTestCaseForm("A single test case: ");
+      $this->closeElement('li');
+
+      $this->closeElement('ul');
+    }
+    else {
+      $this->addElement('p', null, "The {$this->mTestSuite->getTitle()} contains 1 test case.");
+
+      $this->writeTestCaseForm('');
     }
 
-    $this->openElement('li');
-    $this->writeTestCaseForm("A single test case: ");
-    $this->closeElement('li');
-
-    $this->closeElement('ul');
-    
+    $this->addElement('span', array('id' => 'extra_controls'), '');
+  }
+  
+  
+  function writeTestingNotes()
+  {
     $this->openElement('p');
     $this->addElement('strong', null, "Note: ");
     $this->addTextContent("The harness presents each test case embedded within a page " .
@@ -274,11 +314,46 @@ class TestSuitePage extends HarnessPage
                           "reference pages in a separate window if desired.");
     $this->closeElement('p');
 
-    $this->addElement('p', null,
-                      'If there is any doubt about the result of a test, please press the "Cannot Tell" button.');
+    if (Config::Get('system', 'shepherd')) {
+      $this->addElement('p', null,
+                        'If a the test does not appear to be functioning correctly, please press the "Report Issue" button.');
+    }
 
     $this->addElement('p', null,
+                      'If there is any doubt about the result of a test, please press the "Cannot Tell" button.');
+    $this->addElement('p', null,
                       'If listed requirements for a test cannot be met, please press the "Skip" button.');
+  }
+  
+  
+  function writeBodyContent()
+  {
+    $this->openElement('div', array('class' => 'body'));
+
+    if ((! $this->mTestSuite) || (! $this->mTestSuite->isValid())) {
+      $this->addElement('p', null, 'Unknown test suite.');
+    }
+    elseif (! $this->mTestCases->getCount()) {
+      $this->addElement('p', null, "The {$this->mTestSuite->getTitle()} does not contain any test cases. ");
+    }
+    else {
+      $this->writeUASelect();
+      
+      $this->writeTestControls();
+    
+      $this->writeTestingNotes();
+    }
+    
+    if (Config::IsDebugMode()) {
+      if ($this->mSections) {
+        $this->addElement('span', null, 'Sections: ' . $this->mSections->getQueryTime());
+      }
+      if ($this->mTestCases) {
+        $this->addElement('span', null, 'Testcases: ' . $this->mTestCases->getQueryTime());
+      }
+    }
+
+    $this->closeElement('div');
   }
 }
 

@@ -16,8 +16,8 @@
  * 
  ******************************************************************************/
 
-require_once('lib/HarnessPage.php');
+require_once('core/System.php');
 
-HarnessPage::RunPage();
+System::Run();
 
 ?>

@@ -19,9 +19,11 @@
 
 require_once("lib/ResultsBasedPage.php");
 require_once("lib/Result.php");
-require_once("lib/Format.php");
-require_once("lib/Specification.php");
 require_once("lib/Sections.php");
+
+require_once("modules/testsuite/TestFormat.php");
+require_once("modules/specification/Specification.php");
+require_once("modules/specification/SpecificationAnchor.php");
 
 
 /**
@@ -31,14 +33,10 @@ require_once("lib/Sections.php");
 class DetailsPage extends ResultsBasedPage
 {  
   protected $mDisplayLinks;
-  protected $mEngine;
   protected $mUserAgents;
   protected $mFormats;
   protected $mUsers;
-  protected $mSpecification;
   protected $mSections;
-  
-  protected $mSectionId;
   protected $mOrdering;
 
 
@@ -48,41 +46,17 @@ class DetailsPage extends ResultsBasedPage
   }
 
   /**
-   * Expected URL paramaters:
-   * 's' Test Suite Name
-   *
-   * Optional URL paramaters:
-   * 'c' Test Case Name
-   * 'g' Spec Section Id
-   * 'sec' Spec Section name 
-   * 't' Report type (override 'c' & 'g', 0 = entire suite, 1 = group, 2 = one test)
-   * 'o' Display order (currently unused)
-   * 'm' Modified date (only results before date)
-   * 'e' Engine (filter results for this engine)
-   * 'v' Engine Version
-   * 'p' Platform
+   * Additional URL paramaters:
    * 'o' Ordering (optional)
    */
-  function __construct(Array $args = null, Array $pathComponents = null) 
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
 
-    if (! $this->mTestSuite) {
-      $msg = 'No test suite identified.';
-      trigger_error($msg, E_USER_WARNING);
-    }
-    
     $this->mDisplayLinks = TRUE;
 
-    $this->mEngine = $this->_getData('e');
-    
-    $this->mSectionId = intval($this->_getData('g'));
-    $sectionName = $this->_getData('sec');
-    if ((0 == $this->mSectionId) && $sectionName) {
-      $this->mSectionId = Sections::GetSectionIdFor($this->mTestSuite, $sectionName);
-    }
-    $this->mOrdering = intval($this->_getData('o'));
-    if ($this->_getData('c')) {
+    $this->mOrdering = intval($this->_getData('order'));
+    if ($this->mTestCase) {
       $this->mOrdering = 0;
     }
   }
@@ -101,8 +75,8 @@ class DetailsPage extends ResultsBasedPage
     
     if ($this->mTestSuite) {
       $title = "Review Results";
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
 
       $uri = $this->buildPageURI('review', $args);
       $uris[] = compact('title', 'uri');
@@ -132,29 +106,29 @@ class DetailsPage extends ResultsBasedPage
     $userAgentA = $this->mUserAgents[$a->getUserAgentId()];
     $userAgentB = $this->mUserAgents[$b->getUserAgentId()];
     
-    return strnatcasecmp($resultOrder[$a->getResult()] . $userAgentA->getDescription() . $a->getDate(), 
-                         $resultOrder[$b->getResult()] . $userAgentB->getDescription() . $b->getDate());
+    return strnatcasecmp($resultOrder[$a->getResult()] . $userAgentA->getDescription() . $a->getDateTime()->format('c'), 
+                         $resultOrder[$b->getResult()] . $userAgentB->getDescription() . $b->getDateTime()->format('c'));
   }
   
   
-  function _writeResultsFor($testCaseId, $testCaseData, $section = null, $isPrimarySection = FALSE)
+  function _writeResultsFor(TestCase $testCase, SpecificationAnchor $section = null, $isPrimarySection = FALSE)
   {
     $haveResults = FALSE;
-    $engineResults = $this->mResults->getResultsFor($testCaseId);
+    $engineResults = $this->mResults->getResultsFor($testCase);
     
     if ($engineResults) {
       ksort($engineResults);
       
-      $testCaseName = $testCaseData['testcase'];
+      $testCaseName = $testCase->getName();
       if ($section) {
-        $anchor = array('name' => "s{$section}_{$testCaseName}");
+        $anchor = array('name' => "s{$section->getName()}_{$testCase->getName()}");
       }
       else {
         $anchor = array('name' => $testCaseName);
       }
       
-      foreach ($engineResults as $engine => $engineResultData) {
-        if ((! $this->mEngine) || (0 == strcasecmp($engine, $this->mEngine))) {
+      foreach ($engineResults as $engineName => $engineResultData) {
+        if ((! $this->mEngineName) || (0 == strcasecmp($engineName, $this->mEngineName))) {
           $results = array();
           foreach ($engineResultData as $resultId => $resultValue) {
             $results[] = new Result($resultId);
@@ -168,9 +142,9 @@ class DetailsPage extends ResultsBasedPage
             $this->openElement('tr', array('class' => $resultValue));
 
             $userAgent = $this->mUserAgents[$result->getUserAgentId()];
-            $sourceId = $result->getSourceId();
-            if ($sourceId) {
-              $user = $this->mUsers[$sourceId];
+            $userId = $result->getUserId();
+            if ($userId) {
+              $user = $this->mUsers[$userId];
               $source = $user->getFullName();
               if (! $source) {
                 $ipAddress = $user->getIPAddress();
@@ -193,10 +167,10 @@ class DetailsPage extends ResultsBasedPage
             if ($this->mDisplayLinks) {
               $this->addSpiderTrap();
             
-              $args['s'] = $this->mTestSuite->getName();
-              $args['c'] = $testCaseName;
-              $args['f'] = $result->getFormatName();
-              $args['u'] = $this->mUserAgent->getId();
+              $args['suite'] = $this->mTestSuite->getName();
+              $args['testcase'] = $testCaseName;
+              $args['format'] = $result->getFormatName();
+              $args['ua'] = $this->mUserAgent->getId();
               $uri = $this->buildPageURI('testcase', $args);
               
               $this->addHyperLink($uri, $anchor, $testCaseName);
@@ -212,11 +186,36 @@ class DetailsPage extends ResultsBasedPage
             $this->closeElement('td');
 
             $this->addElement('td', null, $this->mFormats[$result->getFormatName()]->getTitle());
-            $this->addElement('td', null, $resultValue);
+            if (0 < ($result->getPassCount() + $result->getFailCount())) {
+              $resultString = '';
+              if ((('pass' != $resultValue) && ('fail' != $resultValue)) || 
+                  (('pass' == $resultValue) && (0 < $result->getFailCount())) ||
+                  (('fail' == $resultValue) && (0 < $result->getPassCount()))) {
+                $resultString .= "{$resultValue} (";
+              }
+              if (0 < $result->getPassCount()) {
+                $resultString .= "{$result->getPassCount()} pass";
+                if (0 < $result->getFailCount()) {
+                  $resultString .= ", ";
+                }
+              }
+              if (0 < $result->getFailCount()) {
+                $resultString .= "{$result->getFailCount()} fail";
+              }
+              if ((('pass' != $resultValue) && ('fail' != $resultValue)) || 
+                  (('pass' == $resultValue) && (0 < $result->getFailCount())) ||
+                  (('fail' == $resultValue) && (0 < $result->getPassCount()))) {
+                $resultString .= ")";
+              }
+            }
+            else {
+              $resultString = $resultValue;
+            }
+            $this->addElement('td', null, $resultString);
             $this->openElement('td');
             $this->addAbbrElement($userAgent->getUAString(), null, $userAgent->getDescription());
             $this->closeElement('td');
-            $this->addElement('td', null, $result->getDate());
+            $this->addElement('td', null, $this->_getDateTimeString($result->getDateTime()));
             $this->addElement('td', null, $source);
 
             $this->closeElement('tr');
@@ -229,29 +228,29 @@ class DetailsPage extends ResultsBasedPage
   }
   
 
-  function writeSectionRows($sectionId)
+  function writeSectionRows(Specification $spec, SpecificationAnchor $section = null)
   {
-    if (0 < $sectionId) {
-      $sectionData = $this->mSections->getSectionData($sectionId);
-      $testCount = intval($sectionData['test_count']);
+    if ($section) {
+      $testCaseIds = $this->mSections->getTestCaseIdsFor($spec, $section);
 
-      if (0 < $testCount) {
+      if (0 < count($testCaseIds)) {
         $this->_beginBuffering();
         $hadOutput = FALSE;
         
-        $this->openElement('tbody', array('id' => "s{$sectionData['section']}"));
+        $this->openElement('tbody', array('id' => "s{$section->getName()}"));
         $this->openElement('tr');
         $this->openElement('th', array('colspan' => 6, 'scope' => 'rowgroup'));
-        $specURI = $this->mSpecification->getBaseURI() . $sectionData['uri'];
-        $this->addHyperLink($specURI, null, "{$sectionData['section']}: {$sectionData['title']}");
+        $specURI = $section->getURI($spec);
+        $this->addHyperLink($specURI, null, "{$section->getName()}: {$section->getTitle()}");
         $this->closeElement('th');
         $this->closeElement('tr');
 
-        $testCasesIds = $this->mSections->getTestCaseIdsFor($sectionId);
+        $testCases = $this->mResults->getTestCases();
         
-        foreach ($testCasesIds as $testCaseId) {
-          $isPrimarySection = ($this->mSections->getPrimarySectionFor($testCaseId) == $sectionId);
-          if ($this->_writeResultsFor($testCaseId, $this->mResults->getTestCaseData($testCaseId), $sectionData['section'], $isPrimarySection)) {
+        foreach ($testCaseIds as $testCaseId) {
+          $testCase = $testCases[$testCaseId];
+          $isPrimarySection = ($this->mSections->getPrimarySectionFor($testCase) == $section);
+          if ($this->_writeResultsFor($testCase, $section, $isPrimarySection)) {
             $hadOutput = TRUE;
           }
         }
@@ -261,23 +260,35 @@ class DetailsPage extends ResultsBasedPage
       }
     }
   
-    $subSections = $this->mSections->getSubSectionData($sectionId);
+    $subSections = $this->mSections->getSubSections($spec, $section);
     if ($subSections) {
-      foreach ($subSections as $subSectionId => $sectionData) {
-        $testCount = intval($sectionData['test_count']);
-        if ((0 < $testCount) || (0 < $this->mSections->getSubSectionCount($subSectionId))) {
-          $this->writeSectionRows($subSectionId);
+      foreach ($subSections as $subSection) {
+        $testCaseIds = $this->mSections->getTestCaseIdsFor($spec, $subSection);
+        if ((0 < count($testCaseIds)) || (0 < $this->mSections->getSubSectionCount($spec, $subSection))) {
+          $this->writeSectionRows($spec, $subSection);
         }
       }
     }
   }
 
 
+  function writeSpecificationHeader(Specification $spec)
+  {
+    $this->openElement('tbody');
+    $this->openElement('tr');
+    $this->addElement('th', array('colspan' => 6), $spec->getDescription());
+    $this->closeElement('tr');
+    $this->closeElement('tbody');
+  }
+  
+  
   /**
    * Output details table
    */
   function writeBodyContent()
   {
+    $this->openElement('div', array('class' => 'body'));
+    
     $this->loadResults();
     
     if (0 == $this->mResults->getResultCount()) {
@@ -298,7 +309,7 @@ class DetailsPage extends ResultsBasedPage
       $this->closeElement('thead');
 
 
-      $this->mFormats = Format::GetFormatsFor($this->mTestSuite);
+      $this->mFormats = TestFormat::GetAllFormats();
       $this->mUserAgents = UserAgent::GetAllUserAgents();
       $this->mUsers = User::GetAllUsers();
       
@@ -306,19 +317,35 @@ class DetailsPage extends ResultsBasedPage
 
       if (0 == $this->mOrdering) {
         $this->openElement('tbody');
-        foreach ($testCases as $testCaseId => $testCaseData) {
-          $this->_writeResultsFor($testCaseId, $testCaseData);
+        foreach ($testCases as $testCase) {
+          $this->_writeResultsFor($testCase);
         }
         $this->closeElement('tbody');
       }
       else {
         $this->mSections = new Sections($this->mTestSuite, TRUE);
-        $this->mSpecification = new Specification($this->mTestSuite);
-        $this->writeSectionRows($this->mSectionId);
+        if ($this->mSection) {
+          $this->writeSectionRows($this->mSpec, $this->mSection);
+        }
+        elseif ($this->mSpec) {
+          $this->writeSectionRows($this->mSpec);
+        }
+        else {
+          $specs = $this->mSections->getSpecifications();
+          foreach ($specs as $spec) {
+            if (1 < count($specs)) {
+              $this->writeSpecificationHeader($spec);
+            }
+            $this->writeSectionRows($spec);
+          }
+        }
       }
       
       $this->closeElement('table');
     }
+    $this->writeLedgend();
+
+    $this->closeElement('div');
   }
   
   function writeLedgend()
@@ -358,8 +385,6 @@ class DetailsPage extends ResultsBasedPage
   
   function writeBodyFooter()
   {
-    $this->writeLedgend();
-    
     parent::writeBodyFooter();
   }  
 }

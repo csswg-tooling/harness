@@ -228,7 +228,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
           $comment = $comments[$testCaseId];  // pre-encoded
           if ($modified) {
             $sql .= "(`testcase_id`, `revision`, `format`, ";
-            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`user_agent_id`, `user_id`, `user_user_agent_id`, ";
             $sql .= "`result`, `comment`, `modified`) ";
             $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
@@ -236,7 +236,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
           }
           else {
             $sql .= "(`testcase_id`, `revision`, `format`, ";
-            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`user_agent_id`, `user_id`, `user_user_agent_id`, ";
             $sql .= "`result`, `comment`) ";
             $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
@@ -246,7 +246,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
         else {
           if ($modified) {
             $sql .= "(`testcase_id`, `revision`, `format`, ";
-            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`user_agent_id`, `user_id`, `user_user_agent_id`, ";
             $sql .= "`result`, `modified`) ";
             $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";
@@ -254,7 +254,7 @@ class ImplementationReportImport extends HarnessCmdLineWorker
           }
           else {
             $sql .= "(`testcase_id`, `revision`, `format`, ";
-            $sql .= "`useragent_id`, `source_id`, `source_useragent_id`, ";
+            $sql .= "`user_agent_id`, `user_id`, `user_user_agent_id`, ";
             $sql .= "`result`) ";
             $sql .= "VALUES ('{$testCaseId}', '{$revision}', '{$formatName}', ";
             $sql .= "'{$userAgentId}', '$sourceId', '{$userAgentId}', ";

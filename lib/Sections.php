@@ -16,23 +16,29 @@
  * 
  ******************************************************************************/
 
-require_once("core/DBConnection.php");
+require_once('lib/HarnessDB.php');
+
+require_once('modules/testsuite/TestSuite.php');
+
+require_once('modules/specification/SpecificationDB.php');
+require_once('modules/specification/Specification.php');
+require_once('modules/specification/SpecificationAnchor.php');
 
 /**
  * Sorting callback helper
  */
 class SectionSorter
 {
-  protected $mSections;
+  protected $mAnchors;
   
-  function __construct($sections)
+  function __construct($anchors)
   {
-    $this->mSections = $sections;
+    $this->mAnchors = $anchors;
   }
   
   function compare($a, $b)
   {
-    return strnatcasecmp($this->mSections[$a]['section'], $this->mSections[$b]['section']);
+    return SpecificationAnchor::CompareAnchorName($this->mAnchors[$a], $this->mAnchors[$b]);
   }
 };
 
@@ -40,194 +46,207 @@ class SectionSorter
 /**
  * Encapsulate data about test groups
  */
-class Sections extends DBConnection
+class Sections extends HarnessDBConnection
 {
   protected $mSections;
   protected $mTestCaseIds;
-  protected $mPrimarySectionIds;
+  protected $mPrimaryAnchors;
 
 
-  static function GetSectionIdFor(TestSuite $testSuite, $sectionName)
-  {
-    if ($testSuite->isValid() && $sectionName) {
-      $db = new DBConnection();
-
-      $specName = $db->encode($testSuite->getSpecName(), 'sections.spec');
-      $sectionName = $db->encode($sectionName, 'sections.section');
-      
-      $sql  = "SELECT `id` ";
-      $sql .= "FROM `sections` ";
-      $sql .= "WHERE `spec` = '{$specName}' AND `section` = '{$sectionName}' ";
-      
-      $r = $db->query($sql);
-      $sectionId = intval($r->fetchField(0));
-      
-      if ($sectionId) {
-        return $sectionId;
-      }
-    }
-    return FALSE;
-  }
-  
-  
-  static function GetSectionNameFor(TestSuite $testSuite, $sectionId)
-  {
-    if ($testSuite->isValid() && $sectionId) {
-      $db = new DBConnection();
-
-      $specName = $db->encode($testSuite->getSpecName(), 'sections.spec');
-      
-      $sql  = "SELECT `section` ";
-      $sql .= "FROM `sections` ";
-      $sql .= "WHERE `spec` = '{$specName}' AND `id` = '{$sectionId}' ";
-      
-      $r = $db->query($sql);
-      $sectionName = $r->fetchField(0);
-      
-      if ($sectionName) {
-        return $sectionName;
-      }
-    }
-    return FALSE;
-  }
-  
 
   function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE)
   {
     parent::__construct();
 
-    $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.testsuite');
-    $specName = $this->encode($testSuite->getSpecName(), 'sections.spec');
-    
-    $sql  = "SELECT `sections`.`id`, `sections`.`parent_id`, ";
-    $sql .= "`sections`.`section`, `sections`.`title`, ";
-    $sql .= "`sections`.`uri`, ";
-    $sql .= "SUM(IF(`speclinks`.`group`=0,1,0)) as `test_count` ";
-    $sql .= "FROM `sections` ";
-    $sql .= "LEFT JOIN (`speclinks`, `suitetests`) ";
-    $sql .= "ON `sections`.`id` = `speclinks`.`section_id` ";
-    $sql .= "AND `speclinks`.`testcase_id` = `suitetests`.`testcase_id` ";
-    $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `sections`.`spec` = '{$specName}' ";
-    $sql .= "GROUP BY `sections`.`id` ";
-    $sql .= "ORDER BY `sections`.`id` ";
-    
-    $r = $this->query($sql);
-    
-    if (! $r->succeeded()) {
-      $msg = 'Unable to obtain list of sections.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-    
-    while ($sectionData = $r->fetchRow()) {
-      $id = intval($sectionData['id']);
-      $parentId = intval($sectionData['parent_id']);
-    
-      $sectionData['id'] = $id;
-      $sectionData['parent_id'] = $parentId;
-      $sectionData['test_count'] = intval($sectionData['test_count']);
+    $startTime = microtime(TRUE);
 
-      $this->mSections[$parentId][$id] = $sectionData;
+    $specDBName = SpecificationDBConnection::GetDBName();
+
+    $testSuiteName = $this->encode($testSuite->getName(), 'suitetests.test_suite');
+    $specs = $testSuite->getSpecifications();
+    $specNames = array();
+    foreach ($specs as $spec) {
+      $specNames[] = $spec->getName();
+    }
+    $specSearchSQL = $this->_getMultiSearchSQL("`{$specDBName}`.`spec_anchors`.`spec`", $specNames);
+    
+    $sql  = "SELECT `{$specDBName}`.`spec_anchors`.*, ";
+    $sql .= "SUM(IF(`test_spec_links`.`type`='direct',1,0)) as `link_count` ";
+    $sql .= "FROM `test_spec_links` ";
+    $sql .= "INNER JOIN (`{$specDBName}`.`spec_anchors`) ";
+    $sql .= "  ON `{$specDBName}`.`spec_anchors`.`spec` = `test_spec_links`.`spec` ";
+    $sql .= "  AND `{$specDBName}`.`spec_anchors`.`parent_name` = `test_spec_links`.`parent_name` ";
+    $sql .= "  AND `{$specDBName}`.`spec_anchors`.`name` = `test_spec_links`.`anchor_name` ";
+    $sql .= "WHERE {$specSearchSQL} ";
+    $sql .= "  AND `{$specDBName}`.`spec_anchors`.`structure` = 'section' ";
+    $sql .= "  AND `test_spec_links`.`test_suite` = '{$testSuiteName}' ";
+    $sql .= "GROUP BY `{$specDBName}`.`spec_anchors`.`parent_name`, `{$specDBName}`.`spec_anchors`.`name` ";
+    $sql .= "ORDER BY `{$specDBName}`.`spec_anchors`.`spec`, ";
+    $sql .= "  `{$specDBName}`.`spec_anchors`.`parent_name`, `{$specDBName}`.`spec_anchors`.`name`, ";
+    $sql .= "  `{$specDBName}`.`spec_anchors`.`spec_type` ";
+
+    $r = $this->query($sql);
+
+    $this->mSections = array();
+    while ($anchorData = $r->fetchRow()) {
+      $specName = $anchorData['spec'];
+      $anchorName = $anchorData['name'];
+      $parentName = $anchorData['parent_name'];
+    
+      $anchorData['link_count'] = intval($anchorData['link_count']);
+
+      $this->mSections[$specName][$parentName][$anchorName] = new SpecificationAnchor($anchorData);
     }
     
-    foreach ($this->mSections as $parentId => $subSections) {
-      $sorter = new SectionSorter($subSections);
-      uksort($subSections, array($sorter, 'compare'));
-      $this->mSections[$parentId] = $subSections;
+    foreach ($this->mSections as $specName => $sections) {
+      foreach ($sections as $parentName => $subSections) {
+        $sorter = new SectionSorter($subSections);
+        uksort($subSections, array($sorter, 'compare'));
+        $this->mSections[$specName][$parentName] = $subSections;
+      }
     }
     
     if ($loadTestCaseIds) {
-      $sql  = "SELECT `testcases`.`id`, `speclinks`.`section_id`, ";
-      $sql .= "`speclinks`.`sequence` ";
-      $sql .= "FROM `testcases` ";
-      $sql .= "LEFT JOIN (`suitetests`, `speclinks`, `sections`) ";
-      $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-      $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
-      $sql .= "AND `sections`.`id` = `speclinks`.`section_id` ";
-      $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-      $sql .= "AND `speclinks`.`group` = 0 ";
-      $sql .= "AND `sections`.`spec` = '{$specName}' ";
+      $specSearchSQL = $this->_getMultiSearchSQL("`test_spec_links`.`spec`", $specNames);
+
+      $sql  = "SELECT `test_spec_links`.* ";
+      $sql .= "FROM `test_spec_links` ";
+      $sql .= "INNER JOIN (`testcases`) ";
+      $sql .= "  ON `test_spec_links`.`testcase_id` = `testcases`.`id` ";
+      $sql .= "WHERE {$specSearchSQL} ";
+      $sql .= "  AND `test_spec_links`.`test_suite` = '{$testSuiteName}' ";
+      $sql .= "  AND `test_spec_links`.`type` = 'direct' ";
       $sql .= "ORDER BY `testcases`.`testcase` ";
 
       $r = $this->query($sql);
       
       while ($testCaseData = $r->fetchRow()) {
-        $sectionId = intval($testCaseData['section_id']);
-        $testCaseId = intval($testCaseData['id']);
-        $this->mTestCaseIds[$sectionId][] = $testCaseId;
+        $specName = $testCaseData['spec'];
+        $parentName = $testCaseData['parent_name'];
+        $anchorName = $testCaseData['anchor_name'];
+        $testCaseId = intval($testCaseData['testcase_id']);
+        
+        if ((! array_key_exists($parentName, $this->mSections[$specName])) ||
+            (! array_key_exists($anchorName, $this->mSections[$specName][$parentName]))) {  // ensure links to sections
+          $anchorName = $parentName;
+          $parentName = SpecificationAnchor::GetAnchorParentName($parentName);
+        }
+        
+        $this->mTestCaseIds[$specName][$parentName][$anchorName][] = $testCaseId;
         if (0 == intval($testCaseData['sequence'])) {
-          $this->mPrimarySectionIds[$testCaseId] = $sectionId;
+          $this->mPrimaryAnchors[$testCaseId] = $this->mSections[$specName][$parentName][$anchorName];
         }
       }
     }
+    $this->mQueryTime = (microtime(TRUE) - $startTime);
   }
 
 
-  function getSectionData($sectionId)
+  function getQueryTime()
   {
-    foreach ($this->mSections as $parentId => $subSections) {
+    return $this->mQueryTime;
+  }
+
+
+  function getSpecifications()
+  {
+    $specs = array();
+    foreach ($this->mSections as $specName => $sections) {
+      $specs[$specName] = Specification::GetSpecificationByName($specName);
+    }
+    return $specs;
+  }
+  
+
+/*
+  function getSection(SpecificationAnchor $section)
+  {
+    $specName = $section->getSpecName();
+    foreach ($this->mSections[$specName] as $parentName => $subSections) {
       if (array_key_exists($sectionId, $subSections)) {
         return $subSections[$sectionId];
       }
     }
     return FALSE;
   }
-  
+*/
 
-  function getSubSectionCount($parentId = 0)
+  function getSubSectionCount(Specification $spec, SpecificationAnchor $parent = null)
   {
-    if ($this->mSections && array_key_exists($parentId, $this->mSections)) {
-      return count($this->mSections[$parentId]);
+    $specName = $spec->getName();
+    $parentName = ($parent ? $parent->getName() : null);
+    if ($this->mSections && array_key_exists($specName, $this->mSections) &&
+        array_key_exists($parentName, $this->mSections[$specName])) {
+      return count($this->mSections[$specName][$parentName]);
     }
     return 0;
   }
   
   
-  function getSubSectionData($parentId = 0)
+  function getSubSections(Specification $spec, SpecificationAnchor $parent = null)
   {
-    if ($this->mSections && array_key_exists($parentId, $this->mSections)) {
-      return $this->mSections[$parentId];
+    $specName = $spec->getName();
+    $parentName = ($parent ? $parent->getName() : null);
+    if ($this->mSections && array_key_exists($specName, $this->mSections) &&
+        array_key_exists($parentName, $this->mSections[$specName])) {
+      return $this->mSections[$specName][$parentName];
     }
     return FALSE;
   }
   
   
-  function getTestCaseIdsFor($sectionId, $recursive = FALSE)
+  function getTestCaseIdsFor(Specification $spec, SpecificationAnchor $section = null, $recursive = FALSE)
   {
     $testCaseIds = array();
-    if ($this->mTestCaseIds && array_key_exists($sectionId, $this->mTestCaseIds)) {
-      $testCaseIds = $this->mTestCaseIds[$sectionId];
+    if ($section) {
+      $specName = $section->getSpecName();
+      $parentName = $section->getParentName();
+      $anchorName = $section->getName();
+
+      if ($this->mTestCaseIds && array_key_exists($specName, $this->mTestCaseIds) &&
+          array_key_exists($parentName, $this->mTestCaseIds[$specName]) &&
+          array_key_exists($anchorName, $this->mTestCaseIds[$specName][$parentName])) {
+        $testCaseIds = array_unique($this->mTestCaseIds[$specName][$parentName][$anchorName]);
+      }
     }
     if ($recursive) {
-      $subSections = $this->getSubSectionData($sectionId);
+      $subSections = $this->getSubSections($spec, $section);
       if ($subSections) {
-        foreach ($subSections as $subSectionId => $subSectionData) {
-          $subSectionTestIds = $this->getTestCaseIdsFor($subSectionData['id'], TRUE);
-          if ($subSectionTestIds) {
+        foreach ($subSections as $subSection) {
+          $subSectionTestIds = $this->getTestCaseIdsFor($spec, $subSection, TRUE);
+          if (0 < count($subSectionTestIds)) {
             $testCaseIds = array_unique(array_merge($testCaseIds, $subSectionTestIds));
           }
         }
       }
     }
-    return ((0 < count($testCaseIds)) ? $testCaseIds : FALSE);
+    return $testCaseIds;
   }
   
   
-  function getPrimarySectionFor($testCaseId)
+  function getPrimarySectionFor(TestCase $testCase)
   {
-    if ($this->mPrimarySectionIds && array_key_exists($testCaseId, $this->mPrimarySectionIds)) {
-      return $this->mPrimarySectionIds[$testCaseId];
+    $testCaseId = $testCase->getId();
+    if ($this->mPrimaryAnchors && array_key_exists($testCaseId, $this->mPrimaryAnchors)) {
+      return $this->mPrimaryAnchors[$testCaseId];
     }
     return FALSE;
   }
   
   
-  function findSectionIdForURI($uri)
+  function findSectionForURI($uri)
   {
-    foreach ($this->mSections as $parentId => $subSections) {
-      foreach ($subSections as $sectionId => $sectionData) {
-        if ($sectionData['uri'] == $uri) {
-          return $sectionId;
+    $spec = Specification::GetSpecificationByURI($uri);
+    if ($spec) {
+      $specName = $spec->getName();
+      if (array_key_exists($specName, $this->mSections)) {
+        $anchorURI = $spec->getAnchorURI($uri);
+        foreach ($this->mSections[$specName] as $parentName => $subSections) {
+          foreach ($subSections as $sectionName => $anchor) {
+            if ($anchor->getAnchorURI() == $anchorURI) {
+              return $anchor;
+            }
+          }
         }
       }
     }

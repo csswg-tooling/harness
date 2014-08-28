@@ -16,103 +16,112 @@
  * 
  ******************************************************************************/
 
-require_once('core/DBConnection.php');
-require_once('lib/Flags.php');
+require_once('lib/HarnessDB.php');
+
 require_once('lib/StatusCache.php');
+
+require_once('modules/testsuite/TestFlags.php');
+require_once('modules/testsuite/TestFormat.php');
 
 
 /**
  * Wrapper class for information about a particular test case 
  * when bound to a given test suite
  */
-class TestCase extends DBConnection
+class TestCase extends HarnessDBEntity
 {
   protected $mTestSuite;
-  protected $mInfo;
   protected $mFlags;
   protected $mURIs;
   protected $mReferences;
-  protected $mSpecURIs;
+  protected $mSpecAnchors;
 
 
-  static function GetTestCaseIdFor($testCaseName)
+  static function GetTestCase(TestSuite $testSuite, $testCaseName)
   {
     if ($testCaseName) {
-      $db = new DBConnection();
+      $db = new TestCase();
 
       $testCaseName = $db->encode($testCaseName, 'testcases.testcase');
+      $testSuiteName = $db->encode($testSuite->getName(), 'suite_tests.test_suite');
       
-      $sql  = "SELECT `id` ";
+      $sql  = "SELECT `testcases`.* ";
       $sql .= "FROM `testcases` ";
-      $sql .= "WHERE `testcase` = '{$testCaseName}' ";
-      
+      $sql .= "LEFT JOIN `suite_tests` ";
+      $sql .= "  ON `testcases`.`id` = `suite_tests`.`testcase_id` ";
+      $sql .= "  AND `testcases`.`revision` = `suite_tests`.`revision` ";
+      $sql .= "WHERE `testcases`.`testcase` = '{$testCaseName}' ";
+      $sql .= "  AND `suite_tests`.`test_suite` = '{$testSuiteName}' ";
+      $sql .= "LIMIT 1";
+
       $r = $db->query($sql);
-      $testCaseId = intval($r->fetchField(0));
+      $data = $r->fetchRow();
       
-      if ($testCaseId) {
-        return $testCaseId;
+      if ($data) {
+        return new TestCase($testSuite, $data);
       }
     }
-    return FALSE;
+    return null;
   }
   
   
-  function __construct(TestSuite $testSuite = null, $testCaseId = 0)
+  function __construct(TestSuite $testSuite = null, $data = null)
   {
-    parent::__construct();
-    
-    if ($testSuite && (0 < $testCaseId)) {
-      $this->mTestSuite = $testSuite;
-      $this->mInfo = $this->_selectCaseById($testCaseId);
-    }
-
-    if ($this->isValid()) {
-      $this->mFlags = new Flags($this->mInfo['flags'], TRUE);
-    }
-  }
-  
-  function load(TestSuite $testSuite, $testCaseName, $sectionId,
-                UserAgent $userAgent, $order, $index, $flag = null)
-  {
-    if ($index < 0) {
-      $index = 0;
-    }
-    
     $this->mTestSuite = $testSuite;
-
-    if ($testCaseName) {  // load specific test case
-      $this->mInfo = $this->_selectCaseByName($testCaseName);
-    }
-    elseif ($sectionId) { // load test from spec section
-      $this->mInfo = $this->_selectCaseFromSection($sectionId, $userAgent, $order, $index, $flag);
-      
-    }
-    else { // load test from suite
-      $this->mInfo = $this->_selectCaseFromSuite($userAgent, $order, $index, $flag);
-    }
-
-    if ($this->isValid()) {
-      $this->mFlags = new Flags($this->mInfo['flags'], TRUE);
-    }
+    
+    parent::__construct($data);
   }
-  
-  
+
+
+  /**
+   * Load data about a test case by id
+   */
+  protected function _queryById($testCaseId)
+  {
+    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suite_tests.test_suite');
+    $testCaseId = intval($testCaseId);
+    
+    $sql  = "SELECT `testcases`.* ";
+    $sql .= "FROM `testcases` ";
+    $sql .= "LEFT JOIN `suite_tests` ";
+    $sql .= "  ON `testcases`.`id` = `suite_tests`.`testcase_id`";
+    $sql .= "  AND `testcases`.`revision` = `suite_tests`.`revision` ";
+    $sql .= "WHERE `testcases`.`id` = '{$testCaseId}' ";
+    $sql .= "  AND `suite_tests`.`test_suite` = '{$testSuiteName}' ";
+    $sql .= "LIMIT 1";
+
+    $r = $this->query($sql);
+    $data = $r->fetchRow();
+
+    return $data;
+  }
+
+
   protected function _loadReferences()
   {
     if ((null == $this->mReferences) && $this->isReferenceTest()) {
       $testCaseId = $this->getId();
+      $testSuiteName = $this->encode($this->mTestSuite->getName(), 'refernce_pages.test_suite');
+      $revision = $this->encode($this->getRevision());
       
       $sql  = "SELECT * ";
       $sql .= "FROM `references` ";
-      $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+      $sql .= "LEFT JOIN `reference_pages` ";
+      $sql .= "  ON `references`.`testcase_id` = `reference_pages`.`testcase_id` ";
+      $sql .= "  AND `references`.`reference` = `reference_pages`.`reference` ";
+      $sql .= "WHERE `references`.`testcase_id` = '{$testCaseId}' ";
+      $sql .= "  AND `test_suite` = '{$testSuiteName}' ";
+      $sql .= "  AND `revision` = '{$revision}' ";
+      $sql .= "ORDER BY `group`, `sequence` ";
       
-      $formatNames = $this->mTestSuite->getFormatNames();
+      $suiteFormats = $this->mTestSuite->getFormats();
       
       $r = $this->query($sql);
       while ($referenceData = $r->fetchRow()) {
         $formatName = $referenceData['format'];
-        if (Format::FormatNameInArray($formatName, $formatNames)) {
-          $this->mReferences[] = $referenceData;
+        if (array_key_exists(strtolower($formatName), $suiteFormats)) {
+          $groupIndex = intval($referenceData['group']);
+          $this->mReferences[$groupIndex][] = $referenceData;
         }
       }
     }
@@ -123,454 +132,74 @@ class TestCase extends DBConnection
   protected function _loadURIs()
   {
     if (null == $this->mURIs) {
+      $this->mURIs = array();
+      
       $testCaseId = $this->getId();
+      $testSuiteName = $this->encode($this->mTestSuite->getName(), 'test_pages.test_suite');
       
       $sql  = "SELECT `format`, `uri` ";
-      $sql .= "FROM `testpages` ";
+      $sql .= "FROM `test_pages` ";
       $sql .= "WHERE `testcase_id` = '{$testCaseId}' ";
+      $sql .= "  AND `test_suite` = '{$testSuiteName}' ";
       
-      $formatNames = $this->mTestSuite->getFormatNames();
+      $suiteFormats = $this->mTestSuite->getFormats();
 
       $r = $this->query($sql);
       while ($uriData = $r->fetchRow()) {
         $formatName = $uriData['format'];
         
-        if (Format::FormatNameInArray($formatName, $formatNames)) {
+        if (array_key_exists(strtolower($formatName), $suiteFormats)) {
           $uri = $uriData['uri'];
         
           $this->mURIs[strtolower($formatName)] = $uri;
         }
       }
     }
-    return (null != $this->mURIs);
+    return $this->mURIs;
   }
   
   
-  protected function _loadSpecURIs()
+  protected function _loadHelpLinks()
   {
-    if (null == $this->mSpecURIs) {
+    if (null == $this->mSpecAnchors) {
+      $this->mSpecAnchors = array();
+      
       $testCaseId = $this->getId();
+      $revision = $this->encode($this->getRevision());
+      $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suite_tests.test_suite');
       
-      $specName = $this->encode($this->mTestSuite->getSpecName(), 'sections.spec');
-
-      $sql  = "SELECT `sections`.`spec`, `sections`.`title`, `sections`.`section`, `sections`.`uri`, ";
-      $sql .= "`specifications`.`base_uri` AS `spec_uri`, ";
-      $sql .= "`specifications`.`title` AS `spec_title` ";
-      $sql .= "FROM `sections` ";
-      $sql .= "LEFT JOIN (`speclinks`, `specifications`) ";
-      $sql .= "ON `sections`.`id` = `speclinks`.`section_id` ";
-      $sql .= "AND `sections`.`spec` = `specifications`.`spec` ";
-      $sql .= "WHERE `speclinks`.`testcase_id` = '{$testCaseId}' ";
-      $sql .= "AND `sections`.`spec` = '{$specName}' ";
-      $sql .= "AND `speclinks`.`group` = 0 ";
-      $sql .= "ORDER BY `speclinks`.`sequence` ";
-      
+      $sql  = "SELECT * ";
+      $sql .= "FROM `test_help_links` ";
+      $sql .= "INNER JOIN `suite_tests` ";
+      $sql .= "  ON `test_help_links`.`testcase_id` = `suite_tests`.`testcase_id` ";
+      $sql .= "  AND `suite_tests`.`revision` = `test_help_links`.`revision` ";
+      $sql .= "WHERE `test_help_links`.`testcase_id` = {$testCaseId} ";
+      $sql .= "  AND `suite_tests`.`test_suite` = '{$testSuiteName}' ";
+      $sql .= "ORDER BY `sequence` ";
       $r = $this->query($sql);
-      while ($sectionData = $r->fetchRow()) {
-        $spec       = $sectionData['spec'];
-        $specTitle  = $sectionData['spec_title'];
-        $title      = $sectionData['title'];
-        $section    = $sectionData['section'];
-        $uri        = $this->_CombinePath($sectionData['spec_uri'], $sectionData['uri']);
-        
-        $this->mSpecURIs[] = compact('spec', 'specTitle', 'title', 'section', 'uri');
-      }
-    }
-  }
-
-
-  function getSpecSectionIds()
-  {
-    $sectionIds = array();
-    
-    $testCaseId = $this->getId();
-    $specName = $this->encode($this->mTestSuite->getSpecName(), 'sections.spec');
-
-    $sql  = "SELECT `sections`.`id` ";
-    $sql .= "FROM `sections` ";
-    $sql .= "LEFT JOIN (`speclinks`, `specifications`) ";
-    $sql .= "ON `sections`.`id` = `speclinks`.`section_id` ";
-    $sql .= "AND `sections`.`spec` = `specifications`.`spec` ";
-    $sql .= "WHERE `speclinks`.`testcase_id` = '{$testCaseId}' ";
-    $sql .= "AND `sections`.`spec` = '{$specName}' ";
-    
-    $r = $this->query($sql);
-    while ($sectionData = $r->fetchRow()) {
-      $sectionIds[] = intval($sectionData['id']);
-    }
-    return $sectionIds;
-  }
-
-
-  /**
-   * Count number of test cases in suite
-   */
-  function countCasesInSuite($flag = null)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
-    
-    $sql  = "SELECT COUNT(*) AS `count` ";
-    $sql .= "FROM `suitetests` ";
-    if ($flag) {
-      $sql .= "LEFT JOIN `testcases` ";
-      $sql .= "ON `suitetests`.`testcase_id` = `testcases`.`id` ";
-    }
-    $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
-    if ($flag) {
-      if ('!' === $flag[0]) {
-        $flag = substr($flag, 1);
-        $compare = 'IS NULL OR `flags` NOT LIKE';
-      }
-      else {
-        $compare = 'LIKE';
-      }
-      $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
-    }
-    $sql .= "LIMIT 1";
-    
-    $r = $this->query($sql);
-    
-    $count = $r->fetchField(0);
-    
-    if (FALSE === $count) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_WARNING);
-    }
-
-    return intval($count);
-  }
-
-
-  protected function _getSequenceEngine(UserAgent $userAgent)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'testsequence.testsuite');
-    $engineName = $this->encode($userAgent->getEngineName(), 'testsequence.engine');
-    
-    // check if engine is sequenced
-    $sql  = "SELECT * FROM `testsequence` ";
-    $sql .= "WHERE `engine` = '{$engineName}' ";
-    $sql .= "AND `testsuite` = '{$testSuiteName}' ";
-    $sql .= "LIMIT 0, 1";
-    $r = $this->query($sql);
-
-    if (0 == $r->rowCount()) {  // try magic engine name
-      $engineName = $this->encode('-no-data-', 'testsequence.engine');
       
-      $sql  = "SELECT * FROM `testsequence` ";
-      $sql .= "WHERE `engine` = '{$engineName}' ";
-      $sql .= "AND `testsuite` = '{$testSuiteName}' ";
-      $sql .= "LIMIT 0, 1";
-      $r = $this->query($sql);
-
-      if (0 == $r->rowCount()) {
-        return FALSE;
+      while ($data = $r->fetchRow()) {
+        $uri = $data['uri'];
+        $spec = Specification::GetSpecificationByURI($uri);
+        if ($spec && $this->mTestSuite->hasSpecification($spec)) {
+          $anchors = SpecificationAnchor::GetAnchorsForURI($spec, $uri);
+          if ($anchors) {
+            $this->mSpecAnchors[] = $anchors;
+          }
+        }
       }
     }
-    return $engineName;
-  }
-  
-  /**
-   * Load data about a test case based on index within suite
-   */
-  protected function _selectCaseFromSuite(UserAgent $userAgent, $order, $index, $flag = null)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
-    $engineName = FALSE;
-    if (1 == $order) {
-      $engineName = $this->_getSequenceEngine($userAgent);
-    }
-    $index = intval($index);
-    
-    // Select case ordered by sequence table
-    $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
-    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`suitetests`.`revision` ";
-    $sql .= "FROM (`testcases` ";
-    $sql .= "LEFT JOIN `suitetests` ";
-    $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    if ($engineName) {
-      $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
-    }
-    $sql .= ") ";
-    $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
-    if ($flag) {
-      if ('!' === $flag[0]) {
-        $flag = substr($flag, 1);
-        $compare = 'IS NULL OR `flags` NOT LIKE';
-      }
-      else {
-        $compare = 'LIKE';
-      }
-      $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
-    }
-    if ($engineName) {
-      $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
-      $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
-    }
-    $sql .= ") GROUP BY `id` ";
-    if ($engineName) {
-      $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
-    }
-    else {
-      $sql .= "ORDER BY `testcases`.`testcase` ";
-    }
-    $sql .= "LIMIT {$index}, 1";
-
-    $r = $this->query($sql);
-
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $data = $r->fetchRow();
-    
-    return $data;
   }
 
 
-  /**
-   * Count number of test cases in a particular section
-   */
-  function countCasesInSection($sectionId, $flag = null)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
-    $sectionId = intval($sectionId);
-    
-    $sql  = "SELECT COUNT(*) AS `count` ";
-    $sql .= "FROM `suitetests` ";
-    $sql .= "LEFT JOIN (`speclinks`, `testcases`) ";
-    $sql .= "ON `suitetests`.`testcase_id` = `speclinks`.`testcase_id` ";
-    $sql .= "AND `suitetests`.`testcase_id` = `testcases`.`id` ";
-    $sql .= "WHERE `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
-    if ($flag) {
-      if ('!' === $flag[0]) {
-        $flag = substr($flag, 1);
-        $compare = 'IS NULL OR `flags` NOT LIKE';
-      }
-      else {
-        $compare = 'LIKE';
-      }
-      $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
-    }
-    $sql .= "LIMIT 1";
-
-    $r = $this->query($sql);
-    
-    $count = $r->fetchField(0);
-    
-    if (FALSE === $count) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    return intval($count);
-  }
-
-  /**
-   * Load data about test case from section by index
-   */
-  protected function _selectCaseFromSection($sectionId, UserAgent $userAgent, $order, $index, $flag = null)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
-    $engineName = FALSE;
-    if (1 == $order) {
-      $engineName = $this->_getSequenceEngine($userAgent);
-    }
-    $sectionId = intval($sectionId);
-    $index = intval($index);
-    
-    // Select case ordered by sequence table
-    $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
-    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`suitetests`.`revision` ";
-    $sql .= "FROM (`testcases` ";
-    $sql .= "LEFT JOIN (`suitetests`, `speclinks`) ";
-    $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= "AND `testcases`.`id` = `speclinks`.`testcase_id` ";
-    if ($engineName) {
-      $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
-    }
-    $sql .= ") ";
-    $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
-    if ($flag) {
-      if ('!' === $flag[0]) {
-        $flag = substr($flag, 1);
-        $compare = 'IS NULL OR `flags` NOT LIKE';
-      }
-      else {
-        $compare = 'LIKE';
-      }
-      $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
-    }
-    if ($engineName) {
-      $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
-      $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
-    }
-    $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
-    $sql .= ") GROUP BY `id` ";
-    if ($engineName) {
-      $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
-    }
-    else {
-      $sql .= "ORDER BY `testcases`.`testcase` ";
-    }
-    $sql .= "LIMIT {$index}, 1";
-
-    $r = $this->query($sql);
-
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $data = $r->fetchRow();
-    
-    return $data;
-  }
-
-
-  /**
-   * Load data about a test case by id
-   */
-  protected function _selectCaseById($testCaseId)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
-    $testCaseId = intval($testCaseId);
-    
-    $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
-    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`suitetests`.`revision` ";
-    $sql .= "FROM (`testcases` ";
-    $sql .= "LEFT JOIN `suitetests` ";
-    $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id`";
-    $sql .= ") ";
-    $sql .= "WHERE `testcases`.`id` = '{$testCaseId}' ";
-    $sql .= "AND `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "LIMIT 1";
-
-    $r = $this->query($sql);
-
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $data = $r->fetchRow();
-    
-    return $data;
-  }
-
-
-  /**
-   * Load data about a test case by name
-   */
-  protected function _selectCaseByName($testCaseName)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'suitetests.testsuite');
-    $testCaseName = $this->encode($testCaseName, 'testcases.testcase');
-
-    $sql  = "SELECT `testcases`.`id`, `testcases`.`testcase`, ";
-    $sql .= "`testcases`.`title`, `testcases`.`assertion`, ";
-    $sql .= "`testcases`.`flags`, `testcases`.`credits`, ";
-    $sql .= "`suitetests`.`revision` ";
-    $sql .= "FROM (`testcases` ";
-    $sql .= "LEFT JOIN `suitetests` ";
-    $sql .= "ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    $sql .= ") ";
-    $sql .= "WHERE `testcases`.`testcase` = '{$testCaseName}' ";
-    $sql .= "AND `suitetests`.`testsuite` = '{$testSuiteName}' ";
-    $sql .= "LIMIT 1";
-
-    $r = $this->query($sql);
-
-    if (! $r->succeeded()) {
-      $msg = 'Unable to access information about test cases.';
-      trigger_error($msg, E_USER_ERROR);
-    }
-
-    $data = $r->fetchRow();
-    
-    return $data;
-  }
-
-
-  function getIndex($sectionId, UserAgent $userAgent, $order, $flag = null)
-  {
-    $testSuiteName = $this->encode($this->mTestSuite->getName(), 'testsequence.testsuite');
-    $engineName = FALSE;
-    if (1 == $order) {
-      $engineName = $this->_getSequenceEngine($userAgent);
-    }
-    $sectionId = intval($sectionId);
-    $testCaseName = $this->getTestCaseName();
-    
-    // Yuck, there really should be a way to query this from MySQL, but I don't know how...
-    // so we query for all testcases in the group, and search
-    $sql  = "SELECT `testcases`.`testcase` ";
-    $sql .= "FROM (`testcases` ";
-    $sql .= "LEFT JOIN `suitetests` ON `testcases`.`id` = `suitetests`.`testcase_id` ";
-    if ($sectionId) {
-      $sql .= "LEFT JOIN `speclinks`ON `testcases`.`id` = `speclinks`.`testcase_id` ";
-    }
-    if ($engineName) {
-      $sql .= "LEFT JOIN `testsequence` ON `testcases`.`id` = `testsequence`.`testcase_id` ";
-    }
-    $sql .= ") ";
-    $sql .= "WHERE (`suitetests`.`testsuite` = '{$testSuiteName}' ";
-    if ($flag) {
-      if ('!' === $flag[0]) {
-        $flag = substr($flag, 1);
-        $compare = 'IS NULL OR `flags` NOT LIKE';
-      }
-      else {
-        $compare = 'LIKE';
-      }
-      $flag = $this->encode($flag, 'testcases.flags');
-      $sql .= "AND `testcases`.`flags` {$compare} '%,{$flag},%' ";
-    }
-    if ($sectionId) {
-      $sql .= "AND `speclinks`.`section_id` = '{$sectionId}' ";
-    }
-    if ($engineName) {
-      $sql .= "AND `testsequence`.`engine` = '{$engineName}' ";
-      $sql .= "AND `testsequence`.`testsuite` = '{$testSuiteName}' ";
-    }
-    $sql .= ") GROUP BY `id` ";
-    if ($engineName) {
-      $sql .= "ORDER BY `testsequence`.`sequence`, `testcases`.`testcase` ";
-    }
-    else {
-      $sql .= "ORDER BY `testcases`.`testcase` ";
-    }
-    $r = $this->query($sql);
-    $index = 0;
-    while ($data = $r->fetchRow()) {
-      if ($data['testcase'] == $testCaseName) {
-        return $index;
-      }
-      $index++;
-    }
-    return FALSE;
-  }
-  
-  
   /**
    * Store test result
    */
-  function submitResult(UserAgent $userAgent, User $user, Format $format, $result)
+  function submitResult(UserAgent $userAgent, User $user, TestFormat $format, $result, $passCount, $failCount)
   {
-    if ($this->isValid()) {
+    if ($this->isValid() && $userAgent->getId()) {
       $sql  = "INSERT INTO `results` ";
-      $sql .= "(`testcase_id`, `revision`, `format`, `useragent_id`, `source_id`, `source_useragent_id`, `result`) ";
+      $sql .= "(`testcase_id`, `revision`, `format`, `user_agent_id`, `user_id`, `user_user_agent_id`, `result`, `pass_count`, `fail_count`) ";
       $sql .= "VALUES (";
       $sql .= "'" . $this->getId() . "',";
       $sql .= "'" . $this->encode($this->getRevision(), 'results.revision') . "',";
@@ -578,7 +207,8 @@ class TestCase extends DBConnection
       $sql .= "'" . $userAgent->getId() . "',";
       $sql .= "'" . $user->getId() . "',";
       $sql .= "'" . $userAgent->getActualUA()->getId() . "',";
-      $sql .= "'" . $this->encode(strtolower($result)) . "'";
+      $sql .= "'" . $this->encode(strtolower($result)) . "',";
+      $sql .= intval($passCount) . ", " . intval($failCount);
       $sql .= ")";
       
       $r = $this->query($sql);
@@ -609,95 +239,91 @@ class TestCase extends DBConnection
   }
   
   
-  function getFormatNames()
+  function getFormats()
   {
     if ($this->isValid()) {
       if ($this->_loadURIs()) {
-        $suiteFormatNames = $this->mTestSuite->getFormatNames();
+        $suiteFormats = $this->mTestSuite->getFormats();
 
-        $formatNames = array();
-        foreach ($suiteFormatNames as $formatName) {
-          if (array_key_exists(strtolower($formatName), $this->mURIs)) {
-            $formatNames[] = $formatName; // take names from test suite since we normalize names in array key
+        $formats = array();
+        foreach ($suiteFormats as $formatName => $format) {
+          if (array_key_exists($formatName, $this->mURIs)) {
+            $formats[$formatName] = $format;
           }
         }
-        return $formatNames;
+        return $formats;
       }
     }
     return FALSE;
   }
   
 
-  function getURI($formatName)
+  function getURI(TestFormat $format)
   {
     if ($this->isValid()) {
-      $formatName = strtolower($formatName);
+      $formatName = strtolower($format->getName());
       if ($this->_loadURIs() && array_key_exists($formatName, $this->mURIs)) {
-        return $this->_CombinePath($this->mTestSuite->getBaseURI(), $this->mURIs[$formatName]);
+        return $this->_CombinePath($this->mTestSuite->getURI(), $this->mURIs[$formatName]);
       }
     }
     return FALSE;
   }
   
 
-  function getTestCaseName()
+  function getName()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['testcase'];
-    }
-    return FALSE;
+    return $this->_getStrValue('testcase');
   }
 
 
   function getRevision()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['revision'];
-    }
-    return FALSE;
+    return $this->_getStrValue('revision');
   }
 
 
   function getTitle()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['title'];
-    }
-    return FALSE;
+    return $this->_getStrValue('title');
   }
 
 
   function getAssertion()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['assertion'];
-    }
-    return FALSE;
+    return $this->_getStrValue('assertion');
   }
 
 
   function isReferenceTest()
   {
-    if ($this->isValid()) {
-      return $this->mFlags->hasFlag('reftest');
+    $flags = $this->getFlags();
+    if ($flags) {
+      return $flags->hasFlag('reftest');
     }
     return FALSE;
   }
 
 
   /**
-   * Get Reference data
+   * Get names of References
    *
    * @return FALSE|array
    */
-  function getReferences($formatName)
+  function getReferenceNames(TestFormat $format)
   {
     if ($this->isValid()) {
       if ($this->_loadReferences()) {
+        $formatName = $format->getName();
         $references = array();
-        foreach ($this->mReferences as $referenceData) {
-          if (0 == strcasecmp($referenceData['format'], $formatName)) {
-            $references[] = $referenceData;
+        foreach ($this->mReferences as $referenceGroup) {
+          $group = array();
+          foreach ($referenceGroup as $referenceData) {
+            if (0 == strcasecmp($referenceData['format'], $formatName)) {
+              $group[] = $referenceData['reference'];
+            }
+          }
+          if ($group) {
+            $references[] = $group;
           }
         }
         if (0 < count($references)) {
@@ -705,18 +331,21 @@ class TestCase extends DBConnection
         }
       }
     }
-    return FALSE;
+    return array();
   }
   
 
-  function getReferenceURI($refName, $formatName)
+  function getReferenceURI($refName, TestFormat $format)
   {
-    if ($this->isValid() && ($refName) && ($formatName)) {
+    if ($this->isValid() && ($refName)) {
       if ($this->_loadReferences()) {
-        foreach ($this->mReferences as $referenceData) {
-          if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
-              (0 == strcasecmp($referenceData['format'], $formatName))) {
-            return $this->_CombinePath($this->mTestSuite->getBaseURI(), $referenceData['uri']);
+        $formatName = $format->getName();
+        foreach ($this->mReferences as $referenceGroup) {
+          foreach ($referenceGroup as $referenceData) {
+            if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
+                (0 == strcasecmp($referenceData['format'], $formatName))) {
+              return $this->_CombinePath($this->mTestSuite->getURI(), $referenceData['uri']);
+            }
           }
         }
       }
@@ -730,14 +359,17 @@ class TestCase extends DBConnection
    * @param int $refId
    * @return string ('==' or '!=')
    */
-  function getReferenceType($refName, $formatName)
+  function getReferenceType($refName, TestFormat $format)
   {
-    if ($this->isValid() && ($refName) && ($formatName)) {
+    if ($this->isValid() && ($refName)) {
       if ($this->_loadReferences()) {
-        foreach ($this->mReferences as $referenceData) {
-          if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
-              (0 == strcasecmp($referenceData['format'], $formatName))) {
-            return $referenceData['type'];
+        $formatName = $format->getName();
+        foreach ($this->mReferences as $referenceGroup) {
+          foreach ($referenceGroup as $referenceData) {
+            if ((0 == strcasecmp($referenceData['reference'], $refName)) && 
+                (0 == strcasecmp($referenceData['format'], $formatName))) {
+              return $referenceData['type'];
+            }
           }
         }
       }
@@ -749,6 +381,10 @@ class TestCase extends DBConnection
   function getFlags()
   {
     if ($this->isValid()) {
+      if (! $this->mFlags) {
+        $flagNames = $this->_ExplodeTrimAndFilter(',', $this->_getStrValue('flags'));
+        $this->mFlags = new TestFlags($flagNames);
+      }
       return $this->mFlags;
     }
     return FALSE;
@@ -757,18 +393,30 @@ class TestCase extends DBConnection
   
   function hasFlag($flag)
   {
-    if ($this->isValid()) {
-      return $this->mFlags->hasFlag($flag);
+    $flags = $this->getFlags();
+    if ($flags) {
+      return $flags->hasFlag($flag->getName());
     }
     return FALSE;
   }
   
 
-  function getSpecURIs()
+  function isOptional(TestFlags $optionalFlags)
+  {
+    foreach ($optionalFlags->getFlags() as $flagName => $flag) {
+      if ($this->hasFlag($flag)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+  
+  
+  function getSpecAnchors()
   {
     if ($this->isValid()) {
-      $this->_loadSpecURIs();
-      return $this->mSpecURIs;
+      $this->_loadHelpLinks();
+      return $this->mSpecAnchors;
     }
     return FALSE;
   }  
@@ -776,10 +424,7 @@ class TestCase extends DBConnection
   
   function getCredits()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['credits'];
-    }
-    return FALSE;
+    return $this->_getStrValue('credits');
   }
 
 }

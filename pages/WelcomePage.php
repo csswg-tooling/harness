@@ -18,6 +18,7 @@
 
 
 require_once("lib/HarnessPage.php");
+
 require_once("lib/TestSuites.php");
 
 
@@ -34,100 +35,112 @@ class WelcomePage extends HarnessPage
     return 'home';
   }
 
-  function __construct(Array $args = null, Array $pathComponents = null) 
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
 
     $this->mTestSuites = new TestSuites();
   }
   
   
-  function writeTestSuites($showUnlocked = TRUE, $showLocked = TRUE)
+  /**
+   * Generate <style> element
+   */
+  function writeHeadStyle()
+  {
+    parent::writeHeadStyle();
+    
+    $this->addStyleSheetLink($this->buildConfigURI('stylesheet.welcome'));
+  }
+
+
+  function _writeTestSuites($showUnlocked = TRUE)
   {
     $testSuites = $this->mTestSuites->getTestSuites();
     
     if ($testSuites) {
-      $this->openElement('dl');
+      $this->openElement('table', array('class' => 'list'));
+      
+      if ($showUnlocked) {
+        $this->addElement('caption', null,
+                          'You can run tests or review the testing results for the following test suites:');
+      }
+      else {
+        $this->addElement('caption', null,
+                          'You can review the testing results for the following locked test suites:');
+      }
 
+      $this->openElement('thead');
+      $this->openElement('tr');
+      $this->addElement('th', null, 'Test Suite');
+      $this->addElement('th', null, 'Test Count');
+      if ($showUnlocked) {
+        $this->addElement('th', null, '');
+      }
+      $this->addElement('th', null, '');
+      $this->closeElement('tr');
+      $this->closeElement('thead');
+
+      $this->openElement('tbody');
+      
       foreach ($testSuites as $testSuite) {
-        if (($testSuite->isLocked() && $showLocked) || 
-            ((! $testSuite->isLocked()) && $showUnlocked)) {
-          unset($args);
-          $args['s'] = $testSuite->getName();
-          $args['u'] = $this->mUserAgent->getId();
+        if (($testSuite->getLockDateTime() && (! $showUnlocked)) ||
+            ((! $testSuite->getLockDateTime()) && $showUnlocked)) {
+          $this->openElement('tr');
+          
+          $this->openElement('td', array('title' => $testSuite->getDescription()));
+          $this->addHyperLink($testSuite->getURI(), null, $testSuite->getTitle());
+          $this->closeElement('td');
+          $this->addElement('td', null, $this->mTestSuites->getTestCount($testSuite));
 
-          $reviewURI = $this->buildPageURI('review', $args);
+          $args['suite'] = $testSuite->getName();
+          $args['ua'] = $this->mUserAgent->getId();
 
-          $this->openElement('dt', null, FALSE);
-          $this->addHyperLink($testSuite->getHomeURI(), null, $testSuite->getTitle());
-          $this->addTextContent(' (');
-          if (! $testSuite->isLocked()) {
-            $enterURI = $this->buildPageURI('testsuite', $args);
-            $this->addHyperLink($enterURI, null, "Enter Data");
-            $this->addTextContent(', ');
+          if (! $testSuite->getLockDateTime()) {
+            $this->openElement('td');
+            $this->addHyperLink($this->buildPageURI('testsuite', $args), null, 'Run Tests');
+            $this->closeElement('td');
           }
-          $this->addHyperLink($reviewURI, null, "Review Results");
-          $this->addTextContent(')');
-          $this->closeElement('dt');
-
-          $this->addElement('dd', null, $testSuite->getDescription());
+          $this->openElement('td');
+          $this->addHyperLink($this->buildPageURI('review', $args), null, 'Review Results');
+          $this->closeElement('td');
+          
+          $this->closeElement('tr');
         }
       }
-      $this->closeElement('dl');
+      
+      $this->closeElement('tbody');
+      $this->closeElement('table');
     }
   }
   
-
-  function writeBodyContent()
+  
+  function writeTestSuites()
   {
     if (0 < $this->mTestSuites->getCount()) {
 
       if (0 < ($this->mTestSuites->getCount() - $this->mTestSuites->getLockedCount())) {
-        $this->addElement('p', null, "You can provide test data or review " .
-                                     "the testing results for the following test suites:");
-
-        $this->writeTestSuites(TRUE, FALSE);
+        $this->_writeTestSuites(TRUE);
       }
       if (0 < $this->mTestSuites->getLockedCount()) {
-        $this->addElement('p', null, "You can review the testing results for the following locked test suites:");
-
-        $this->writeTestSuites(FALSE, TRUE);
+        $this->_writeTestSuites(FALSE);
       }
     }
     else {
       $this->addElement('p', null, "** No Test Suites Defined. **");
     }
   }
-  
-  
-  function writeBodyFooter()
+
+
+  function writeBodyContent()
   {
-    $this->openElement('p');
-    $this->openElement('small');
-    $this->addTextContent("This W3C Conformance Test Harness was adapted from the ");
-    $this->addHyperLink('http://www.w3.org/2007/03/mth/harness', null, "Mobile Test Harness");
-    $this->addTextContent(" by the ");
-    $this->addHyperLink('http://www.w3.org/Style/CSS/', null, "CSS WG (Cascading Style Sheets Working Group)");
-    $this->addTextContent(" to provide navigation and result recording controls for efficiently assessing " .
-                          "browser-based test cases, allowing anyone to easily submit pass/fail " .
-                          "data in conformance testing.");
+    $this->openElement('div', array('class' => 'body'));
 
-    $mailArgs['subject'] = 'W3C Conformance Test Harness';
-    $this->openElement('span', null, FALSE);  // turn off source formatting
-    $this->addTextContent("It was developed by ");
-    $this->addHyperLink('http://www.w3.org/People/Dom/', null, "Dominique Hazael-Massieux");
-    $this->addTextContent(" ");
-    $this->addEmailHyperLink('dom@w3.org', null, $mailArgs);
-    $this->addTextContent(', ');
-    $this->addEmailHyperLink('david.berfanger@hp.com', 'David M. Berfanger', $mailArgs);
-    $this->addTextContent(" and ");
-    $this->addEmailHyperLink('peter.linss@hp.com', 'Peter Linss', $mailArgs);
-    $this->closeElement('span');
-    $this->closeElement('small');
-    $this->closeElement('p');
+    $this->writeTestSuites();
 
-    parent::writeBodyFooter();
+    $this->closeElement('div');
   }
+  
 }
 
 ?>

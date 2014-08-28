@@ -1,7 +1,7 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2011-2014 Hewlett-Packard Development Company, L.P.
  *
  *  This work is distributed under the W3C® Software License [1] 
  *  in the hope that it will be useful, but WITHOUT ANY 
@@ -17,75 +17,89 @@
  ******************************************************************************/
 
 
-require_once('core/DBConnection.php');
+require_once('lib/HarnessDB.php');
 
+require_once('modules/testsuite/TestSuite.php');
+require_once('modules/specification/Specification.php');
+require_once('modules/specification/SpecificationAnchor.php');
 
 /**
- * Class for responding to result status queries
+ * Class for caching result status queries
  */
 class StatusCache
 {
 
-  static function GetResultsForSection(TestSuite $testSuite, $sectionId)
+  static function GetResultsForSection(TestSuite $testSuite, Specification $spec, SpecificationAnchor $section = null)
   {
-    $db = new DBConnection();
+    $db = new HarnessDBConnection();
     
-    $testSuiteName = $db->encode($testSuite->getName(), 'statuscache.testsuite');
-    $sectionId = intval($sectionId);
-
+    $testSuiteName = $db->encode($testSuite->getName(), 'status_cache.test_suite');
+    $specName = $db->encode($spec->getName(), 'status_cache.spec');
+    if ($section) {
+      $specType = $db->encode($section->getSpecType());
+      $parentName = $db->encode($section->getParentName(), 'status_cache.parent_name');
+      $anchorName = $db->encode($section->getName(), 'status_cache.anchor_name');
+    }
+    else {
+      $specType = 'official';
+      $parentName = '';
+      $anchorName = '';
+    }
+    
     $sql  = "SELECT `data` ";
-    $sql .= "FROM `statuscache` ";
-    $sql .= "WHERE `testsuite` = '{$testSuiteName}' AND `section_id` = '{$sectionId}' ";
+    $sql .= "FROM `status_cache` ";
+    $sql .= "WHERE `test_suite` = '{$testSuiteName}'  ";
+    $sql .= "  AND `spec` = '{$specName}' ";
+    $sql .= "  AND `spec_type` = '{$specType}' ";
+    $sql .= "  AND `parent_name` = '{$parentName}' ";
+    $sql .= "  AND `anchor_name` = '{$anchorName}' ";
     $r = $db->query($sql);
     $dataString = $r->fetchField(0);
     
     if ($dataString) {
-      $data = json_decode($dataString);
+      $data = json_decode($dataString, TRUE);
       return $data;
     }
     return FALSE;
   }
   
   
-  static function SetResultsForSection(TestSuite $testSuite, $sectionId, $results)
+  static function SetResultsForSection(TestSuite $testSuite, Specification $spec, SpecificationAnchor $section = null, $results = null)
   {
-    $db = new DBConnection();
+    $db = new HarnessDBConnection();
     
-    $testSuiteName = $db->encode($testSuite->getName(), 'statuscache.testsuite');
-    $sectionId = intval($sectionId);
+    $testSuiteName = $db->encode($testSuite->getName(), 'status_cache.test_suite');
+    $specName = $db->encode($spec->getName(), 'status_cache.spec');
+    if ($section) {
+      $specType = $db->encode($section->getSpecType());
+      $parentName = $db->encode($section->getParentName(), 'status_cache.parent_name');
+      $anchorName = $db->encode($section->getName(), 'status_cache.anchor_name');
+    }
+    else {
+      $specType = 'official';
+      $parentName = '';
+      $anchorName = '';
+    }
+    
     $data = $db->encode(json_encode($results));
     
-    $sql  = "INSERT INTO `statuscache` ";
-    $sql .= "(`testsuite`, `section_id`, `data`) ";
-    $sql .= "VALUES ('{$testSuiteName}', '{$sectionId}', '{$data}') ";
+    $sql  = "INSERT INTO `status_cache` ";
+    $sql .= "  (`test_suite`, `spec`, `spec_type`, `parent_name`, `anchor_name`, `data`) ";
+    $sql .= "VALUES ('{$testSuiteName}', '{$specName}', '{$specType}', '$parentName', '{$anchorName}', '{$data}') ";
     $sql .= "ON DUPLICATE KEY UPDATE `data` = '{$data}' ";
     
     $db->query($sql);
   }
   
   
-  static function FlushResultsForSection(TestSuite $testSuite, $sectionId)
-  {
-    $db = new DBConnection();
-    
-    $testSuiteName = $db->encode($testSuite->getName(), 'statuscache.testsuite');
-    $sectionId = intval($sectionId);
-
-    $sql  = "DELETE FROM `statuscache` ";
-    $sql .= "WHERE `testsuite` = '{$testSuiteName}' AND `section_id` = '{$sectionId}' ";
-    
-    $db->query($sql);
-  }
-
-
   static function FlushResultsForTestSuite(TestSuite $testSuite)
   {
-    $db = new DBConnection();
+    $db = new HarnessDBConnection();
     
-    $testSuiteName = $db->encode($testSuite->getName(), 'statuscache.testsuite');
+    $testSuiteName = $db->encode($testSuite->getName(), 'status_cache.test_suite');
 
-    $sql  = "DELETE FROM `statuscache` ";
-    $sql .= "WHERE `testsuite` = '{$testSuiteName}' ";
+    $sql  = "DELETE FROM `status_cache` ";
+    $sql .= "WHERE `test_suite` = '{$testSuiteName}' ";
     
     $db->query($sql);
   }
@@ -93,9 +107,9 @@ class StatusCache
   
   static function FlushAllResults()
   {
-    $db = new DBConnection();
+    $db = new HarnessDBConnection();
     
-    $sql  = "TRUNCATE TABLE `statuscache` ";
+    $sql  = "TRUNCATE TABLE `status_cache` ";
     
     $db->query($sql);
   }

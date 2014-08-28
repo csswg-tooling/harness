@@ -18,7 +18,7 @@
 
   
 require_once("core/CmdLineWorker.php");
-require_once("lib/UserAgent.php");
+require_once("modules/useragent/UserAgent.php");
 
 
 /**
@@ -36,7 +36,7 @@ class ReparseUA extends CmdLineWorker
   function reparse() 
   {
 
-    $sql = "SELECT `id` FROM `useragents` ";
+    $sql = "SELECT `id` FROM `user_agents` ";
     $r = $this->query($sql);
 
     while ($dbData = $r->fetchRow()) {

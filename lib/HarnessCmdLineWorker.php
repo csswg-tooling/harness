@@ -17,12 +17,14 @@
  ******************************************************************************/
  
 require_once('core/CmdLineWorker.php');
+require_once('lib/HarnessDB.php');
 
 /**
  * Common utility functions for harness command line worker classes
  */
 class HarnessCmdLineWorker extends CmdLineWorker
-{  
+{
+  protected $mDB;
   protected $mTestCaseIds;
   protected $mReferences;
 
@@ -31,12 +33,14 @@ class HarnessCmdLineWorker extends CmdLineWorker
   {
     parent::__construct();
     
+    $this->mDB = new HarnessDBConnection();
   }
 
   
   /**
    * Subclass hook to store additional test case data
    */
+/*** XXX needs to be rewritten / removed
   protected function _addTestCase($testCaseName, $testCaseId, $testCaseData)
   {
     $this->mTestCaseIds[$testCaseName] = $testCaseId;
@@ -48,7 +52,7 @@ class HarnessCmdLineWorker extends CmdLineWorker
     $this->mTestCaseIds = array();
     
     if ($testSuiteName) {
-      $testSuiteName = $this->encode($testSuiteName, 'suitetests.testsuite');
+      $testSuiteName = $this->mDB->encode($testSuiteName, 'suitetests.testsuite');
       
       $sql  = "SELECT * ";
       $sql .= "FROM `testcases` ";
@@ -63,7 +67,7 @@ class HarnessCmdLineWorker extends CmdLineWorker
       $sql .= "ORDER BY `testcase` ";
     }
     
-    $r = $this->query($sql);
+    $r = $this->mDB->query($sql);
     while ($testCaseData = $r->fetchRow()) {
       $testCaseName = $testCaseData['testcase'];
       $testCaseId   = intval($testCaseData['id']);
@@ -89,7 +93,7 @@ class HarnessCmdLineWorker extends CmdLineWorker
     $sql  = "SELECT * ";
     $sql .= "FROM `references` ";
     
-    $r = $this->query($sql);
+    $r = $this->mDB->query($sql);
     
     $this->mReferences = $r->fetchTable();
   }
@@ -119,6 +123,7 @@ class HarnessCmdLineWorker extends CmdLineWorker
     }
     return FALSE;
   }
+****/
 }
 
 ?>

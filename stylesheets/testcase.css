@@ -15,6 +15,7 @@
  * 
  ******************************************************************************/
 
+/*
 html, body, div, p, form {
   margin: 0;
   padding: 0;
@@ -44,13 +45,52 @@ h1, h2, h3, h4 {
   margin: 0; padding: 0;
 }
 
+
+.header {
+  display: table-cell;
+  margin-bottom: 0.4em;
+  padding: 1em 1em 0em 1em;
+  height: auto;
+}
+
+.footer {
+  margin-top: 0.4em;
+  padding: .5em;
+  display: table-cell;
+  height: 2em;
+}
+
+.title {
+  clear: both;
+  font-size: 1.0em;
+  margin-bottom: 4pt;
+}
+
+.suite {
+  font: inherit; 
+  font-size: 1.3em;
+  margin-bottom: 4pt;
+}
+.testname {
+  clear: both;
+  font-size: 1.0em;
+  margin-bottom: 4pt;
+}
+.testname {
+  font-weight: bold;
+}
+
+*/
+
+
+
 .results {
   font-size: small;
   float: right;
   width: auto;
-  margin: 0 0 0 1em;
+  margin: 3em 0 0 1em;
 }
-.results a {
+.results .engine {
   padding: 1px .25em;
   margin: 0 0.1em;
   border: solid 1px black;
@@ -83,35 +123,50 @@ h1, h2, h3, h4 {
   background-color: #AAA;
 }
 
-.suite {
-  font: inherit; 
-  font-size: 1.3em;
-  margin-bottom: 4pt;
+
+.testinfo {
+  background: #f4f4f4;
+  margin: -.5em -1em .5em -36px;
+  padding: .75em 1em .5em 36px;
+  border-bottom: 1px solid #aaa;
 }
-.title {
-  clear: both;
-  font-size: 1.0em;
-  margin-bottom: 4pt;
+
+.testinfo .format {
+  float: right;
+  font-size: smaller;
+  margin-left: 2em;
 }
-.testname {
-  clear: both;
-  font-size: 1.0em;
-  margin-bottom: 4pt;
+ .testinfo .format .other {
+  color: white;
+  background: #4040ff;
 }
-.resultlink {
+
+.testinfo .draft::after {
+  content: '';
+  display: inline-block;
+  width: 42px;
+  height: 14px;
+  background: url(../img/icons.png) no-repeat center;
+  background-position: 0px 0px;
+  margin: 0em .1em;
+  vertical-align: top;
+  text-decoration: remove-all;
+}
+
+
+.shepherd {
   font-weight: normal;
-}
-.notes {
+  float: right;
+  margin-left: 2em;
   font-size: smaller;
 }
-.testname {
-  font-weight: bold;
+.shepherd a + a {
+  margin-left: 1em;
 }
-.header {
-  display: table-cell;
-  margin-bottom: 0.4em;
-  padding: 1em 1em 0em 1em;
-  height: auto;
+
+.notes {
+  margin-top: .5em;
+  font-size: smaller;
 }
 
 .prerequisites {
@@ -120,115 +175,159 @@ h1, h2, h3, h4 {
 }
 p.userstyle { 
   color: green; 
-  display: none; 
+  display: none;
 }
 p.nouserstyle {
   color: red; 
   display: none;
 }
 
-.tabbar {
-  display: table-row;
-  height: 1.0em;
+/* Tab Bar */
+.tab_bar {
+  display: block;
+  margin: -.5em -1em 0 -36px;
+  padding: .5em 0em 0em 26px;
+  background: #f8f8f8;
 }
-.tabbar.ref {
-  height: 3.5em;
-}
-.tabbar .tabgroup {
+.tab_bar .tab_group {
   padding: 0;
   margin: 0;
 }
-.tabbar .tabgroup .tab {
+.tab_bar .tab_group .tab {
   float: left;
   border: 1px solid #888;
   border-bottom-width: 0;
-  margin: 0 0 0 1em;
+  border-radius: 4px 4px 0 0;
+  margin: 0 -0.5em 0 1em;
 }
-.tabbar .tabgroup .tab a {
+.tab_bar .tab_group .or {
+  float: left;
+  display: block;
+  text-align: bottom;
+  padding: 0.24em 1em;
+  margin: 0 -0.5em 0 1em;
+}
+.tab_bar .tab_group .tab a {
   text-decoration: none;
   display: block;
   padding: 0.24em 1em;
   text-align: center;
+  border-radius: inherit;
   background: #e4e4e4;
 }
-.tabbar .tabgroup .tab a:hover {
+.tab_bar .tab_group .tab a:hover {
   background: #eee;
 }
-.tabbar .tabgroup .tab.active {
+.tab_bar .tab_group .tab.active {
   border-color: black;
+  background: white;
 }
-.tabbar .tabgroup .tab.active a {
+.tab_bar .tab_group .tab.active a {
   position: relative;
   top: 1px;
-  background: white;
+  background: inherit;
   color: black;
 }
-.tabbar .tabgroup.format {
-  float: right;
-  display: inline;
-  margin-right: 1.5em;
-  clear: none;
-}
-.tabbar .tabgroup.format .tab.active a {
-  top: 2px;
-}
-.tabbar .tabgroup.format .tab.disabled a {
+.tab_bar .tab_group .tab.disabled a {
   background: #ddd;
   color: #aaa;
 }
-.tabbar .tabgroup.format .tab.active.other,
-.tabbar .tabgroup.format .tab.active.other a {
-  color: white;
-  background: #4040ff;
+.tab_bar .tab_foot {
+  border-top: 1px solid black;
+  clear: both;
+  margin-bottom: 0;
+  margin-left: -36px;
+  padding-left: 36px;
 }
 .instruct {
-  border-top: 1px solid black;
-  clear: left;
-  padding: 4pt 1em 0 1em;
-  margin: 0 0 4pt 0;
+  padding: 4pt 0 0 10px;
+  margin: 0;
   color: black;
 }
+.instruct:not(.active) {
+  display: none;
+}
 
-.test {
-  height: 70%;
+
+.body  {
+  padding:0;
+}
+.body_inner {
+  display: table; 
+  table-layout: fixed; 
+  padding: 0; 
+  margin: 0; 
+  height: 100%; 
+  width: 100%; 
+}
+.body .testinfo {
+  display: table-cell;
+  height: 1em;
+  padding: .75em 1em .5em 36px;
+}
+.body .tab_bar {
+  display: table-row; 
+}
+.body .tab_bar .tab_group {
+  display: table-cell; 
+  padding: .5em 0 0 26px;
+  height: 1em; 
+}
+.body .test_view {
+  height: 90%;
   width: 100%;
   text-align: center;
   display: table-row;
 }
-.test p {
+.body .test_wrapper {
   height: inherit;
   display: table-cell;
+  position: relative;
+  xpadding: .5em .5em .5em 36px;
 }
-object {
-  height: 98%;
-  width: 98%;
+object, iframe {
+  position: absolute;
   border: groove 2px;
-  margin: auto;
   display: block;
+  top: 8px;
+  left: 34px;
+  height: 95%;
+  width: 90%;
+  height: calc(100% - 16px);
+  width: calc(100% - 54px);
 }
-object a {
-  display: block;
+object:not(.active), iframe:not(.active) {
+  visibility: hidden;
 }
 
-.footer {
-  margin-top: 0.4em;
-  padding: .5em;
-  display: table-cell;
-  height: 2em;
+.body > p {
+  margin-left: 36px;
 }
-p.buttons {
+
+
+.cycle {
+  float: right;
+  margin-right: 1em;
+}
+
+
+.footer {
+  text-align: center;
+}
+.footer .buttons {
   float: left;
 }
-p.ua {
+.footer .ua {
+  float: right;
   text-align: right;
-  font-size: smaller;
+  padding-top: .2em;
 }
-p.ua abbr.other {
+.footer .ua abbr.other {
   font-weight: bolder;
   color: white;
   background: #4040ff;
   padding: 2pt;
 }
-p.ua a {
+.footer .ua a {
   padding: 0 .1em;
 }

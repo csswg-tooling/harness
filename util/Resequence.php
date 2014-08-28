@@ -18,9 +18,10 @@
 
 require_once('lib/HarnessCmdLineWorker.php');
 require_once('lib/TestSuites.php');
-require_once('lib/TestSuite.php');
 require_once('lib/Results.php');
-require_once('lib/Flags.php');
+
+require_once('modules/testsuite/TestSuite.php');
+require_once('modules/testsuite/TestFlags.php');
 
 /**
  * This class regenerates the testsequence table, maintaining an ordering 
@@ -32,7 +33,7 @@ require_once('lib/Flags.php');
 class Resequence extends HarnessCmdLineWorker
 {
   protected $mTestSuites;
-  protected $mEngineNames;
+  protected $mEngines;
   protected $mCounts;
 
   function __construct() 
@@ -48,7 +49,7 @@ class Resequence extends HarnessCmdLineWorker
     $passCount = 0;
     $testInvalid = FALSE;
     
-    foreach ($this->mEngineNames as $engineName) {
+    foreach ($this->mEngines as $engineName => $engine) {
       if ($engineResults && array_key_exists($engineName, $engineResults)) {
         $pass      = $engineResults[$engineName]['pass'];
         $invalid   = $engineResults[$engineName]['invalid'];
@@ -61,7 +62,7 @@ class Resequence extends HarnessCmdLineWorker
       }
     }
     
-    foreach ($this->mEngineNames as $engineName) {
+    foreach ($this->mEngines as $engineName => $engine) {
       $enginePasses = FALSE;
       $engineCount  = 0;
       if ($engineResults && array_key_exists($engineName, $engineResults)) {
@@ -118,11 +119,12 @@ class Resequence extends HarnessCmdLineWorker
   function rebuild()
   {
     foreach ($this->mTestSuites->getTestSuites() as $testSuite) {
-      if ($testSuite->isLocked()) {
+      if ($testSuite->getLockDateTime()) {
         continue;
       }
     
       $testSuiteName = $testSuite->getName();
+      $optionalFlags = $testSuite->getOptionalFlags();
        
       unset ($this->mCounts);
       
@@ -132,40 +134,42 @@ class Resequence extends HarnessCmdLineWorker
 
       print "Processing results\n";
       
-      $this->mEngineNames = $results->getEngineNames();
-      $this->mEngineNames[] = '-no-data-';  // magic engine name for engines with no result data
+      $this->mEngines = $results->getEngines();
+      $this->mEngines['-no-data-'] = FALSE;  // magic engine name for engines with no result data
       $testCases = $results->getTestCases();
       
       $index = 0;
-      foreach ($testCases as $testCaseId => $testCaseData) {
+      foreach ($testCases as $testCaseId => $testCase) {
         $index++;
 
-        $flags = new Flags($testCaseData['flags']);
-        $optional = $testSuite->testIsOptional($flags);
+        $optional = $testCase->isOptional($optionalFlags);
 
-        $engineResults = $results->getResultCountsFor($testCaseId);
+        $engineResults = $results->getResultCountsFor($testCase);
         
-        $this->_processTestCase($testCaseId, $engineResults, $optional, $index);
+        $this->_processTestCase($testCase->getId(), $engineResults, $optional, $index);
       }
       
-      $testSuiteName = $this->encode($testSuiteName, 'testsequence.testsuite');
+      $testSuiteName = $this->mDB->encode($testSuiteName, 'test_sequence.test_suite');
       
-      foreach ($this->mEngineNames as $engineName) {
+      $sql  = "DELETE FROM `test_sequence` ";
+      $sql .= "WHERE `test_suite` = '{$testSuiteName}' ";
+      $this->mDB->query($sql);
+    
+      foreach ($this->mEngines as $engineName => $engine) {
         print "Storing sequence for {$engineName}\n";
+        $engineName = $this->mDB->encode($engineName, 'test_sequence.engine');
         
         $engineCounts = $this->mCounts[$engineName];
         asort($engineCounts);
-        $engineName = $this->encode($engineName, 'testsequence.engine');
         $sequence = -1;
         foreach ($engineCounts as $testCaseId => $count) {
           $sequence++;
           
-          $sql  = "INSERT INTO `testsequence` ";
-          $sql .= "(`testsuite`, `engine`, `testcase_id`, `sequence`) ";
+          $sql  = "INSERT INTO `test_sequence` ";
+          $sql .= "(`test_suite`, `engine`, `testcase_id`, `sequence`) ";
           $sql .= "VALUES ('{$testSuiteName}', '{$engineName}', '{$testCaseId}', '{$sequence}') ";
-          $sql .= "ON DUPLICATE KEY UPDATE `sequence` = '{$sequence}' ";
 
-          $this->query($sql);
+          $this->mDB->query($sql);
         }
       }
     }

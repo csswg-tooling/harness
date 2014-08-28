@@ -18,7 +18,7 @@
 
 
 require_once('lib/HarnessPage.php');
-require_once('lib/UserAgent.php');
+require_once('modules/useragent/UserAgent.php');
 
 /**
  * A page to select a different user agent for entering test results
@@ -39,7 +39,7 @@ class SelectUserAgentPage extends HarnessPage
     parent::__construct($args, $pathComponents);
     
     $this->mSubmitData = $this->_uriData();
-    unset($this->mSubmitData['u']);
+    unset($this->mSubmitData['ua']);
 
     $this->mRedirectURI = null;
     
@@ -52,8 +52,8 @@ class SelectUserAgentPage extends HarnessPage
         }
       }
       
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
 
       $this->mRedirectURI = $this->buildPageURI('testsuite', $args);
     }
@@ -70,8 +70,8 @@ class SelectUserAgentPage extends HarnessPage
     
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
       $title = "Enter Data";
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
 
       $uri = $this->buildPageURI('testsuite', $args);
       $uris[] = compact('title', 'uri');
@@ -124,7 +124,9 @@ class SelectUserAgentPage extends HarnessPage
 
   function writeBodyContent()
   {
-    $this->addElement('p', null, 
+    $this->openElement('div', array('class' => 'body'));
+
+    $this->addElement('p', null,
                       "This page allows you to enter test results for a user agent " . 
                       "other than the one you are currently using.");
 
@@ -161,7 +163,7 @@ class SelectUserAgentPage extends HarnessPage
 
       $attrs['size'] = 10;
       $attrs['style'] = 'width: 80%';
-      $this->openSelectElement('u', $attrs);
+      $this->openSelectElement('ua', $attrs);
       
       foreach ($userAgents as $engineTitle => $agentsByEngine) {
         $this->openElement('optgroup', array('label' => $engineTitle));
@@ -202,6 +204,8 @@ class SelectUserAgentPage extends HarnessPage
     $this->addInputElement('submit', 'action', 'Cancel');
     $this->closeElement('form');
     $this->closeElement('p');
+
+    $this->closeElement('div');
   }
 }
 

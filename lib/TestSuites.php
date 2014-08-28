@@ -16,31 +16,39 @@
  * 
  ******************************************************************************/
 
-require_once('core/DBConnection.php');
+require_once('lib/HarnessDB.php');
 
+require_once('modules/testsuite/TestSuite.php');
 
 /**
  * Class to encapsulate data about all test suites
  */
-class TestSuites extends DBConnection
+class TestSuites extends HarnessDBConnection
 {
   protected $mTestSuites;
+  protected $mTestCounts;
 
 
   function __construct() 
   {
     parent::__construct();
     
-    $sql  = "SELECT DISTINCT `suitetests`.`testsuite` ";
-    $sql .= "FROM `suitetests` LEFT JOIN `testsuites` ";
-    $sql .= "ON `suitetests`.`testsuite` = `testsuites`.`testsuite` ";
-    $sql .= "WHERE `testsuites`.`active` = '1' ";
-    $sql .= "ORDER BY `testsuites`.`locked`, `testsuites`.`testsuite` ";
+    $testSuiteDB = TestSuite::GetDBName();
+    
+    $sql  = "SELECT `suite_tests`.`test_suite`, COUNT(*) as `test_count` ";
+    $sql .= "FROM `suite_tests` ";
+    $sql .= "LEFT JOIN `{$testSuiteDB}`.`test_suites` ";
+    $sql .= "  ON `suite_tests`.`test_suite` = `{$testSuiteDB}`.`test_suites`.`test_suite` ";
+    $sql .= "WHERE `{$testSuiteDB}`.`test_suites`.`active` = '1' ";
+    $sql .= "GROUP BY `suite_tests`.`test_suite` ";
+    $sql .= "ORDER BY `{$testSuiteDB}`.`test_suites`.`lock_date`, `{$testSuiteDB}`.`test_suites`.`test_suite` ";
     
     $r = $this->query($sql);
     
-    while ($testSuite = $r->fetchRow()) {
-      $this->mTestSuites[] = new TestSuite($testSuite['testsuite']);
+    while ($data = $r->fetchRow()) {
+      $testSuiteName = strtolower($data['test_suite']);
+      $this->mTestSuites[$testSuiteName] = TestSuite::GetTestSuiteByName($testSuiteName);
+      $this->mTestCounts[$testSuiteName] = intval($data['test_count']);
     }
   }
 
@@ -60,7 +68,7 @@ class TestSuites extends DBConnection
     $count = 0;
     if ($this->mTestSuites) {
       foreach ($this->mTestSuites as $testSuite) {
-        if ($testSuite->isLocked()) {
+        if ($testSuite->getLockDateTime()) {
           $count++;
         }
       }
@@ -72,6 +80,15 @@ class TestSuites extends DBConnection
   function getTestSuites()
   {
     return $this->mTestSuites;
+  }
+  
+  function getTestCount(TestSuite $testSuite)
+  {
+    $testSuiteName = strtolower($testSuite->getName());
+    if ($this->mTestCounts && array_key_exists($testSuiteName, $this->mTestCounts)) {
+      return $this->mTestCounts[$testSuiteName];
+    }
+    return FALSE;
   }
 
 }

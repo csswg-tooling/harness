@@ -1,4 +1,6 @@
 php_value mbstring.internal_encoding UTF-8
+php_value mbstring.func_overload 7
+php_value output_buffering 0
 
 Options +MultiViews
 
@@ -7,10 +9,10 @@ AddHandler application/x-httpd-php .js
 
 
 
-RewriteEngine On
-RewriteBase	/harness
+<IfModule mod_rewrite.c>
+  RewriteEngine On
 
-RewriteCond %{REQUEST_FILENAME} !-f  
-RewriteCond %{REQUEST_FILENAME} !-d  
-RewriteRule ^(.*)$ index.php [L,QSA]  
-
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php [L,QSA]
+</IfModule>

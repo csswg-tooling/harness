@@ -36,10 +36,6 @@ class SuccessPage extends HarnessPage
   {
     parent::__construct($args, $pathComponents);
 
-    if (! $this->mTestSuite) {
-      $msg = 'No test suite identified.';
-      trigger_error($msg, E_USER_WARNING);
-    }
   }
 
 
@@ -49,8 +45,8 @@ class SuccessPage extends HarnessPage
     
     if ($this->mTestSuite) {
       $title = "Enter Data";
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
 
       $uri = $this->buildPageURI('testsuite', $args);
       $uris[] = compact('title', 'uri');
@@ -65,25 +61,31 @@ class SuccessPage extends HarnessPage
 
   function writeBodyContent()
   {
-    $this->addElement('p', null, "Thank you for providing test result data for the " .
-                                 $this->mTestSuite->getTitle());
+    if ($this->mTestSuite) {
+      $this->openElement('div', array('class' => 'body'));
+      
+      $this->addElement('p', null, "Thank you for providing test result data for the " .
+                                   $this->mTestSuite->getTitle());
 
-    $args['u'] = $this->mUserAgent->getId();
-    $homeURI = $this->buildPageURI('home', $args);
+      $args['ua'] = $this->mUserAgent->getId();
+      $homeURI = $this->buildPageURI('home', $args);
 
-    $args['s'] = $this->mTestSuite->getName();
-    $reviewURI = $this->buildPageURI('review', $args);
-    $enterURI = $this->buildPageURI('testsuite', $args);
+      $args['suite'] = $this->mTestSuite->getName();
+      $reviewURI = $this->buildPageURI('review', $args);
+      $enterURI = $this->buildPageURI('testsuite', $args);
 
-    $this->openElement('p', null, FALSE);
-    $this->addTextContent("You can ");
-    $this->addHyperLink($enterURI, null, "enter additional data");
-    $this->addTextContent(", ");
-    $this->addHyperLink($reviewURI, null, "review results");
-    $this->addTextContent(", or access other test suites from the ");
-    $this->addHyperLink($homeURI, null, "harness welcome page");
-    $this->addTextContent(".");
-    $this->closeElement('p');
+      $this->openElement('p', null, FALSE);
+      $this->addTextContent("You can ");
+      $this->addHyperLink($enterURI, null, "enter additional data");
+      $this->addTextContent(", ");
+      $this->addHyperLink($reviewURI, null, "review results");
+      $this->addTextContent(", or access other test suites from the ");
+      $this->addHyperLink($homeURI, null, "harness home page");
+      $this->addTextContent(".");
+      $this->closeElement('p');
+
+      $this->closeElement('div');
+    }
   }
 }
 

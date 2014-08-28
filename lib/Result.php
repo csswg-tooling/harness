@@ -16,28 +16,25 @@
  * 
  ******************************************************************************/
  
-require_once('core/DBConnection.php');
+require_once('lib/HarnessDB.php');
 
 
 /**
  * Class to load result details
  */
-class Result extends DBConnection
+class Result extends HarnessDBEntity
 {
-  protected $mInfo;
 
-
-  function __construct($resultId)
+  protected function _queryById($id)
   {
-    parent::__construct();
-    
     $sql  = "SELECT * ";
     $sql .= "FROM `results` ";
-    $sql .= "WHERE `id` = '{$resultId}' ";
+    $sql .= "WHERE `id` = {$id} ";
 
     $r = $this->query($sql);
 
-    $this->mInfo = $r->fetchRow();
+    $data = $r->fetchRow();
+    return $data;
   }
 
 
@@ -48,7 +45,7 @@ class Result extends DBConnection
    */
   function isValid()
   {
-    return ($this->mInfo && array_key_exists('id', $this->mInfo) && (0 < $this->mInfo['id']));
+    return (0 < $this->getId());
   }
   
 
@@ -59,98 +56,67 @@ class Result extends DBConnection
    */
   function getId()
   {
-    if ($this->isValid()) {
-      return intval($this->mInfo['id']);
-    }
-    return FALSE;
+    return $this->_getIntValue('id');
   }
   
   function getTestCaseId()
   {
-    if ($this->isValid()) {
-      return intval($this->mInfo['testcase_id']);
-    }
-    return FALSE;
+    return $this->_getIntValue('testcase_id');
   }
   
   function getRevision()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['revision'];
-    }
-    return FALSE;
+    return $this->_getStrValue('revision');
   }
   
   function getFormatName()
   {
-    if ($this->isValid()) {
-      return strtolower($this->mInfo['format']);
-    }
-    return FALSE;
+    return $this->_getStrValue('format');
   }
   
   function getUserAgentId()
   {
-    if ($this->isValid()) {
-      return intval($this->mInfo['useragent_id']);
-    }
-    return FALSE;
+    return $this->_getIntValue('user_agent_id');
   }
   
-  function getSourceId()
+  function getUserId()
   {
-    if ($this->isValid()) {
-      return intval($this->mInfo['source_id']);
-    }
-    return FALSE;
+    return $this->_getIntValue('user_id');
   }
   
-  function getSourceUserAgentId()
+  function getUserUserAgentId()
   {
-    if ($this->isValid()) {
-      return intval($this->mInfo['source_useragent_id']);
-    }
-    return FALSE;
+    return $this->_getIntValue('user_user_agent_id');
   }
   
   function getResult()
   {
-    if ($this->isValid()) {
-      return strtolower($this->mInfo['result']);
-    }
-    return FALSE;
+    return $this->_getStrValue('result');
+  }
+  
+  function getPassCount()
+  {
+    return $this->_getIntValue('pass_count');
+  }
+  
+  function getFailCount()
+  {
+    return $this->_getIntValue('fail_count');
   }
   
   function getComment()
   {
-    if ($this->isValid()) {
-      return $this->mInfo['comment'];
-    }
-    return FALSE;
+    return $this->_getStrValue('comment');
   }
   
   function getIgnore()
   {
-    if ($this->isValid()) {
-      return intval($this->mInfo['ignore']);
-    }
-    return FALSE;
-  }
-  
-  function getDate()
-  {
-    if ($this->isValid()) {
-      return $this->mInfo['modified'];
-    }
-    return FALSE;
+    return $this->_getIntValue('ignore');
   }
   
   function getDateTime()
   {
-    if ($this->isValid()) {
-      return new DateTime($this->mInfo['modified'], new DateTimeZone(Config::Get('server', 'time_zone')));
-    }
-    return FALSE;
+    return $this->_getDateTimeValue('modified');
   }
   
 }

@@ -17,12 +17,14 @@
  ******************************************************************************/
 
 require_once('lib/HarnessCmdLineWorker.php');
-require_once('lib/TestSuite.php');
 require_once('lib/Results.php');
 require_once('lib/Result.php');
-require_once('lib/Format.php');
-require_once('lib/UserAgent.php');
 require_once('core/User.php');
+
+require_once('modules/testsuite/TestSuite.php');
+require_once('modules/testsuite/TestFormat.php');
+require_once('modules/useragent/UserAgent.php');
+
 
 /**
  * This class exports the results database into a csv file
@@ -52,6 +54,16 @@ class ExportResults extends HarnessCmdLineWorker
     return $string;
   }
   
+  protected function _encodeDateTime(DateTime $dateTime = null)
+  {
+    if ($dateTime) {
+      $clone = clone $dateTime;
+      $clone->setTimeZone(self::_GetUTCTimeZone());
+      return $clone->format('c');
+    }
+    return '';
+  }
+  
   
   /**
    * Dump test results into a csv file
@@ -68,7 +80,7 @@ class ExportResults extends HarnessCmdLineWorker
       if ($outFile) {
         fwrite($outFile, "testcase,result,format,date,source,engine,useragent\n");
         
-        $formats = Format::GetFormatsFor($testSuite);
+        $formats = $testSuite->getFormats();
         $userAgents = UserAgent::GetAllUserAgents();
         $users = User::GetAllUsers();
 
@@ -79,31 +91,37 @@ class ExportResults extends HarnessCmdLineWorker
         echo "Exporting\n";
         
         $testCases = $results->getTestCases();
-        foreach ($testCases as $testCaseId => $testCaseData) {
-          $engineResults = $results->getResultsFor($testCaseId);
+        foreach ($testCases as $testCaseId => $testCase) {
+          $engineResults = $results->getResultsFor($testCase);
           
           if ($engineResults) {
             ksort($engineResults);
             
-            $testCaseName = $testCaseData['testcase'];
+            $testCaseName = $testCase->getName();
             
-            foreach ($engineResults as $engine => $engineResultData) {
+            foreach ($engineResults as $engineName => $engineResultData) {
               asort($engineResultData);
               
               foreach ($engineResultData as  $resultId => $resultValue) {
                 $result = new Result($resultId);
                 $userAgent = $userAgents[$result->getUserAgentId()];
-                $sourceId = $result->getSourceId();
+                $userId = $result->getUserId();
               
                 $testCaseName     = $this->_encode($testCaseName);
                 $resultValue      = $this->_encode($resultValue);
                 $testFormat       = $this->_encode($formats[$result->getFormatName()]->getTitle());
-                $date             = $this->_encode($result->getDate());
+                $date             = $this->_encodeDateTime($result->getDateTime());
                 $engine           = $this->_encode($userAgent->getEngineTitle());
                 $userAgentString  = $this->_encode($userAgent->getUAString());
-                if ($sourceId) {
-                  $user = $users[$sourceId];
+                if ($userId) {
+                  $user = $users[$userId];
                   $source = $this->_encode($user->getName());
+                  if (! $source) {
+                    $ipAddress = $user->getIPAddress();
+                    if ($ipAddress->isValid()) {
+                      $source = (($ipAddress->isIPv6()) ? $ipAddress->getIPv6String() : $ipAddress->getIPv4String());
+                    }
+                  }
                 }
                 else {
                   $source = '';

@@ -18,9 +18,9 @@
 
 
 require_once("lib/HarnessPage.php");
-require_once("lib/TestSuite.php");
 require_once("lib/Sections.php");
 require_once("lib/TestCases.php");
+
 
 
 /**
@@ -43,46 +43,41 @@ class ReviewPage extends HarnessPage
   {
     parent::__construct($args, $pathComponents);
 
-    if (! $this->mTestSuite) {
-      $msg = 'No test suite identified.';
-      trigger_error($msg, E_USER_WARNING);
-    }
-
     $this->mSections = new Sections($this->mTestSuite);
 
     $this->mTestCases = new TestCases($this->mTestSuite);
     
-    $this->mSubmitData['s'] = $this->mTestSuite->getName();
+    $this->mSubmitData['suite'] = $this->mTestSuite->getName();
     if (! $this->mUserAgent->isActualUA()) {
-      $this->mSubmitData['u'] = $this->mUserAgent->getId();
+      $this->mSubmitData['ua'] = $this->mUserAgent->getId();
     }
     
     $this->mResultsURI = null;
-    if ('Go' == $this->_postData('action')) {
-      $args['s'] = $this->mTestSuite->getName();
-      $args['c'] = $this->_postData('c');
-      $args['sec'] = $this->_postData('sec');
+    if (('Go' == $this->_postData('action')) || (1 == $this->mTestCases->getCount())) {
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['testcase'] = $this->_postData('testcase');
+      $args['section'] = $this->_postData('section');
 
-      if (null !== $this->_postData('t')) {
-        $type = intval($this->_postData('t'));
+      if (null !== $this->_postData('type')) {
+        $type = intval($this->_postData('type'));
         switch ($type) {
-          case 0: unset($args['sec']); // whole suite
-          case 1: unset($args['c']);   // test group
+          case 0: unset($args['section']);  // whole suite
+          case 1: unset($args['testcase']); // test group
                   break;
-          case 2: unset($args['sec']);      // individual test case
+          case 2: unset($args['section']);  // individual test case
                   break;         
         }
       }
 
-      $filter = $this->_postData('f');
+      $filter = $this->_postData('filter');
       if (is_array($filter)) {
         $filterValue = 0;
         foreach ($filter as $value) {
           $filterValue = $filterValue | intval($value);
         }
-        $args['f'] = $filterValue;
+        $args['filter'] = $filterValue;
       }
-      $args['o'] = $this->_postData('o');
+      $args['order'] = $this->_postData('order');
       
       $this->mResultsURI = $this->buildPageURI('results', $args);
     }
@@ -113,129 +108,153 @@ class ReviewPage extends HarnessPage
   }
 
 
-  function writeSectionOptions($parentId = 0)
+  function writeSectionOptions(Specification $spec, SpecificationAnchor $parent = null)
   {
-    $data = $this->mSections->getSubSectionData($parentId);
-    foreach ($data as $sectionData) {
-      $id = $sectionData['id'];
-      $sectionName = $sectionData['section'];
-      $testCount = $sectionData['test_count'];
-      $subSectionCount = $this->mSections->getSubSectionCount($id);
+    $sections = $this->mSections->getSubSections($spec, $parent);
+    foreach ($sections as $section) {
+      $sectionName = $section->getName();
+      $testCount = $section->getLinkCount();
+      $subSectionCount = $this->mSections->getSubSectionCount($spec, $section);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
-        $this->addOptionElement($sectionName, null, "{$sectionName}: {$sectionData['title']}");
+        $this->addOptionElement($sectionName, null, "{$sectionName}: {$section->getTitle()}");
       }
       if (0 < $subSectionCount) {
-        $this->writeSectionOptions($id);
+        $this->writeSectionOptions($spec, $section);
       }
     }
   }
 
 
-  function writeSectionSelect()
+  function writeSectionSelect(Specification $spec)
   {
-    $this->openSelectElement('sec', array('style' => 'width: 25em',
-                                          'onchange' => 'document.getElementById("result_form").t[1].checked = true'));
-    $this->writeSectionOptions();
+    $this->openSelectElement('section', array('style' => 'width: 25em',
+                                              'onchange' => 'document.getElementById("result_form").type[1].checked = true'));
+    $this->writeSectionOptions($spec);
     $this->closeElement('select');
   }
   
   
   function writeTestCaseSelect()
   {
-    $testCases = $this->mTestCases->getTestCaseData();
+    $testCases = $this->mTestCases->getTestCases();
     
-    $this->openSelectElement('c', array('style' => 'width: 25em',
-                                        'onchange' => 'document.getElementById("result_form").t[2].checked = true'));
+    if (1 < count($testCases)) {
+      $this->openSelectElement('testcase', array('style' => 'width: 25em',
+                                                 'onchange' => 'document.getElementById("result_form").type[2].checked = true'));
 
-    foreach ($testCases as $testCaseData) {
-      $testCaseName = $testCaseData['testcase'];
-      
-      $this->addOptionElement($testCaseName, null,
-                              "{$testCaseName}: {$testCaseData['title']}");
+      foreach ($testCases as $testCase) {
+        $testCaseName = $testCase->getName();
+        
+        $this->addOptionElement($testCaseName, null,
+                                "{$testCaseName}: {$testCase->getTitle()}");
+      }
+
+      $this->closeElement('select');
     }
-
-    $this->closeElement('select');
+    else {
+      $testCaseData = reset($testCases);
+      $this->addTextContent("{$testCase->getName()}: {$testCase->getTitle()}");
+    }
   }
   
-
-  function writeBodyContent()
+  
+  function writeTestControls()
   {
-    $this->openElement('p');
-    $this->addTextContent("The {$this->mTestSuite->getTitle()} test suite contains ");
-    $this->addTextContent($this->mTestCases->getCount() . " test cases.");
-    $this->addTextContent("You can choose to review:");
-    $this->closeElement('p');
-    
-    $this->openFormElement($this->buildPageURI(null, $this->_uriData()),
-                           'post', 'result_form', array('onSubmit' => 'return filterTypes();'));
+    $this->addElement('p', null,
+                      "The {$this->mTestSuite->getTitle()} contains {$this->mTestCases->getCount()} test cases.");
+
+    $this->openFormElement('', 'post', 'result_form');
 
     $this->openElement('p');
+    $this->addTextContent("You can choose to review:");
+    $this->addElement('br');
     
     $this->writeHiddenFormControls(TRUE);
-    
-    $this->addInputElement('radio', 't', 0, 't0', array('checked' => TRUE));
-    $this->addLabelElement('t0', ' The full test suite');
+
+    $this->addInputElement('radio', 'type', 0, 'type0', array('checked' => TRUE));
+    $this->addLabelElement('type0', ' The full test suite');
     $this->addElement('br');
     
-    if (0 < $this->mSections->getSubSectionCount()) {
-      $this->addInputElement('radio', 't', 1, 't1');
-      $this->addLabelElement('t1', ' A section of the specification: ');
-      $this->writeSectionSelect();
-      $this->addElement('br');
-    }
-    else {  // write dummy controls so script still works
-      $this->openElement('span', array('style' => 'display: none'));
-      $this->addInputElement('radio', 't', 1);
-      $this->addInputElement('hidden', 'sec', '');
-      $this->closeElement('span');
+    $specs = $this->mSections->getSpecifications();
+    $sectionCount = 0;
+    foreach ($specs as $specName => $spec) {
+      $sectionCount++;
+      if (0 < $this->mSections->getSubSectionCount($spec)) {
+        $sectionCount++;
+        $this->addInputElement('radio', 'type', 1, 'type1');
+        $specName = ((1 < count($specs)) ? ' ' . $spec->getTitle() : '');
+        $this->addLabelElement('type1', " A section of the specification{$specName}: ");
+        $this->writeSectionSelect($spec);
+        $this->addElement('br');
+      }
     }
     
-    $this->addInputElement('radio', 't', 2, 't2');
-    $this->addLabelElement('t2', ' A single test case: ');
+    $this->addInputElement('radio', 'type', 2, 'type2');
+    $this->addLabelElement('type2', ' A single test case: ');
     $this->writeTestCaseSelect();
-    $this->addElement('br');
-    
     $this->closeElement('p');
     
-    if (0 < $this->mSections->getSubSectionCount()) {
+    if (1 < $sectionCount) {
       $this->openElement('p');
       $this->addTextContent('Options:');
       $this->addElement('br');
-      $this->addInputElement('checkbox', 'o', 1, 'o1');
-      $this->addLabelElement('o1', ' Group by specification section');
+      $this->addInputElement('checkbox', 'order', 1, 'order1', array('checked' => TRUE));
+      $this->addLabelElement('order1', ' Group by specification section');
       $this->closeElement('p');
     }
 
-    $this->openElement('p');
-    $this->addTextContent('Do not display tests that:');
-    $this->addElement('br');
-
-    $this->addInputElement('checkbox', 'f[]', 1, 'f1');
-    $this->addLabelElement('f1', ' Meet exit criteria');
-    $this->addElement('br');
+    $this->writeFilterControls();
     
-    $this->addInputElement('checkbox', 'f[]', 2, 'f2');
-    $this->addLabelElement('f2', ' Have blocking failures');
-    $this->addElement('br');
-    
-    $this->addInputElement('checkbox', 'f[]', 4, 'f4');
-    $this->addLabelElement('f4', ' Lack sufficient data');
-    $this->addElement('br');
-    
-    $this->addInputElement('checkbox', 'f[]', 8, 'f8');
-    $this->addLabelElement('f8', ' Have been reported as invalid');
-    $this->addElement('br');
-    
-    $this->addInputElement('checkbox', 'f[]', 16, 'f16');
-    $this->addLabelElement('f16', ' Are not required');
-    $this->addElement('br');
-        
-    $this->closeElement('p');
-
     $this->addInputElement('submit', 'action', 'Go', 'submit');
 
     $this->closeElement('form');
+  }
+  
+  function writeFilterControls()
+  {
+    $this->openElement('p');
+    
+    $this->addTextContent('Do not display tests that:');
+    $this->addElement('br');
 
+    $this->addInputElement('checkbox', 'filter[]', 1, 'filter1');
+    $this->addLabelElement('filter1', ' Meet exit criteria');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'filter[]', 2, 'filter2');
+    $this->addLabelElement('filter2', ' Have blocking failures');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'filter[]', 4, 'filter4');
+    $this->addLabelElement('filter4', ' Lack sufficient data');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'filter[]', 8, 'filter8');
+    $this->addLabelElement('filter8', ' Have been reported as invalid');
+    $this->addElement('br');
+    
+    $this->addInputElement('checkbox', 'filter[]', 16, 'filter16');
+    $this->addLabelElement('filter16', ' Are not required');
+    $this->addElement('br');
+        
+    $this->closeElement('p');
+  }
+
+  function writeBodyContent()
+  {
+    $this->openElement('div', array('class' => 'body'));
+
+    if ((! $this->mTestSuite) || (! $this->mTestSuite->isValid())) {
+      $this->addElement('p', null, 'Unknown test suite.');
+    }
+    elseif (! $this->mTestCases->getCount()) {
+      $this->addElement('p', null, "The {$this->mTestSuite->getTitle()} does not contain any test cases. ");
+    }
+    else {
+      $this->writeTestControls();
+    }
+
+    $this->closeElement('div');
   }
 }
 

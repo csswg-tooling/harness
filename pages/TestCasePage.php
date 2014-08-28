@@ -17,13 +17,17 @@
  ******************************************************************************/
 
 require_once('lib/HarnessPage.php');
-require_once('lib/TestSuite.php');
-require_once('lib/TestCase.php');
-require_once('lib/UserAgent.php');
-require_once('lib/Format.php');
+
+require_once('lib/Harness.php');
+require_once('lib/TestCases.php');
 require_once('lib/Results.php');
-require_once('lib/Engine.php');
-require_once('lib/Sections.php');
+
+require_once('modules/testsuite/TestSuite.php');
+require_once('modules/testsuite/TestFormat.php');
+require_once('modules/specification/Specification.php');
+require_once('modules/specification/SpecificationAnchor.php');
+require_once('modules/useragent/UserAgent.php');
+require_once('modules/useragent/Engine.php');
 
 /**
  * A class for generating the page that presents a test
@@ -32,13 +36,13 @@ require_once('lib/Sections.php');
 class TestCasePage extends HarnessPage
 {  
   protected $mTestCase;
-  protected $mIndex;
-  protected $mCount;
-  protected $mFormatName;
-  protected $mDesiredFormatName;
+  protected $mIndexData;
+  protected $mFormat;
+  protected $mDesiredFormat;
   protected $mRefName;
-  protected $mSectionName;
-  protected $mHasResults;
+  protected $mSpec;
+  protected $mSection;
+  protected $mResults;
 
 
   static function GetPageKey()
@@ -48,121 +52,110 @@ class TestCasePage extends HarnessPage
 
   /**
    * Expected URL paramaters:
-   * 's' Test Suite Name
+   * 'suite' Test Suite Name
    *
    * Optional URL paramaters
-   * 'c' Test Case Name - test only this test
-   * 'g' Spec Section Id
-   * 'sec' Spec Section Name
-   * 'r' Index of test case
-   * 'i' Test Case Name - find this test in the group
-   * 'o' Test ordering - 0 = alphabetical, 1 = sequenced
-   * 'f' Desired format of test
-   * 'fl' Flag - only display tests with this flag
-   * 'ref' Name of reference
+   * 'testcase' Test Case Name - test only this test
+   * 'spec' Specification
+   * 'section' Spec Section Name
+   * 'index' Test Case Name - find this test in the group
+   * 'order' Test ordering - 0 = alphabetical, 1 = sequenced
+   * 'format' Desired format of test
+   * 'flag' Flag - only display tests with this flag
+   * 'reference' Name of reference
    */
-  function __construct(Array $args = null, Array $pathComponents = null) 
+  function _initPage()
   {
-    parent::__construct($args, $pathComponents);
+    parent::_initPage();
 
-    if (! $this->mTestSuite) {
-      $msg = 'No test suite identified.';
-      trigger_error($msg, E_USER_WARNING);
-    }
+    if ($this->mTestSuite && $this->mTestSuite->isValid()) {
+      $testCaseName = $this->_getData('testcase');
+    
+      $this->mSpec = null;
+      $this->mSection = null;
 
-    $testCaseName = $this->_getData('c');
-    $sectionId = intval($this->_getData('g'));
-    $this->mSectionName = $this->_getData('sec');
-    if ((0 == $sectionId) && ($this->mSectionName)) {
-      $sectionId = Sections::GetSectionIdFor($this->mTestSuite, $this->mSectionName);
-    }
-    if ($sectionId) {
-      $this->mSectionName = Sections::GetSectionNameFor($this->mTestSuite, $sectionId);
-    }
-    
-    $order = intval($this->_getData('o'));
-    
-    $this->mCount = -1;
-    if ($testCaseName) {
-      $this->mCount = 0;
-    }
-    else {
-      $testCaseName = $this->_getData('i');
-    }
-    $this->mIndex = intval($this->_getData('r'));
-    
-    $formatName = $this->_getData('f');
-    $flag = $this->_getData('fl');
-    
-    $this->mTestCase = new TestCase();
-    $this->mTestCase->load($this->mTestSuite, $testCaseName, $sectionId,
-                           $this->mUserAgent, $order, $this->mIndex, $flag);
-                           
-    if (! $this->mTestCase->isValid()) {
-      $msg = 'No test case identified.';
-      trigger_error($msg, E_USER_WARNING);
-    }
-    
-    if (0 == $this->mIndex) {
-      $this->mIndex = $this->mTestCase->getIndex($sectionId, $this->mUserAgent, $order, $flag);
-      if (FALSE === $this->mIndex) {  // given a testcase and a section, but test isn't in that section
-        $this->mIndex = -1;
+      if ($testCaseName) {
+        $this->mTestCase = TestCase::GetTestCase($this->mTestSuite, $testCaseName);
+        $this->mIndexData = array('index' => 0, 'count' => 1,
+                                  'first' => $this->mTestCase, 'prev' => null,
+                                  'next' => null, 'last' => $this->mTestCase);
       }
-    }
-                   
-    $suiteFormatNames = $this->mTestSuite->getFormatNames();
-    $testFormatNames = $this->mTestCase->getFormatNames();
+      else {
+        $specName = $this->_getData('spec');
+        if ($specName) {
+          $this->mSpec = Specification::GetSpecificationByName($specName);
+        }
+        
+        $sectionName = $this->_getData('section');
+        if ($sectionName) {
+          if (! $this->mSpec) {
+            $this->mSpec = reset($this->mTestSuite->getSpecifications());
+          }
+          $this->mSection = SpecificationAnchor::GetSectionFor($this->mSpec, $sectionName);
+        }
     
-    if (Format::FormatNameInArray($formatName, $suiteFormatNames)) {
-      $this->mDesiredFormatName = $formatName;
+        $flag = $this->_getData('flag');
+        $orderAgent = ($this->_getData('order') ? $this->mUserAgent : null);
+        $testCases = new TestCases($this->mTestSuite, $this->mSpec, $this->mSection, TRUE, $flag, $orderAgent);
+        
+        $testCaseName = $this->_getData('index');
+        if ($testCaseName) {
+          $this->mTestCase = $testCases->getTestCase($testCaseName);
+        }
+        else {
+          $this->mTestCase = $testCases->getFirstTestCase();
+        }
+        
+        $this->mIndexData = $testCases->getIndexData($this->mTestCase);
+      }
       
-      if (Format::FormatNameInArray($formatName, $testFormatNames)) {
-        $this->mFormatName = $formatName;
+      $formatName = strtolower($this->_getData('format'));
+      $suiteFormats = $this->mTestSuite->getFormats();
+      $testFormats = ($this->mTestCase ? $this->mTestCase->getFormats() : $suiteFormats);
+      
+      if (array_key_exists($formatName, $suiteFormats)) {
+        $this->mDesiredFormat = $suiteFormats[$formatName];
+        
+        if (array_key_exists($formatName, $testFormats)) {
+          $this->mFormat = $testFormats[$formatName];
+        }
+        else {
+          $this->mFormat = reset($testFormats);
+        }
       }
       else {
-        $this->mFormatName = $testFormatNames[0];
+        $this->mFormat = reset($testFormats);
       }
-    }
-    else {
-      $this->mFormatName = $testFormatNames[0];
-    }
-    
-    if (-1 == $this->mCount) {
-      if ($sectionId) {
-        $this->mCount = $this->mTestCase->countCasesInSection($sectionId, $flag);
-      }
-      else {
-        $this->mCount = $this->mTestCase->countCasesInSuite($flag);
-      }
-    }
 
-    $this->mSubmitData = $this->_uriData();
-    $this->mSubmitData['c'] = $this->mTestCase->getTestCaseName();
-    $this->mSubmitData['g'] = $sectionId;
-    $this->mSubmitData['sec'] = $this->mSectionName;
-    $this->mSubmitData['cid'] = $this->mTestCase->getId();
-    $this->mSubmitData['f'] = $this->mFormatName;
-    if ($this->mDesiredFormatName) {
-      $this->mSubmitData['df'] = $this->mDesiredFormatName;
-    }
-    if ($this->mIndex < ($this->mCount - 1)) {
-      $this->mSubmitData['next'] = ($this->mIndex + 1);
-    }
-    else {
-      $this->mSubmitData['next'] = -1;
-    }
-    if (isset($this->mSubmitData['ref'])) {
-      unset($this->mSubmitData['ref']);
-    }
+      if ($this->mTestCase) {
+        $this->mSubmitData = $this->_uriData();
+        $this->mSubmitData['testcase'] = $this->mTestCase->getName();
+        $this->mSubmitData['testcaseid'] = $this->mTestCase->getId();
+        $this->mSubmitData['spec'] = ($this->mSpec ? $this->mSpec->getName() : null);
+        $this->mSubmitData['section'] = ($this->mSection ? $this->mSection->getName() : null);
+        $this->mSubmitData['format'] = $this->mFormat->getName();
+        if ($this->mDesiredFormat) {
+          $this->mSubmitData['desiredformat'] = $this->mDesiredFormat->getName();
+        }
+        if ($this->mIndexData['next']) {
+          $this->mSubmitData['next'] = $this->mIndexData['next']->getName();
+        }
+        if (isset($this->mSubmitData['reference'])) {
+          unset($this->mSubmitData['reference']);
+        }
+      }
 
-    $this->mRefName = $this->_getData('ref');
-    if (FALSE === $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormatName)) {
-      $this->mRefName = null;
+      $this->mRefName = $this->_getData('reference');
+      if ((! $this->mTestCase) || (FALSE === $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormat))) {
+        $this->mRefName = null;
+      }
+      
+      $this->mResults = ($this->mTestCase ? new Results($this->mTestSuite, $this->mTestCase) : null);
     }
-    
-    $this->mHasResults = FALSE;
-    
-    $this->mRedirectURI = null;
+  }
+  
+  function getRedirectURI()
+  {
     if ($result = $this->_postData('result')) {
       switch (strtolower(substr($result, 0, 4))) {
         case 'pass':
@@ -178,66 +171,52 @@ class TestCasePage extends HarnessPage
           $result = null;
           break;
         default:
-          $msg = 'Invalid response submitted.';
-          trigger_error($msg, E_USER_WARNING);
+          return null;
       }
-      if ($result && (! $this->mTestSuite->isLocked())) {
+      if ($result && (! $this->mTestSuite->getLockDateTime())) {
         $this->mUser->update();
         $this->mUserAgent->update();
-        $format = new Format($this->mFormatName);
-        $this->mTestCase->submitResult($this->mUserAgent, $this->mUser, $format, $result);
+        $passCount = $this->_postData('pass_count');
+        $failCount = $this->_postData('fail_count');
+        $this->mTestCase->submitResult($this->mUserAgent, $this->mUser, $this->mFormat, $result, $passCount, $failCount);
       }
     
-      $nextIndex = $this->_postData('next');
+      $nextTestcaseName = $this->_postData('next');
       
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
-      if (0 <= $nextIndex) {
-        if ($this->mDesiredFormatName) {
-          $args['f'] = $this->mDesiredFormatName;
-        }
-        if ($this->mSectionName) {
-          $args['sec'] = $this->mSectionName;
-        }
-        $args['fl'] = $this->_postData('fl');
-
-        $nextTestCase = new TestCase();
-        $nextTestCase->load($this->mTestSuite, null, $sectionId,
-                            $this->mUserAgent, $order, $nextIndex, $flag);
-        $args['i'] = $nextTestCase->getTestCaseName();
-        if (0 < $order) {
-          $args['o'] = $order;
-        }
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
+      if ($nextTestcaseName) {
+        $args['index'] = $nextTestcaseName;
+        $args['format'] = ($this->mDesiredFormat ? $this->mDesiredFormat->getName() : null);
+        $args['spec'] = ($this->mSpec ? $this->mSpec->getName() : null);
+        $args['section'] = ($this->mSection ? $this->mSection->getName() : null);
+        $args['flag'] = $this->_postData('flag');
+        $args['order'] = $this->_postData('order');
       
-        $this->mRedirectURI = $this->buildPageURI('testcase', $args);
+        return $this->buildPageURI('testcase', $args);
       }
       else {
-        $this->mRedirectURI = $this->buildPageURI('success', $args);
+        return $this->buildPageURI('success', $args);
       }
     }
-  }
-  
-  function getRedirectURI()
-  {
-    return $this->mRedirectURI;
+    return null;
   }
   
   function getNavURIs()
   {
     $uris = parent::getNavURIs();
     
-    if ($this->mTestSuite) {
-      $title = "Enter Data";
-      $args['s'] = $this->mTestSuite->getName();
-      $args['u'] = $this->mUserAgent->getId();
+    $title = "Run Tests";
+    $args['suite'] = ($this->mTestSuite ? $this->mTestSuite->getName() : '');
+    $args['ua'] = $this->mUserAgent->getId();
 
-      $uri = $this->buildPageURI('testsuite', $args);
-      $uris[] = compact('title', 'uri');
-      
-      $title = "Test Case";
-      $uri = '';
-      $uris[] = compact('title', 'uri');
-    }
+    $uri = $this->buildPageURI('testsuite', $args);
+    $uris[] = compact('title', 'uri');
+    
+    $title = "Test Case";
+    $uri = '';
+    $uris[] = compact('title', 'uri');
+
     return $uris;
   }
 
@@ -251,297 +230,369 @@ class TestCasePage extends HarnessPage
     
     $this->addStyleSheetLink($this->buildConfigURI('stylesheet.test'));
 
+/*
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
       $actualEngineName = strtolower($actualUA->getEngineName());
       
       $this->addStyleSheetLink($this->buildURI(sprintf(Config::Get('uri.stylesheet', 'test_engine'), $actualEngineName)));
     }
+*/
+  }
+
+
+  function writeHeadScript()
+  {
+    parent::writeHeadScript();
+    
+    $this->addScriptElementInline(Config::Get('uri.script', 'testcase'), 'text/javascript', null, null);
   }
 
 
   function getPageTitle()
   {
     $title = parent::getPageTitle();
-    if ($this->mSectionName) {
-      return "{$title} - Section {$this->mSectionName}";
+    if ($this->mSection) {
+      return "{$title} - Section {$this->mSection->getName()}";
     }
     return $title;
   }
 
 
-  function writeTestTitle($elementName = 'h2', $class = 'title', $attrs = null)
+  function writeTestTitle($elementName = 'div', $class = 'title', $attrs = null)
   {
-    $title = $this->mTestCase->getTitle();
-    $assertion = $this->mTestCase->getAssertion();
-    $specURIs = $this->mTestCase->getSpecURIs();
+    if ($this->mTestCase) {
+      $title = $this->mTestCase->getTitle();
+      $assertion = $this->mTestCase->getAssertion();
     
-    if ((0 < $this->mCount) || $title || $assertion || $specURIs) {
       $attrs['class'] = $class;
-      $this->openElement($elementName, $attrs);
+      $this->openElement($elementName, $attrs, FALSE);
       
-      if (0 < $this->mCount) {
-        $index = $this->mIndex + 1;
-        $this->addTextContent("Test {$index} of {$this->mCount}" . ($title ? ': ' : ''));
+      if (0 < $this->mIndexData['count']) {
+        $index = $this->mIndexData['index'] + 1;
+        $this->addTextContent("Test {$index} of {$this->mIndexData['count']}" . ($title ? ': ' : ''));
       }
       if ($title) {
+        $this->addTextContent('&ldquo;', FALSE);
         if ($assertion) {
           $this->addElement('span', array('title' => $assertion), $title);
         }
         else {
           $this->addTextContent($title);
         }
+        $this->addTextContent('&rdquo;', FALSE);
       }
       elseif ($assertion) {
         $this->addTextContent("Assertion: {$assertion}");
       }
-      if ($specURIs && (0 < count($specURIs))) {
-        $this->openElement('span', array('class' => 'speclink'), FALSE);
-        $this->addTextContent(' (');
-        $index = -1;
-        foreach ($specURIs as $specURI) {
-          $index++;
-          extract($specURI);  // $specTitle, $section, $title, $uri
 
-          if (0 < $index) {  
+      $this->closeElement($elementName);
+    }
+  }
+  
+  function writeSpecLinks($elementName = 'div', $class = 'speclink', $attrs = null)
+  {
+    if ($this->mTestCase) {
+      $anchors = $this->mTestCase->getSpecAnchors();
+      $attrs['class'] = $class;
+      $this->openElement($elementName, $attrs, FALSE);
+      
+      if ($anchors && (0 < count($anchors))) {
+        $this->addTextContent('Testing: ');
+        $index = -1;
+        foreach ($anchors as $specAnchors) {
+          $index++;
+          if (0 < $index) {
             $this->addTextContent(', ');
           }
-          $this->openElement('a', array('href' => $uri, 'target' => 'spec'));
+
+          $anchor = reset($specAnchors);
+          $spec = $anchor->getSpec();
           
-          if (! $specTitle) {
-            $specTitle = "Spec";
-          }
-          if ($section) {
-            $section = $this->encode($specTitle) . ' &sect; ' . $this->encode($section);
+          if ('section' == $anchor->getStructure()) {
+            $sectionName = $anchor->getName();
+            $anchorName = null;
           }
           else {
-            $section = $this->encode($specTitle);
+            $sectionName = $anchor->getParentName();
+            $anchorName = $anchor->getName();
           }
-          if ($title) {
-            $this->addElement('span', array('title' => $title), $section, FALSE);
+          $anchorText = "{$spec->getTitle()} \xC2\xA7 {$sectionName}";
+          if ($anchorName) {
+            $anchorText .= " {$anchor->getDisplaySymbol()} " . ($anchor->getTitle() ? $anchor->getTitle() : $anchorName);
           }
-          else {
-            $this->addTextContent($section, FALSE);
+          $attrs['target'] = 'spec';
+          if ('draft' == $anchor->getSpecType()) {
+            $attrs['class'] = 'draft';
+            $attrs['title'] = 'Only present in draft';
           }
-          $this->closeElement('a');
+          $this->addHyperLink($anchor->getURI($spec), $attrs, $anchorText);
+          
+          if (1 < count($specAnchors)) {
+            $anchor = next($specAnchors);
+            if ('section' == $anchor->getStructure()) {
+              $draftSectionName = $anchor->getName();
+              $draftAnchorName = null;
+            }
+            else {
+              $draftSectionName = $anchor->getParentName();
+              $draftAnchorName = $anchor->getName();
+            }
+            if (($sectionName != $draftSectionName) || ($anchorName != $draftAnchorName)) {
+              $this->addTextContent(' (');
+              if (($sectionName == $draftSectionName) && ($anchorName) && ($draftAnchorName)) {
+                $anchorText = "{$anchor->getDisplaySymbol()} " . ($anchor->getTitle() ? $anchor->getTitle() : $draftAnchorName);
+              }
+              else {
+                $anchorText = "\xC2\xA7 {$draftSectionName}";
+                if ($draftAnchorName) {
+                  $anchorText .= " {$anchor->getDisplaySymbol()} " . ($anchor->getTitle() ? $anchor->getTitle() : $draftAnchorName);
+                }
+              }
+              $this->addHyperLink($anchor->getURI($spec),
+                                  array('target' => 'spec',
+                                        'class' => 'draft',
+                                        'title' => 'Link target moved in draft'),
+                                  $anchorText);
+              $this->addTextContent(')');
+            }
+          }
         }
-        $this->addTextContent(')');
-        $this->closeElement('span');
       }
       $this->closeElement($elementName);
     }
   }
   
   
-  function writeTestLinks($elementName = 'h3', $class = 'testname', $attrs = null)
+  function writeTestLinks($elementName = 'div', $class = 'testname', $attrs = null)
   {
     $attrs['class'] = $class;
     $this->openElement($elementName, $attrs);
     
     $this->addTextContent("Test Case: ");
-    $this->addHyperLink($this->mTestCase->getURI($this->mFormatName), 
+    $this->addHyperLink($this->mTestCase->getURI($this->mFormat),
                         array('target' => 'test_case'), 
-                        $this->mTestCase->getTestCaseName());
+                        $this->mTestCase->getName());
     
     if ($this->mTestCase->isReferenceTest()) {
-      $refTests = $this->mTestCase->getReferences($this->mFormatName);
-      if ($refTests) {
-        foreach ($refTests as $refTest) {
-          $this->addTextContent(" {$refTest['type']} ");
-          $this->addHyperLink($this->mTestCase->getReferenceURI($refTest['reference'], $this->mFormatName), 
-                              array('target' => 'reference'), 
-                              $refTest['reference']);
+      $refGroups = $this->mTestCase->getReferenceNames($this->mFormat);
+      if ($refGroups) {
+        $index = -1;
+        foreach ($refGroups as $refNames) {
+          $index++;
+          if (1 < count($refGroups)) {
+            $this->addTextContent("(");
+          }
+          foreach ($refNames as $refName) {
+            $refType = $this->mTestCase->getReferenceType($refName, $this->mFormat);
+            $this->addTextContent(" {$refType} ");
+            $this->addHyperLink($this->mTestCase->getReferenceURI($refName, $this->mFormat),
+                                array('target' => 'reference'), 
+                                $refName);
+          }
+          if (1 < count($refGroups)) {
+            $this->addTextContent(") ");
+            if ($index < (count($refGroups) - 1)) {
+              $this->addTextContent(" or ");
+            }
+          }
         }
       }
-    }
-    
-    if ($this->mHasResults) {
-      $args['s'] = $this->mTestSuite->getName();
-      $args['c'] = $this->mTestCase->getTestCaseName();
-      $args['u'] = $this->mUserAgent->getId();
-      $detailsURI = $this->buildPageURI('details', $args);
-
-      $this->openElement('span', null, FALSE);
-      $this->addTextContent(' (');
-      $this->addHyperLink($detailsURI, null, 'Results');
-      $this->addTextContent(')');
-      $this->closeElement('span');
     }
     
     $this->closeElement($elementName);
   }
   
-  
-  function writeTestFlags($elementName = 'p', $class = 'notes', $attrs = null)
+
+  function writeShepherdLink($elementName = 'div', $class = 'shepherd', $attrs = null)
   {
-    $flagDescriptions = $this->mTestCase->getFlags()->getDescriptions();
-    if ($flagDescriptions && (0 < count($flagDescriptions))) {
+    $args['repo'] = $this->mTestSuite->getRepositoryName();
+    $args['testcase'] = $this->mTestCase->getName();
+    $shepherdURI = Harness::GetShepherdURI($args);
+    if ($shepherdURI) {
+      $attrs['class'] = $class;
+      $this->openElement($elementName, $attrs, FALSE);
+
+      $attrs['class'] = 'button';
+      $attrs['target'] = 'shepherd';
+      $this->addHyperLink($shepherdURI, $attrs, 'Report Issue');
+
+      $this->closeElement($elementName);
+    }
+  }
+
+  function writeTestFlags($elementName = 'div', $class = 'notes', $attrs = null)
+  {
+    $flags = $this->mTestCase->getFlags();
+    if ($flags && (0 < $flags->getCount())) {
       $attrs['class'] = $class;
       $this->openElement($elementName, $attrs);
-      foreach ($flagDescriptions as $flag => $description) {
-        $this->addElement('span', null, $description . ' ', FALSE);
+      foreach ($flags->getFlags() as $flagName => $flag) {
+        $this->addElement('span', null, $flag->getHTMLDescription() . ' ', FALSE);
       }
       $this->closeElement($elementName);
     }
   }
   
   
-  function writeFlagTests($elementName = 'div', $class = 'prerequisites', $attrs = null)
+  function writeFlagTests($elementName = 'span', $class = 'prerequisites', $attrs = null)
   {
+    $allFlags = TestFlag::GetAllFlags();
     $flags = $this->mTestCase->getFlags();
     
-    if ($flags) {
-      $tests = $flags->getTests();
-      if ($tests && (0 < count($tests))) {
-        $attrs['class'] = $class;
-        $this->openElement($elementName, $attrs);
-        foreach ($tests as $flag => $test) {
-          $this->addTextContent($test, FALSE);
+    if ($allFlags && (0 < count($allFlags))) {
+      $attrs['class'] = $class;
+      $this->openElement($elementName, $attrs);
+      foreach ($allFlags as $flagName => $flag) {
+        if ($flags->hasFlag($flagName)) {
+          $this->addTextContent($flag->getSetTest(), FALSE);
         }
-        $this->closeElement($elementName);
+        else {
+          $this->addTextContent($flag->getUnsetTest(), FALSE);
+        }
       }
+      $this->closeElement($elementName);
     }
   }
   
   
-  function writeReferenceAndFormatTabs()
+  function writeReferenceTabs()
   {
-    $suiteFormats = Format::GetFormatsFor($this->mTestSuite);
-
     if ($this->mTestCase->isReferenceTest()) {
-      $refTests = $this->mTestCase->getReferences($this->mFormatName);
-      if ((FALSE === $refTests) || (0 == count($refTests))) {
-        unset($refTests);
+      $refGroups = $this->mTestCase->getReferenceNames($this->mFormat);
+      if ((FALSE === $refGroups) || (0 == count($refGroups))) {
+        unset($refGroups);
       }
     }
     
-    if (isset($refTests) || (1 < count($suiteFormats))) {
-      if (isset($refTests)) {
-        $attrs['class'] = 'tabbar ref';
+    if (isset($refGroups)) {
+      $refCount = 0;
+      foreach ($refGroups as $refNames) {
+        $refCount += count($refNames);
+      }
+      
+      $this->openElement('div', array('class' => 'tab_bar'));
+      
+      $this->openElement('div', array('class' => 'tab_group', 'id' => 'reference_tabs'));
+      
+      $this->openElement('span', array('class' => 'tabs'));
+      if (! $this->mRefName) {
+        $this->openElement('span', array('class' => 'tab active'));
+        $this->addElement('a', null, 'Test Case');
+        $this->closeElement('span');
       }
       else {
-        $attrs['class'] = 'tabbar';
+        $args = $this->_uriData();
+        unset($args['reference']);
+        $uri = $this->buildPageURI('testcase', $args);
+        
+        $this->openElement('span', array('class' => 'tab'));
+        $this->addHyperLink($uri, null, 'Test Case');
+        $this->closeElement('span');
       }
-      $this->openElement('div', $attrs);
-      
-      if (isset($refTests)) {
-        $this->openElement('span', array('class' => 'tabgroup references'));
-        if (! $this->mRefName) {
-          $this->openElement('span', array('class' => 'tab active'));
-          $this->addElement('a', null, 'Test Case');
-          $this->closeElement('span');
-        }
-        else {
-          $args = $this->_uriData();
-          unset($args['ref']);
-          $uri = $this->buildPageURI('testcase', $args);
-          
-          $this->openElement('span', array('class' => 'tab'));
-          $this->addHyperLink($uri, null, 'Test Case');
-          $this->closeElement('span');
-        }
-        foreach ($refTests as $refTest) {
-          $refName = $refTest['reference'];
-          $refType = $refTest['type'];
+      $groupIndex = -1;
+      foreach ($refGroups as $refNames) {
+        $groupIndex++;
+        foreach ($refNames as $refName) {
+          $refType = $this->mTestCase->getReferenceType($refName, $this->mFormat);
           if (0 == strcasecmp($refName, $this->mRefName)) {
-            $this->openElement('span', array('class' => 'tab active'));
+            $this->openElement('span', array('class' => 'tab active', 'data-ref' => "{$refName}-{$groupIndex}"));
             $this->addElement('a', null, "{$refType} Reference Page");
             $this->closeElement('span');
           }
           else {
             $args = $this->_uriData();
-            $args['ref'] = $refName;
+            $args['reference'] = $refName;
             $uri = $this->buildPageURI('testcase', $args);
             
-            $this->openElement('span', array('class' => 'tab'));
+            $this->openElement('span', array('class' => 'tab', 'data-ref' => "{$refName}-{$groupIndex}"));
             $this->addHyperLink($uri, null, "{$refType} Reference Page");
             $this->closeElement('span');
           }
         }
-        $this->closeElement('span');
+        if ($groupIndex < (count($refGroups) - 1)) {
+          $this->addElement('span', array('class' => 'or'), "or");
+        }
       }
+      $this->closeElement('span'); // .tabs
       
-      if (isset($refTests)) {
-        if (! $this->mRefName) {
-          $plural = ((1 < count($refTests)) ? 's' : '');
-          $this->openElement('p', array('class' => 'instruct'));
-          $this->addTextContent("This page must be compared to the Reference Page{$plural}");
-        }
-        else {
-          $not = (('!=' == $this->mTestCase->getReferenceType($this->mRefName, $this->mFormatName)) ? 'NOT ' : '');
-          $this->openElement('p', array('class' => 'instruct'));
-          $this->addTextContent("This page must {$not}match the Test Case");
+      $this->openElement('div', array('class' => 'tab_foot'));
+      $plural = ((1 < $refCount) ? 's' : '');
+      $class = ((! $this->mRefName) ? ' active' : '');
+      $this->addElement('p', array('class' => 'instruct' . $class), "This page must be compared to the Reference Page{$plural}");
+
+      $groupIndex = -1;
+      foreach ($refGroups as $refNames) {
+        $groupIndex++;
+        foreach ($refNames as $refName) {
+          $not = (('!=' == $this->mTestCase->getReferenceType($refName, $this->mFormat)) ? 'NOT ' : '');
+          $class = ((0 == strcasecmp($refName, $this->mRefName)) ? ' active' : '');
+          $this->addElement('p', array('class' => 'instruct' . $class, 'data-ref' => "{$refName}-{$groupIndex}"),
+                            "This page must {$not}match the Test Case");
         }
       }
+      $this->closeElement('div'); // .tab_foot
 
-      if (1 < count($suiteFormats)) {
-        $this->openElement('span', array('class' => 'tabgroup format'));
+      $this->closeElement('div'); // .tab_group
 
-        $testFormatNames = $this->mTestCase->getFormatNames();
+      $this->closeElement('div'); // .tabBar
+    }
+  }
+  
+  function writeFormatControls()
+  {
+    $suiteFormats = $this->mTestSuite->getFormats();
 
-        foreach ($suiteFormats as $formatName => $format) {
-          $formatTitle = $format->getTitle();
-          
-          if (0 == strcasecmp($formatName, $this->mFormatName)) {
-            $class = 'tab active';
-            if ($this->mDesiredFormatName && (0 != strcasecmp($formatName, $this->mDesiredFormatName))) {
+    if (1 < count($suiteFormats)) {
+      $this->openElement('span', array('class' => 'format'));
+
+      $this->addTextContent('Format: ');
+      $testFormats = $this->mTestCase->getFormats();
+
+      foreach ($suiteFormats as $formatName => $format) {
+        $class = 'stateButton';
+        if (array_key_exists($formatName, $testFormats)) {
+          if (0 == strcasecmp($formatName, $this->mFormat->getName())) {
+            $class .= ' active';
+            if ($this->mDesiredFormat && (0 != strcasecmp($formatName, $this->mDesiredFormat->getName()))) {
               $class .= ' other';
             }
-            $this->openElement('span', array('class' => $class));
-            $this->addElement('a', null, $formatTitle);
-            $this->closeElement('span');
           }
-          else {
-            if (Format::FormatNameInArray($formatName, $testFormatNames)) {
-              $args = $this->_uriData();
-              $args['f'] = $formatName;
-              if ($this->mRefName) {
-                $args['ref'] = $this->mRefName; 
-              }
-              $uri = $this->buildPageURI('testcase', $args);
 
-              $this->openElement('span', array('class' => 'tab'));
-              $this->addHyperLink($uri, null, $formatTitle);
-              $this->closeElement('span');
-            }
-            else {
-              $this->openElement('span', array('class' => 'tab disabled'));
-              $this->addElement('a', null, $formatTitle);
-              $this->closeElement('span');
-            }
-          }
+          $args = $this->_uriData();
+          $args['format'] = $formatName;
+          $uri = $this->buildPageURI('testcase', $args);
+          $this->addHyperLink($uri, array('class' => $class), $format->getTitle());
         }
-        $this->closeElement('span');
+        else {
+          $this->addElement('a', array('class' => 'stateButton disabled'), $format->getTitle());
+        }
       }
-      
-      if (isset($refTests)) {
-        $this->closeElement('p');
-      }
-
-      $this->closeElement('div');
+      $this->closeElement('span');
     }
   }
   
 
   function writeResults()
   {
-    $results = new Results($this->mTestSuite, $this->mTestCase->getTestCaseName());
-    $engines = Engine::GetAllEngines();
-    
-    $engineNames = $results->getEngineNames();
-    if (0 < count($engineNames)) {
-      $this->mHasResults = TRUE;
-      $counts = $results->getResultCountsFor($this->mTestCase->getId());
+    if ($this->mResults && (0 < $this->mResults->getResultCount())) {
+      $engines = $this->mResults->getEngines();
+      $counts = $this->mResults->getResultCountsFor($this->mTestCase);
       
-      $args['s'] = $this->mTestSuite->getName();
-      $args['c'] = $this->mTestCase->getTestCaseName();
-      $args['u'] = $this->mUserAgent->getId();
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['testcase'] = $this->mTestCase->getName();
+      $args['ua'] = $this->mUserAgent->getId();
 
       $this->openElement('div', array('class' => 'results'), FALSE);
-      foreach ($engineNames as $engineName) {
-        $class = '';
+
+      $detailsURI = $this->buildPageURI('details', $args);
+      $this->addHyperLink($detailsURI, null, 'Results:');
+      $this->addTextContent(' ');
+      
+      foreach ($engines as $engineName => $engine) {
+        $class = 'engine';
         if (0 < $counts[$engineName]['uncertain']) {
-          $class = 'uncertain';
+          $class .= ' uncertain';
         }
         if (0 < $counts[$engineName]['fail']) {
           $class .= ' fail';
@@ -555,32 +606,54 @@ class TestCasePage extends HarnessPage
         if (0 == strcasecmp($engineName, $this->mUserAgent->getEngineName())) {
           $class .= ' active';
         }
-        $args['e'] = $engineName;
+        $args['engine'] = $engineName;
         $this->addHyperLink($this->buildPageURI('details', $args),
-                            array('class' => $class), $engines[$engineName]->getTitle());
+                            array('class' => $class), $engine->getTitle());
       }
       $this->closeElement('div');
     }
   }
 
 
+  function _writeTest($uri, $attrs, $target, $linkText)
+  {
+    if (static::_IsConnectionSecure()) {
+      $uri = static::_ReplaceURIScheme($uri, 'https', 443);
+    }
+    $attrs['data'] = $uri;
+    $attrs['type'] = $this->mFormat->getMimeType();
+    $this->openElement('object', $attrs);
+    $this->addHyperLink($uri, array('target' => $target), $linkText);
+    $this->closeElement('object');
+  }
+
   function writeTest()
   {
-    $this->openElement('div', array('class' => 'test'));
-    $this->openElement('p');
-    $refURI = $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormatName);
-    if ($refURI) {
-      $this->openElement('object', array('data' => $refURI, 'type' => 'text/html'));
-      $this->addHyperLink($refURI, array('target' => 'reference'), "Show reference");
-      $this->closeElement('object');
+    $this->openElement('div', array('class' => 'test_view'));
+    $this->openElement('div', array('class' => 'test_wrapper', 'id' => 'test_wrapper'));
+
+    if ($this->mTestCase->isReferenceTest()) {
+      $refGroups = $this->mTestCase->getReferenceNames($this->mFormat);
+
+      $class = ((! $this->mRefName) ? 'active' : '');
+      $this->_writeTest($this->mTestCase->getURI($this->mFormat), array('class' => $class), 'test_case', 'Run Test');
+    
+      $groupIndex = -1;
+      foreach ($refGroups as $refNames) {
+        $groupIndex++;
+        foreach ($refNames as $refName) {
+          $class = ((0 == strcasecmp($refName, $this->mRefName)) ? ' active' : '');
+          $this->_writeTest($this->mTestCase->getReferenceURI($refName, $this->mFormat),
+                            array('class' => $class, 'data-ref' => "{$refName}-{$groupIndex}"),
+                            'reference', 'Show Reference');
+        }
+      }
     }
     else {
-      $uri = $this->mTestCase->getURI($this->mFormatName);
-      $this->openElement('object', array('data' => $uri, 'type' => 'text/html'));
-      $this->addHyperLink($uri, array('target' => 'test_case'), "Run test");
-      $this->closeElement('object');
+      $this->_writeTest($this->mTestCase->getURI($this->mFormat), array('class' => 'active'), 'test_case', 'Run Test');
     }
-    $this->closeElement('p');
+    
+    $this->closeElement('div');
     $this->closeElement('div');
   }
   
@@ -588,22 +661,24 @@ class TestCasePage extends HarnessPage
   function writeSubmitForm()
   {
     $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post', 'eval');
-    $this->openElement('p', array('class' => 'buttons'));
+    $this->openElement('div', array('class' => 'buttons'));
     $this->writeHiddenFormControls();
     
-    $locked = $this->mTestSuite->isLocked();
-    $this->addInputElement('submit', 'result', 'Pass [1]', null, array('accesskey' => '1', 'disabled' => $locked));
-    $this->addTextContent(' ');
-    $this->addInputElement('submit', 'result', 'Fail [2]', null, array('accesskey' => '2', 'disabled' => $locked));
-    $this->addTextContent(' ');
-    $this->addInputElement('submit', 'result', 'Cannot tell [3]', null, array('accesskey' => '3', 'disabled' => $locked));
-    $this->addTextContent(' ');
-    $this->addInputElement('submit', 'result', 'Skip [4]', null, array('accesskey' => '4'));
+    $this->addInputElement('hidden', 'pass_count', 0, 'pass_count');
+    $this->addInputElement('hidden', 'fail_count', 0, 'fail_count');
     
-    $this->closeElement('p');
+    $locked = (null != $this->mTestSuite->getLockDateTime());
+    $this->addInputElement('submit', 'result', 'Pass [1]', 'button_pass', array('accesskey' => '1', 'disabled' => $locked));
+    $this->addTextContent(' ');
+    $this->addInputElement('submit', 'result', 'Fail [2]', 'button_fail', array('accesskey' => '2', 'disabled' => $locked));
+    $this->addTextContent(' ');
+    $this->addInputElement('submit', 'result', 'Cannot tell [3]', 'button_cannot', array('accesskey' => '3', 'disabled' => $locked));
+    $this->addTextContent(' ');
+    $this->addInputElement('submit', 'result', 'Skip [4]', 'button_skip', array('accesskey' => '4'));
+    
+    $this->closeElement('div');
     $this->closeElement('form');
   }
-  
   
   function writeUserAgent()
   {
@@ -611,7 +686,7 @@ class TestCasePage extends HarnessPage
       $uaString = $this->mUserAgent->getUAString();
       $description = $this->mUserAgent->getDescription();
 
-      $this->openElement('p', array('class' => 'ua'));
+      $this->openElement('div', array('class' => 'ua'));
       
       if ($this->mUserAgent->isActualUA()) {
         $this->addTextContent("Testing: ");
@@ -622,7 +697,7 @@ class TestCasePage extends HarnessPage
         $this->addAbbrElement($uaString, array('class' => 'other'), $description);
 
         $args = $this->_uriData();
-        unset($args['u']);
+        unset($args['ua']);
         $uri = $this->buildPageURI('testcase', $args);
         $this->openElement('span', null, FALSE);
         $this->addTextContent(' (');
@@ -630,31 +705,37 @@ class TestCasePage extends HarnessPage
         $this->addTextContent(')');
         $this->closeElement('span');
       }
-      $this->closeElement('p');
+      $this->closeElement('div');
     }
   }
   
 
-  function writeBodyHeader()
+  function writeContentTitle($elementName = 'h1', Array $attrs = null)
   {
-    $this->openElement('div', array('class' => 'header'));
+    if (! $this->inMaintenance()) {
+      $this->writeResults();
+    }
     
-    $this->addSpiderTrap();
+    parent::writeContentTitle($elementName, $attrs);
+  }
 
-    $this->writeSmallW3CLogo();
-    
-    $this->writeResults();
+  
+  function writeTestInfo()
+  {
+    $this->openElement('div', array('class' => 'testinfo'));
 
-    $this->writeNavLinks();
-    
-    $this->writeContentTitle('h1', array('class' => 'suite'));
+    $this->writeFormatControls();
 
     $this->writeTestTitle();
-
+    
     $this->writeTestLinks();
+    
+    $this->writeSpecLinks();
+
+    $this->writeShepherdLink();
 
     $this->writeTestFlags();
-    
+  
     $this->writeFlagTests();
 
     $this->closeElement('div');
@@ -663,23 +744,50 @@ class TestCasePage extends HarnessPage
 
   function writeBodyContent()
   {
-    $this->writeReferenceAndFormatTabs();
+    $this->openElement('div', array('class' => 'body'));
+    
+    if ($this->mTestCase) {
+      $this->openElement('div', array('class' => 'body_inner'));
+      
+      $this->writeTestInfo();
+  
+      $this->writeReferenceTabs();
 
-    $this->writeTest();
+      $this->writeTest();
+
+      $this->closeElement('div');
+    }
+    else {
+      if ($this->mTestSuite && $this->mTestSuite->isValid()) {
+        $this->addElement('p', null, 'Unknown test case.');
+      }
+      else {
+        $this->addElement('p', null, 'Unknown test suite.');
+      }
+    }
+
+    $this->closeElement('div');
   }
   
 
   function writeBodyFooter()
   {
-    $this->openElement('div', array('class' => 'footer'));
+    if ($this->mTestCase) {
+      $this->openElement('div', array('class' => 'footer'));
 
-    $this->writeSubmitForm();
-    
-    $this->writeUserAgent();
+      if (! $this->inMaintenance()) {
+        $this->writeSubmitForm();
+        
+        $this->writeUserAgent();
+      }
 
-    $this->addSpiderTrap();
+      $this->addSpiderTrap();
 
-    $this->closeElement('div');
+      $this->closeElement('div');
+    }
+    else {
+      parent::writeBodyFooter();
+    }
   }
 }
 
