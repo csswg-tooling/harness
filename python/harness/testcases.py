@@ -120,8 +120,9 @@ class Testcases(db.HarnessDBConnection):
                 sequence += 1
                 self.query("INSERT INTO `references` "
                            "  (`testcase_id`, `revision`, `reference`, `type`, `group`, `sequence`) "
-                           "VALUES (%s, %s, %s, %s, %s, %s)",
-                           (id, revision, reference.name, reference.type, groupIndex, sequence)).close()
+                           "VALUES (%s, %s, %s, %s, %s, %s) "
+                           "ON DUPLICATE KEY UPDATE `type` = %s, `sequence` = %s ",
+                           (id, revision, reference.name, reference.type, groupIndex, sequence, reference.type, sequence)).close()
 
         sequence = -1
         for link in links:

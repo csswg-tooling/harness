@@ -15,7 +15,7 @@ from core import db
 
 class HarnessDBSchema(db.DBSchema):
     def getSchemaVersion(self):
-        return 5
+        return 6
 
     def getSchemaGeneration(self):
         return 2

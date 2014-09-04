@@ -40,7 +40,7 @@ class HarnessDBSchema extends DBSchema
   `type` enum('==','!=') NOT NULL,
   `group` int(11) unsigned NOT NULL,
   `sequence` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`testcase_id`, `revision`, `reference`(191))
+  PRIMARY KEY (`testcase_id`, `revision`, `reference`(191), `group`)
 EOT;
 
   $this->mTables['reference_pages'] = <<<'EOT'
@@ -171,7 +171,7 @@ EOT;
 
   function getSchemaVersion()
   {
-    return 5;
+    return 6;
   }
   
   function getSchemaGeneration()
@@ -381,6 +381,13 @@ EOT;
         $sql  = "ALTER TABLE `results` ";
         $sql .= "  ADD `pass_count` int(11) unsigned DEFAULT 0 AFTER `result`, ";
         $sql .= "  ADD `fail_count` int(11) unsigned DEFAULT 0 AFTER `pass_count` ";
+        $db->query($sql);
+
+        // fall through intentional
+      case 5:
+        $sql  = "ALTER TABLE `references` ";
+        $sql .= "  DROP PRIMARY KEY, ";
+        $sql .= "  ADD PRIMARY KEY (`testcase_id`, `revision`, `reference`(191), `group`) ";
         $db->query($sql);
 
         // fall through intentional
