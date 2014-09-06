@@ -200,7 +200,7 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
     def synchronizeSpec(self, specName, force):
         self.lockTables()
 
-        if (self.mSpecs.getSpecURI(specName)):
+        if (self.mSpecs.getSpecURI(specName) or self.mSpecs.getDraftURI(specName)):
             self._synchronizeSpec(specName, force)
         else:
             self.mUI.warn("ERROR: Unknown specification: ", specName, "\n")
