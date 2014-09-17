@@ -55,6 +55,9 @@ class Harness extends SystemDelegate
     Events::RegisterEventHook('harness', 'suite-delete', 'python/TestSuiteDeleted.py');
     Events::RegisterEventHook('harness', 'suite-resync', 'python/SynchronizeSpecLinks.py');
     
+    Events::RegisterEventHook('harness', 'format-rename', 'python/TestFormatRenamed.py');
+    Events::RegisterEventHook('harness', 'format-delete', 'python/TestFormatDeleted.py');
+    
   }
 
 
