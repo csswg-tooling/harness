@@ -71,7 +71,7 @@ class Sections extends HarnessDBConnection
     $specSearchSQL = $this->_getMultiSearchSQL("`{$specDBName}`.`spec_anchors`.`spec`", $specNames);
     
     $sql  = "SELECT `{$specDBName}`.`spec_anchors`.*, ";
-    $sql .= "SUM(IF(`test_spec_links`.`type`='direct',1,0)) as `link_count` ";
+    $sql .= "SUM(IF(`test_spec_links`.`type`='group',0,1)) as `link_count` ";
     $sql .= "FROM `test_spec_links` ";
     $sql .= "INNER JOIN (`{$specDBName}`.`spec_anchors`) ";
     $sql .= "  ON `{$specDBName}`.`spec_anchors`.`spec` = `test_spec_links`.`spec` ";

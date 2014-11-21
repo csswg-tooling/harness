@@ -162,10 +162,10 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
                 if ((anchorSpecName == specName) and (specName in testSuite.getSpecNames())):
                     for specType in ('official', 'draft'):
                         if (anchorData and (specType in anchorData)):
-                            parentName, anchorName = anchorData[specType]
+                            parentName, anchorName, structure = anchorData[specType]
                             if (anchorName and
                                 (not usedAnchors[testcaseId][testSuiteName].isUsed(specName, parentName, anchorName))):
-                                testcaseLinks[testcaseId][testSuiteName].append((specType, parentName, linkSequence))
+                                testcaseLinks[testcaseId][testSuiteName].append((specType, parentName, linkSequence, structure))
                                 usedAnchors[testcaseId][testSuiteName].add(specName, parentName, anchorName)
                                 self.execute("INSERT INTO `test_spec_links` "
                                              "  (`testcase_id`, `test_suite`, `spec`, `spec_type`, `parent_name`, `anchor_name`, `type`, `sequence`) "
@@ -178,18 +178,20 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
             self.mUI.debug("Creating group links\n")
             for testcaseId in testcaseLinks:
                 for testSuiteName in testcaseLinks[testcaseId]:
-                    for specType, parentName, linkSequence in testcaseLinks[testcaseId][testSuiteName]:
+                    for specType, parentName, linkSequence, structure in testcaseLinks[testcaseId][testSuiteName]:
                         anchorName = parentName
                         parentName = self.mSpecs.getAnchorParentName(parentName)
+                        linkType = 'group' if ('section' == structure) else 'section'
                         while (anchorName and (not usedAnchors[testcaseId][testSuiteName].isUsed(specName, parentName, anchorName))):
                             usedAnchors[testcaseId][testSuiteName].add(specName, parentName, anchorName)
                             self.execute("INSERT INTO `test_spec_links` "
                                          "  (`testcase_id`, `test_suite`, `spec`, `spec_type`, `parent_name`, `anchor_name`, `type`, `sequence`) "
                                          "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ",
                                          (testcaseId, testSuiteName, specName, specType, parentName if parentName else '', anchorName,
-                                          'group', linkSequence)).close()
+                                          linkType, linkSequence)).close()
                             anchorName = parentName
                             parentName = self.mSpecs.getAnchorParentName(parentName)
+                            linkType = 'group'
 
         self.setSyncDateTime(specName, self.mSpecs.getSyncDateTime(specName))
         self.execute("DELETE FROM `status_cache` "

@@ -99,7 +99,7 @@ EOT;
   `spec_type` enum('official','draft') NOT NULL,
   `parent_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `anchor_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-  `type` enum('direct','group') NOT NULL,
+  `type` enum('direct','section','group') NOT NULL,
   `sequence` int(11) unsigned NOT NULL,
   PRIMARY KEY (`testcase_id`,`test_suite`,`spec`,`spec_type`,`parent_name`(191),`anchor_name`(191)),
   KEY `testcase_id` (`testcase_id`),
@@ -171,7 +171,7 @@ EOT;
 
   function getSchemaVersion()
   {
-    return 6;
+    return 7;
   }
   
   function getSchemaGeneration()
@@ -391,6 +391,10 @@ EOT;
         $db->query($sql);
 
         // fall through intentional
+      case 6:
+        $sql  = "ALTER TABLE `test_spec_links` ";
+        $sql .= "  CHANGE `type` `type` enum('direct','section','group') NOT NULL ";
+        $db->query($sql);
     }
 
     $db->query("COMMIT");
