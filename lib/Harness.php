@@ -47,16 +47,17 @@ class Harness extends SystemDelegate
   {
     parent::__construct();
    
-    Events::RegisterEventHook('harness', 'spec-resync', 'python/SynchronizeSpecLinks.py');
-    Events::RegisterEventHook('harness', 'spec-rename', 'python/SpecificationRenamed.py');
-    Events::RegisterEventHook('harness', 'spec-delete', 'python/SpecificationDeleted.py');
+    $schema = HarnessDBConnection::GetDBSchema();
+    Events::RegisterEventHook('harness', $schema, 'spec-resync', 'python/SynchronizeSpecLinks.py');
+    Events::RegisterEventHook('harness', $schema, 'spec-rename', 'python/SpecificationRenamed.py');
+    Events::RegisterEventHook('harness', $schema, 'spec-delete', 'python/SpecificationDeleted.py');
     
-    Events::RegisterEventHook('harness', 'suite-rename', 'python/TestSuiteRenamed.py');
-    Events::RegisterEventHook('harness', 'suite-delete', 'python/TestSuiteDeleted.py');
-    Events::RegisterEventHook('harness', 'suite-resync', 'python/SynchronizeSpecLinks.py');
+    Events::RegisterEventHook('harness', $schema, 'suite-rename', 'python/TestSuiteRenamed.py');
+    Events::RegisterEventHook('harness', $schema, 'suite-delete', 'python/TestSuiteDeleted.py');
+    Events::RegisterEventHook('harness', $schema, 'suite-resync', 'python/SynchronizeSpecLinks.py');
     
-    Events::RegisterEventHook('harness', 'format-rename', 'python/TestFormatRenamed.py');
-    Events::RegisterEventHook('harness', 'format-delete', 'python/TestFormatDeleted.py');
+    Events::RegisterEventHook('harness', $schema, 'format-rename', 'python/TestFormatRenamed.py');
+    Events::RegisterEventHook('harness', $schema, 'format-delete', 'python/TestFormatDeleted.py');
     
   }
 
