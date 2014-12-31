@@ -250,7 +250,7 @@ class Sections extends HarnessDBConnection
         }
       }
     }
-    return FALSE;
+    return null;
   }
   
 }
