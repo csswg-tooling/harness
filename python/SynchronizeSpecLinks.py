@@ -41,6 +41,8 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
         self.mSpecs = specifications.Specifications()
         self.mTestSuites = testsuite.TestSuites()
         self.mSyncDates = None
+        self.mSpecs.preloadData()
+        self.mTestSuites.preloadData()
 
     def __del__(self):
         self.mSpecs.close()
@@ -49,12 +51,12 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
         del self.mTestSuites
         
     def lockTables(self):
-        dbClasses = (SynchronizeSpecLinks, specifications.Specifications, testsuite.TestSuites)
+        dbClasses = (SynchronizeSpecLinks, )
         db.HarnessDBConnection.StartTransaction(dbClasses)
         db.HarnessDBConnection.WriteLockTables(dbClasses)
     
     def unlockTables(self):
-        dbClasses = (SynchronizeSpecLinks, specifications.Specifications, testsuite.TestSuites)
+        dbClasses = (SynchronizeSpecLinks, )
         db.HarnessDBConnection.UnlockTables(dbClasses)
         db.HarnessDBConnection.Commit(dbClasses)
 
