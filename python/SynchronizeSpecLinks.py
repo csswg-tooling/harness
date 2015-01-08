@@ -233,7 +233,7 @@ class SyncProcess(systemprocess.SystemProcess):
                           help = "sync even if not modified")
 
     def _lockName(self):
-        return 'specifications'
+        return 'testcase'
   
     def run(self):
         sync = SynchronizeSpecLinks(self.ui)
