@@ -105,15 +105,19 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
         class UsedAnchors(object):
             def __init__(self):
                 self.mAnchors = dict()
-            def add(self, specName, parentName, anchorName):
+            def add(self, specName, specType, parentName, anchorName):
                 if (specName not in self.mAnchors):
                     self.mAnchors[specName] = dict()
-                if (parentName not in self.mAnchors[specName]):
-                    self.mAnchors[specName][parentName] = set()
-                self.mAnchors[specName][parentName].add(anchorName)
-            def isUsed(self, specName, parentName, anchorName):
-                if ((specName in self.mAnchors) and (parentName in self.mAnchors[specName])):
-                    return (anchorName in self.mAnchors[specName][parentName])
+                if (specType not in self.mAnchors[specName]):
+                    self.mAnchors[specName][specType] = dict()
+                if (parentName not in self.mAnchors[specName][specType]):
+                    self.mAnchors[specName][specType][parentName] = set()
+                self.mAnchors[specName][specType][parentName].add(anchorName)
+            def isUsed(self, specName, specType, parentName, anchorName):
+                if ((specName in self.mAnchors) and
+                    (specType in self.mAnchors[specName]) and
+                    (parentName in self.mAnchors[specName][specType])):
+                    return (anchorName in self.mAnchors[specName][specType][parentName])
                 return False
 
 
@@ -166,9 +170,9 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
                         if (anchorData and (specType in anchorData)):
                             parentName, anchorName, structure = anchorData[specType]
                             if (anchorName and
-                                (not usedAnchors[testcaseId][testSuiteName].isUsed(specName, parentName, anchorName))):
+                                (not usedAnchors[testcaseId][testSuiteName].isUsed(specName, specType, parentName, anchorName))):
                                 testcaseLinks[testcaseId][testSuiteName].append((specType, parentName, linkSequence, structure))
-                                usedAnchors[testcaseId][testSuiteName].add(specName, parentName, anchorName)
+                                usedAnchors[testcaseId][testSuiteName].add(specName, specType, parentName, anchorName)
                                 self.execute("INSERT INTO `test_spec_links` "
                                              "  (`testcase_id`, `test_suite`, `spec`, `spec_type`, `parent_name`, `anchor_name`, `type`, `sequence`) "
                                              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ",
@@ -184,8 +188,8 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
                         anchorName = parentName
                         parentName = self.mSpecs.getAnchorParentName(parentName)
                         linkType = 'group' if ('section' == structure) else 'section'
-                        while (anchorName and (not usedAnchors[testcaseId][testSuiteName].isUsed(specName, parentName, anchorName))):
-                            usedAnchors[testcaseId][testSuiteName].add(specName, parentName, anchorName)
+                        while (anchorName and (not usedAnchors[testcaseId][testSuiteName].isUsed(specName, specType, parentName, anchorName))):
+                            usedAnchors[testcaseId][testSuiteName].add(specName, specType, parentName, anchorName)
                             self.execute("INSERT INTO `test_spec_links` "
                                          "  (`testcase_id`, `test_suite`, `spec`, `spec_type`, `parent_name`, `anchor_name`, `type`, `sequence`) "
                                          "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ",
