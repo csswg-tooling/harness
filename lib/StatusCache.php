@@ -29,7 +29,7 @@ require_once('modules/specification/SpecificationAnchor.php');
 class StatusCache
 {
 
-  static function GetResultsForSection(TestSuite $testSuite, Specification $spec, SpecificationAnchor $section = null)
+  static function GetResultsForSection(TestSuite $testSuite, Specification $spec, $specType, SpecificationAnchor $section = null)
   {
     $db = new HarnessDBConnection();
     
@@ -41,7 +41,7 @@ class StatusCache
       $anchorName = $db->encode($section->getName(), 'status_cache.anchor_name');
     }
     else {
-      $specType = 'official';
+      $specType = $db->encode($specType);
       $parentName = '';
       $anchorName = '';
     }
@@ -64,7 +64,7 @@ class StatusCache
   }
   
   
-  static function SetResultsForSection(TestSuite $testSuite, Specification $spec, SpecificationAnchor $section = null, $results = null)
+  static function SetResultsForSection(TestSuite $testSuite, Specification $spec, $specType, SpecificationAnchor $section = null, $results = null)
   {
     $db = new HarnessDBConnection();
     
@@ -76,7 +76,7 @@ class StatusCache
       $anchorName = $db->encode($section->getName(), 'status_cache.anchor_name');
     }
     else {
-      $specType = 'official';
+      $specType = $db->encode($specType);
       $parentName = '';
       $anchorName = '';
     }

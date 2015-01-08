@@ -38,6 +38,7 @@ class StatusAPI extends APIPage
   protected $mTestSuite;
   protected $mUserAgent;
   protected $mSpec;
+  protected $mSpecType;
   protected $mSection;
   protected $mSections;
   protected $mResults;
@@ -67,11 +68,11 @@ class StatusAPI extends APIPage
       
       
       if ($this->mSpec) {
-        $specType = $this->_requestData('type');
-        if (! $specType) {
-          $specType = 'draft';  // XXX maybe default to 'official' once TR starts using?
+        $this->mSpecType = $this->_requestData('type');
+        if (! $this->mSpecType) {
+          $this->mSpecType = 'draft';  // XXX maybe default to 'official' once TR starts using?
         }
-        $this->mSections = new Sections($this->mTestSuite, TRUE, $specType);
+        $this->mSections = new Sections($this->mTestSuite, TRUE, $this->mSpecType);
 
         $specURI = $this->_requestData('uri');
         if ($specURI) {
@@ -188,13 +189,13 @@ class StatusAPI extends APIPage
         $this->_addField($response, 'is_index', (null == $this->mSection));
         
         
-        $resultData = StatusCache::GetResultsForSection($this->mTestSuite, $this->mSpec, $this->mSection);
+        $resultData = StatusCache::GetResultsForSection($this->mTestSuite, $this->mSpec, $this->mSpecType, $this->mSection);
         if (! $resultData) {
           $this->mResults = new Results($this->mTestSuite, null, $this->mSpec, $this->mSection);
           
           $resultData['engines'] = $this->_getEngineTitles();
           $resultData['sections'] = $this->_getSectionData($this->mSection, TRUE);
-          StatusCache::SetResultsForSection($this->mTestSuite, $this->mSpec, $this->mSection, $resultData);
+          StatusCache::SetResultsForSection($this->mTestSuite, $this->mSpec, $this->mSpecType, $this->mSection, $resultData);
         }
         
         $this->_addField($response, 'engine_titles', $resultData['engines']);
