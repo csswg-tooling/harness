@@ -67,7 +67,11 @@ class StatusAPI extends APIPage
       
       
       if ($this->mSpec) {
-        $this->mSections = new Sections($this->mTestSuite, TRUE);
+        $specType = $this->_requestData('type');
+        if (! $specType) {
+          $specType = 'draft';  // XXX maybe default to 'official' once TR starts using?
+        }
+        $this->mSections = new Sections($this->mTestSuite, TRUE, $specType);
 
         $specURI = $this->_requestData('uri');
         if ($specURI) {

@@ -54,7 +54,7 @@ class Sections extends HarnessDBConnection
 
 
 
-  function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE)
+  function __construct(TestSuite $testSuite, $loadTestCaseIds = FALSE, $specType = null)
   {
     parent::__construct();
 
@@ -69,6 +69,9 @@ class Sections extends HarnessDBConnection
       $specNames[] = $spec->getName();
     }
     $specSearchSQL = $this->_getMultiSearchSQL("`{$specDBName}`.`spec_anchors`.`spec`", $specNames);
+    if ($specType) {
+      $specType = $this->encode($specType);
+    }
     
     $sql  = "SELECT `{$specDBName}`.`spec_anchors`.*, ";
     $sql .= "SUM(IF(`test_spec_links`.`type`='group',0,1)) as `link_count` ";
@@ -79,6 +82,9 @@ class Sections extends HarnessDBConnection
     $sql .= "  AND `{$specDBName}`.`spec_anchors`.`name` = `test_spec_links`.`anchor_name` ";
     $sql .= "WHERE {$specSearchSQL} ";
     $sql .= "  AND `{$specDBName}`.`spec_anchors`.`structure` = 'section' ";
+    if ($specType) {
+      $sql .= "  AND `{$specDBName}`.`spec_anchors`.`spec_type` = '{$specType}' ";
+    }
     $sql .= "  AND `test_spec_links`.`test_suite` = '{$testSuiteName}' ";
     $sql .= "GROUP BY `{$specDBName}`.`spec_anchors`.`parent_name`, `{$specDBName}`.`spec_anchors`.`name` ";
     $sql .= "ORDER BY `{$specDBName}`.`spec_anchors`.`spec`, ";
@@ -116,6 +122,9 @@ class Sections extends HarnessDBConnection
       $sql .= "WHERE {$specSearchSQL} ";
       $sql .= "  AND `test_spec_links`.`test_suite` = '{$testSuiteName}' ";
       $sql .= "  AND `test_spec_links`.`type` = 'direct' ";
+      if ($specType) {
+        $sql .= "  AND `test_spec_links`.`spec_type` = '{$specType}' ";
+      }
       $sql .= "ORDER BY `testcases`.`testcase` ";
 
       $r = $this->query($sql);
