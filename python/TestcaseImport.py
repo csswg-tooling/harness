@@ -195,7 +195,7 @@ class TestcaseImport(systemprocess.SystemProcess):
             return
         
         manifest = self._loadManifest(manifestFilePath)
-        if (not manifest):
+        if (manifest is None):
             return
 
         importer = Importer(self.ui)

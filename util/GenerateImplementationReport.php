@@ -654,6 +654,11 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
     $testSuite = @new TestSuite($testSuiteName);
     
     if ($testSuite->isValid()) {
+
+      if (! $testSuite->getBuildDateTime()) {
+        echo "Test suite has not been imported\n";
+        return;
+      }
       
       if ($outputPath) {
         if (! file_exists($outputPath)) {
