@@ -214,6 +214,9 @@ class ResultsPage extends ResultsBasedPage
         $componentTestPassCount = 0;
         foreach ($componentTests as $componentTestId => $componentTest) {
           $componentResults = $this->mResults->getResultCountsFor($componentTest);
+          if (! $componentResults) {
+            break;
+          }
           $componentPassCount = 0;
           foreach ($componentResults as $componentEngine => $componentEngineResults) {
             if ((0 == $componentEngineResults['invalid']) && 
