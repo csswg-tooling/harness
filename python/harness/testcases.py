@@ -11,7 +11,7 @@
 #  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
 #
 
-import os
+import os, collections
 
 import db
 from testcase import Testcase
@@ -22,17 +22,28 @@ class Testcases(db.HarnessDBConnection):
         names = super(Testcases, cls).GetTableNames()
         return names + ['testcases', 'references', 'test_help_links', 'revisions']
 
-    def __init__(self, testSuiteName = None):
+    def __init__(self, testSuiteName = None, allRevisions = False):
         db.HarnessDBConnection.__init__(self)
         if (testSuiteName):
-            cursor = self.query("SELECT * "
-                                "FROM `testcases` "
-                                "LEFT JOIN `suite_tests` "
-                                "  ON `testcases`.`id` = `suite_tests`.`testcase_id` "
-                                "  AND `testcases`.revision` = `suite_tests`.`revision` "
-                                "WHERE `suite_tests`.`test_suite` = %s "
-                                "ORDER BY `testcase` ",
-                                (testSuiteName, ))
+            if (allRevisions):
+                cursor = self.query("SELECT * "
+                                    "FROM `testcases` "
+                                    "LEFT JOIN (`suite_tests`, `revisions`) "
+                                    "  ON `testcases`.`id` = `suite_tests`.`testcase_id` "
+                                    "  AND `testcases`.`id` = `revisions`.`testcase_id` "
+                                    "  AND `testcases`.`revision` = `revisions`.`revision` "
+                                    "WHERE `suite_tests`.`test_suite` = %s "
+                                    "ORDER BY `testcase`, `revisions`.`date` ",
+                                    (testSuiteName, ))
+            else:
+                cursor = self.query("SELECT * "
+                                    "FROM `testcases` "
+                                    "LEFT JOIN `suite_tests` "
+                                    "  ON `testcases`.`id` = `suite_tests`.`testcase_id` "
+                                    "  AND `testcases`.`revision` = `suite_tests`.`revision` "
+                                    "WHERE `suite_tests`.`test_suite` = %s "
+                                    "ORDER BY `testcase` ",
+                                    (testSuiteName, ))
         else:
             cursor = self.query("SELECT * "
                                 "FROM `testcases` "
@@ -55,14 +66,20 @@ class Testcases(db.HarnessDBConnection):
             self.testcasesById[id] = {}
         self.testcasesById[id][revision] = testcase
         if (name not in self.testcasesByName):
-            self.testcasesByName[name] = {}
+            self.testcasesByName[name] = collections.OrderedDict()
         self.testcasesByName[name][revision] = testcase
     
     
-    def getTestcase(self, name, revision):
+    def getTestcases(self, name):
+        return self.testcasesByName.get(name.lower())
+
+
+    def getTestcase(self, name, revision = None):
         name = name.lower()
         if (name in self.testcasesByName):
-            return self.testcasesByName[name].get(revision)
+            if (revision):
+                return self.testcasesByName[name].get(revision)
+            return self.testcasesByName[name].itervalues().next()
         return None
 
 
@@ -109,8 +126,8 @@ class Testcases(db.HarnessDBConnection):
         self.query("INSERT INTO `revisions` "
                    "  (`testcase_id`, `revision`, `equal_revision`, `date`) "
                    "VALUES (%s, %s, %s, %s) "
-                   "ON DUPLICATE KEY UPDATE `date` = %s ",
-                   (id, revision, 0, date, date)).close()
+                   "ON DUPLICATE KEY UPDATE `date` = `date` ",
+                   (id, revision, 0, date)).close()
 
         groupIndex = -1
         for referenceGroup in references:

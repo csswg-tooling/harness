@@ -28,3 +28,15 @@ p.ua abbr.other {
 p.ua a {
   padding: 0 .1em;
 }
+
+p.error, tr.error th {
+  color: red;
+}
+
+tr.error th, tr.error td:first-of-type {
+  background: #ff8;
+}
+
+.import_result {
+  font-weight: bold;
+}

@@ -197,20 +197,27 @@ class TestCase extends HarnessDBEntity
    */
   function submitResult(UserAgent $userAgent, User $user, TestFormat $format, $result, $passCount, $failCount)
   {
-    if ($this->isValid() && $userAgent->getId()) {
+    if ($this->isValid() && $user->getId() && $userAgent->getId()) {
+      $revisionStr = $this->encode($this->getRevision(), 'results.revision');
+      $formatStr = $this->encode($format->getName(), 'results.format');
+      $resultStr = $this->encode($result);
+      $passCount = intval($passCount);
+      $failCount = intval($failCount);
+
+      $sql  = "UPDATE `results` ";
+      $sql .= "SET `ignore` = 1 ";
+      $sql .= "WHERE `testcase_id` = {$this->getId()} ";
+      $sql .= "  AND `revision` = '{$revisionStr}' ";
+      $sql .= "  AND `format` = '{$formatStr}' ";
+      $sql .= "  AND `user_agent_id` = {$userAgent->getId()} ";
+      $sql .= "  AND `user_id` = {$user->getId()} ";
+      $sql .= "  AND  DATE_SUB(NOW(), INTERVAL 12 HOUR) < `modified` ";
+      $this->query($sql);
+
       $sql  = "INSERT INTO `results` ";
       $sql .= "(`testcase_id`, `revision`, `format`, `user_agent_id`, `user_id`, `user_user_agent_id`, `result`, `pass_count`, `fail_count`) ";
-      $sql .= "VALUES (";
-      $sql .= "'" . $this->getId() . "',";
-      $sql .= "'" . $this->encode($this->getRevision(), 'results.revision') . "',";
-      $sql .= "'" . $this->encode($format->getName(), 'results.format') . "', ";
-      $sql .= "'" . $userAgent->getId() . "',";
-      $sql .= "'" . $user->getId() . "',";
-      $sql .= "'" . $userAgent->getActualUA()->getId() . "',";
-      $sql .= "'" . $this->encode(strtolower($result)) . "',";
-      $sql .= intval($passCount) . ", " . intval($failCount);
-      $sql .= ")";
-      
+      $sql .= "VALUES ({$this->getId()}, '{$revisionStr}', '{$formatStr}', {$userAgent->getId()}, {$user->getId()}, ";
+      $sql .= "  {$userAgent->getActualUA()->getId()}, '{$resultStr}', {$passCount}, {$failCount}) ";
       $r = $this->query($sql);
 
       if (! $r->succeeded()) {

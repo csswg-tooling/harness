@@ -64,7 +64,7 @@ EOT;
   `pass_count` int(11) unsigned DEFAULT 0,
   `fail_count` int(11) unsigned DEFAULT 0,
   `comment` varchar(63) DEFAULT NULL,
-  `ignore` int(1) unsigned NOT NULL,
+  `ignore` int(1) unsigned NOT NULL DEFAULT 0,
   `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_agent_id` (`user_agent_id`),
@@ -128,6 +128,7 @@ EOT;
   `test_suite` varchar(31) NOT NULL,
   `testcase_id` int(11) unsigned NOT NULL,
   `revision` char(40) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+  `date_added` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`test_suite`,`testcase_id`),
   KEY `test_suite` (`test_suite`),
   KEY `testcase_id` (`testcase_id`)
@@ -171,7 +172,7 @@ EOT;
 
   function getSchemaVersion()
   {
-    return 7;
+    return 8;
   }
   
   function getSchemaGeneration()
@@ -394,6 +395,16 @@ EOT;
       case 6:
         $sql  = "ALTER TABLE `test_spec_links` ";
         $sql .= "  CHANGE `type` `type` enum('direct','section','group') NOT NULL ";
+        $db->query($sql);
+
+        // fall through intentional
+      case 7:
+        $sql  = "ALTER TABLE `suite_tests` ";
+        $sql .= "  ADD  `date_added` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `revision` ";
+        $db->query($sql);
+
+        $sql  = "ALTER TABLE `results` ";
+        $sql .= "  CHANGE `ignore` `ignore` int(1) unsigned NOT NULL DEFAULT 0 ";
         $db->query($sql);
     }
 

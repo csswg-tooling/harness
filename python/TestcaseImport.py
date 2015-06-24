@@ -68,29 +68,38 @@ class Importer(db.HarnessDBConnection):
         importDate = self.getNow()
         testSuiteName = testSuite.getName()
 
-        self.query("DELETE FROM `suite_tests` "
-                   "WHERE `test_suite` = %s ",
-                   (testSuiteName, )).close()
+        dateAdded = {}
+        cursor = self.query("SELECT `testcase_id`, `date_added` "
+                            "FROM `suite_tests` "
+                            "WHERE `test_suite` = %s",
+                            (testSuiteName, ))
+        for data in cursor:
+            dateAdded[data['testcase_id']] = data['date_added']
+        cursor.close()
 
-        self.query("DELETE FROM `status_cache` "
-                   "WHERE `test_suite` = %s ",
-                   (testSuiteName, )).close()
+        self.execute("DELETE FROM `suite_tests` "
+                     "WHERE `test_suite` = %s ",
+                     (testSuiteName, )).close()
 
-        self.query("DELETE FROM `test_spec_links` "
-                   "WHERE `test_suite` = %s ",
-                   (testSuiteName, )).close()
+        self.execute("DELETE FROM `status_cache` "
+                     "WHERE `test_suite` = %s ",
+                     (testSuiteName, )).close()
 
-        self.query("DELETE FROM `test_pages` "
-                   "WHERE `test_suite` = %s ",
-                   (testSuiteName, )).close()
+        self.execute("DELETE FROM `test_spec_links` "
+                     "WHERE `test_suite` = %s ",
+                     (testSuiteName, )).close()
 
-        self.query("DELETE FROM `reference_pages` "
-                   "WHERE `test_suite` = %s ",
-                   (testSuiteName, )).close()
+        self.execute("DELETE FROM `test_pages` "
+                     "WHERE `test_suite` = %s ",
+                     (testSuiteName, )).close()
 
-        self.query("DELETE FROM `test_sequence` "
-                   "WHERE `test_suite` = %s ",
-                   (testSuiteName, )).close()
+        self.execute("DELETE FROM `reference_pages` "
+                     "WHERE `test_suite` = %s ",
+                     (testSuiteName, )).close()
+
+        self.execute("DELETE FROM `test_sequence` "
+                     "WHERE `test_suite` = %s ",
+                     (testSuiteName, )).close()
 
         suiteFormats = testSuite.getFormats()
 
@@ -121,28 +130,29 @@ class Importer(db.HarnessDBConnection):
             testcase = self.testcases.addTestcase(testPath, revision, references, data['title'], flags, links,
                                                   credits, data['assertion'], importDate)
 
-            self.query("INSERT INTO `suite_tests` "
-                       "  (`test_suite`, `testcase_id`, `revision`) "
-                       "VALUES (%s, %s, %s) ",
-                       (testSuiteName, testcase.getId(), revision)).close()
+            self.execute("INSERT INTO `suite_tests` "
+                         "  (`test_suite`, `testcase_id`, `revision`, `date_added`) "
+                         "VALUES (%s, %s, %s, %s) ",
+                         (testSuiteName, testcase.getId(), revision, 
+                          dateAdded[testcase.getId()] if testcase.getId() in dateAdded else importDate)).close()
 
             for formatName in suiteFormats:
                 format = suiteFormats[formatName]
                 if (format.validForFlags(flags)):
                     uri = self.joinPath(format.getPath(), testPath, format.getExtension())
-                    self.query("INSERT INTO `test_pages` "
-                               "  (`testcase_id`, `test_suite`, `format`, `uri`) "
-                               "VALUES (%s, %s, %s, %s) ",
-                               (testcase.getId(), testSuiteName, formatName, uri)).close()
+                    self.execute("INSERT INTO `test_pages` "
+                                 "  (`testcase_id`, `test_suite`, `format`, `uri`) "
+                                 "VALUES (%s, %s, %s, %s) ",
+                                 (testcase.getId(), testSuiteName, formatName, uri)).close()
 
                     for referenceGroup in references:
                         for reference in referenceGroup:
                             uri = self.joinPath(format.getPath(), reference.path, format.getExtension())
-                            self.query("INSERT INTO `reference_pages` "
-                                       "  (`testcase_id`, `test_suite`, `reference`, `format`, `uri`) "
-                                       "VALUES (%s, %s, %s, %s, %s) "
-                                       "ON DUPLICATE KEY UPDATE `uri` = %s ",
-                                       (testcase.getId(), testSuiteName, reference.name, formatName, uri, uri)).close()
+                            self.execute("INSERT INTO `reference_pages` "
+                                         "  (`testcase_id`, `test_suite`, `reference`, `format`, `uri`) "
+                                         "VALUES (%s, %s, %s, %s, %s) "
+                                         "ON DUPLICATE KEY UPDATE `uri` = %s ",
+                                         (testcase.getId(), testSuiteName, reference.name, formatName, uri, uri)).close()
         
         self.execute("DELETE FROM `status_cache` "
                      "WHERE `test_suite` = %s ",
@@ -177,7 +187,7 @@ class TestcaseImport(systemprocess.SystemProcess):
                 data['credits'] = _htmlparser.unescape(data['credits'])
                 manifest.append(data)
             return manifest
-        self.ui.manifest("Unable to read manifest\n")
+        self.ui.status("Unable to read manifest\n")
         return None
 
 

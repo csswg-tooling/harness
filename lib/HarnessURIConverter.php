@@ -55,6 +55,14 @@ class HarnessURIConverter extends URIConverter
 
         $this->_addQueryArg($queryArgs, 'suite', $components);
         break;
+
+      case 'upload':
+        $pageKey = 'upload_results';
+        $this->_addQueryArg($queryArgs, 'suite', $components);
+        if ('ua' == array_shift($components)) {
+          $this->_addQueryArg($queryArgs, 'ua', $components);
+        }
+        break;
         
       case 'test':
         $pageKey = 'testcase';
@@ -250,6 +258,11 @@ class HarnessURIConverter extends URIConverter
         $this->_appendURI($uriPath, 'suite', $queryArgs, 'agent');
         break;
         
+      case 'upload_results':
+        $this->_appendURI($uriPath, 'suite', $queryArgs, 'upload');
+        $this->_appendURI($uriPath, 'ua', $queryArgs, 'ua');
+        break;
+
       case 'testcase':
         $this->_appendURI($uriPath, 'suite', $queryArgs, 'test');
         if (! $this->_appendURI($uriPath, 'testcase', $queryArgs, 'single')) {

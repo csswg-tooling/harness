@@ -301,6 +301,24 @@ class TestSuitePage extends HarnessPage
 
     $this->addElement('span', array('id' => 'extra_controls'), '');
   }
+
+
+  function writeUploadLink()
+  {
+    if ($this->mUser->hasRole('tester')) {
+      $this->openElement('div', null, FALSE);
+      $this->addTextContent("Alternatively results can be imported from an ");
+      $this->addHyperLink($this->_CombinePath($this->mTestSuite->getURI(), 'implementation-report-TEMPLATE.data'), null, 'implementation report');
+      $this->addTextContent(": ");
+      $args['suite'] = $this->mTestSuite->getName();
+      $args['ua'] = $this->mUserAgent->getId();
+      $uri = $this->buildPageURI('upload_results', $args);
+      $this->openFormElement($uri, 'GET');
+      $this->addInputElement('submit', null, 'Batch Upload');
+      $this->closeElement('form');
+      $this->closeElement('div');
+    }
+  }
   
   
   function writeTestingNotes()
@@ -341,6 +359,8 @@ class TestSuitePage extends HarnessPage
       
       $this->writeTestControls();
     
+      $this->writeUploadLink();
+
       $this->writeTestingNotes();
     }
     
