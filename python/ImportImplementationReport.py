@@ -163,6 +163,15 @@ class Importer(db.HarnessDBConnection):
 
         for data in report:
             self.ui.debug('Adding result ', data.result, ' for ', data.format.getName(), '/', data.testcase.getName(), '\n')
+            self.execute("UPDATE `results` "
+                         "SET `ignore` = 1 "
+                         "WHERE `testcase_id` = %s "
+                         "  AND `revision` = %s "
+                         "  AND `format` = %s "
+                         "  AND `user_agent_id` = %s "
+                         "  AND `user_id` = %s "
+                         "  AND  `modified` = %s ",
+                         (data.testcase.getId(), data.revision, data.format.getName(), self.ua.getId(), self.user.getId(), self.dateTime)).close()
             self.execute("INSERT INTO `results` "
                          "  (`testcase_id`, `revision`, `format`, `user_agent_id`, `user_id`, "
                          "   `user_user_agent_id`, `result`, `comment`, `modified`) "
