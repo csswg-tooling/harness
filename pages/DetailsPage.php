@@ -99,6 +99,14 @@ class DetailsPage extends ResultsBasedPage
     $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
   }
 
+  function writeHeadScript()
+  {
+    parent::writeHeadScript();
+    
+    $vars = array('gResultsAPIURI' => $this->buildPageURI('api.results'));
+    $this->addScriptElementInline(Config::Get('uri.script', 'details'), 'text/javascript', null, $vars);
+  }
+
   function _compareResults(Result $a, Result $b)
   {
     $resultOrder = array('pass' => '0', 'fail' => '1', 'uncertain' => '2', 'invalid' => '3');
@@ -139,7 +147,7 @@ class DetailsPage extends ResultsBasedPage
             $haveResults = TRUE;
             $resultValue = $result->getResult();
 
-            $this->openElement('tr', array('class' => $resultValue));
+            $this->openElement('tr', array('class' => $resultValue, 'data-result-id' => $result->getId()));
 
             $userAgent = $this->mUserAgents[$result->getUserAgentId()];
             $userId = $result->getUserId();
@@ -218,6 +226,13 @@ class DetailsPage extends ResultsBasedPage
             $this->addElement('td', null, $this->_getDateTimeString($result->getDateTime()));
             $this->addElement('td', null, $source);
 
+            if ($this->mUser->hasRole('tester')) {
+              $this->openElement('td');
+              $this->addElement('button', array('class' => 'icon button cancel', 'type' => 'button',
+                                                'onclick' => 'removeResult(event)'), '');
+              $this->closeElement('td');
+            }
+
             $this->closeElement('tr');
             $anchor = null; // only first row gets anchor
           }
@@ -239,7 +254,7 @@ class DetailsPage extends ResultsBasedPage
         
         $this->openElement('tbody', array('id' => "s{$section->getName()}"));
         $this->openElement('tr');
-        $this->openElement('th', array('colspan' => 6, 'scope' => 'rowgroup'));
+        $this->openElement('th', array('colspan' => (($this->mUser->hasRole('tester')) ? 7 : 6), 'scope' => 'rowgroup'));
         $specURI = $section->getURI($spec);
         $this->addHyperLink($specURI, null, "{$section->getName()}: {$section->getTitle()}");
         $this->closeElement('th');
@@ -276,7 +291,7 @@ class DetailsPage extends ResultsBasedPage
   {
     $this->openElement('tbody');
     $this->openElement('tr');
-    $this->addElement('th', array('colspan' => 6), $spec->getDescription());
+    $this->addElement('th', array('colspan' => (($this->mUser->hasRole('tester')) ? 7 : 6)), $spec->getDescription());
     $this->closeElement('tr');
     $this->closeElement('tbody');
   }
@@ -305,6 +320,9 @@ class DetailsPage extends ResultsBasedPage
       $this->addElement('th', null, 'User Agent');
       $this->addElement('th', null, 'Date');
       $this->addElement('th', null, 'Source');
+      if ($this->mUser->hasRole('tester')) {
+        $this->addElement('th', array('class' => 'controls', ''));
+      }
       $this->closeElement('tr');
       $this->closeElement('thead');
 

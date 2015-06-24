@@ -119,6 +119,19 @@ class Result extends HarnessDBEntity
     return $this->_getDateTimeValue('modified');
   }
   
+  function ignore($comment = null)
+  {
+    $sql  = "UPDATE `results` ";
+    $sql .= "SET `ignore` = 1, `modified` = `modified` ";
+    if ($comment) {
+      $this->encode($comment);
+      $sql .= ", `comment` = {$comment} ";
+    }
+    $sql .= "WHERE `id` = {$this->getId()} ";
+    $this->query($sql);
+
+    $this->_setIntValue('ignore', 1);
+  }
 }
 
 ?>
