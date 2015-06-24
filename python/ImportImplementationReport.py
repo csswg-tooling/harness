@@ -84,9 +84,12 @@ class Importer(db.HarnessDBConnection):
             report = []
             for line in reportFile.readlines():
                 lineNumber += 1
+                hashIndex = line.find('#')
+                if (-1 < hashIndex):
+                    line = line[0:hashIndex]
                 line = line.strip()
 
-                if (line.startswith('#')):
+                if (not line):
                     continue
 
                 if (haveRevision):
@@ -156,8 +159,12 @@ class Importer(db.HarnessDBConnection):
 
     def importResults(self, reportFilePath):
         report = self._loadReport(reportFilePath)
-        if (not report):
+        if (report is None):
             return False
+
+        if (not report):
+            self.ui.status('No results found.\n')
+            return True
 
         self.lockTables()
 
