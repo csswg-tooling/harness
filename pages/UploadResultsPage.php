@@ -155,6 +155,8 @@ class UploadResultsPage extends HarnessPage
     $args[] = $this->mUser->getName();
     $args[] = $this->mUserAgent->getUAString();
 
+    $this->mUserAgent->update();
+
     list($status, $output) = ShellProcess::ExecuteSynchnonousFor($this->mUser, $this->_GetInstallPath(),
                                                                  'python/ImportImplementationReport.py', null, $args);
 
