@@ -1,18 +1,24 @@
-php_value mbstring.internal_encoding UTF-8
-php_value mbstring.func_overload 7
-php_value output_buffering 0
+<IfModule mod_php5.c>
+	php_value mbstring.internal_encoding UTF-8
+	php_value mbstring.func_overload 7
+	php_value output_buffering 0
+</IfModule>
 
 Options +MultiViews
 
 AddType application/javascript .js
 AddHandler application/x-httpd-php .js
 
-
-
 <IfModule mod_rewrite.c>
-  RewriteEngine On
+	RewriteEngine On
 
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^(.*)$ index.php [L,QSA]
+	<IfModule mod_fastcgi.c>
+		RewriteCond %{REQUEST_URI} ^/php5-fcgi(.*)
+		RewriteRule . - [L]
+	</IfModule>
+
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^(.*)$ index.php [L,QSA]
 </IfModule>
+
