@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 require_once('core/SystemDelegate.php');
@@ -36,7 +36,7 @@ class Harness extends SystemDelegate
   {
     return HarnessPage::_MatchURIConnectionSecurity(HarnessPage::_BuildPageURI($baseURI, null, null, TRUE));
   }
-  
+
   static function ExternalConfigURI($pageKey)
   {
     return HarnessPage::_MatchURIConnectionSecurity(HarnessPage::_BuildConfigURI($pageKey, null, null, TRUE));
@@ -46,19 +46,19 @@ class Harness extends SystemDelegate
   function __construct()
   {
     parent::__construct();
-   
+
     $schema = HarnessDBConnection::GetDBSchema();
-    Events::RegisterEventHook('harness', $schema, 'spec-resync', 'python/SynchronizeSpecLinks.py');
+    Events::RegisterEventHook('harness', $schema, 'spec-resync', 'python/SynchronizeSpecLinks.py', TRUE, 'low');
     Events::RegisterEventHook('harness', $schema, 'spec-rename', 'python/SpecificationRenamed.py');
     Events::RegisterEventHook('harness', $schema, 'spec-delete', 'python/SpecificationDeleted.py');
-    
+
     Events::RegisterEventHook('harness', $schema, 'suite-rename', 'python/TestSuiteRenamed.py');
     Events::RegisterEventHook('harness', $schema, 'suite-delete', 'python/TestSuiteDeleted.py');
-    Events::RegisterEventHook('harness', $schema, 'suite-resync', 'python/SynchronizeSpecLinks.py');
-    
+    Events::RegisterEventHook('harness', $schema, 'suite-resync', 'python/SynchronizeSpecLinks.py', TRUE, 'low');
+
     Events::RegisterEventHook('harness', $schema, 'format-rename', 'python/TestFormatRenamed.py');
     Events::RegisterEventHook('harness', $schema, 'format-delete', 'python/TestFormatDeleted.py');
-    
+
   }
 
 
@@ -66,12 +66,12 @@ class Harness extends SystemDelegate
   {
     return new HarnessURIConverter();
   }
- 
+
 
   function addStyleSheetsTo(SystemPage $page)
   {
     parent::addStyleSheetsTo($page);
-    
+
 //    $page->addStyleSheetLink($page->buildConfigURI('stylesheet.harness'));
   }
 
@@ -79,7 +79,7 @@ class Harness extends SystemDelegate
   function getDatabases()
   {
     $databases = parent::getDatabases();
-    
+
     $databases[] = new HarnessDBConnection();
 
     return $databases;
@@ -96,7 +96,7 @@ class Harness extends SystemDelegate
         }
         $uri = static::_CombinePath($uri, $args['testcase'] . '/');
       }
-      
+
       return $uri;
     }
     return null;
