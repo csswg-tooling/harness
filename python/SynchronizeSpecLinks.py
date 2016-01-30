@@ -83,6 +83,13 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
                          "ON DUPLICATE KEY UPDATE `sync_date` = %s ",
                          (specName, unicode(syncDateTime), unicode(syncDateTime))).close()
   
+    def _getAlternateSchemes(self, uri):
+        if (uri.startswith('http:')):
+            return (uri, 'https:' + uri[5:])
+        if (uri.startswith('https:')):
+            return ('http:' + uri[6:], uri)
+        return (uri, uri)
+
     def _synchronizeSpec(self, specName, force):
         specSyncDate = self.mSpecs.getSyncDateTime(specName)
         if (specSyncDate):
@@ -133,18 +140,26 @@ class SynchronizeSpecLinks(db.HarnessDBConnection):
                    "  ON `test_help_links`.`testcase_id` = `suite_tests`.`testcase_id` "
                    "  AND `test_help_links`.`revision` = `suite_tests`.`revision` ")
             if (specURI):
+                httpSpecURI, httpsSpecURI = self._getAlternateSchemes(specURI)
                 if (draftURI):
+                    httpDraftURI, httpsDraftURI = self._getAlternateSchemes(draftURI)
                     cursor = self.query(sql +
-                                        "  AND (`test_help_links`.`uri` LIKE %s OR `test_help_links`.`uri` LIKE %s) ",
-                                        (specURI + '%', draftURI + '%'))
+                                        "  AND (`test_help_links`.`uri` LIKE %s "
+                                        "       OR `test_help_links`.`uri` LIKE %s "
+                                        "       OR `test_help_links`.`uri` LIKE %s "
+                                        "       OR `test_help_links`.`uri` LIKE %s) ",
+                                        (httpSpecURI + '%', httpsSpecURI + '%', httpDraftURI + '%', httpsDraftURI + '%'))
                 else:
                     cursor = self.query(sql +
-                                        "  AND `test_help_links`.`uri` LIKE %s ",
-                                        (specURI + '%', ))
+                                        "  AND (`test_help_links`.`uri` LIKE %s "
+                                        "       OR `test_help_links`.`uri` LIKE %s) ",
+                                        (httpSpecURI + '%', httpsSpecURI + '%'))
             else:
+                httpDraftURI, httpsDraftURI = self._getAlternateSchemes(draftURI)
                 cursor = self.query(sql +
-                                    "  AND `test_help_links`.`uri` LIKE %s ",
-                                    (draftURI + '%', ))
+                                    "  AND (`test_help_links`.`uri` LIKE %s "
+                                    "       OR `test_help_links`.`uri` LIKE %s) ",
+                                    (httpDraftURI + '%', httpsDraftURI + '%'))
 
             usedAnchors = dict()
             testcaseLinks = dict()
