@@ -3,12 +3,12 @@
  *
  *  Copyright © 2014 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  ******************************************************************************/
 
@@ -34,7 +34,7 @@ class StatusAPI extends APIPage
   {
     return 'api.status';
   }
-  
+
   protected $mTestSuite;
   protected $mUserAgent;
   protected $mSpec;
@@ -42,10 +42,10 @@ class StatusAPI extends APIPage
   protected $mSection;
   protected $mSections;
   protected $mResults;
-  
+
   /**
    * Expected URL paramaters:
-   * 
+   *
    */
   function _initPage()
   {
@@ -53,7 +53,7 @@ class StatusAPI extends APIPage
 
     $this->mTestSuite = $this->_requestData('suite', 'TestSuite');
     $this->mUserAgent = new UserAgent(intval($this->_requestData('ua')));
-    
+
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
       $specName = $this->_requestData('spec');
       if ($specName) {
@@ -65,8 +65,8 @@ class StatusAPI extends APIPage
       else {
         $this->mSpec = reset($this->mTestSuite->getSpecifications());
       }
-      
-      
+
+
       if ($this->mSpec) {
         $this->mSpecType = $this->_requestData('type');
         if (! $this->mSpecType) {
@@ -78,9 +78,9 @@ class StatusAPI extends APIPage
         if ($specURI) {
           $specURIName = $this->_getURIFileName($specURI);
           $specHomeURI = $this->_getURIFileName($this->mSpec->getHomeURI());
-          if (('' == $specURIName) || 
-              ($specHomeURI == $specURIName) || 
-              (('' == $specHomeURI) && (0 === stripos($specURIName, 'index.')))) {
+          if (('' == $specURIName) ||
+              ($specHomeURI == $specURIName) ||
+              (('' == $specHomeURI) && (0 === mb_stripos($specURIName, 'index.')))) {
             $this->mSection = null;
           }
           else {
@@ -92,24 +92,24 @@ class StatusAPI extends APIPage
       }
     }
   }
-  
-  
+
+
   protected function _getURIFileName($uri)
   {
     $uriPath = $this->_ParseURI($uri, PHP_URL_PATH);
-    if ('/' == substr($uriPath, -1)) {
+    if ('/' == mb_substr($uriPath, -1)) {
       return '';
     }
     return basename($uriPath);
   }
-  
-  
-  
+
+
+
   function secureRequired()
   {
     return FALSE;
   }
-  
+
   function crossOriginAllowed()
   {
     return TRUE;
@@ -119,12 +119,12 @@ class StatusAPI extends APIPage
   {
     return 'status';
   }
-  
+
   function getURITemplate()
   {
     return '{suite,spec,uri}';
   }
-  
+
   function getOverview()
   {
     return 'Write This...';
@@ -135,10 +135,10 @@ class StatusAPI extends APIPage
     $args['suite'] = $this->_defineArgument('param/suite', '<string>', 'name of test suite');
     $args['spec'] = $this->_defineArgument('param/spec', '<string>', 'short name of spec', 'optional');
     $args['uri'] = $this->_defineArgument('param/uri', '<string>', 'uri of spec');
-    
+
     return $args;
   }
-  
+
   function getReturnValues()
   {
     $statusData['title'] = '<string>';
@@ -160,15 +160,15 @@ class StatusAPI extends APIPage
     $sectionData['test_count'] = '<int>';
     $sectionData['results'] = '{_<engine-name>: <engine-data>}';
     $values['section-data'] = $sectionData;
-    
+
     $engineData['pass_count'] = '<int>';
     $engineData['fail_count'] = '<int>';
     $values['engine-data'] = $engineData;
-    
+
     return $values;
   }
-    
-  
+
+
   function processCall($version)
   {
     if ('GET' == $this->_getRequestMethod()) {
@@ -178,77 +178,77 @@ class StatusAPI extends APIPage
         $this->_addField($response, 'heading', $this->mTestSuite->getAnnotationTitle());
         $this->_addField($response, 'build_date', $this->_dateTimeValue($this->mTestSuite->getBuildDateTime()));
         $this->_addField($response, 'lock_date', $this->_dateTimeValue($this->mTestSuite->getLockDateTime()));
-        
+
         $args['suite'] = $this->mTestSuite->getName();
         $args['order'] = TRUE;
         $this->_addField($response, 'test_uri', $this->buildPageURI('testcase', $args, null, TRUE));
         $this->_addField($response, 'results_uri', $this->buildPageURI('results', $args, null, TRUE));
         $this->_addField($response, 'details_uri', $this->buildPageURI('details', $args, null, TRUE));
-        
+
         $this->_addField($response, 'client_engine', $this->mUserAgent->getEngineTitle());
         $this->_addField($response, 'is_index', (null == $this->mSection));
-        
-        
+
+
         $resultData = StatusCache::GetResultsForSection($this->mTestSuite, $this->mSpec, $this->mSpecType, $this->mSection);
         if (! $resultData) {
           $this->mResults = new Results($this->mTestSuite, null, $this->mSpec, $this->mSection);
-          
+
           $resultData['engines'] = $this->_getEngineTitles();
           $resultData['sections'] = $this->_getSectionData($this->mSection, TRUE);
           StatusCache::SetResultsForSection($this->mTestSuite, $this->mSpec, $this->mSpecType, $this->mSection, $resultData);
         }
-        
+
         $this->_addField($response, 'engine_titles', $resultData['engines']);
         $this->_addField($response, 'sections', $resultData['sections']);
-        
+
         return $response;
       }
-      
+
     }
     elseif ('POST' == $this->_getRequestMethod()) {
 /*
       if (XXX && $this->mUser->hasRole('admin')) {
 
       }
-*/      
+*/
     }
     return null;
   }
-  
+
 
   protected function _getEngineTitles()
   {
     $engines = array();
-    
+
     foreach ($this->mResults->getEngines() as $engineName => $engine) {
       $engines['_' . $engineName] = $engine->getTitle();
     }
     return $engines;
   }
-  
+
   protected function _getSectionData(SpecificationAnchor $section = null, $forceResults = FALSE)
   {
     $sectionURI = '';
     $fragId = '';
     if ($section) {
       $sectionURI = $section->getAnchorURI();
-      if (FALSE !== strpos($sectionURI, '#')) {
-        $fragId = substr(strstr($sectionURI, '#'), 1);
-        $sectionURI = strstr($sectionURI, '#', TRUE);
+      if (FALSE !== mb_strpos($sectionURI, '#')) {
+        $fragId = mb_substr(mb_strstr($sectionURI, '#'), 1);
+        $sectionURI = mb_strstr($sectionURI, '#', TRUE);
       }
     }
-    
+
     $results = array();
     $testCases = $this->mResults->getTestCases();
     $engines = $this->mResults->getEngines();
     $testCaseIds = $this->mSections->getTestCaseIdsFor($this->mSpec, $section, TRUE);
-    
+
     if ($forceResults || (0 < count($testCaseIds))) {
       $sectionData = array();
       $this->_addField($sectionData, 'anchor_name', $fragId);
       $this->_addField($sectionData, 'section_name', ($section ? $section->getName() : ''));
       $sectionData['test_count'] = ($testCaseIds ? count($testCaseIds) : 0);
-      
+
       $engineResults = array();
       if ($testCaseIds) {
         foreach ($engines as $engineName => $engine) {
@@ -268,29 +268,29 @@ class StatusAPI extends APIPage
             }
           }
         }
-        
+
         foreach ($engines as $engineName => $engine) {
           $engineData = array();
           $engineData['pass_count'] = (array_key_exists($engineName, $enginePassCount) ? $enginePassCount[$engineName] : 0);
           $engineData['fail_count'] = (array_key_exists($engineName, $engineFailCount) ? $engineFailCount[$engineName] : 0);
-          
+
           if (0 < ($engineData['pass_count'] + $engineData['fail_count'])) {
             $engineResults['_' . $engineName] = $engineData;
           }
         }
       }
-      
+
       $this->_addField($sectionData, 'results', $engineResults);
-      
+
       $results['_' . $fragId] = $sectionData;
     }
-    
+
     $subSections = $this->mSections->getSubSections($this->mSpec, $section);
     if ($subSections) {
       foreach ($subSections as $subSection) {
         $subSectionURI = $subSection->getAnchorURI();
-        if (FALSE !== strpos($subSectionURI, '#')) {
-          $subSectionURI = strstr($subSectionURI, '#', TRUE);
+        if (FALSE !== mb_strpos($subSectionURI, '#')) {
+          $subSectionURI = mb_strstr($subSectionURI, '#', TRUE);
         }
         if (($sectionURI == $subSectionURI) &&
             ((0 < count($this->mSections->getTestCaseIdsFor($this->mSpec, $subSection))) ||

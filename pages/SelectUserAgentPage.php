@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 
@@ -26,7 +26,7 @@ require_once('modules/useragent/UserAgent.php');
 class SelectUserAgentPage extends HarnessPage
 {
   protected $mRedirectURI;
-  
+
 
   static function GetPageKey()
   {
@@ -37,12 +37,12 @@ class SelectUserAgentPage extends HarnessPage
   function __construct(Array $args = null, Array $pathComponents = null)
   {
     parent::__construct($args, $pathComponents);
-    
+
     $this->mSubmitData = $this->_uriData();
     unset($this->mSubmitData['ua']);
 
     $this->mRedirectURI = null;
-    
+
     if ($action = $this->_postData('action')) {
       if ('Enter' == $action) {
         $uaString = $this->_postData('ua');
@@ -51,13 +51,13 @@ class SelectUserAgentPage extends HarnessPage
           $this->mUserAgent->update();
         }
       }
-      
+
       $args['suite'] = $this->mTestSuite->getName();
       $args['ua'] = $this->mUserAgent->getId();
 
       $this->mRedirectURI = $this->buildPageURI('testsuite', $args);
     }
-  }  
+  }
 
   function getRedirectURI()
   {
@@ -67,7 +67,7 @@ class SelectUserAgentPage extends HarnessPage
   function getNavURIs()
   {
     $uris = parent::getNavURIs();
-    
+
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
       $title = "Enter Data";
       $args['suite'] = $this->mTestSuite->getName();
@@ -76,7 +76,7 @@ class SelectUserAgentPage extends HarnessPage
       $uri = $this->buildPageURI('testsuite', $args);
       $uris[] = compact('title', 'uri');
     }
-      
+
     $title = "Select User Agent";
     $uri = '';
     $uris[] = compact('title', 'uri');
@@ -84,7 +84,7 @@ class SelectUserAgentPage extends HarnessPage
     return $uris;
   }
 
-  
+
   protected function _splitByEngine($userAgents)
   {
     foreach ($userAgents as $userAgent) {
@@ -94,13 +94,13 @@ class SelectUserAgentPage extends HarnessPage
     uksort($engines, 'strnatcasecmp');
     return $engines;
   }
-  
+
   protected function _splitByBrowser($userAgents)
   {
     foreach ($userAgents as $userAgent) {
       $browserTitle = $userAgent->getBrowserTitle();
       $browserVersion = $userAgent->getBrowserVersion();
-      if (0 < strlen($browserVersion)) {
+      if (0 < mb_strlen($browserVersion)) {
         $browserTitle .= ' ' . $browserVersion;
       }
       $browsers[$browserTitle][] = $userAgent;
@@ -108,12 +108,12 @@ class SelectUserAgentPage extends HarnessPage
     uksort($browsers, 'strnatcasecmp');
     return $browsers;
   }
-  
+
   protected function _splitByPlatform($userAgents)
   {
     foreach ($userAgents as $userAgent) {
       $platformTitle = $userAgent->getPlatformTitle();
-      if (0 == strlen($platformTitle)) {
+      if (0 == mb_strlen($platformTitle)) {
         $platformTitle = "Unknown";
       }
       $platforms[$platformTitle][] = $userAgent;
@@ -127,19 +127,19 @@ class SelectUserAgentPage extends HarnessPage
     $this->openElement('div', array('class' => 'body'));
 
     $this->addElement('p', null,
-                      "This page allows you to enter test results for a user agent " . 
+                      "This page allows you to enter test results for a user agent " .
                       "other than the one you are currently using.");
 
-    $this->addElement('p', null, 
+    $this->addElement('p', null,
                       "This capability is intended ONLY for entering results for user agents " .
                       "that are not capable of using the test harness, such as non-interactive " .
                       "page converters. If the other user agent is capable of running the harness, " .
                       "please use it instead.");
 
-    $this->addElement('p', null, 
+    $this->addElement('p', null,
                       "When doing this, you must NOT rely on the rendering of test or reference " .
                       "pages in the harness, but only on results as observed in the other user agent.");
-    
+
     $userAgents = UserAgent::GetAllUserAgents();
     uasort($userAgents, array('UserAgent', 'CompareUAString'));
 
@@ -153,8 +153,8 @@ class SelectUserAgentPage extends HarnessPage
           $userAgents[$engineTitle][$browser] = $this->_splitByPlatform($agentsByBrowser);
         }
       }
-    
-      $this->addElement('p', null, 
+
+      $this->addElement('p', null,
                         "You may select from one of the following known user agents, " .
                         "or enter a custom user agent string below:");
 
@@ -164,13 +164,13 @@ class SelectUserAgentPage extends HarnessPage
       $attrs['size'] = 10;
       $attrs['style'] = 'width: 80%';
       $this->openSelectElement('ua', $attrs);
-      
+
       foreach ($userAgents as $engineTitle => $agentsByEngine) {
         $this->openElement('optgroup', array('label' => $engineTitle));
         foreach ($agentsByEngine as $browser => $agentsByBrowser) {
           foreach ($agentsByBrowser as $platform => $agentsByPlatform) {
             foreach ($agentsByPlatform as $userAgent) {
-              $this->addOptionElement($userAgent->getId(), 
+              $this->addOptionElement($userAgent->getId(),
                                       array('selected' => $userAgent->isActualUA()),
                                       "{$browser} - {$platform} - {$userAgent->getUAString()}");
             }
@@ -182,7 +182,7 @@ class SelectUserAgentPage extends HarnessPage
 
       $this->addTextContent(' ');
       $this->addInputElement('submit', 'action', 'Select');
-      
+
       $this->closeElement('form');
     }
     else {

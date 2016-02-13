@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2010-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2010-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 require_once('lib/HarnessCmdLineWorker.php');
@@ -34,26 +34,26 @@ require_once('modules/useragent/UserAgent.php');
 class ExportResults extends HarnessCmdLineWorker
 {
 
-  function __construct() 
+  function __construct()
   {
     parent::__construct();
 
   }
-  
+
   function usage()
   {
     echo "USAGE: php ExportResults.php testsuite outputfile\n";
   }
-  
-  
+
+
   protected function _encode($string)
   {
-    if ((FALSE !== strpos($string, ',')) || (FALSE !== strpos($string, '"'))) {
+    if ((FALSE !== mb_strpos($string, ',')) || (FALSE !== mb_strpos($string, '"'))) {
       $string = '"' . str_replace('"', '""', $string) . '"';
     }
     return $string;
   }
-  
+
   protected function _encodeDateTime(DateTime $dateTime = null)
   {
     if ($dateTime) {
@@ -63,8 +63,8 @@ class ExportResults extends HarnessCmdLineWorker
     }
     return '';
   }
-  
-  
+
+
   /**
    * Dump test results into a csv file
    *
@@ -72,14 +72,14 @@ class ExportResults extends HarnessCmdLineWorker
   function export($testSuiteName, $outPath)
   {
     $testSuite = @new TestSuite($testSuiteName);
-    
+
     if ($testSuite->isValid()) {
-    
+
       $outFile = fopen($outPath, "wb");
-      
+
       if ($outFile) {
         fwrite($outFile, "testcase,result,format,date,source,engine,useragent\n");
-        
+
         $formats = TestFormat::GetAllFormats();
         $userAgents = UserAgent::GetAllUserAgents();
         $users = User::GetAllUsers();
@@ -87,26 +87,26 @@ class ExportResults extends HarnessCmdLineWorker
         echo "Loading results for {$testSuiteName}\n";
 
         $results = new Results($testSuite);
-        
+
         echo "Exporting\n";
-        
+
         $testCases = $results->getTestCases();
         foreach ($testCases as $testCaseId => $testCase) {
           $engineResults = $results->getResultsFor($testCase);
-          
+
           if ($engineResults) {
             ksort($engineResults);
-            
+
             $testCaseName = $testCase->getName();
-            
+
             foreach ($engineResults as $engineName => $engineResultData) {
               asort($engineResultData);
-              
+
               foreach ($engineResultData as  $resultId => $resultValue) {
                 $result = new Result($resultId);
                 $userAgent = $userAgents[$result->getUserAgentId()];
                 $userId = $result->getUserId();
-              
+
                 $testCaseName     = $this->_encode($testCaseName);
                 $resultValue      = $this->_encode($resultValue);
                 $testFormat       = $this->_encode($formats[$result->getFormatName()]->getTitle());
@@ -132,7 +132,7 @@ class ExportResults extends HarnessCmdLineWorker
             }
           }
         }
-        
+
         fclose($outFile);
       }
     }

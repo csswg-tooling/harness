@@ -1,21 +1,21 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
- 
+
 require_once('lib/HarnessDB.php');
 require_once('lib/TestCase.php');
 
@@ -39,15 +39,15 @@ class TestCases extends HarnessDBConnection
                        UserAgent $agentOrder = null)
   {
     parent::__construct();
-    
+
     $startTime = microtime(TRUE);
 
     $testSuiteName = $this->encode($testSuite->getName(), 'test_spec_links.test_suite');
     $engineName = ($agentOrder ? $this->_getSequenceEngine($testSuite, $agentOrder) : FALSE);
-    
+
     $this->mTestCasesById = array();
     $this->mTestCasesByName = array();
-    
+
     $sql  = "SELECT `testcases`.* ";
     $sql .= "FROM `testcases` ";
     $sql .= "LEFT JOIN (`suite_tests`) ";
@@ -81,7 +81,7 @@ class TestCases extends HarnessDBConnection
     }
     if ($flag) {
       if ('!' === $flag[0]) {
-        $flag = substr($flag, 1);
+        $flag = mb_substr($flag, 1);
         $compare = 'NOT LIKE';
       }
       else {
@@ -115,7 +115,7 @@ class TestCases extends HarnessDBConnection
   {
     $testSuiteName = $this->encode($testSuite->getName(), 'test_sequence.test_suite');
     $engineName = $this->encode($userAgent->getEngineName(), 'test_sequence.engine');
-    
+
     // check if engine is sequenced
     $sql  = "SELECT * ";
     $sql .= "FROM `test_sequence` ";
@@ -126,7 +126,7 @@ class TestCases extends HarnessDBConnection
 
     if (0 == $r->rowCount()) {  // try magic engine name
       $engineName = $this->encode('-no-data-', 'test_sequence.engine');
-      
+
       $sql  = "SELECT * ";
       $sql .= "FROM `test_sequence` ";
       $sql .= "WHERE `engine` = '{$engineName}' ";
@@ -140,7 +140,7 @@ class TestCases extends HarnessDBConnection
     }
     return $engineName;
   }
-  
+
 
   function getQueryTime()
   {
@@ -164,7 +164,7 @@ class TestCases extends HarnessDBConnection
     }
     return array();
   }
-  
+
   function getFirstTestCase()
   {
     if ($this->mTestCasesById) {
@@ -172,7 +172,7 @@ class TestCases extends HarnessDBConnection
     }
     return null;
   }
-  
+
   function getTestCase($testCaseName)
   {
     if ($this->mTestCasesByName && array_key_exists($testCaseName, $this->mTestCasesByName)) {
@@ -180,7 +180,7 @@ class TestCases extends HarnessDBConnection
     }
     return null;
   }
-  
+
   function getTestCaseById($testCaseId)
   {
     if ($this->mTestCasesById && array_key_exists($testCaseId, $this->mTestCasesById)) {
@@ -188,7 +188,7 @@ class TestCases extends HarnessDBConnection
     }
     return null;
   }
-  
+
   /**
    * Get index data for testacse in query
    * returns array of: index, count, first, prev, next, last

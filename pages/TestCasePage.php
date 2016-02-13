@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 require_once('lib/HarnessPage.php');
@@ -34,7 +34,7 @@ require_once('modules/useragent/Engine.php');
  * case and the UI to submit results
  */
 class TestCasePage extends HarnessPage
-{  
+{
   protected $mTestCase;
   protected $mIndexData;
   protected $mFormat;
@@ -70,7 +70,7 @@ class TestCasePage extends HarnessPage
 
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
       $testCaseName = $this->_getData('testcase');
-    
+
       $this->mSpec = null;
       $this->mSection = null;
 
@@ -85,7 +85,7 @@ class TestCasePage extends HarnessPage
         if ($specName) {
           $this->mSpec = Specification::GetSpecificationByName($specName);
         }
-        
+
         $sectionName = $this->_getData('section');
         if ($sectionName) {
           if (! $this->mSpec) {
@@ -93,11 +93,11 @@ class TestCasePage extends HarnessPage
           }
           $this->mSection = SpecificationAnchor::GetSectionFor($this->mSpec, $sectionName);
         }
-    
+
         $flag = $this->_getData('flag');
         $orderAgent = ($this->_getData('order') ? $this->mUserAgent : null);
         $testCases = new TestCases($this->mTestSuite, $this->mSpec, $this->mSection, TRUE, $flag, $orderAgent);
-        
+
         $testCaseName = $this->_getData('index');
         if ($testCaseName) {
           $this->mTestCase = $testCases->getTestCase($testCaseName);
@@ -105,17 +105,17 @@ class TestCasePage extends HarnessPage
         else {
           $this->mTestCase = $testCases->getFirstTestCase();
         }
-        
+
         $this->mIndexData = $testCases->getIndexData($this->mTestCase);
       }
-      
-      $formatName = strtolower($this->_getData('format'));
+
+      $formatName = mb_strtolower($this->_getData('format'));
       $suiteFormats = $this->mTestSuite->getFormats();
       $testFormats = ($this->mTestCase ? $this->mTestCase->getFormats() : $suiteFormats);
-      
+
       if (array_key_exists($formatName, $suiteFormats)) {
         $this->mDesiredFormat = $suiteFormats[$formatName];
-        
+
         if (array_key_exists($formatName, $testFormats)) {
           $this->mFormat = $testFormats[$formatName];
         }
@@ -149,15 +149,15 @@ class TestCasePage extends HarnessPage
       if ((! $this->mTestCase) || (FALSE === $this->mTestCase->getReferenceURI($this->mRefName, $this->mFormat))) {
         $this->mRefName = null;
       }
-      
+
       $this->mResults = ($this->mTestCase ? new Results($this->mTestSuite, $this->mTestCase) : null);
     }
   }
-  
+
   function getRedirectURI()
   {
     if ($result = $this->_postData('result')) {
-      switch (strtolower(substr($result, 0, 4))) {
+      switch (mb_strtolower(mb_substr($result, 0, 4))) {
         case 'pass':
           $result = 'pass';
           break;
@@ -180,9 +180,9 @@ class TestCasePage extends HarnessPage
         $failCount = $this->_postData('fail_count');
         $this->mTestCase->submitResult($this->mUserAgent, $this->mUser, $this->mFormat, $result, $passCount, $failCount);
       }
-    
+
       $nextTestcaseName = $this->_postData('next');
-      
+
       $args['suite'] = $this->mTestSuite->getName();
       $args['ua'] = $this->mUserAgent->getId();
       if ($nextTestcaseName) {
@@ -192,7 +192,7 @@ class TestCasePage extends HarnessPage
         $args['section'] = ($this->mSection ? $this->mSection->getName() : null);
         $args['flag'] = $this->_postData('flag');
         $args['order'] = $this->_postData('order');
-      
+
         return $this->buildPageURI('testcase', $args);
       }
       else {
@@ -201,18 +201,18 @@ class TestCasePage extends HarnessPage
     }
     return null;
   }
-  
+
   function getNavURIs()
   {
     $uris = parent::getNavURIs();
-    
+
     $title = "Run Tests";
     $args['suite'] = ($this->mTestSuite ? $this->mTestSuite->getName() : '');
     $args['ua'] = $this->mUserAgent->getId();
 
     $uri = $this->buildPageURI('testsuite', $args);
     $uris[] = compact('title', 'uri');
-    
+
     $title = "Test Case";
     $uri = '';
     $uris[] = compact('title', 'uri');
@@ -220,21 +220,21 @@ class TestCasePage extends HarnessPage
     return $uris;
   }
 
-  
+
   /**
    * Generate <style> element
    */
   function writeHeadStyle()
   {
     parent::writeHeadStyle();
-    
+
     $this->addStyleSheetLink($this->buildConfigURI('stylesheet.test'));
 
 /*
     if ($this->mUserAgent) {
       $actualUA = $this->mUserAgent->getActualUA();
-      $actualEngineName = strtolower($actualUA->getEngineName());
-      
+      $actualEngineName = mb_strtolower($actualUA->getEngineName());
+
       $this->addStyleSheetLink($this->buildURI(sprintf(Config::Get('uri.stylesheet', 'test_engine'), $actualEngineName)));
     }
 */
@@ -244,7 +244,7 @@ class TestCasePage extends HarnessPage
   function writeHeadScript()
   {
     parent::writeHeadScript();
-    
+
     $this->addScriptElementInline(Config::Get('uri.script', 'testcase'), 'text/javascript', null, null);
   }
 
@@ -264,10 +264,10 @@ class TestCasePage extends HarnessPage
     if ($this->mTestCase) {
       $title = $this->mTestCase->getTitle();
       $assertion = $this->mTestCase->getAssertion();
-    
+
       $attrs['class'] = $class;
       $this->openElement($elementName, $attrs, FALSE);
-      
+
       if (0 < $this->mIndexData['count']) {
         $index = $this->mIndexData['index'] + 1;
         $this->addTextContent("Test {$index} of {$this->mIndexData['count']}" . ($title ? ': ' : ''));
@@ -289,14 +289,14 @@ class TestCasePage extends HarnessPage
       $this->closeElement($elementName);
     }
   }
-  
+
   function writeSpecLinks($elementName = 'div', $class = 'speclink', $attrs = null)
   {
     if ($this->mTestCase) {
       $anchors = $this->mTestCase->getSpecAnchors();
       $attrs['class'] = $class;
       $this->openElement($elementName, $attrs, FALSE);
-      
+
       if ($anchors && (0 < count($anchors))) {
         $this->addTextContent('Testing: ');
         $index = -1;
@@ -308,7 +308,7 @@ class TestCasePage extends HarnessPage
 
           $anchor = reset($specAnchors);
           $spec = $anchor->getSpec();
-          
+
           if ('section' == $anchor->getStructure()) {
             $sectionName = $anchor->getName();
             $anchorName = null;
@@ -327,7 +327,7 @@ class TestCasePage extends HarnessPage
             $attrs['title'] = 'Only present in draft';
           }
           $this->addHyperLink($anchor->getURI($spec), $attrs, $anchorText);
-          
+
           if (1 < count($specAnchors)) {
             $anchor = next($specAnchors);
             if ('section' == $anchor->getStructure()) {
@@ -362,18 +362,18 @@ class TestCasePage extends HarnessPage
       $this->closeElement($elementName);
     }
   }
-  
-  
+
+
   function writeTestLinks($elementName = 'div', $class = 'testname', $attrs = null)
   {
     $attrs['class'] = $class;
     $this->openElement($elementName, $attrs);
-    
+
     $this->addTextContent("Test Case: ");
     $this->addHyperLink($this->mTestCase->getURI($this->mFormat),
-                        array('target' => 'test_case'), 
+                        array('target' => 'test_case'),
                         $this->mTestCase->getName());
-    
+
     if ($this->mTestCase->isReferenceTest()) {
       $refGroups = $this->mTestCase->getReferenceNames($this->mFormat);
       if ($refGroups) {
@@ -387,7 +387,7 @@ class TestCasePage extends HarnessPage
             $refType = $this->mTestCase->getReferenceType($refName, $this->mFormat);
             $this->addTextContent(" {$refType} ");
             $this->addHyperLink($this->mTestCase->getReferenceURI($refName, $this->mFormat),
-                                array('target' => 'reference'), 
+                                array('target' => 'reference'),
                                 $refName);
           }
           if (1 < count($refGroups)) {
@@ -399,10 +399,10 @@ class TestCasePage extends HarnessPage
         }
       }
     }
-    
+
     $this->closeElement($elementName);
   }
-  
+
 
   function writeShepherdLink($elementName = 'div', $class = 'shepherd', $attrs = null)
   {
@@ -433,13 +433,13 @@ class TestCasePage extends HarnessPage
       $this->closeElement($elementName);
     }
   }
-  
-  
+
+
   function writeFlagTests($elementName = 'span', $class = 'prerequisites', $attrs = null)
   {
     $allFlags = TestFlag::GetAllFlags();
     $flags = $this->mTestCase->getFlags();
-    
+
     if ($allFlags && (0 < count($allFlags))) {
       $attrs['class'] = $class;
       $this->openElement($elementName, $attrs);
@@ -454,8 +454,8 @@ class TestCasePage extends HarnessPage
       $this->closeElement($elementName);
     }
   }
-  
-  
+
+
   function writeReferenceTabs()
   {
     if ($this->mTestCase->isReferenceTest()) {
@@ -464,17 +464,17 @@ class TestCasePage extends HarnessPage
         unset($refGroups);
       }
     }
-    
+
     if (isset($refGroups)) {
       $refCount = 0;
       foreach ($refGroups as $refNames) {
         $refCount += count($refNames);
       }
-      
+
       $this->openElement('div', array('class' => 'tab_bar'));
-      
+
       $this->openElement('div', array('class' => 'tab_group', 'id' => 'reference_tabs'));
-      
+
       $this->openElement('span', array('class' => 'tabs'));
       if (! $this->mRefName) {
         $this->openElement('span', array('class' => 'tab active'));
@@ -485,7 +485,7 @@ class TestCasePage extends HarnessPage
         $args = $this->_uriData();
         unset($args['reference']);
         $uri = $this->buildPageURI('testcase', $args);
-        
+
         $this->openElement('span', array('class' => 'tab'));
         $this->addHyperLink($uri, null, 'Test Case');
         $this->closeElement('span');
@@ -504,7 +504,7 @@ class TestCasePage extends HarnessPage
             $args = $this->_uriData();
             $args['reference'] = $refName;
             $uri = $this->buildPageURI('testcase', $args);
-            
+
             $this->openElement('span', array('class' => 'tab', 'data-ref' => "{$refName}-{$groupIndex}"));
             $this->addHyperLink($uri, null, "{$refType} Reference Page");
             $this->closeElement('span');
@@ -515,7 +515,7 @@ class TestCasePage extends HarnessPage
         }
       }
       $this->closeElement('span'); // .tabs
-      
+
       $this->openElement('div', array('class' => 'tab_foot'));
       $plural = ((1 < $refCount) ? 's' : '');
       $class = ((! $this->mRefName) ? ' active' : '');
@@ -538,7 +538,7 @@ class TestCasePage extends HarnessPage
       $this->closeElement('div'); // .tabBar
     }
   }
-  
+
   function writeFormatControls()
   {
     $suiteFormats = $this->mTestSuite->getFormats();
@@ -571,14 +571,14 @@ class TestCasePage extends HarnessPage
       $this->closeElement('span');
     }
   }
-  
+
 
   function writeResults()
   {
     if ($this->mResults && (0 < $this->mResults->getResultCount())) {
       $engines = $this->mResults->getEngines();
       $counts = $this->mResults->getResultCountsFor($this->mTestCase);
-      
+
       $args['suite'] = $this->mTestSuite->getName();
       $args['testcase'] = $this->mTestCase->getName();
       $args['ua'] = $this->mUserAgent->getId();
@@ -588,7 +588,7 @@ class TestCasePage extends HarnessPage
       $detailsURI = $this->buildPageURI('details', $args);
       $this->addHyperLink($detailsURI, null, 'Results:');
       $this->addTextContent(' ');
-      
+
       foreach ($engines as $engineName => $engine) {
         $class = 'engine';
         if (0 < $counts[$engineName]['uncertain']) {
@@ -637,7 +637,7 @@ class TestCasePage extends HarnessPage
 
       $class = ((! $this->mRefName) ? 'active' : '');
       $this->_writeTest($this->mTestCase->getURI($this->mFormat), array('class' => $class), 'test_case', 'Run Test');
-    
+
       $groupIndex = -1;
       foreach ($refGroups as $refNames) {
         $groupIndex++;
@@ -652,21 +652,21 @@ class TestCasePage extends HarnessPage
     else {
       $this->_writeTest($this->mTestCase->getURI($this->mFormat), array('class' => 'active'), 'test_case', 'Run Test');
     }
-    
+
     $this->closeElement('div');
     $this->closeElement('div');
   }
-  
-  
+
+
   function writeSubmitForm()
   {
     $this->openFormElement($this->buildPageURI(null, $this->_uriData()), 'post', 'eval');
     $this->openElement('div', array('class' => 'buttons'));
     $this->writeHiddenFormControls();
-    
+
     $this->addInputElement('hidden', 'pass_count', 0, 'pass_count');
     $this->addInputElement('hidden', 'fail_count', 0, 'fail_count');
-    
+
     $locked = (null != $this->mTestSuite->getLockDateTime());
     $this->addInputElement('submit', 'result', 'Pass [1]', 'button_pass', array('accesskey' => '1', 'disabled' => $locked));
     $this->addTextContent(' ');
@@ -675,11 +675,11 @@ class TestCasePage extends HarnessPage
     $this->addInputElement('submit', 'result', 'Cannot tell [3]', 'button_cannot', array('accesskey' => '3', 'disabled' => $locked));
     $this->addTextContent(' ');
     $this->addInputElement('submit', 'result', 'Skip [4]', 'button_skip', array('accesskey' => '4'));
-    
+
     $this->closeElement('div');
     $this->closeElement('form');
   }
-  
+
   function writeUserAgent()
   {
     if ($this->mUserAgent) {
@@ -687,7 +687,7 @@ class TestCasePage extends HarnessPage
       $description = $this->mUserAgent->getDescription();
 
       $this->openElement('div', array('class' => 'ua'));
-      
+
       if ($this->mUserAgent->isActualUA()) {
         $this->addTextContent("Testing: ");
         $this->addAbbrElement($uaString, null, $description);
@@ -708,18 +708,18 @@ class TestCasePage extends HarnessPage
       $this->closeElement('div');
     }
   }
-  
+
 
   function writeContentTitle($elementName = 'h1', Array $attrs = null)
   {
     if (! $this->inMaintenance()) {
       $this->writeResults();
     }
-    
+
     parent::writeContentTitle($elementName, $attrs);
   }
 
-  
+
   function writeTestInfo()
   {
     $this->openElement('div', array('class' => 'testinfo'));
@@ -727,15 +727,15 @@ class TestCasePage extends HarnessPage
     $this->writeFormatControls();
 
     $this->writeTestTitle();
-    
+
     $this->writeTestLinks();
-    
+
     $this->writeSpecLinks();
 
     $this->writeShepherdLink();
 
     $this->writeTestFlags();
-  
+
     $this->writeFlagTests();
 
     $this->closeElement('div');
@@ -745,12 +745,12 @@ class TestCasePage extends HarnessPage
   function writeBodyContent()
   {
     $this->openElement('div', array('class' => 'body'));
-    
+
     if ($this->mTestCase) {
       $this->openElement('div', array('class' => 'body_inner'));
-      
+
       $this->writeTestInfo();
-  
+
       $this->writeReferenceTabs();
 
       $this->writeTest();
@@ -768,7 +768,7 @@ class TestCasePage extends HarnessPage
 
     $this->closeElement('div');
   }
-  
+
 
   function writeBodyFooter()
   {
@@ -777,7 +777,7 @@ class TestCasePage extends HarnessPage
 
       if (! $this->inMaintenance()) {
         $this->writeSubmitForm();
-        
+
         $this->writeUserAgent();
       }
 

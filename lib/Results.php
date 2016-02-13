@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 require_once('lib/HarnessDB.php');
@@ -43,16 +43,16 @@ class Results extends HarnessDBConnection
   function __construct(TestSuite $testSuite, TestCase $testCase = null,
                        Specification $spec = null, SpecificationAnchor $anchor = null,
                        DateTime $modified = null,
-                       $engineName = null, $engineVersion = null, 
-                       $browserName = null, $browserVersion = null, 
+                       $engineName = null, $engineVersion = null,
+                       $browserName = null, $browserVersion = null,
                        $platformName = null, $platformVersion = null)
   {
     parent::__construct();
-    
+
     if ((! $modified) && $testSuite->getLockDateTime()) {
       $modified = $testSuite->getLockDateTime();
     }
-    
+
     $this->mEngines = array();
     $this->mTestCases = array();
     $this->mComponentTests = array();
@@ -61,7 +61,7 @@ class Results extends HarnessDBConnection
 
     $testSuiteName = $this->encode($testSuite->getName(), 'suite_tests.test_suite');
     $searchTestCaseId = ($testCase ? $testCase->getId() : null);
-    
+
     $userAgentDB = UserAgentDBConnection::GetDBName();
 
     $engines = Engine::GetAllEngines();
@@ -71,17 +71,17 @@ class Results extends HarnessDBConnection
     $sql .= "FROM `revisions` ";
     $sql .= "WHERE `equal_revision` != 0 ";
     $sql .= "ORDER BY `date` ";
-    
+
     $r = $this->query($sql);
     $testCaseEqualRevisions = array();
     while ($revisionData = $r->fetchRow()) {
       $testCaseId     = intval($revisionData['testcase_id']);
       $revision       = $revisionData['revision'];
       $equalRevision  = $revisionData['equal_revision'];
-      
+
       $testCaseEqualRevisions[$testCaseId][$revision] = $equalRevision;
     }
-    
+
     if ($testCase) {
       $this->mTestCases[$testCase->getId()] = $testCase;
     }
@@ -89,14 +89,14 @@ class Results extends HarnessDBConnection
       $testCases = new TestCases($testSuite, $spec, $anchor);
       $this->mTestCases = $testCases->getTestCases();
     }
-    
-    
+
+
     $currentComboId = 0;
     foreach ($this->mTestCases as $testCaseId => $testCase) {
       $revision = $testCase->getRevision();
       $testCaseRevisions[$testCaseId][$revision] = TRUE;
 
-      // find equal revisions 
+      // find equal revisions
       if (array_key_exists($testCaseId, $testCaseEqualRevisions)) {
         $equalRevisions = $testCaseEqualRevisions[$testCaseId];
 
@@ -105,7 +105,7 @@ class Results extends HarnessDBConnection
           $testCaseRevisions[$testCaseId][$revision] = TRUE;
         }
       }
-      
+
       // look for combo/component relationship
       $flags = $testCase->getFlags();
       if ($flags->hasFlag('combo')) {
@@ -115,7 +115,7 @@ class Results extends HarnessDBConnection
       else {
         if ($currentComboId) {
           $testCaseName = $testCase->getName();
-          if (substr($testCaseName, 0, strlen($currentComboName)) == $currentComboName) {
+          if (mb_substr($testCaseName, 0, mb_strlen($currentComboName)) == $currentComboName) {
             $this->mComponentTests[$currentComboId][] = $testCase;
           }
           else {
@@ -125,7 +125,7 @@ class Results extends HarnessDBConnection
         }
       }
     }
-    
+
     // load results
     $sql  = "SELECT DISTINCT `results`.`id`, `results`.`testcase_id`, ";
     $sql .= "  `results`.`revision`, `results`.`result`,  ";
@@ -154,7 +154,7 @@ class Results extends HarnessDBConnection
     if ($modified) {
       $modified = $this->encodeDateTime($modified);
       $sql .= "  AND `results`.`modified` <= '{$modified}' ";
-    }  
+    }
     if ($engineName) {
       $engineName = $this->encode($engineName, 'user_agents.engine');
       $sql .= "  AND `{$userAgentDB}`.`user_agents`.`engine` = '{$engineName}' ";
@@ -186,9 +186,9 @@ class Results extends HarnessDBConnection
     while ($resultData = $r->fetchRow()) {
       $testCaseId = intval($resultData['testcase_id']);
       $revision   = $resultData['revision'];
-      
+
       if (array_key_exists($revision, $testCaseRevisions[$testCaseId])) {
-        $engineName = strtolower($resultData['engine']);
+        $engineName = mb_strtolower($resultData['engine']);
         if ('' != $engineName) {
           $engineResults[$engineName] = TRUE;
           $resultId = intval($resultData['id']);
@@ -198,20 +198,20 @@ class Results extends HarnessDBConnection
         }
       }
     }
-    
+
     foreach ($engines as $engineName => $engine) {
       if (array_key_exists($engineName, $engineResults)) {
         $this->mEngines[$engineName] = $engine;
       }
     }
   }
-  
-  
+
+
   function getEngineCount()
   {
     return count($this->mEngines);
   }
-  
+
   function getEngines()
   {
     return $this->mEngines;
@@ -230,13 +230,13 @@ class Results extends HarnessDBConnection
   {
     return $this->mTestCases;
   }
-  
+
   function getTestCaseCount()
   {
     return count($this->mTestCases);
   }
-  
-  
+
+
   /**
    * Get total result count
    *
@@ -246,8 +246,8 @@ class Results extends HarnessDBConnection
   {
     return $this->mResultCount;
   }
-  
-  
+
+
   /**
    * Get result data per engine for test case
    *
@@ -262,8 +262,8 @@ class Results extends HarnessDBConnection
     }
     return FALSE;
   }
-  
-  
+
+
   /**
    * Get result counts per engine
    *
@@ -283,7 +283,7 @@ class Results extends HarnessDBConnection
         $engineResults[$engineName]['fail'] = 0;
         $engineResults[$engineName]['uncertain'] = 0;
         $engineResults[$engineName]['invalid'] = 0;
-        
+
         if (array_key_exists($engineName, $this->mResults[$testCaseId])) {
           $engineData = $this->mResults[$testCaseId][$engineName];
 
@@ -297,11 +297,11 @@ class Results extends HarnessDBConnection
     }
     return FALSE;
   }
-  
-  
+
+
   /**
    * Get component tests for combo test
-   * 
+   *
    * @param int test case id
    * @return array|FALSE array of component test ids
    */
@@ -313,7 +313,7 @@ class Results extends HarnessDBConnection
     }
     return FALSE;
   }
-  
+
 
 }
 
