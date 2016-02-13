@@ -1,6 +1,6 @@
 <IfModule mod_php5.c>
 	php_value mbstring.internal_encoding UTF-8
-	php_value mbstring.func_overload 7
+	php_value mbstring.func_overload 0
 	php_value output_buffering 0
 </IfModule>
 
