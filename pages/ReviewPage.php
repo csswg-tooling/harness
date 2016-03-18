@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 
@@ -27,10 +27,10 @@ require_once("lib/TestCases.php");
  * A class for generating the page to select how to report results
  */
 class ReviewPage extends HarnessPage
-{  
+{
   protected $mSections;
   protected $mTestCases;
-  
+
   protected $mResultsURI;
 
 
@@ -39,19 +39,19 @@ class ReviewPage extends HarnessPage
     return 'review';
   }
 
-  function __construct(Array $args = null, Array $pathComponents = null) 
+  function __construct(Array $args = null, Array $pathComponents = null)
   {
     parent::__construct($args, $pathComponents);
 
     $this->mSections = new Sections($this->mTestSuite);
 
     $this->mTestCases = new TestCases($this->mTestSuite);
-    
+
     $this->mSubmitData['suite'] = $this->mTestSuite->getName();
     if (! $this->mUserAgent->isActualUA()) {
       $this->mSubmitData['ua'] = $this->mUserAgent->getId();
     }
-    
+
     $this->mResultsURI = null;
     if (('Go' == $this->_postData('action')) || (1 == $this->mTestCases->getCount())) {
       $args['suite'] = $this->mTestSuite->getName();
@@ -65,7 +65,7 @@ class ReviewPage extends HarnessPage
           case 1: unset($args['testcase']); // test group
                   break;
           case 2: unset($args['section']);  // individual test case
-                  break;         
+                  break;
         }
       }
 
@@ -78,17 +78,17 @@ class ReviewPage extends HarnessPage
         $args['filter'] = $filterValue;
       }
       $args['order'] = $this->_postData('order');
-      
+
       $this->mResultsURI = $this->buildPageURI('results', $args);
     }
-    
+
   }
-  
+
   function getRedirectURI()
   {
     return $this->mResultsURI;
   }
-  
+
   function getPageTitle()
   {
     $title = parent::getPageTitle();
@@ -99,7 +99,7 @@ class ReviewPage extends HarnessPage
   function getNavURIs()
   {
     $uris = parent::getNavURIs();
-    
+
     $title = "Review Results";
     $uri = '';
     $uris[] = compact('title', 'uri');
@@ -116,7 +116,7 @@ class ReviewPage extends HarnessPage
       $testCount = $section->getLinkCount();
       $subSectionCount = $this->mSections->getSubSectionCount($spec, $section);
       if ((1 != $subSectionCount) || (0 < $testCount)) {
-        $this->addOptionElement($sectionName, null, "{$sectionName}: {$section->getTitle()}");
+        $this->addOptionElement($sectionName, null, $section->getSectionTitle());
       }
       if (0 < $subSectionCount) {
         $this->writeSectionOptions($spec, $section);
@@ -132,19 +132,19 @@ class ReviewPage extends HarnessPage
     $this->writeSectionOptions($spec);
     $this->closeElement('select');
   }
-  
-  
+
+
   function writeTestCaseSelect()
   {
     $testCases = $this->mTestCases->getTestCases();
-    
+
     if (1 < count($testCases)) {
       $this->openSelectElement('testcase', array('style' => 'width: 25em',
                                                  'onchange' => 'document.getElementById("result_form").type[2].checked = true'));
 
       foreach ($testCases as $testCase) {
         $testCaseName = $testCase->getName();
-        
+
         $this->addOptionElement($testCaseName, null,
                                 "{$testCaseName}: {$testCase->getTitle()}");
       }
@@ -156,8 +156,8 @@ class ReviewPage extends HarnessPage
       $this->addTextContent("{$testCase->getName()}: {$testCase->getTitle()}");
     }
   }
-  
-  
+
+
   function writeTestControls()
   {
     $this->addElement('p', null,
@@ -168,13 +168,13 @@ class ReviewPage extends HarnessPage
     $this->openElement('p');
     $this->addTextContent("You can choose to review:");
     $this->addElement('br');
-    
+
     $this->writeHiddenFormControls(TRUE);
 
     $this->addInputElement('radio', 'type', 0, 'type0', array('checked' => TRUE));
     $this->addLabelElement('type0', ' The full test suite');
     $this->addElement('br');
-    
+
     $specs = $this->mSections->getSpecifications();
     $sectionCount = 0;
     foreach ($specs as $specName => $spec) {
@@ -188,12 +188,12 @@ class ReviewPage extends HarnessPage
         $this->addElement('br');
       }
     }
-    
+
     $this->addInputElement('radio', 'type', 2, 'type2');
     $this->addLabelElement('type2', ' A single test case: ');
     $this->writeTestCaseSelect();
     $this->closeElement('p');
-    
+
     if (1 < $sectionCount) {
       $this->openElement('p');
       $this->addTextContent('Options:');
@@ -204,39 +204,39 @@ class ReviewPage extends HarnessPage
     }
 
     $this->writeFilterControls();
-    
+
     $this->addInputElement('submit', 'action', 'Go', 'submit');
 
     $this->closeElement('form');
   }
-  
+
   function writeFilterControls()
   {
     $this->openElement('p');
-    
+
     $this->addTextContent('Do not display tests that:');
     $this->addElement('br');
 
     $this->addInputElement('checkbox', 'filter[]', 1, 'filter1');
     $this->addLabelElement('filter1', ' Meet exit criteria');
     $this->addElement('br');
-    
+
     $this->addInputElement('checkbox', 'filter[]', 2, 'filter2');
     $this->addLabelElement('filter2', ' Have blocking failures');
     $this->addElement('br');
-    
+
     $this->addInputElement('checkbox', 'filter[]', 4, 'filter4');
     $this->addLabelElement('filter4', ' Lack sufficient data');
     $this->addElement('br');
-    
+
     $this->addInputElement('checkbox', 'filter[]', 8, 'filter8');
     $this->addLabelElement('filter8', ' Have been reported as invalid');
     $this->addElement('br');
-    
+
     $this->addInputElement('checkbox', 'filter[]', 16, 'filter16');
     $this->addLabelElement('filter16', ' Are not required');
     $this->addElement('br');
-        
+
     $this->closeElement('p');
   }
 

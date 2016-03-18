@@ -63,7 +63,7 @@ class StatusAPI extends APIPage
         }
       }
       else {
-        $this->mSpec = reset($this->mTestSuite->getSpecifications());
+        $this->mSpec = array_first($this->mTestSuite->getSpecifications());
       }
 
 

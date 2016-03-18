@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 
@@ -38,7 +38,7 @@ class ResultsBasedPage extends HarnessPage
   protected $mPlatformName;
   protected $mPlatformVersion;
   protected $mResults;
-  
+
   /**
    * Expected URL paramaters:
    * 'suite' Test Suite Name
@@ -57,7 +57,7 @@ class ResultsBasedPage extends HarnessPage
   function _initPage()
   {
     parent::_initPage();
-   
+
     $this->mModifiedDateTime = $this->_getData('modified', 'DateTime');
     $this->mEngineName       = $this->_getData('engine');
     $this->mEngineVersion    = $this->_getData('version');
@@ -68,14 +68,14 @@ class ResultsBasedPage extends HarnessPage
 
     set_time_limit(3600);
   }
-  
-  
+
+
   function setResults(Results $results)
   {
     $this->mResults = $results;
   }
-  
-  
+
+
   function loadResults()
   {
     if ($this->mTestSuite && $this->mTestSuite->isValid() && (! $this->mResults)) {
@@ -90,7 +90,7 @@ class ResultsBasedPage extends HarnessPage
           case 2: break;                  // individual test case
         }
       }
-      
+
       if ($testCaseName) {
         $this->mTestCase = TestCase::GetTestCase($this->mTestSuite, $testCaseName);
       }
@@ -99,7 +99,7 @@ class ResultsBasedPage extends HarnessPage
       }
       if ($sectionName) {
         if (! $this->mSpec) {
-          $this->mSpec = reset($this->mTestSuite->getSpecifications());
+          $this->mSpec = array_first($this->mTestSuite->getSpecifications());
         }
         $this->mSection = SpecificationAnchor::GetSectionFor($this->mSpec, $sectionName);
       }

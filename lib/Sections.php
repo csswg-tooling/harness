@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 require_once('lib/HarnessDB.php');
@@ -30,12 +30,12 @@ require_once('modules/specification/SpecificationAnchor.php');
 class SectionSorter
 {
   protected $mAnchors;
-  
+
   function __construct($anchors)
   {
     $this->mAnchors = $anchors;
   }
-  
+
   function compare($a, $b)
   {
     return SpecificationAnchor::CompareAnchorName($this->mAnchors[$a], $this->mAnchors[$b]);
@@ -72,7 +72,7 @@ class Sections extends HarnessDBConnection
     if ($specType) {
       $specType = $this->encode($specType);
     }
-    
+
     $sql  = "SELECT `{$specDBName}`.`spec_anchors`.*, ";
     $sql .= "SUM(IF(`test_spec_links`.`type`='group',0,1)) as `link_count` ";
     $sql .= "FROM `test_spec_links` ";
@@ -81,7 +81,9 @@ class Sections extends HarnessDBConnection
     $sql .= "  AND `{$specDBName}`.`spec_anchors`.`parent_name` = `test_spec_links`.`parent_name` ";
     $sql .= "  AND `{$specDBName}`.`spec_anchors`.`name` = `test_spec_links`.`anchor_name` ";
     $sql .= "WHERE {$specSearchSQL} ";
-    $sql .= "  AND `{$specDBName}`.`spec_anchors`.`structure` = 'section' ";
+    $sql .= "  AND (`{$specDBName}`.`spec_anchors`.`structure` = 'section' ";
+    $sql .= "       OR `{$specDBName}`.`spec_anchors`.`type` = 'heading' ";
+    $sql .= "       OR `{$specDBName}`.`spec_anchors`.`parent_name` = '') ";
     if ($specType) {
       $sql .= "  AND `{$specDBName}`.`spec_anchors`.`spec_type` = '{$specType}' ";
     }
@@ -95,15 +97,28 @@ class Sections extends HarnessDBConnection
 
     $this->mSections = array();
     while ($anchorData = $r->fetchRow()) {
-      $specName = $anchorData['spec'];
-      $anchorName = $anchorData['name'];
-      $parentName = $anchorData['parent_name'];
-    
-      $anchorData['link_count'] = intval($anchorData['link_count']);
+      if (('section' == $anchorData['structure']) || ('heading' == $anchorData['type'])) {
+        $specName = $anchorData['spec'];
+        $anchorName = $anchorData['name'];
+        $parentName = $anchorData['parent_name'];
 
-      $this->mSections[$specName][$parentName][$anchorName] = new SpecificationAnchor($anchorData);
+        $anchorData['link_count'] = intval($anchorData['link_count']);
+
+        $this->mSections[$specName][$parentName][$anchorName] = new SpecificationAnchor($anchorData);
+      }
+      else {  // synthesize a fake parent section for items outside any section
+        $rootData = Array();
+        $rootData['spec'] = $anchorData['spec'];
+        $rootData['spec_type'] = $anchorData['spec_type'];
+        $rootData['parent_name'] = '';
+        $rootData['name'] = '';
+        $rootData['title'] = '- No Section -';
+        $rootData['structure'] = 'section';
+        $rootData['type'] = 'other';
+        $this->mSections[$specName][''][''] = new SpecificationAnchor($rootData);
+      }
     }
-    
+
     foreach ($this->mSections as $specName => $sections) {
       foreach ($sections as $parentName => $subSections) {
         $sorter = new SectionSorter($subSections);
@@ -111,7 +126,7 @@ class Sections extends HarnessDBConnection
         $this->mSections[$specName][$parentName] = $subSections;
       }
     }
-    
+
     if ($loadTestCaseIds) {
       $specSearchSQL = $this->_getMultiSearchSQL("`test_spec_links`.`spec`", $specNames);
 
@@ -128,22 +143,24 @@ class Sections extends HarnessDBConnection
       $sql .= "ORDER BY `testcases`.`testcase` ";
 
       $r = $this->query($sql);
-      
+
       while ($testCaseData = $r->fetchRow()) {
         $specName = $testCaseData['spec'];
         $parentName = $testCaseData['parent_name'];
         $anchorName = $testCaseData['anchor_name'];
         $testCaseId = intval($testCaseData['testcase_id']);
-        
-        if ((! array_key_exists($parentName, $this->mSections[$specName])) ||
-            (! array_key_exists($anchorName, $this->mSections[$specName][$parentName]))) {  // ensure links to sections
+
+        if ($parentName &&
+            ((! array_key_exists($parentName, $this->mSections[$specName])) ||
+             (! array_key_exists($anchorName, $this->mSections[$specName][$parentName])))) {  // ensure links to sections
           $anchorName = $parentName;
           $parentName = SpecificationAnchor::GetAnchorParentName($parentName);
         }
-        
+
         $this->mTestCaseIds[$specName][$parentName][$anchorName][] = $testCaseId;
         if (0 == intval($testCaseData['sequence'])) {
-          $this->mPrimaryAnchors[$testCaseId] = $this->mSections[$specName][$parentName][$anchorName];
+          $anchor = $this->mSections[$specName][$parentName][$anchorName];
+          $this->mPrimaryAnchors[$testCaseId] = $anchor;
         }
       }
     }
@@ -165,7 +182,7 @@ class Sections extends HarnessDBConnection
     }
     return $specs;
   }
-  
+
 
 /*
   function getSection(SpecificationAnchor $section)
@@ -190,8 +207,8 @@ class Sections extends HarnessDBConnection
     }
     return 0;
   }
-  
-  
+
+
   function getSubSections(Specification $spec, SpecificationAnchor $parent = null)
   {
     $specName = $spec->getName();
@@ -202,8 +219,8 @@ class Sections extends HarnessDBConnection
     }
     return FALSE;
   }
-  
-  
+
+
   function getTestCaseIdsFor(Specification $spec, SpecificationAnchor $section = null, $recursive = FALSE)
   {
     $testCaseIds = array();
@@ -231,8 +248,8 @@ class Sections extends HarnessDBConnection
     }
     return $testCaseIds;
   }
-  
-  
+
+
   function getPrimarySectionFor(TestCase $testCase)
   {
     $testCaseId = $testCase->getId();
@@ -241,8 +258,8 @@ class Sections extends HarnessDBConnection
     }
     return FALSE;
   }
-  
-  
+
+
   function findSectionForURI($uri)
   {
     $spec = Specification::GetSpecificationByURI($uri);
@@ -261,7 +278,7 @@ class Sections extends HarnessDBConnection
     }
     return null;
   }
-  
+
 }
 
 ?>

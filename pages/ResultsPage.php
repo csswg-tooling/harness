@@ -1,19 +1,19 @@
 <?php
 /*******************************************************************************
  *
- *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P. 
+ *  Copyright © 2008-2011 Hewlett-Packard Development Company, L.P.
  *
- *  This work is distributed under the W3C® Software License [1] 
- *  in the hope that it will be useful, but WITHOUT ANY 
- *  WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ *  This work is distributed under the W3C® Software License [1]
+ *  in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231 
+ *  [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
  *
  *  Adapted from the Mobile Test Harness
  *  Copyright © 2007 World Wide Web Consortium
  *  http://dev.w3.org/cvsweb/2007/mobile-test-harness/
- * 
+ *
  ******************************************************************************/
 
 
@@ -29,15 +29,15 @@ require_once('modules/specification/SpecificationAnchor.php');
  * Class for generating the page of result data
  */
 class ResultsPage extends ResultsBasedPage
-{  
+{
   protected $mDisplayLinks;
   protected $mDisplayFilter;                  // bitflag to supress rows: 1=pass, 2=fail, 4=uncertain, 8=invalid, 0x10=optional
   protected $mOrdering;                       // display ordering
   protected $mOptionalFlags;
-  
+
   protected $mSections;
   protected $mTestCaseCounted;                // array of test case ids already counted for stats
-  
+
   protected $mTestCaseRequiredCount;          // number of required tests
   protected $mTestCaseRequiredPassCount;      // number of required tests with 2 or more passes
   protected $mTestCaseOptionalCount;          // number of optional tests ('may' or 'should')
@@ -82,25 +82,25 @@ class ResultsPage extends ResultsBasedPage
     if ($this->mTestCase) {
       $this->mOrdering = 0;
     }
-    
+
     if ($this->mTestSuite && $this->mTestSuite->isValid()) {
       $this->mOptionalFlags = $this->mTestSuite->getOptionalFlags();
     }
     $this->mTestCaseCounted = array();
   }
-  
-  
+
+
   function getPageTitle()
   {
     $title = parent::getPageTitle();
     return "{$title} Results";
   }
-  
+
 
   function getNavURIs()
   {
     $uris = parent::getNavURIs();
-    
+
     if ($this->mTestSuite) {
       $title = "Review Results";
       $args['suite'] = $this->mTestSuite->getName();
@@ -108,7 +108,7 @@ class ResultsPage extends ResultsBasedPage
 
       $uri = $this->buildPageURI('review', $args);
       $uris[] = compact('title', 'uri');
-      
+
       $title = "Results";
       $uri = '';
       $uris[] = compact('title', 'uri');
@@ -116,12 +116,12 @@ class ResultsPage extends ResultsBasedPage
     return $uris;
   }
 
-  
+
   /**
    * Generate <style> element
    */
   function writeHeadStyle()
-  {  
+  {
     parent::writeHeadStyle();
 
     $this->addStyleSheetLink($this->buildConfigURI('stylesheet.report'));
@@ -132,12 +132,12 @@ class ResultsPage extends ResultsBasedPage
   {
     $engineResults = $this->mResults->getResultCountsFor($testCase);
     $componentTests = $this->mResults->getComponentTestsFor($testCase);
-  
+
     $hasResults   = FALSE;
     $testInvalid  = FALSE;
     $passCount    = 0;
     $failCount    = 0;
-    
+
     $cells = array();
     foreach ($this->mResults->getEngines() as $engineName => $engine) {
       $engineMissing[$engineName] = TRUE;
@@ -178,14 +178,14 @@ class ResultsPage extends ResultsBasedPage
         $content  = ((0 < $pass) ? $pass : '.') . ' / ';
         $content .= ((0 < $fail) ? $fail : '.') . ' / ';
         $content .= ((0 < $uncertain) ? $uncertain : '.');
-        
+
         $cells[] = array($engineName, $class, $content);
       }
       else {
         $cells[] = '';
       }
     }
-    
+
     $display = TRUE;
     $class = '';
     if ($testInvalid) {
@@ -219,7 +219,7 @@ class ResultsPage extends ResultsBasedPage
           }
           $componentPassCount = 0;
           foreach ($componentResults as $componentEngine => $componentEngineResults) {
-            if ((0 == $componentEngineResults['invalid']) && 
+            if ((0 == $componentEngineResults['invalid']) &&
                 (0 < $componentEngineResults['pass'])) {
               $componentPassCount++;
             }
@@ -278,9 +278,9 @@ class ResultsPage extends ResultsBasedPage
     }
     if ($display) {
       $this->openElement('tr', array('class' => $class));
-      
+
       $this->_generateTestCaseCell($testCase, $section, $hasResults, $isPrimarySection);
-      
+
       foreach ($cells as $cell) {
         if (is_array($cell)) {
           list($engineName, $class, $content) = $cell;
@@ -295,8 +295,8 @@ class ResultsPage extends ResultsBasedPage
     }
     return FALSE;
   }
-  
-  
+
+
   function _copyArgs(Array $source, Array &$destination, Array $filterKeys)
   {
     foreach ($filterKeys as $key) {
@@ -305,8 +305,8 @@ class ResultsPage extends ResultsBasedPage
       }
     }
   }
-  
-  
+
+
   function _generateTestCaseCell(TestCase $testCase, $section, $hasResults, $isPrimarySection)
   {
     $attrs = null;
@@ -314,7 +314,7 @@ class ResultsPage extends ResultsBasedPage
       $attrs['class'] = 'primary';
     }
     $this->openElement('td', $attrs, FALSE);
-    
+
     if ($section) {
       $anchor = array('name' => "s{$section->getName()}_{$testCase->getName()}");
     }
@@ -334,7 +334,7 @@ class ResultsPage extends ResultsBasedPage
       else {
         $uri = $this->buildPageURI('testcase', $args);
       }
-      
+
       $this->addHyperLink($uri, $anchor, $testCase->getName());
     }
     else {
@@ -342,8 +342,8 @@ class ResultsPage extends ResultsBasedPage
     }
     $this->closeElement('td');
   }
-  
-  
+
+
   function _generateResultCell(TestCase $testCase, $engineName, $class, $section, $content)
   {
     if ($this->mDisplayLinks) {
@@ -353,7 +353,7 @@ class ResultsPage extends ResultsBasedPage
       $args['ua'] = $this->mUserAgent->getId();
       $this->_copyArgs($this->_uriData(), $args, array('modified', 'version', 'browser', 'browser_version', 'platform', 'platform_version'));
       $uri = $this->buildPageURI('details', $args);
-      
+
       $this->openElement('td', array('class' => $class), FALSE);
       $this->addHyperLink($uri, null, $content, FALSE);
       $this->closeElement('td');
@@ -363,11 +363,11 @@ class ResultsPage extends ResultsBasedPage
     }
   }
 
-  
+
   function writeRow(TestCase $testCase, SpecificationAnchor $section = null, $isPrimarySection = FALSE)
   {
     $testCaseId   = $testCase->getId();
-    
+
     $needStats = (! array_key_exists($testCaseId, $this->mTestCaseCounted));
     $this->mTestCaseCounted[$testCaseId] = TRUE;
 
@@ -375,8 +375,8 @@ class ResultsPage extends ResultsBasedPage
 
     return $this->_generateRow($testCase, $optional, $needStats, $section, $isPrimarySection);
   }
-  
-  
+
+
   function writeSectionRows(Specification $spec, SpecificationAnchor $section = null)
   {
     if ($section) {
@@ -385,17 +385,17 @@ class ResultsPage extends ResultsBasedPage
       if (0 < count($testCaseIds)) {
         $this->_beginBuffering();
         $hadOutput = FALSE;
-        
+
         $this->openElement('tbody', array('id' => "s{$section->getName()}"));
         $this->openElement('tr');
         $this->openElement('th', array('colspan' => ($this->mResults->getEngineCount() + 1), 'scope' => 'rowgroup'));
         $specURI = $section->getURI($spec);
-        $this->addHyperLink($specURI, null, "{$section->getName()}: {$section->getTitle()}");
+        $this->addHyperLink($specURI, null, $section->getSectionTitle());
         $this->closeElement('th');
         $this->closeElement('tr');
 
         $testCases = $this->mResults->getTestCases();
-        
+
         foreach ($testCaseIds as $testCaseId) {
           $testCase = $testCases[$testCaseId];
           $isPrimarySection = ($this->mSections->getPrimarySectionFor($testCase) == $section);
@@ -403,12 +403,12 @@ class ResultsPage extends ResultsBasedPage
             $hadOutput = TRUE;
           }
         }
-        
+
         $this->closeElement('tbody');
         $this->_endBuffering(! $hadOutput);
       }
     }
-  
+
     $subSections = $this->mSections->getSubSections($spec, $section);
     if ($subSections) {
       foreach ($subSections as $subSection) {
@@ -419,7 +419,7 @@ class ResultsPage extends ResultsBasedPage
       }
     }
   }
-  
+
   function writeSpecificationHeader(Specification $spec)
   {
     $this->openElement('tbody');
@@ -428,8 +428,8 @@ class ResultsPage extends ResultsBasedPage
     $this->closeElement('tr');
     $this->closeElement('tbody');
   }
-  
-  
+
+
   function writeResultTable()
   {
     $this->openElement('table');
@@ -442,7 +442,7 @@ class ResultsPage extends ResultsBasedPage
     }
     $this->closeElement('tr');
     $this->closeElement('thead');
-    
+
     if ((0 == $this->mOrdering) || ($this->mTestCase)) {
       $this->openElement('tbody');
       $testCases = $this->mResults->getTestCases();
@@ -469,7 +469,7 @@ class ResultsPage extends ResultsBasedPage
         }
       }
     }
-    
+
     $testCount = $this->mResults->getTestCaseCount();
     $this->openElement('tfoot');
     $this->openElement('tr');
@@ -479,7 +479,7 @@ class ResultsPage extends ResultsBasedPage
       $this->addElement('th', null, "{$passPercentage}%");
     }
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('th', null, 'Coverage');
     foreach ($this->mResults->getEngines() as $engineName => $engine) {
@@ -488,11 +488,11 @@ class ResultsPage extends ResultsBasedPage
     }
     $this->closeElement('tr');
     $this->closeElement('tfoot');
-    
+
     $this->closeElement('table');
   }
-  
-  
+
+
   function resetStats()
   {
     $this->mTestCaseRequiredCount = 0;
@@ -503,7 +503,7 @@ class ResultsPage extends ResultsBasedPage
     $this->mTestCaseNeededCount = 0;
     $this->mTestCaseNeedMoreResults = 0;
     $this->mTestCaseTooManyFails = 0;
-    
+
     $this->mTestCaseEngineNeededCount = array();
     $this->mTestCaseEnginePassCount = array();
     $this->mTestCaseEngineResultCount = array();
@@ -514,12 +514,12 @@ class ResultsPage extends ResultsBasedPage
       $this->mTestCaseEngineResultCount[$engineName] = 0;
     }
   }
-  
-  
+
+
   function writeSummary()
   {
     $engines = $this->mResults->getEngines();
-    
+
     $this->addElement('p', null, "{$this->mTestCaseRequiredPassCount} of {$this->mTestCaseRequiredCount} required tests meet CR exit criteria.");
     if (0 < $this->mTestCaseOptionalCount) {
       $this->addElement('p', null, "{$this->mTestCaseOptionalPassCount} of {$this->mTestCaseOptionalCount} optional tests meet CR exit criteria.");
@@ -566,22 +566,22 @@ class ResultsPage extends ResultsBasedPage
       $this->addElement('p', null, "CR exit criteria have been met.");
     }
   }
-  
-  
+
+
   /**
    * Write HTML for a table displaying result data
    */
   function writeBodyContent()
   {
     $this->loadResults();
-    
+
     $this->resetStats();
-    
+
     $this->openElement('div', array('class' => 'body'));
-    
+
     if ($this->mResults->getResultCount()) {
       $this->writeResultTable();
-      
+
       $this->writeSummary();
 
       $this->writeLedgend();
@@ -599,22 +599,22 @@ class ResultsPage extends ResultsBasedPage
 
       $this->mTestCaseNeededCount = $this->mTestCaseRequiredCount;
       $this->mTestCaseNeedMoreResults = $this->mTestCaseNeededCount;
-      
+
       foreach ($this->mResults->getEngines() as $engineName => $engine) {
         $this->mTestCaseEngineNeededCount[$engineName] = $this->mTestCaseNeededCount;
       }
 
       $this->addElement('p', null, "No results entered matching this query.");
     }
-    
+
     $this->closeElement('div');
   }
 
-  
+
   function writeLedgend()
   {
     $this->addElement('h2', null, 'Legend');
-    
+
     $this->openElement('table', array('class' => 'legend'));
 
     $this->openElement('thead');
@@ -622,36 +622,36 @@ class ResultsPage extends ResultsBasedPage
     $this->addElement('th', null, 'Row color codes');
     $this->closeElement('tr');
     $this->closeElement('thead');
-    
+
     $this->openElement('tbody');
 
     $this->openElement('tr', array('class' => 'pass'));
     $this->addElement('td', null, 'two or more passes');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr', array('class' => 'pass bycomponents'));
     $this->addElement('td', null, '* combo test passed by component tests');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr', array('class' => 'fail'));
     $this->addElement('td', null, 'blocking failures');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr', array('class' => 'uncertain'));
     $this->addElement('td', null, 'not enough results');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr', array('class' => 'invalid'));
     $this->addElement('td', null, 'reported as invalid');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr', array('class' => 'optional'));
     $this->addElement('td', null, 'not passing, but optional');
     $this->closeElement('tr');
-    
+
     $this->closeElement('tbody');
     $this->closeElement('table');
-    
+
     $this->openElement('table', array('class' => 'legend'));
 
     $this->openElement('thead');
@@ -659,41 +659,41 @@ class ResultsPage extends ResultsBasedPage
     $this->addElement('th', null, 'Result color codes');
     $this->closeElement('tr');
     $this->closeElement('thead');
-    
+
     $this->openElement('tbody');
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'pass'), 'all results pass');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'pass fail'), 'pass reported, but also other results');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'fail'), 'all results fail');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'fail uncertain'), 'fail reported, but also other results');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'uncertain'), 'all results uncertain');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('td', array('class' => 'invalid'), 'reported as invalid');
     $this->closeElement('tr');
-    
+
     $this->openElement('tr');
     $this->addElement('td', null, '# pass / # fail / # uncertain');
     $this->closeElement('tr');
-    
+
     $this->closeElement('tbody');
     $this->closeElement('table');
   }
-  
-  
+
+
 }
 
 ?>

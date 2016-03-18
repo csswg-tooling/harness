@@ -89,7 +89,7 @@ class TestCasePage extends HarnessPage
         $sectionName = $this->_getData('section');
         if ($sectionName) {
           if (! $this->mSpec) {
-            $this->mSpec = reset($this->mTestSuite->getSpecifications());
+            $this->mSpec = array_first($this->mTestSuite->getSpecifications());
           }
           $this->mSection = SpecificationAnchor::GetSectionFor($this->mSpec, $sectionName);
         }
@@ -313,6 +313,10 @@ class TestCasePage extends HarnessPage
             $sectionName = $anchor->getName();
             $anchorName = null;
           }
+          else if ('heading' == $anchor->getType()) {
+            $sectionName = $anchor->getTitle();
+            $anchorName = null;
+          }
           else {
             $sectionName = $anchor->getParentName();
             $anchorName = $anchor->getName();
@@ -332,6 +336,10 @@ class TestCasePage extends HarnessPage
             $anchor = next($specAnchors);
             if ('section' == $anchor->getStructure()) {
               $draftSectionName = $anchor->getName();
+              $draftAnchorName = null;
+            }
+            else if ('heading' == $anchor->getType()) {
+              $draftSectionName = $anchor->getTitle();
               $draftAnchorName = null;
             }
             else {

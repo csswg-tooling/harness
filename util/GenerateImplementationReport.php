@@ -676,7 +676,7 @@ class GenerateImplementationReport extends HarnessCmdLineWorker
         $spec = Specification::GetSpecificationByName($specName);
       }
       if (! $spec) {
-        $spec = reset($testSuite->getSpecifications());
+        $spec = array_first($testSuite->getSpecifications());
       }
 
       $this->mResults = new Results($testSuite, null, $spec);
