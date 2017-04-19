@@ -74,6 +74,7 @@ class StatusAPI extends APIPage
         }
         $this->mSections = new Sections($this->mTestSuite, TRUE, $this->mSpecType);
 
+        // XXX do some defaults (override?) based on specURI - w3.org/TR
         $specURI = $this->_requestData('uri');
         if ($specURI) {
           $specURIName = $this->_getURIFileName($specURI);

@@ -56,7 +56,9 @@ var annotator = {
   ENGINE_LOGOS: { '_gecko': "<?php  echo Harness::ExternalConfigURI('image.gecko'); ?>",
                   '_presto': "<?php  echo Harness::ExternalConfigURI('image.presto'); ?>",
                   '_trident': "<?php  echo Harness::ExternalConfigURI('image.trident'); ?>",
-                  '_webkit': "<?php  echo Harness::ExternalConfigURI('image.webkit'); ?>" },
+                  '_webkit': "<?php  echo Harness::ExternalConfigURI('image.webkit'); ?>",
+                  '_blink': "<?php  echo Harness::ExternalConfigURI('image.blink'); ?>",
+                  '_edge': "<?php  echo Harness::ExternalConfigURI('image.edge'); ?>"},
 
   mResponse: null,
   mClosed: false,
