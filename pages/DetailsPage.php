@@ -321,7 +321,7 @@ class DetailsPage extends ResultsBasedPage
       $this->addElement('th', null, 'Date');
       $this->addElement('th', null, 'Source');
       if ($this->mUser->hasRole('tester')) {
-        $this->addElement('th', array('class' => 'controls', ''));
+        $this->addElement('th', array('class' => 'controls'));
       }
       $this->closeElement('tr');
       $this->closeElement('thead');
