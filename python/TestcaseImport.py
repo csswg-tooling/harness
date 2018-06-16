@@ -38,7 +38,7 @@ class Importer(db.HarnessDBConnection):
         db.HarnessDBConnection.__init__(self)
         self.ui = ui
         self.testcases = testcases.Testcases()
-        
+
     def __del__(self):
         self.testcases.close()
         del self.testcases
@@ -47,24 +47,24 @@ class Importer(db.HarnessDBConnection):
         dbClasses = (Importer, testcases.Testcases, testsuite.TestSuites)
         db.HarnessDBConnection.StartTransaction(dbClasses)
         db.HarnessDBConnection.WriteLockTables(dbClasses)
-    
+
     def unlockTables(self):
         dbClasses = (Importer, testcases.Testcases, testsuite.TestSuites)
         db.HarnessDBConnection.UnlockTables(dbClasses)
         db.HarnessDBConnection.Commit(dbClasses)
-        
-        
+
+
     def joinPath(self, path, name, extension):  # for uris, so hardcode '/'
         if (path and ('/' != path[-1]) and name and ('/' != name[0])):
             path += '/'
         if (extension and ('.' != extension[0])):
             extension = '.' + extension
         return path + name + extension
-        
-    
+
+
     def importTests(self, testSuite, manifest):
         self.lockTables()
-    
+
         importDate = self.getNow()
         testSuiteName = testSuite.getName()
 
@@ -105,7 +105,9 @@ class Importer(db.HarnessDBConnection):
 
         for data in manifest:
             testPath = data['id']
-            testcaseName = os.path.basename(testPath)
+            testcaseName = testPath
+            if (testcaseName.endswith('-manual') or testcaseName.endswith('-visual')):
+                testcaseName = testcaseName[:-7]
             revision = data['revision']
             flags = set(utils.splitStripAndFilter(',', data['flags']))
             referenceGroups = utils.splitStripAndFilter(';', data['references'])
@@ -122,24 +124,25 @@ class Importer(db.HarnessDBConnection):
                     groupData.append(ReferenceData(os.path.basename(referencePath).lower(), type, referencePath))
                 if (groupData):
                     references.append(groupData)
-        
+
             links = utils.splitStripAndFilter(',', data['links'])
             credits = utils.splitStripAndFilter(',', data['credits'])
-            
+
             self.ui.note("Adding testcase: ", testcaseName, " revision: ", revision, "\n")
-            testcase = self.testcases.addTestcase(testPath, revision, references, data['title'], flags, links,
+            testcase = self.testcases.addTestcase(testcaseName, revision, references, data['title'], flags, links,
                                                   credits, data['assertion'], importDate)
 
             self.execute("INSERT INTO `suite_tests` "
                          "  (`test_suite`, `testcase_id`, `revision`, `date_added`) "
                          "VALUES (%s, %s, %s, %s) ",
-                         (testSuiteName, testcase.getId(), revision, 
+                         (testSuiteName, testcase.getId(), revision,
                           dateAdded[testcase.getId()] if testcase.getId() in dateAdded else importDate)).close()
 
             for formatName in suiteFormats:
                 format = suiteFormats[formatName]
                 if (format.validForFlags(flags)):
                     uri = self.joinPath(format.getPath(), testPath, format.getExtension())
+                    self.ui.note("Adding test page: ", uri, "\n")
                     self.execute("INSERT INTO `test_pages` "
                                  "  (`testcase_id`, `test_suite`, `format`, `uri`) "
                                  "VALUES (%s, %s, %s, %s) ",
@@ -153,13 +156,13 @@ class Importer(db.HarnessDBConnection):
                                          "VALUES (%s, %s, %s, %s, %s) "
                                          "ON DUPLICATE KEY UPDATE `uri` = %s ",
                                          (testcase.getId(), testSuiteName, reference.name, formatName, uri, uri)).close()
-        
+
         self.execute("DELETE FROM `status_cache` "
                      "WHERE `test_suite` = %s ",
                      (testSuiteName, )).close()
 
         testSuite.setBuildDate(importDate)
-        
+
         self.unlockTables()
 
 
@@ -195,15 +198,15 @@ class TestcaseImport(systemprocess.SystemProcess):
         if (len(self.args) < 2):
             self.ui.status(self._getUsage(), "\n")
             return
-        
+
         manifestFilePath, testSuiteName = self.args[0:2]
-        
+
         testSuites = testsuite.TestSuites()
         testSuite = testSuites.getTestSuite(testSuiteName)
         if (not testSuite):
             self.ui.status("Unknown test suite\n")
             return
-        
+
         manifest = self._loadManifest(manifestFilePath)
         if (manifest is None):
             return
