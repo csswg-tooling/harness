@@ -103,11 +103,16 @@ class Importer(db.HarnessDBConnection):
 
         suiteFormats = testSuite.getFormats()
 
+        normalized_testcase_names = {}
         for data in manifest:
             testPath = data['id']
             testcaseName = testPath
             if (testcaseName.endswith('-manual') or testcaseName.endswith('-visual')):
                 testcaseName = testcaseName[:-7]
+            if (testcaseName in normalized_testcase_names):
+                self.ui.status("Testcase name collision between ", testPath, " and ", normalized_testcase_names[testcaseName], "\n")
+                continue
+            normalized_testcase_names[testcaseName] = testPath
             revision = data['revision']
             flags = set(utils.splitStripAndFilter(',', data['flags']))
             referenceGroups = utils.splitStripAndFilter(';', data['references'])
